@@ -11,13 +11,13 @@
 - **Hash:** SHA-256 com `certutil -hashfile <arquivo> SHA256` (Windows) ou `sha256sum <arquivo>`.
 - **Onde ficam os arquivos crus:** `arte/tripo/` e `arte/mixamo/`, fora do git (`.gitignore`).
 
-**Estado (2026-10-09):** vazio. Nenhum lote aprovado, nada gerado, 0 crédito gasto.
+**Estado (2026-10-09):** Lote 1 aprovado pelo Vinicius neste chat ("Aprovo 485 (teto 550)"), em produção pelo coordenador no Chrome deste PC.
 
 ## 1. Livro-razão de créditos (Tripo, conta do estúdio, plano Max)
 
 | Data/hora | Evento | Saldo visto no site | Gasto | Obs |
 |---|---|---|---|---|
-| | Abertura do Lote 1 (aval: ___; orçado 485, teto 550) | | 0 | conferir "Gerar 45" e Privado no 1º modelo |
+| 2026-10-09 ~15:20 | Abertura do Lote 1 (aval do Vinicius em 2026-10-09: "Aprovo 485 (teto 550)"; orçado 485, teto 550) | **20 720** | 0 | painel conferido: "Gerar 45", 8K desligado, Privado, H3.1 - Máx. qualidade. Teto: saldo final ≥ **20 170** |
 | | | | | |
 
 ## 2. Registro por peça (Tripo)

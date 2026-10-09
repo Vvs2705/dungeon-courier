@@ -1,0 +1,408 @@
+using System;
+using System.Collections.Generic;
+using DC.Core;
+using UnityEngine;
+using UnityEngine.UI;
+using Rect = UnityEngine.Rect;
+
+namespace DC
+{
+    /// <summary>
+    /// Arte 100% gerada por codigo (zero asset), padrao do Art.cs do Forge Street: mascaras com 4 amostras de antialias, cache por
+    /// chave, 1 unidade de mundo = sprite inteiro. Cada entidade tem cor E forma: o papel do inimigo nunca e so a cor (morcego asas,
+    /// ladrao mascara, guarda elmo quadrado, bruto chifres, ogro chifres dourados e maior). A troca por sprite real e por entidade, nos
+    /// metodos Paint* do WorldView.
+    /// </summary>
+    public static class Art
+    {
+        public static Color Hex(int rgb) => new Color(((rgb >> 16) & 255) / 255f, ((rgb >> 8) & 255) / 255f, (rgb & 255) / 255f);
+        public static Color A(Color c, float a) => new Color(c.r, c.g, c.b, a);
+
+        // Paleta = docs/ART_BIBLE.md §3 (decisao do coordenador, 2026-10-09). Regras: azul so no courier (projetil e anel do dash);
+        // amarelo-limao so na CARGA (contorno, alerta, icone); roxo so no ladrao e no roubo; moeda e ouro-laranja, nunca o limao;
+        // cenario so azul-violeta-cinza.
+        // interface e feedback
+        public static readonly Color Ink = Hex(0xF7F3EA), Tinta = Hex(0x1B1724), Bad = Hex(0xFF3B30), Good = Hex(0x45C46B),
+            Coin = Hex(0xF5A623), Gold = Hex(0xE0B23A), Paper = Hex(0xF3E2C0), PaperEdge = Hex(0xC9A877),
+            Bg = Hex(0x14161F), Dim = Hex(0x8A90A8), Off = Hex(0x4F5866), Dark = Hex(0x0E0F18);
+        // cenario
+        public static readonly Color FloorA = Hex(0x3E4458), FloorB = Hex(0x394052), Joint = Hex(0x24273A), WallTop = Hex(0x5E6680),
+            Wall = Hex(0x474D63), Skirt = Hex(0x2C3042), BlockTop = Hex(0x6B7390), Block = Hex(0x4E5570), BlockEdge = Hex(0x8A93B0),
+            DoorIn = Hex(0x0E0F18), Plate = Hex(0x2E3242), Bone = Hex(0xEDE6D6), Steel = Hex(0x8C96A6), SteelDark = Hex(0x4F5866);
+        // papeis
+        public static readonly Color Courier = Hex(0x2F6FE4), Cream = Hex(0xF2E6CC), Leather = Hex(0x7A4A2A), Shot = Hex(0x7FC4FF),
+            Cargo = Hex(0xFFE14D), BoxStrap = Hex(0x6E7487), Gem = Hex(0x5CE1E6), EggSpot = Hex(0xE8735A), Pet = Hex(0xE8735A),
+            ThiefSkin = Hex(0x8DB255), BatWing = Hex(0xB5546A),
+            Client = Hex(0x3FAE5A), Tele = Hex(0xFF3B30), Crack = Hex(0x1B1724), Chest = Hex(0x9A6432);
+        /// <summary>Cor dominante por PAPEL (indice de EnemyType): morcego vinho, ladrao roxo, guarda vermelho, bruto laranja-ferrugem, ogro musgo.</summary>
+        static readonly Color[] RoleC = { Hex(0x5B2A3A), Hex(0x8E44AD), Hex(0xB3262E), Hex(0xC8642B), Hex(0x6F8A4B) };
+        /// <summary>Corpo por carga: caixa madeira, reliquia porcelana, ovo casca.</summary>
+        static readonly Color[] CargoC = { Hex(0xC98A4B), Hex(0xF1EEE4), Hex(0xF3E3C3) };
+        public static Color Role(EnemyType t) => RoleC[(int)t];
+        public static Color CargoColor(CargoType t) => CargoC[(int)t];
+        /// <summary>Forma por carga: caixa = quadrado arredondado, reliquia = losango, ovo = oval.</summary>
+        public static Sprite CargoSprite(CargoType t) => t == CargoType.Box ? Rounded() : t == CargoType.Relic ? Diamond() : Egg();
+
+        // ---------- mascaras (x, y em [-1, 1]) ----------
+        const int Side = 128;
+        static readonly Dictionary<string, Sprite> Cache = new Dictionary<string, Sprite>();
+
+        public static Sprite Square() => Get("sq", (x, y) => true);
+        public static Sprite Disc() => Get("disc", (x, y) => x * x + y * y <= 0.96f);
+        public static Sprite Ring() => Get("ring", (x, y) => { float d = x * x + y * y; return d <= 0.96f && d >= 0.66f; });
+        public static Sprite ThinRing() => Get("ring2", (x, y) => { float d = x * x + y * y; return d <= 0.96f && d >= 0.84f; });
+        /// <summary>Anel tracejado (16 tracos): area de entrega e alcance de pegar a carga.</summary>
+        public static Sprite DashedRing() => Get("dashring", (x, y) =>
+        {
+            float d = x * x + y * y;
+            return d <= 0.96f && d >= 0.82f && Mathf.Repeat(Mathf.Atan2(y, x) / (Mathf.PI * 2f) * 16f, 1f) < 0.6f;
+        });
+        public static Sprite Rounded() => Get("rounded", RoundedIn);
+        static bool RoundedIn(float x, float y)
+        {
+            const float r = 0.3f;
+            float qx = Mathf.Max(Mathf.Abs(x) - (0.96f - r), 0f), qy = Mathf.Max(Mathf.Abs(y) - (0.96f - r), 0f);
+            return qx * qx + qy * qy <= r * r;
+        }
+        public static Sprite Diamond() => Get("dia", (x, y) => Mathf.Abs(x) * 0.8f + Mathf.Abs(y) < 0.96f);
+        /// <summary>Triangulo apontando para +Y (nariz do courier, seta).</summary>
+        public static Sprite Triangle() => Get("tri", (x, y) => y > -0.8f && Mathf.Abs(x) < (0.9f - y) * 0.58f);
+        public static Sprite Egg() => Get("egg", (x, y) =>
+        {
+            float rx = 0.74f - 0.14f * y;
+            return x * x / (rx * rx) + y * y / 0.92f <= 1f;
+        });
+        public static Sprite Star() => Get("star", (x, y) =>
+        {
+            const float seg = Mathf.PI * 2f / 5f;
+            float f = Mathf.Abs(Mathf.Repeat(Mathf.Atan2(x, y), seg) / seg * 2f - 1f);
+            return x * x + y * y <= Mathf.Pow(Mathf.Lerp(0.45f, 0.98f, f * f), 2f);
+        });
+        public static Sprite Heart() => Get("heart", (x, y) =>
+        {
+            float X = x * 1.2f, Y = y * 1.2f + 0.15f, a = X * X + Y * Y - 1f;
+            return a * a * a - X * X * Y * Y * Y <= 0f;
+        });
+        public static Sprite Skull() => Get("skull", (x, y) =>
+        {
+            float ax = Mathf.Abs(x);
+            bool head = x * x + (y - 0.15f) * (y - 0.15f) <= 0.6f || (ax < 0.44f && y > -0.9f && y < -0.2f);
+            bool eye = (ax - 0.3f) * (ax - 0.3f) + (y - 0.08f) * (y - 0.08f) < 0.05f;
+            bool nose = y < -0.12f && y > -0.36f && ax < (y + 0.36f) * 0.5f;
+            bool teeth = y < -0.58f && Mathf.Repeat((x + 0.44f) / 0.22f, 1f) < 0.2f;
+            return head && !eye && !nose && !teeth;
+        });
+        public static Sprite Bat() => Get("bat", (x, y) =>
+        {
+            float ax = Mathf.Abs(x);
+            bool body = x * x + (y + 0.05f) * (y + 0.05f) <= 0.18f;
+            bool ear = y > 0.2f && y < 0.62f - 1.7f * Mathf.Abs(ax - 0.2f);
+            bool wing = ax >= 0.25f && ax <= 0.98f && y <= 0.45f - 0.36f * (ax - 0.25f)
+                && y >= -0.22f + 0.24f * Mathf.Abs(Mathf.Sin((ax - 0.25f) * 8.6f));
+            return body || ear || wing;
+        });
+        /// <summary>Capuz pontudo (silhueta do ladrao): disco com a ponta para cima.</summary>
+        public static Sprite Hood() => Get("hood", (x, y) => x * x + (y + 0.18f) * (y + 0.18f) <= 0.62f || InTri(x, y, -0.5f, 0.3f, 0.5f, 0.3f, 0.08f, 0.98f));
+        /// <summary>Duas manoplas de pedra dos lados (silhueta do bruto: ombros largos, punhos grandes).</summary>
+        public static Sprite Fists() => Get("fists", (x, y) => (Mathf.Abs(x) - 0.72f) * (Mathf.Abs(x) - 0.72f) + (y + 0.25f) * (y + 0.25f) <= 0.07f);
+        /// <summary>Dois chifres para fora (ogro; icone do chefe na placa), desenhados por cima do corpo em escala maior.</summary>
+        public static Sprite Horns() => Get("horns", (x, y) =>
+        {
+            float s = x < 0f ? -1f : 1f, ax = x * s;
+            return InTri(ax, y, 0.22f, 0.4f, 0.58f, 0.4f, 0.86f, 0.98f);
+        });
+        /// <summary>Dois olhos (pupila feita por um segundo Eyes menor e escuro).</summary>
+        public static Sprite Eyes() => Get("eyes", (x, y) => (Mathf.Abs(x) - 0.45f) * (Mathf.Abs(x) - 0.45f) + y * y < 0.2f);
+        /// <summary>Rachaduras: 1 a 3 trincas em zigue-zague saindo do centro (contorno escuro desenhado por cima da carga).</summary>
+        public static Sprite Cracks(int n)
+        {
+            n = Mathf.Clamp(n, 1, 3);
+            return CrackS[n] != null ? CrackS[n] : (CrackS[n] = MakeCracks(n));   // chamado todo quadro: cache sem closure nem string
+        }
+        static readonly Sprite[] CrackS = new Sprite[4];
+        static Sprite MakeCracks(int n) => Get("crack" + n, (x, y) =>
+        {
+            for (int i = 0; i < n; i++)
+            {
+                float a = 0.7f + i * 2.1f, c = Mathf.Cos(a), s = Mathf.Sin(a);
+                float u = x * c + y * s, v = -x * s + y * c;
+                if (u < -0.05f || u > 0.95f) continue;
+                float t = u * 4f, tri = 4f * Mathf.Abs(t - Mathf.Floor(t + 0.5f)) - 1f;
+                if (Mathf.Abs(v - 0.14f * tri) < 0.09f) return true;
+            }
+            return false;
+        });
+        public static Sprite ChestShape() => Get("chest", (x, y) =>
+            Mathf.Abs(x) < 0.88f && ((y > -0.72f && y < 0.18f) || (y > 0.26f && y < 0.66f && RoundedIn(x, (y - 0.3f) * 1.6f))));
+        public static Sprite Lock() => Get("lock", (x, y) =>
+        {
+            float d = Mathf.Sqrt(x * x + (y - 0.15f) * (y - 0.15f));
+            bool shackle = y > 0.15f && d > 0.32f && d < 0.5f;
+            bool body = Mathf.Abs(x) < 0.62f && y > -0.85f && y <= 0.18f;
+            bool hole = x * x + (y + 0.3f) * (y + 0.3f) < 0.025f;
+            return (shackle || body) && !hole;
+        });
+        public static Sprite Bars() => Get("bars", (x, y) => Mathf.Repeat((x + 1f) / 0.5f, 1f) < 0.3f || Mathf.Abs(y) < 0.1f);
+        public static Sprite Pause() => Get("pause", (x, y) => Mathf.Abs(Mathf.Abs(x) - 0.36f) < 0.17f && Mathf.Abs(y) < 0.72f);
+        public static Sprite Clock() => Get("clock", (x, y) =>
+        {
+            float d = x * x + y * y;
+            return (d <= 0.96f && d >= 0.62f) || (Mathf.Abs(x) < 0.09f && y > -0.05f && y < 0.55f) || (Mathf.Abs(y) < 0.09f && x > -0.05f && x < 0.42f);
+        });
+        public static Sprite Flag() => Get("flag", (x, y) =>
+            (Mathf.Abs(x + 0.62f) < 0.09f && Mathf.Abs(y) < 0.92f) || (x > -0.56f && x < 0.75f && y > 0.06f && y < 0.86f && !(x > 0.45f && Mathf.Abs(y - 0.46f) < 0.75f - x)));
+        public static Sprite CoinShape() => Get("coin", (x, y) => { float d = x * x + y * y; return d <= 0.96f && (d < 0.38f || d > 0.5f); });
+        public static Sprite Bag() => Get("bag", (x, y) =>
+            x * x + (y + 0.28f) * (y + 0.28f) <= 0.42f || (Mathf.Abs(x) < 0.22f && y > 0.25f && y < 0.5f) || InTri(x, y, -0.45f, 0.82f, 0.45f, 0.82f, 0f, 0.46f));
+        /// <summary>Dash: duas setas "&gt;&gt;" apontando para cima.</summary>
+        public static Sprite Chevrons() => Get("chev", (x, y) =>
+        {
+            float ax = Mathf.Abs(x);
+            return ax < 0.8f && (Mathf.Abs(y - (0.55f - 0.75f * ax)) < 0.17f || Mathf.Abs(y - (-0.15f - 0.75f * ax)) < 0.17f);
+        });
+        public static Sprite Smile() => Get("smile", (x, y) => { float d = Mathf.Sqrt(x * x + (y - 0.3f) * (y - 0.3f)); return Mathf.Abs(d - 0.7f) < 0.13f && y < 0.05f; });
+        public static Sprite Frown() => Get("frown", (x, y) => { float d = Mathf.Sqrt(x * x + (y + 0.9f) * (y + 0.9f)); return Mathf.Abs(d - 0.7f) < 0.13f && y > -0.45f; });
+        public static Sprite Flat() => Get("flat", (x, y) => Mathf.Abs(y + 0.2f) < 0.12f && Mathf.Abs(x) < 0.55f);
+        /// <summary>Brilho suave (disco com queda): luz da porta aberta, rastro do dash.</summary>
+        public static Sprite Glow() => Soft("glow", (x, y) => { float d = Mathf.Min(1f, Mathf.Sqrt(x * x + y * y)); return (1f - d) * (1f - d); });
+        /// <summary>Vinheta: so as bordas (alfa 0 no centro): flash de dano em tela cheia.</summary>
+        public static Sprite Vignette() => Soft("vignette", (x, y) => Mathf.Clamp01((x * x + y * y - 0.45f) / 1.1f));
+
+        /// <summary>Arco de progresso (anel cheio no sentido horario a partir do topo ate frac). ponytail: 24 degraus em cache.</summary>
+        public static Sprite Arc(float frac)
+        {
+            int k = Mathf.Clamp(Mathf.CeilToInt(frac * 24f), 0, 24);
+            return Arcs[k] != null ? Arcs[k] : (Arcs[k] = MakeArc(k));   // a closure fica no MakeArc: o caminho quente nao aloca
+        }
+        static Sprite MakeArc(int k) => Get("arc" + k, (x, y) =>
+        {
+            float d = x * x + y * y;
+            return d <= 0.96f && d >= 0.66f && Mathf.Repeat(Mathf.Atan2(x, y) / (Mathf.PI * 2f), 1f) < k / 24f;
+        });
+        static readonly Sprite[] Arcs = new Sprite[25];
+
+        static bool InTri(float px, float py, float ax, float ay, float bx, float by, float cx, float cy)
+        {
+            float d1 = (px - bx) * (ay - by) - (ax - bx) * (py - by);
+            float d2 = (px - cx) * (by - cy) - (bx - cx) * (py - cy);
+            float d3 = (px - ax) * (cy - ay) - (cx - ax) * (py - ay);
+            bool neg = d1 < 0f || d2 < 0f || d3 < 0f, pos = d1 > 0f || d2 > 0f || d3 > 0f;
+            return !(neg && pos);
+        }
+
+        // cache conferido ANTES de criar a closure (licao do Forge Street: lambda capturada aloca na entrada do metodo)
+        static Sprite Get(string key, Func<float, float, bool> inside) => Cached(key) ?? Mask(key, Supersample(inside));
+        static Func<int, int, byte> Supersample(Func<float, float, bool> inside) => (x, y) =>
+        {
+            int n = 0;
+            for (int sy = 0; sy < 2; sy++)
+                for (int sx = 0; sx < 2; sx++)
+                    if (inside((x + 0.25f + sx * 0.5f) / Side * 2f - 1f, (y + 0.25f + sy * 0.5f) / Side * 2f - 1f)) n++;
+            return (byte)(n * 63 + (n == 4 ? 3 : 0));
+        };
+        static Sprite Soft(string key, Func<float, float, float> f) => Cached(key) ?? Mask(key, (x, y) =>
+            (byte)(255f * Mathf.Clamp01(f((x + 0.5f) / Side * 2f - 1f, (y + 0.5f) / Side * 2f - 1f))));
+        static Sprite Cached(string key) => Cache.TryGetValue(key, out Sprite s) && s != null ? s : null;
+
+        static Sprite Mask(string key, Func<int, int, byte> alpha)
+        {
+            var tex = new Texture2D(Side, Side, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.DontUnloadUnusedAsset };
+            var px = new Color32[Side * Side];
+            for (int y = 0; y < Side; y++)
+                for (int x = 0; x < Side; x++) px[y * Side + x] = new Color32(255, 255, 255, alpha(x, y));
+            tex.SetPixels32(px);
+            tex.Apply();
+            Sprite s = Sprite.Create(tex, new Rect(0, 0, Side, Side), new Vector2(0.5f, 0.5f), Side);
+            Cache[key] = s;
+            return s;
+        }
+
+        /// <summary>Piso de lajes de 1 m (xadrez com junta) para SpriteRenderer Tiled: 1 repeticao = 2 x 2 m.</summary>
+        public static Sprite Floor()
+        {
+            if (Cache.TryGetValue("floor", out Sprite s) && s != null) return s;
+            const int ppm = 32, n = 2 * ppm;
+            Color32 a = FloorA, b = FloorB, j = Joint;
+            var px = new Color32[n * n];
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++) px[y * n + x] = x % ppm < 2 || y % ppm < 2 ? j : (x / ppm + y / ppm) % 2 == 0 ? a : b;
+            var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Repeat, hideFlags = HideFlags.DontUnloadUnusedAsset };
+            tex.SetPixels32(px);
+            tex.Apply(false, true);
+            s = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), ppm, 0, SpriteMeshType.FullRect);
+            Cache["floor"] = s;
+            return s;
+        }
+
+        public static SpriteRenderer NewSprite(Transform parent, string name, Sprite sprite, Color color, int order, Vector2 pos, Vector2 scale)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = pos;
+            go.transform.localScale = new Vector3(scale.x, scale.y, 1f);
+            var r = go.AddComponent<SpriteRenderer>();
+            r.sprite = sprite; r.color = color; r.sortingOrder = order;
+            return r;
+        }
+
+        // ---------- uGUI por codigo (fonte embutida, sem TextMeshPro) ----------
+        static Font _font;
+        public static Font Font() => _font != null ? _font : (_font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"));
+
+        public static RectTransform Node(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax)
+        {
+            var rt = (RectTransform)new GameObject(name, typeof(RectTransform)).transform;
+            rt.SetParent(parent, false);
+            rt.anchorMin = anchorMin; rt.anchorMax = anchorMax;
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
+            return rt;
+        }
+
+        public static Image Img(Transform parent, string name, Sprite sprite, Color color, Vector2 anchorMin, Vector2 anchorMax)
+        {
+            Image i = Node(parent, name, anchorMin, anchorMax).gameObject.AddComponent<Image>();
+            i.sprite = sprite; i.color = color; i.preserveAspect = true; i.raycastTarget = false;
+            return i;
+        }
+
+        public static Text NewText(Transform parent, string name, int size, Vector2 anchorMin, Vector2 anchorMax, TextAnchor align = TextAnchor.MiddleCenter)
+        {
+            var t = Node(parent, name, anchorMin, anchorMax).gameObject.AddComponent<Text>();
+            t.font = Font(); t.fontSize = size; t.color = Ink; t.alignment = align; t.raycastTarget = false;
+            t.horizontalOverflow = HorizontalWrapMode.Wrap; t.verticalOverflow = VerticalWrapMode.Overflow;
+            return t;
+        }
+
+        /// <summary>Contorno escuro + sombra: le sobre qualquer fundo.</summary>
+        public static Text Outlined(Text t, float px = 2f)
+        {
+            var o = t.gameObject.AddComponent<Outline>();
+            o.effectColor = A(Tinta, 0.95f); o.effectDistance = new Vector2(px, -px);
+            return t;
+        }
+
+        /// <summary>Retangulo arredondado 9-fatias para uGUI (canto de ~20 px na referencia).</summary>
+        public static Sprite Box()
+        {
+            if (Cache.TryGetValue("box9", out Sprite s) && s != null) return s;
+            Sprite m = Get("box9mask", (x, y) =>
+            {
+                const float r = 0.62f;
+                float qx = Mathf.Max(Mathf.Abs(x) - (1f - r), 0f), qy = Mathf.Max(Mathf.Abs(y) - (1f - r), 0f);
+                return qx * qx + qy * qy <= r * r;
+            });
+            s = Sprite.Create(m.texture, new Rect(0, 0, Side, Side), new Vector2(0.5f, 0.5f), 200f, 0, SpriteMeshType.FullRect, new Vector4(44, 44, 44, 44));
+            Cache["box9"] = s;
+            return s;
+        }
+
+        public static Image Panel(Transform parent, string name, Color color, Vector2 anchorMin, Vector2 anchorMax)
+        {
+            var img = Node(parent, name, anchorMin, anchorMax).gameObject.AddComponent<Image>();
+            img.sprite = Box(); img.type = Image.Type.Sliced; img.color = color;
+            return img;
+        }
+
+        /// <summary>Botao: painel arredondado + rotulo em negrito. Estados normal/aceso/apertado/desligado pelo ColorTint padrao do uGUI.</summary>
+        public static Button NewButton(Transform parent, string label, int size, Color color, Vector2 anchorMin, Vector2 anchorMax, Action onClick)
+        {
+            Image img = Panel(parent, "Btn " + label, color, anchorMin, anchorMax);
+            var b = img.gameObject.AddComponent<Button>();
+            b.targetGraphic = img;
+            b.onClick.AddListener(() => { Sfx.Play("clique"); onClick(); });
+            Text t = NewText(img.transform, "Rotulo", size, Vector2.zero, Vector2.one);
+            t.text = label; t.color = Tinta; t.fontStyle = FontStyle.Bold;
+            t.resizeTextForBestFit = true; t.resizeTextMinSize = Mathf.Max(10, size / 2); t.resizeTextMaxSize = size;
+            return b;
+        }
+    }
+
+    /// <summary>SFX sintetizados (padrao do Forge Street): varredura de seno com envelope, opcional ruido. Um nome por momento do GDD §2/§12.</summary>
+    public static class Sfx
+    {
+        static AudioSource _src;
+        static readonly Dictionary<string, AudioClip> Clips = new Dictionary<string, AudioClip>();
+        static readonly Dictionary<string, float> LastPlayed = new Dictionary<string, float>();
+
+        public static void Init(GameObject host)
+        {
+            _src = host.AddComponent<AudioSource>();
+            _src.playOnAwake = false;
+            Tone("pousar", 240, 120, 0.09f, 0.35f);     // baque curto e grave
+            Tone("pegar", 520, 980, 0.08f);            // pio subindo
+            Tone("carga", 900, 260, 0.2f, 0.7f);       // rachadura: ruido descendo
+            Tone("ladrao", 980, 380, 0.3f, 0.15f);     // escorregadio descendo
+            Tone("dash", 300, 1300, 0.15f, 0.8f);      // vento
+            Tone("tiro", 1700, 1300, 0.04f);           // disparo baixinho
+            Tone("golpe", 1200, 600, 0.06f, 0.3f);     // acertou inimigo
+            Tone("morte", 700, 160, 0.18f, 0.25f);     // inimigo caiu
+            Tone("dano", 420, 140, 0.22f, 0.3f);       // courier apanhou
+            Tone("aviso", 880, 840, 0.1f);             // telegraph
+            Tone("porta", 300, 620, 0.3f, 0.05f);      // atravessou a porta
+            Tone("bloqueio", 150, 120, 0.12f, 0.2f);   // porta fechada
+            Tone("entrega", 523, 1046, 0.7f);          // entrega
+            Tone("moedas", 1300, 2100, 0.14f);         // bau, pagamento
+            Tone("compra", 420, 1250, 0.5f);           // guilda
+            Tone("choca", 600, 1250, 0.35f, 0.05f);    // ovo chocou
+            Tone("quebra", 1400, 200, 0.4f, 0.8f);     // reliquia quebrou
+            Tone("clique", 700, 500, 0.05f);           // interface
+        }
+
+        /// <summary>Toca no maximo uma vez por `minGap` s por nome (varios golpes no mesmo quadro viram um).</summary>
+        public static void Play(string name, float pitch = 1f, float minGap = 0.05f)
+        {
+            if (_src == null || !Ajustes.Som || !Clips.TryGetValue(name, out AudioClip c)) return;
+            if (LastPlayed.TryGetValue(name, out float last) && Time.unscaledTime - last < minGap) return;
+            LastPlayed[name] = Time.unscaledTime;
+            _src.pitch = pitch;
+            _src.PlayOneShot(c, 0.55f);
+        }
+
+        static void Tone(string name, float f0, float f1, float dur, float noise = 0f)
+        {
+            const int rate = 44100;
+            int n = Mathf.CeilToInt(dur * rate);
+            var data = new float[n];
+            var rng = new System.Random(name.Length * 7919 + (int)f0);
+            double phase = 0;
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (float)n;
+                phase += 2 * Math.PI * Mathf.Lerp(f0, f1, t) / rate;
+                float env = Mathf.Min(1f, i / 200f) * Mathf.Exp(-4f * t);
+                float v = (float)Math.Sin(phase) * (1f - noise) + ((float)rng.NextDouble() * 2f - 1f) * noise;
+                data[i] = v * env * 0.5f;
+            }
+            AudioClip clip = AudioClip.Create(name, n, 1, rate, false);
+            clip.SetData(data, 0);
+            Clips[name] = clip;
+        }
+    }
+
+    /// <summary>Som e Vibracao no PlayerPrefs (dc_som, dc_vibra; 1 = ligado), fora do save de progresso (valem no -testsession).
+    /// Vibracao so no Android (Handheld.Vibrate); no PC a chave aparece desligada.</summary>
+    public static class Ajustes
+    {
+        const string SomKey = "dc_som", VibraKey = "dc_vibra";
+        public static readonly bool TemVibra = Application.platform == RuntimePlatform.Android;
+        static int _som = -1, _vibra = -1;
+        static float _last = -99f;
+
+        public static bool Som { get => Read(SomKey, ref _som); set => Write(SomKey, ref _som, value); }
+        public static bool Vibra { get => TemVibra && Read(VibraKey, ref _vibra); set => Write(VibraKey, ref _vibra, value); }
+
+        static bool Read(string key, ref int v) { if (v < 0) v = PlayerPrefs.GetInt(key, 1); return v == 1; }
+        static void Write(string key, ref int v, bool on) { v = on ? 1 : 0; PlayerPrefs.SetInt(key, v); PlayerPrefs.Save(); }
+
+        /// <summary>Vibra (carga atingida, entrega perfeita), no maximo 1 a cada `gap` s. ponytail: Handheld.Vibrate tem duracao fixa
+        /// (~0,4 s); se ficar longo demais no aparelho, trocar por Vibrator.vibrate(ms) via JNI como o Ajustes.Pulso do Forge Street.</summary>
+        public static void Vibrar(float gap = 0.3f)
+        {
+            if (!Vibra || Time.unscaledTime - _last < gap) return;
+            _last = Time.unscaledTime;
+#if UNITY_ANDROID && !UNITY_EDITOR
+            Handheld.Vibrate();
+#endif
+        }
+    }
+}
