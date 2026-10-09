@@ -33,6 +33,12 @@
 | 2026-10-09 15:46–15:55 | Auto Rig humanoide, predefinição de esqueleto **Mixamo**, nos 4 personagens (courier, ladrão, guarda v2, cliente), cada um pela URL `workspace/rigging/<task>` | **20 190** | 80 | export FBX predefinição Mixamo 2K com esqueleto |
 | 2026-10-09 15:47–16:00 | 9 exports e downloads (aval do Vinicius: "Pode baixar os 9"); props com FBX predefinição Blender 2K; export não cobra | 20 190 | 0 | arquivos em `06_DUNGEON_COURIER/arte/tripo/<asset>/` do **checkout principal** (o worktree pode ser apagado; `arte/tripo/` fica fora do git) |
 | 2026-10-09 16:00 | **Lote 1 FECHADO: 530 créditos** (10 modelos × 45 + 4 rigs × 20); 20 720 → 20 190 | 20 190 | 530 | dentro do teto de 550 |
+| 2026-10-09 ~17:55 | **Abertura do Lote 2** (aval do Vinicius em 2026-10-09: "pode seguir tudo que for recomendado", sobre a recomendação "Lote 2: 265 créditos, teto 330"); orçado 265 (bruto 65, ogro 65, relíquia 45, ovo 45, filhote 45) | **20 190** | 0 | teto: saldo final ≥ **19 860**; ogro sem algema/corrente (regra dos itens) |
+| 2026-10-09 17:25–17:31 | 5 Modelos HD H3.1 (imagens grátis Nano Banana 2): bruto #3 (`e40525cf-36e0-40be-bf13-4967b9c5a084`, 7 805 faces), ogro #2 (`ffb744ee-0127-4426-8d2a-25cd69986d5a`, 7 530), relíquia #1 (`0948a1dd-bc40-473f-b005-2cfef384216a`, 7 752), ovo #1 (`97947289-c235-4d6b-93d8-42aa551e54c7`, 7 318), filhote #4 (`5b382495-08dc-46b0-837f-5c00ff987ebf`, 7 638) | 19 965 | 225 | receita conferida: "Gerar 45", Privado, 8K off |
+| 2026-10-09 ~17:33 | **Veredito do Vinicius** sobre `client/Builds/arte_lote1/veredito_lote2.png`: "Tudo aprovado, pode baixar" | 19 965 | 0 | libera rig e downloads |
+| 2026-10-09 17:34–17:36 | Auto Rig humanoide Mixamo no bruto e no ogro (pose A; o rig aceitou) | **19 925** | 40 | export FBX predefinição Mixamo 2K |
+| 2026-10-09 17:36–17:41 | 5 exports e downloads; props com predefinição Blender 2K (a relíquia foi exportada 2× por dúvida de predefinição: arquivos idênticos byte a byte, duplicata apagada) | 19 925 | 0 | arquivos em `arte/tripo/<asset>/` do checkout principal |
+| 2026-10-09 17:41 | **Lote 2 FECHADO: 265 créditos** (5 × 45 + 2 × 20); 20 190 → 19 925 | 19 925 | 265 | dentro do teto de 330 |
 | | | | | |
 
 ## 2. Registro por peça (Tripo)
@@ -51,11 +57,11 @@ Preencha cada linha. Prompt e parâmetros completos vão no bloco do §6, se a l
 | bau | 1/#7 | 2026-10-09 | Tripo Studio: imagem → HD H3.1 → FBX Blender 2K | #1 de 4 (Nano Banana 2) | `9d6ba381-8afc-4eec-a9ea-27ee897d35b6` | §2.1 (bloco de prompts) | 45 / 45 | `arte/tripo/bau/bau.zip` (4151987 B) → `tripo_convert_70aa8043-4833-4392-a538-6816ecb51a47.fbx` | zip `2672c74a19e3248d8a742d76ad57dbd291e7571aa8f78eb64f59f39cc12ad14f` · fbx `c3e05b9194cb26ba0c3453c6e9e684c1b436c83620f80cf8ed46f80e133717e0` | tripo_pago | privada |
 | bau_aberto | 1/#8 | — | **cortado** (abertura procedural) | — | — | — | 45 / 0 | — | — | — | — |
 | arco | 1/#9 | 2026-10-09 | Tripo Studio: imagem → HD H3.1 → FBX Blender 2K | #2 de 4 (Nano Banana 2) | `cf719c6f-5e9a-4c39-be8a-f853a3c61da9` | §2.1 (bloco de prompts) | 45 / 45 | `arte/tripo/arco/arco.zip` (3148165 B) → `tripo_convert_5ef411ad-d800-46d7-b5ff-a5ac007f7260.fbx` | zip `8f4be7af2a07e3497b7146cfe2d5af25a76c4b4cf174b6e86e50ac308090d9a0` · fbx `6eda50930fb34712252532cf9f7832a09a82666718d9e1f5a9b7999e15e326ca` | tripo_pago | privada |
-| bruto | 2/#10 | | | | | | 65 / | `arte/tripo/bruto/` | | | |
-| ogro | 2/#11 | | | | | | 65 / | `arte/tripo/ogro/` | | | |
-| reliquia | 2/#12 | | | | | | 45 / | `arte/tripo/reliquia/` | | | |
-| ovo | 2/#13 | | | | | | 45 / | `arte/tripo/ovo/` | | | |
-| filhote | 2/#14 | | | | | | 45 / | `arte/tripo/filhote/` | | | |
+| bruto | 2/#10 | 2026-10-09 | Tripo Studio: imagem → HD H3.1 → Auto Rig Mixamo → FBX Mixamo 2K | #3 de 4 (Nano Banana 2) | `e40525cf-36e0-40be-bf13-4967b9c5a084` | §2.1 | 65 / 65 | `arte/tripo/bruto/bruto.zip` (22999981 B) → `tripo_convert_c1fe3cb8-6ba4-4dc0-95bf-788b7654b593.fbx` | zip `d60df2447cdc2ab733e94a69b836c681ebf63b37d07b0084665267f896ab70f4` · fbx `70dd563ab55fbfb72fabf896dcebd45f4dfc4a7490113937e43a23f9a0fadb56` | tripo_pago | privada |
+| ogro | 2/#11 | 2026-10-09 | Tripo Studio: imagem → HD H3.1 → Auto Rig Mixamo → FBX Mixamo 2K (sem algema/corrente, regra dos itens) | #2 de 4 | `ffb744ee-0127-4426-8d2a-25cd69986d5a` | §2.1 | 65 / 65 | `arte/tripo/ogro/ogro.zip` (22080047 B) → `tripo_convert_b3759572-2a4f-4828-8406-b4d37034b6ed.fbx` | zip `36f1ebfe4e0adf83ad9ec0f1e9f46b6ec75a12e31391ae140bc7041612789600` · fbx `1049c65596931b6843624b24bde40f1b4a745e3827cd015a1de5798bedccc912` | tripo_pago | privada |
+| reliquia | 2/#12 | 2026-10-09 | Tripo Studio: imagem → HD H3.1 → FBX Blender 2K | #1 de 4 | `0948a1dd-bc40-473f-b005-2cfef384216a` | §2.1 | 45 / 45 | `arte/tripo/reliquia/reliquia.zip` (4265990 B) → `tripo_convert_0a9e5d99-77bc-472c-b6fa-75f76fbe67f6.fbx` | zip `84d72bb486e05c1df320550b9ab0906ca8f47230f839c06c2ba955709fea492c` · fbx `dfbfda6edac8f1a74f739ba78254ffac0f015092a614f51e2026622161801639` | tripo_pago | privada |
+| ovo | 2/#13 | 2026-10-09 | Tripo Studio: imagem → HD H3.1 → FBX Blender 2K | #1 de 4 | `97947289-c235-4d6b-93d8-42aa551e54c7` | §2.1 | 45 / 45 | `arte/tripo/ovo/ovo.zip` (3139249 B) → `tripo_convert_85fb4d88-0e9a-4616-b2d1-e30625fb9f2b.fbx` | zip `ae4224e2f5a2e8e5e0f69804535d3ae7cdb103bcf608a68abafc90ca3a9d654e` · fbx `c1027189d6aa9533d08584677ca057d4a562ff6a9b422fd3b2a52c1a4abac0b6` | tripo_pago | privada |
+| filhote | 2/#14 | 2026-10-09 | Tripo Studio: imagem → HD H3.1 → FBX Blender 2K | #4 de 4 | `5b382495-08dc-46b0-837f-5c00ff987ebf` | §2.1 | 45 / 45 | `arte/tripo/filhote/filhote.zip` (2550100 B) → `tripo_convert_06e11dbc-91ec-402d-a13a-925df6df8ae2.fbx` | zip `6ff001f0be9b9c2c7103c3dd1a2d471d20fc375bf8493fc22341fe2920c6da5e` · fbx `42770dbe778dadc3f94ebe8ff10ec625cc7670b07b85e690c0d704980eaf106d` | tripo_pago | privada |
 
 Os prompts previstos estão em `ASSETS.md` §0–§3 (assunto + sufixos).
 - Registre aqui o **texto exato usado**: no Forge, o Lote 4 ficou sem o prompt exato no ledger e precisou ser reconstruído.
@@ -75,6 +81,11 @@ Sufixos usados exatamente como em `ASSETS.md` §0 (`[S]`+`[T]`+`[I]` nos persona
 - escudo (rodada 1, descartada por sair com 2 peças): "tall rectangular steel tower shield with a dark red horizontal band, slightly curved, inner arm straps on the back, front view, " + [P] + [IP]
 - escudo (rodada 2, usada): "one single tall rectangular steel tower shield standing upright, dark red horizontal band across the middle, slightly curved, riveted steel rim, seen from the front at a slight three-quarter angle, only one object in the image, stylized fantasy comic game prop, chunky beveled shapes, flat colors with soft two-tone shading, centered, no background, no text, plain light grey background, soft even light, no ground shadow"
 - arco: "dungeon doorway, chunky grey-blue stone block archway, rounded arch top with a keystone, empty dark opening, no door, " + [P] + [IP]
+- bruto (Lote 2): "hulking brute warrior, very broad shoulders twice the head size, long arms reaching the knees, huge stone-and-iron gauntlets on both fists, small bald head with a heavy brow, rust-orange leather and fur armor, grey stone-colored skin, no weapon in the hands, " + [S] + [T] + [I]
+- ogro (Lote 2): "giant dungeon ogre boss, huge round belly, enormous fists, small head with two lower tusks, mossy green skin, dark brown leather loincloth and belt, necklace of big bones, empty hands, no weapon, no shackle, no chain, " + [S] + [T] + [I]
+- reliquia (Lote 2): "fragile ancient relic urn, slender white porcelain body with thin gold filigree, two delicate handles, small cyan gem on the lid, looks precious and breakable, " + [P] + [IP]
+- ovo (Lote 2): "big creature egg, cream shell with coral orange spots, resting in a woven straw nest basket with two handles, " + [P] + [IP]
+- filhote (Lote 2): "baby dragon hatchling, big round head, big friendly eyes, tiny wings, short tail, coral orange scales and cream belly, sitting pose, " + [P] + [IP]
 
 ## 3. Clipes Mixamo
 
