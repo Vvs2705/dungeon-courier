@@ -15,5 +15,6 @@ Este repositório é **só do Dungeon Courier** (GitHub `Vvs2705/dungeon-courier
 - Memória do estúdio (leitura; atualize só a parte deste jogo): `C:\Users\VINICIUS\Videos\MEUS PROJETOS\Agentes\_memoria\` — `STATUS_jogos-novos-validacao.md` e, se existir, o arquivo deste projeto.
 
 ## Situação
-- Estado: só GDD e estrutura do projeto; ainda não há código. Não comece o projeto Unity sem o Vinicius pedir neste grupo.
-- Comece por: `README.md`, `docs/GDD.md` (revisão competitiva de 2026-10-09 no topo) e `docs/COMPETITIVO.md`; o layout do futuro projeto está em `client/README.md`.
+- Estado (2026-10-09): v0.1 jogável no PC na branch `feat/v0.1-greybox` (projeto Unity criado a pedido do Vinicius), com a arte do Lote 1. Portão: `dotnet test client/tools/coretests` · `dotnet build client/tools/viewcheck/view` · Unity EditMode · build Windows · `-autoplay 8` · fotos 540×960.
+- Regras de arte do Vinicius: itens (escudo, arma) gerados separados e presos ao osso no Blender; animação do Mixamo ou feita no Blender; créditos só com aval por lote. Testar no PC primeiro; manter só o APK atual.
+- Comece por: `README.md`, `docs/CONTRATO_V01.md`, `docs/GDD.md` (revisão competitiva de 2026-10-09 no topo), `docs/BALANCE.md` e `client/README.md`.
