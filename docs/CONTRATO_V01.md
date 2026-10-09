@@ -34,6 +34,7 @@ Unidades: metros e segundos. Origem no canto inferior esquerdo da sala. Vetor pr
 6. **Porta:** só atravessa com a carga nas mãos (sem ela, a porta não abre e a dica avisa). Guarda vivo mantém a porta dele fechada.
 7. **Carga sozinha:** se a carga ficar no chão a mais de 3 m do courier por 8 s, nasce um Ladrão perto dela (§28).
 8. **Integridade:** cada golpe na carga = 1 rachadura (visível). Relíquia quebra com 3 (contrato falha). Nas outras, a rachadura só reduz o bônus.
+9. **Relíquia frágil (passada 2, BALANCE decisão 18):** além do golpe na carga, a relíquia racha +1 quando CAI (dash que a larga, ladrão atingido, ladrão empurrado pelo dash) e a cada golpe no courier que a carrega (inclui o toque do morcego). Pousar não racha.
 
 Números iniciais: courier 4,2 m/s carregando (Caixa pesada não entra na v0.1), raio 0,4 m, vida 6 (+1 por nível de "Vida").
 
@@ -60,7 +61,7 @@ Bônus por integridade na entrega: 0 rachaduras ×1,5; 1 ×1,2; 2 ×1,0.
 ## 6. Salas, rota e contratos
 
 - Sala 9 m × 14 m (retrato; a câmera mostra a sala inteira). Entrada embaixo no centro; 1–3 portas na parede de cima. Obstáculos são retângulos.
-- Cada porta mostra o que há na próxima sala: ameaça 0–3 (caveiras) e recompensa (baú ou nada). O jogador escolhe andando até a porta.
+- Cada porta mostra o que há na próxima sala: ameaça 0–3 (caveiras) e recompensa (baú ou nada). O jogador escolhe andando até a porta. O ícone de ameaça segue o dano médio medido pelo bot (R1/R3 = 1, R2/R5 = 2, R4/R6 = 3; teste `IconeDeAmeaca_AcompanhaODanoMedido`). Ele mede o risco para o courier, não para a carga (pendência para o H2, BALANCE decisão 19).
 - Conteúdo como dados no Core (`RoomDef`, `ContractDef`): 6 salas normais (R1–R6), sala do chefe (B1) e sala de entrega (D1, cliente no topo). Contrato = camadas de salas + entrega; cada porta leva a uma sala da próxima camada.
 - 8 contratos em ordem (Reputation = contratos concluídos; o próximo abre quando o anterior é concluído; os já concluídos podem ser repetidos):
 

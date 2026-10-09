@@ -68,6 +68,8 @@ namespace DC.Core
 
         void Go(V2 to) { stop = false; goal = to; }
 
+        static bool HoldsRelic(Run r) { foreach (Cargo g in r.Cargos) if (g.State == CargoState.Held && g.Type == CargoType.Relic) return true; return false; }
+
         /// <summary>Melhor ponto a 3 m entre 8 direcoes: longe da ameaca e longe das paredes (nao se encurralar).</summary>
         static V2 Escape(Run r, V2 from, V2 threat)
         {
@@ -97,7 +99,7 @@ namespace DC.Core
             {
                 if (!e.Alive || e.State != EnemyState.Telegraph || V2.Dist(e.Pos, c.Pos) - Balance.CourierR > e.Def.Reach + 0.4f) continue;
                 Go(Escape(r, c.Pos, e.Pos));
-                return e.Tele < 0.3f && c.DashReady;
+                return e.Tele < 0.3f && c.DashReady && !HoldsRelic(r);   // o dash larga a reliquia e ela racha: so anda
             }
 
             // 2) ladrao com uma carga nossa: alcancar (dash empurra = derruba) ou parar e atirar
@@ -118,7 +120,7 @@ namespace DC.Core
             {
                 bool atChest = wantChest && r.Chest != null && !r.Chest.Opened && V2.Dist(c.Pos, r.Chest.Pos) <= Balance.ChestRange;
                 if (atChest && c.State == CourierState.Planted && Nearest(r, ground.Pos, true) == null) { stop = true; return false; }
-                bool fight = locker != null || fightRoom || Nearest(r, ground.Pos, true) != null;
+                bool fight = locker != null || fightRoom || ground.Type == CargoType.Relic || Nearest(r, ground.Pos, true) != null;
                 if (c.State == CourierState.Planted && fight && nearD <= Balance.ShotRange && V2.Dist(c.Pos, ground.Pos) <= Balance.PickupRange) { stop = true; return false; }
                 Go(ground.Pos);
                 return false;
@@ -135,7 +137,10 @@ namespace DC.Core
             }
 
             // 5) luta opcional: pousa quando ha inimigo perto (nao-ladrao)
-            if (fightRoom && near != null && near.Type != EnemyType.Thief && nearD <= Balance.ShotRange - 0.3f)
+            // com a reliquia nas maos, golpe e queda racham: pousa e abate quem vem encostar; o ladrao que ronda so e cacado nas salas
+            // em que o bot escolheu lutar (agressividade) ou depois que a reliquia ja rachou ("agora tomo cuidado")
+            bool relic = HoldsRelic(r), careful = relic && (fightRoom || r.Main.Cracks > 0);
+            if ((fightRoom || relic) && near != null && (near.Type != EnemyType.Thief || careful) && nearD <= Balance.ShotRange - 0.3f)
             {
                 if (near.Def.Speed > 0f && near.Def.Reach > 0f && nearD < near.Def.Trigger + Balance.CourierR + 0.8f) Go(Escape(r, c.Pos, near.Pos));   // Bruto colado: recuar antes de pousar
                 else stop = true;
@@ -175,7 +180,13 @@ namespace DC.Core
         public sealed class Stats
         {
             public int Contract, Runs, Delivered, Died, CargoFail, Timeout, RoomsNormal, RoomsFought, Hatched;
-            public double TimeSum, CoinSum, HpLeftSum;
+            public double TimeSum, CoinSum, HpLeftSum, CrackSum;
+            /// <summary>Dano recebido e visitas por sala (indice = id da sala em Content.Rooms).</summary>
+            public readonly double[] RoomDamage = new double[Content.Rooms.Length];
+            public readonly int[] RoomVisits = new int[Content.Rooms.Length];
+            public double DamagePerVisit(int room) => RoomVisits[room] == 0 ? 0 : RoomDamage[room] / RoomVisits[room];
+            /// <summary>Rachaduras medias da carga do contrato no fim (reliquia quebrada conta 3).</summary>
+            public double AvgCracks => Runs == 0 ? 0 : CrackSum / Runs;
             public double Pct(int n) => Runs == 0 ? 0 : 100.0 * n / Runs;
             public double AvgTime => Runs == 0 ? 0 : TimeSum / Runs;
             public double AvgCoins => Runs == 0 ? 0 : CoinSum / Runs;
@@ -189,9 +200,19 @@ namespace DC.Core
             for (int s = 0; s < seeds; s++)
             {
                 var sim = new Sim(baseSeed + s) { Reputation = Sim.Contracts.Length };
-                ContractResult res = Play(sim, contract, false, new Bot(baseSeed * 31 + s, aggression, reaction));
+                var bot = new Bot(baseSeed * 31 + s, aggression, reaction);
+                sim.StartContract(contract, false);
+                int room = -1;
+                room = Count(sim, st, room);
+                while (sim.InContract)   // o mesmo laco do Play, contando dano por sala
+                {
+                    if (sim.Run.Time >= 600f) { sim.Abandon(); break; }
+                    bot.Act(sim);
+                    room = Count(sim, st, room);
+                }
+                ContractResult res = sim.LastResult;
                 st.Runs++;
-                st.TimeSum += res.Time; st.CoinSum += res.Total; st.RoomsNormal += res.RoomsNormal; st.RoomsFought += res.RoomsFought;
+                st.TimeSum += res.Time; st.CoinSum += res.Total; st.RoomsNormal += res.RoomsNormal; st.RoomsFought += res.RoomsFought; st.CrackSum += res.Cracks;
                 if (res.Hatched) st.Hatched++;
                 switch (res.Outcome)
                 {
@@ -202,6 +223,16 @@ namespace DC.Core
                 }
             }
             return st;
+        }
+
+        static int Count(Sim sim, Stats st, int room)
+        {
+            foreach (SimEvent e in sim.Events)
+            {
+                if (e.Kind == Ev.RoomEnter) { room = e.A; st.RoomVisits[room]++; }
+                else if (e.Kind == Ev.DamageTaken && room >= 0) st.RoomDamage[room] += e.A;
+            }
+            return room;
         }
 
         public sealed class Campaign

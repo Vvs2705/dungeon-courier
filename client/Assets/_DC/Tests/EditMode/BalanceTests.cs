@@ -64,6 +64,43 @@ namespace DC.Tests
         }
 
         [Test]
+        public void Reliquia_VerboAparece_SemTornarC5eC7Inviaveis()
+        {
+            Bot.Stats c5 = Table()[4], c7 = Table()[6];
+            Assert.AreEqual(CargoType.Relic, Sim.Contracts[4].Cargo); Assert.AreEqual(CargoType.Relic, Sim.Contracts[6].Cargo);
+            Assert.GreaterOrEqual((c5.AvgCracks + c7.AvgCracks) / 2, 0.8, "rachadura media na reliquia < 0,8: o verbo nao aparece");
+            Assert.GreaterOrEqual(c5.AvgCracks, 0.5, "C5"); Assert.GreaterOrEqual(c7.AvgCracks, 0.5, "C7");
+            Assert.GreaterOrEqual(c5.Pct(c5.Delivered), 80.0, "C5 inviavel");
+            Assert.GreaterOrEqual(c7.Pct(c7.Delivered), 55.0, "C7 inviavel");
+            Assert.Less(Table()[0].AvgCracks + Table()[1].AvgCracks, 0.05, "Caixa nao racha por queda/golpe no courier");
+        }
+
+        /// <summary>O icone de caveiras da porta tem de contar a verdade (H2): sala de icone maior tira mais vida por visita que qualquer sala
+        /// de icone menor, e a media de cada icone sobe com folga de 0,3. B1 fica fora (chefe, porta unica, sem escolha) e D1 nao tem
+        /// inimigos.</summary>
+        [Test]
+        public void IconeDeAmeaca_AcompanhaODanoMedido()
+        {
+            var dmg = new double[Content.Rooms.Length]; var visits = new int[Content.Rooms.Length];
+            foreach (Bot.Stats s in Table())
+                for (int r = 0; r < dmg.Length; r++) { dmg[r] += s.RoomDamage[r]; visits[r] += s.RoomVisits[r]; }
+            var mean = new double[4]; var count = new int[4];
+            foreach (RoomDef a in Content.Rooms)
+            {
+                if (!a.Normal) continue;
+                Assert.GreaterOrEqual(visits[a.Id], 100, a.Code + ": poucas visitas para medir");
+                double da = dmg[a.Id] / visits[a.Id];
+                mean[a.Threat] += da; count[a.Threat]++;
+                foreach (RoomDef b in Content.Rooms)
+                    if (b.Normal && a.Threat < b.Threat)
+                        Assert.Less(da, dmg[b.Id] / visits[b.Id], a.Code + " (icone " + a.Threat + ") tira mais vida que " + b.Code + " (icone " + b.Threat + ")");
+            }
+            for (int t = 1; t < 3; t++)
+                if (count[t] > 0 && count[t + 1] > 0)
+                    Assert.Greater(mean[t + 1] / count[t + 1] - mean[t] / count[t], 0.3, "icones " + t + " e " + (t + 1) + " sem folga de dano");
+        }
+
+        [Test]
         public void Campanha_FechaOs8Contratos_ESobraRaloNaGuilda()
         {
             int n = 100, finished = 0, attempts = 0, levels = 0;
@@ -86,17 +123,23 @@ namespace DC.Tests
         {
             var ci = CultureInfo.InvariantCulture;
             var sb = new StringBuilder();
-            sb.AppendLine("| Contrato | Carga | Camadas | % concluído | % morte | % falha de carga | duração média (s) | % salas com luta | moedas médias | vida na entrega |");
-            sb.AppendLine("|---|---|---|---|---|---|---|---|---|---|");
+            sb.AppendLine("| Contrato | Carga | Camadas | % concluído | % morte | % falha de carga | duração média (s) | % salas com luta | moedas médias | vida na entrega | rachaduras médias |");
+            sb.AppendLine("|---|---|---|---|---|---|---|---|---|---|---|");
             Bot.Stats[] t = Table();
             for (int c = 0; c < t.Length; c++)
             {
                 Bot.Stats s = t[c]; ContractDef d = Sim.Contracts[c];
-                sb.AppendLine(string.Format(ci, "| {0} | {1} | {2} | {3:0} | {4:0} | {5:0} | {6:0.0} | {7:0} | {8:0} | {9:0.0} |",
+                sb.AppendLine(string.Format(ci, "| {0} | {1} | {2} | {3:0} | {4:0} | {5:0} | {6:0.0} | {7:0} | {8:0} | {9:0.0} | {10:0.00} |",
                     d.Code, CargoDef.All[(int)d.Cargo].Name, d.Layers.Length - 1, s.Pct(s.Delivered), s.Pct(s.Died), s.Pct(s.CargoFail),
-                    s.AvgTime, s.FightPct, s.AvgCoins, s.Delivered > 0 ? s.HpLeftSum / s.Delivered : 0));
+                    s.AvgTime, s.FightPct, s.AvgCoins, s.Delivered > 0 ? s.HpLeftSum / s.Delivered : 0, s.AvgCracks));
             }
             sb.AppendLine();
+            var dmg = new double[Content.Rooms.Length]; var vis = new int[Content.Rooms.Length];
+            foreach (Bot.Stats s in t) for (int r = 0; r < dmg.Length; r++) { dmg[r] += s.RoomDamage[r]; vis[r] += s.RoomVisits[r]; }
+            var rooms = new StringBuilder("Dano por visita (ícone):");
+            foreach (RoomDef room in Content.Rooms)
+                if (vis[room.Id] > 0 && room.Spawns.Length > 0) rooms.Append(string.Format(ci, " {0}({1})={2:0.00}", room.Code, room.Threat, dmg[room.Id] / vis[room.Id]));
+            sb.AppendLine(rooms.ToString());
             int n = 100, fin = 0, att = 0, deaths = 0, earned = 0; float time = 0f; int[] lv = new int[3]; int[] per = new int[Sim.Contracts.Length];
             for (int s = 0; s < n; s++)
             {

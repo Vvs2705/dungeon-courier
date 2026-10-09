@@ -177,6 +177,8 @@ namespace DC.Core
         public const int MaxThieves = 3;
         public const float OgreSummon = 10f;
         public const float ChestTime = 1f, ChestRange = 1.2f;
+        /// <summary>Reliquia fragil: racha ao CAIR (dash que a larga, ladrao atingido ou empurrado) e a cada golpe no courier que a carrega
+        /// (toque de morcego inclusive); pousar nao racha. Quebra com 3.</summary>
         public const int RelicBreak = 3;
         public const int PetHp = 2; public const float PetRange = 3f, PetFollow = 0.9f, PetR = 0.3f;
 
@@ -274,6 +276,8 @@ namespace DC.Core
         static V2 P(float x, float y) => new V2(x, y);
         const EnemyType Bat = EnemyType.Bat, Thief = EnemyType.Thief, Guard = EnemyType.Guard, Brute = EnemyType.Brute, Ogre = EnemyType.Ogre;
 
+        // Icone de ameaca (Threat) = ordem do dano medio por visita do bot (BalanceTests.IconeDeAmeaca_AcompanhaODanoMedido):
+        // 1 = R1, R3 · 2 = R5, R2 · 3 = R6, R4. B1 fica 3 (chefe, porta unica, fora da trava).
         // Regras de desenho (medidas em CoreTests.LevelDesign_*): nada solido na faixa das portas (y > 12,2) nem na entrada; spawn a 4 m+ da
         // entrada; toda porta, bau e ponto de resgate alcancaveis; so Guarda/Ogro obrigam a lutar, o resto se atravessa andando.
         public static readonly RoomDef[] Rooms =
@@ -287,10 +291,10 @@ namespace DC.Core
             new RoomDef(R3, "R3", "Rota longa com baú", "bifurcação: baú custa parar 1 s com a carga no chão", 1,
                 new[] { O(3.0f, 5.0f, 3.0f, 0.3f), O(6.0f, 9.5f, 3.0f, 0.3f) },
                 new[] { S(Thief, 8.0f, 7.5f), S(Bat, 4.5f, 12.0f) }, P(1.5f, 2.5f), P(0.9f, 11.0f), 25),
-            new RoomDef(R4, "R4", "Enxame", "morcegos enchem a sala: atravessar correndo ou pousar e limpar", 2,
+            new RoomDef(R4, "R4", "Enxame", "morcegos enchem a sala: atravessar correndo ou pousar e limpar", 3,
                 new[] { O(2.5f, 5.5f, 0.5f, 0.5f), O(6.5f, 5.5f, 0.5f, 0.5f), O(4.5f, 9.0f, 0.8f, 0.8f) },
                 new[] { S(Bat, 1.5f, 11.0f), S(Bat, 3.5f, 12.0f), S(Bat, 5.5f, 12.0f), S(Bat, 7.5f, 11.0f) }, P(1.5f, 2.5f), P(8.2f, 3.0f), 20),
-            new RoomDef(R5, "R5", "Sala do Bruto", "telegraph: saia do golpe; golpe pelas costas acerta a carga (1 morcego só: ver BALANCE.md)", 3,
+            new RoomDef(R5, "R5", "Sala do Bruto", "telegraph: saia do golpe; golpe pelas costas acerta a carga (1 morcego só: ver BALANCE.md)", 2,
                 new[] { O(2.2f, 7.0f, 1.2f, 0.4f), O(6.8f, 7.0f, 1.2f, 0.4f) },
                 new[] { S(Brute, 4.5f, 10.5f), S(Bat, 7.5f, 12.0f) }, P(2.0f, 2.5f), P(0.8f, 9.5f), 35),
             new RoomDef(R6, "R6", "Guarda e Ladrão", "luta obrigatória com a carga no chão: o ladrão vem buscá-la", 3,

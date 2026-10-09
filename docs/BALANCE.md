@@ -1,6 +1,6 @@
 # Balance da v0.1 — medição do bot (2026-10-09)
 
-Fonte das regras e dos números iniciais: [`CONTRATO_V01.md`](CONTRATO_V01.md). Aqui ficam a medição do bot, os custos e as decisões tomadas no núcleo (`client/Assets/_DC/Scripts/Core/`), com o porquê. Os números do contrato que mudaram estão em "Decisões"; o `CONTRATO_V01.md` não foi editado (a mudança está proposta ao coordenador).
+Fonte das regras e dos números iniciais: [`CONTRATO_V01.md`](CONTRATO_V01.md). Aqui ficam a medição do bot, os custos e as decisões tomadas no núcleo (`client/Assets/_DC/Scripts/Core/`), com o porquê. As decisões 1 e 2 já foram aceitas e levadas ao `CONTRATO_V01.md` pelo coordenador; a passada 2 (relíquia frágil e ícones) está nas decisões 18–19.
 
 ## Como medir
 
@@ -11,64 +11,64 @@ Fonte das regras e dos números iniciais: [`CONTRATO_V01.md`](CONTRATO_V01.md). 
 
 ## Tabela por contrato (bot padrão, 200 sementes, guilda nível 0)
 
-| Contrato | Carga | Camadas | % concluído | % morte | % falha de carga | duração média (s) | % salas com luta | moedas médias | vida na entrega |
-|---|---|---|---|---|---|---|---|---|---|
-| C1 | Caixa | 2 | 100 | 0 | 0 | 14.2 | 33 | 72 | 4.9 |
-| C2 | Caixa | 2 | 99 | 2 | 0 | 12.8 | 55 | 81 | 3.3 |
-| C3 | Ovo | 2 | 96 | 5 | 0 | 13.7 | 35 | 94 | 3.6 |
-| C4 | Caixa | 3 | 96 | 5 | 0 | 21.8 | 51 | 113 | 3.5 |
-| C5 | Relíquia frágil | 3 | 96 | 5 | 0 | 19.2 | 43 | 152 | 2.7 |
-| C6 | Ovo | 3 | 86 | 15 | 0 | 22.5 | 74 | 129 | 1.7 |
-| C7 | Relíquia frágil | 3 | 63 | 37 | 0 | 18.5 | 62 | 133 | 1.9 |
-| C8 | Caixa | 4 | 61 | 39 | 1 | 35.4 | 72 | 126 | 1.8 |
+| Contrato | Carga | Camadas | % concluído | % morte | % falha de carga | duração média (s) | % salas com luta | moedas médias | vida na entrega | rachaduras médias |
+|---|---|---|---|---|---|---|---|---|---|---|
+| C1 | Caixa | 2 | 100 | 0 | 0 | 14.2 | 33 | 72 | 4.9 | 0.00 |
+| C2 | Caixa | 2 | 100 | 0 | 0 | 12.9 | 55 | 82 | 3.4 | 0.00 |
+| C3 | Ovo | 2 | 98 | 3 | 0 | 13.3 | 28 | 92 | 4.1 | 0.00 |
+| C4 | Caixa | 3 | 97 | 3 | 0 | 22.0 | 50 | 115 | 3.6 | 0.07 |
+| C5 | Relíquia frágil | 3 | 90 | 6 | 5 | 22.8 | 66 | 116 | 4.0 | 1.30 |
+| C6 | Ovo | 3 | 86 | 15 | 0 | 23.6 | 79 | 134 | 1.8 | 0.07 |
+| C7 | Relíquia frágil | 3 | 80 | 20 | 0 | 23.8 | 95 | 151 | 2.7 | 0.64 |
+| C8 | Caixa | 4 | 69 | 32 | 0 | 37.3 | 65 | 135 | 2.2 | 0.54 |
 
-"Camadas" conta as salas até a entrega (o C8 inclui a sala do chefe). "Moedas médias" = pagamento + resgate + baús, média de todas as tentativas (falhas pagam só o baú). "% salas com luta" = salas R1–R6 em que o bot matou ao menos 1 inimigo não-Guarda (`room_fight_choice`, H1). Em C1–C8 a soma de concluído + morte + falha pode passar de 100 por arredondamento.
+"Camadas" conta as salas até a entrega (o C8 inclui a sala do chefe). "Moedas médias" = pagamento + resgate + baús, média de todas as tentativas (falhas pagam só o baú). "% salas com luta" = salas R1–R6 em que o bot matou ao menos 1 inimigo não-Guarda (`room_fight_choice`, H1). "Rachaduras médias" = rachaduras da carga do contrato no fim (relíquia quebrada conta 3; na Caixa só o Bruto e o Ogro racham). Em C1–C8 a soma de concluído + morte + falha pode passar de 100 por arredondamento.
 
-**Campanha (100 sementes):** fecha os 8 contratos em 100% · 8,2 tentativas · 0,2 morte · **3,0 min de jogo do bot no total** · 1.228 moedas ganhas · níveis Vida/Dash/Bolsa 3,0/3,0/2,8 ao fim (de 5/5/5). Tentativas por contrato: C1 1,00 · C2 1,01 · C3 1,00 · C4 1,03 · C5 1,01 · C6 1,02 · C7 1,01 · C8 1,11.
+**Campanha (100 sementes):** fecha os 8 contratos em 100% · 8,1 tentativas · 0,1 morte · **3,1 min de jogo do bot no total** · 1.158 moedas ganhas · níveis Vida/Dash/Bolsa 3,0/3,0/2,5 ao fim (de 5/5/5). Tentativas por contrato: C1 1,00 · C2 1,00 · C3 1,00 · C4 1,01 · C5 1,06 · C6 1,02 · C7 1,00 · C8 1,05.
 
 ### Lutar é escolha (H1): varredura de agressividade (200 sementes, nível 0)
 
 | Contrato | % luta (agr. 0) | % luta (agr. 0,5) | % luta (agr. 1) | % concluído (agr. 0) | % concluído (agr. 1) |
 |---|---|---|---|---|---|
 | C1 | 23 | 33 | 43 | 100 | 100 |
-| C2 | 29 | 55 | 82 | 100 | 89 |
-| C3 | 21 | 35 | 50 | 100 | 91 |
-| C4 | 32 | 51 | 73 | 97 | 91 |
-| C5 | 30 | 43 | 63 | 100 | 88 |
-| C6 | 55 | 74 | 94 | 93 | 83 |
-| C7 | 40 | 62 | 87 | 66 | 66 |
-| C8 | 48 | 72 | 95 | 51 | 60 |
+| C2 | 29 | 55 | 81 | 100 | 93 |
+| C3 | 4 | 28 | 48 | 100 | 93 |
+| C4 | 32 | 50 | 73 | 97 | 94 |
+| C5 | 66 | 66 | 67 | 95 | 93 |
+| C6 | 62 | 79 | 95 | 72 | 88 |
+| C7 | 91 | 95 | 97 | 69 | 86 |
+| C8 | 35 | 65 | 94 | 70 | 64 |
 
-O % de luta responde à agressividade (o teste `Lutar_EEscolha_...` exige ≥ 15 pp entre 0,1 e 0,9) e passar direto é viável no começo (C1–C3 ≥ 99% sem lutar por escolha). Mesmo com agressividade 0 há 21–55% de salas "com luta": morcegos que chegam enquanto o courier está parado no Guarda ou no baú e ladrões abatidos ao pegar a carga. Lutar mais custa vida no começo (C2: 100% → 89%) e compensa no fim (C8: 51% → 60%).
+O % de luta responde à agressividade (o teste `Lutar_EEscolha_...` exige ≥ 15 pp entre 0,1 e 0,9) e passar direto é viável no começo (C1–C3 = 100% sem lutar por escolha). Com agressividade 0 ainda há salas "com luta": morcegos que chegam enquanto o courier está parado no Guarda ou no baú e ladrões abatidos ao pegar a carga. **Exceção de propósito: C5 e C7 (relíquia) lutam quase sempre, com qualquer agressividade** — a relíquia racha com golpe e queda, então o bot pousa e abate o que vem encostar. A agressividade muda o que acontece com a relíquia: com 0, 1,68/1,14 rachadura (C5/C7); com 1, 0,36/0,30, porque o bot agressivo caça o ladrão antes de pousar.
 
 ### Dano por visita de sala (bot padrão)
 
-| Sala | Ícone de ameaça | Dano médio por visita | Fonte |
+| Sala | Ícone de ameaça (era) | Dano médio por visita | Fonte |
 |---|---|---|---|
-| R1 Guarda | 1 | 0,0 | o bot atira de fora do golpe |
-| R3 Baú | 1 | 1,1 | 1 morcego |
-| R2 1º Ladrão | 2 | 1,3–1,5 | 2 morcegos |
-| R4 Enxame | 2 | 2,2–2,7 | 4 morcegos |
-| R5 Bruto | 3 | 1,0 (morcego) + 0,2 (Bruto) | o bot sai de quase todo telegraph |
-| R6 Guarda+Ladrão | 3 | 2,0 | 1 morcego + Guarda |
-| B1 Ogro | 3 | 0,4 | pancada de 3 |
+| R1 Guarda | 1 | 0,00 | o bot atira de fora do golpe |
+| R3 Baú | 1 | 1,00 | 1 morcego |
+| R5 Bruto | **2** (3) | 1,14 | 1 morcego + Bruto (o bot sai de quase todo telegraph) |
+| R2 1º Ladrão | 2 | 1,29 | 2 morcegos |
+| R6 Guarda+Ladrão | 3 | 2,00 | 1 morcego + Guarda |
+| R4 Enxame | **3** (2) | 2,50 | 4 morcegos |
+| B1 Ogro | 3 | 0,47 | pancada de 3 (fora da trava: chefe, porta única) |
 
-**Morcegos são quase todo o dano.** A R4 (ícone 2) é a sala que mais tira vida; ver "Achados".
+O ícone segue a ordem do dano (teste `IconeDeAmeaca_AcompanhaODanoMedido`: toda sala de ícone maior tira mais vida por visita que toda sala de ícone menor, e a média sobe ≥ 0,3 por ícone; hoje 0,50 → 1,22 → 2,25). **Morcegos são quase todo o dano.**
 
 ### Ladrão, relíquia, ovo, baú (eventos por contrato, bot padrão)
 
 | Contrato | ladrão pegou a carga | carga recuperada | ladrão escapou | ladrão da carga sozinha | rachaduras | baús abertos |
 |---|---|---|---|---|---|---|
 | C1 | 0,35 | 0,35 | 0 | 0 | 0 | 0,47 |
-| C2 | 0,71 | 0,71 | 0 | 0 | 0 | 0,56 |
-| C3 | 0,03 | 0,03 | 0 | 0 | 0 | 0,42 |
-| C4 | 0,41 | 0,41 | 0 | 0 | 0,08 | 0,96 |
-| C5 | 0,38 | 0,38 | 0 | 0 | 0 | 0,92 |
-| C6 | 0,69 | 0,69 | 0 | 0 | 0,04 | 0,80 |
-| C7 | 0,28 | 0,28 | 0 | 0 | 0,08 | 1,08 |
-| C8 | 0,50 | 0,49 | 0,01 | 1,00 | 0,49 | 1,39 |
+| C2 | 0,74 | 0,74 | 0 | 0 | 0 | 0,57 |
+| C3 | 0,22 | 0,22 | 0 | 0 | 0 | 0,23 |
+| C4 | 0,47 | 0,47 | 0 | 0 | 0,07 | 0,98 |
+| C5 | 0,86 | 0,86 | 0 | 0 | 1,30 | 0,78 |
+| C6 | 0,62 | 0,62 | 0 | 0 | 0,07 | 0,95 |
+| C7 | 0,40 | 0,40 | 0 | 0 | 0,64 | 1,32 |
+| C8 | 0,58 | 0,58 | 0 | 1,11 | 0,54 | 1,22 |
 
-O bot nunca chocou o ovo (C3 termina em 12–18 s; C6 em 18–35 s; tempos-alvo 30 s e 45 s).
+De onde vêm as rachaduras da relíquia (por contrato): C5 = queda da mão do ladrão 0,86 (R3 0,66, R2 0,20) + golpe no courier 0,44 (quase tudo morcego na R3); C7 = ladrão 0,40 + golpe 0,24. O dash quase não racha porque o bot não dá dash com a relíquia nas mãos. O bot nunca chocou o ovo (C3 termina em 12–18 s; C6 em 18–35 s; tempos-alvo 30 s e 45 s).
 
 ## Custos da guilda
 
@@ -114,10 +114,19 @@ Detalhes que o contrato não fixava (decididos no núcleo, todos cobertos por te
 16. **Moedas em porcentagem inteira:** pagamento = Pay × carga% × integridade% × Bolsa%, arredondado uma vez só no fim (meio para cima). Com float, `1.4f` vira 1,3999… e a relíquia perfeita do C5 pagava 136 em vez de 137 (teste `Pagamento_PorCargaIntegridadeEBolsa`).
 17. **Save v0** = texto sem a linha `v`: leva só `coins`, `lv`, `rep` (não existia contrato em curso nem pendência) e marca `Dirty` para regravar em v1. Versão futura: `SaveRefused`, `Save()` devolve `null`, `Dirty` fica falso.
 
+Passada 2 (decisões do coordenador, 2026-10-09):
+
+18. **Relíquia frágil de verdade.** A relíquia racha +1 quando **cai** (dash que a larga; ladrão atingido que a derruba; ladrão empurrado pelo dash) e a cada **golpe no courier que a carrega** (toque de morcego incluso). Pousar não racha. O golpe do Bruto pelas costas continua rachando a carga nas mãos, mas a relíquia racha **1 vez** por golpe, não 2. Caixa e Ovo não mudaram. Testes: `Reliquia_RachaAoCair_DashELadrao_PousarNao`, `Reliquia_GolpeNoCourierQueACarrega_Racha_IncluiMorcego`, `Reliquia_VerboAparece_SemTornarC5eC7Inviaveis` (média ≥ 0,8 nos dois contratos de relíquia, cada um ≥ 0,5, C5 ≥ 80%, C7 ≥ 55%).
+    - **Antes** (regra antiga): C5 96% / 0,00 rachadura; C7 63% / 0,08 — a relíquia era uma caixa que pagava 40% a mais.
+    - **Regra nova com o bot antigo:** C5 39% / 2,29 rachaduras / 57% quebrada; C7 22% / 2,14 / 54%. Punitivo, mas porque o bot carregava a relíquia para dentro dos morcegos.
+    - **O bot passou a jogar o verbo** (o que um jogador que viu a relíquia rachar faria): com a relíquia nas mãos, pousa e abate o que vem encostar; não dá dash de esquiva; caça o ladrão que ronda nas salas em que escolheu lutar ou depois da 1ª rachadura.
+    - **Testado e descartado:** bot que sempre mata o ladrão antes de pousar (C5 95%, C7 86%, mas 0,00/0,07 rachadura: com jogo perfeito o verbo some da medição); i-frame de 1 s nas rachaduras por golpe (sem efeito: o bot nunca leva 2 golpes no mesmo segundo com a relíquia; não ficou no código).
+    - **Depois:** C5 90% / 1,30 rachadura / 5% quebrada; C7 80% / 0,64 / 0%. Média 0,97.
+19. **Ícone de ameaça = ordem do dano medido: R4 2 → 3 e R5 3 → 2.** Antes, a R5 (ícone 3) tirava 1,12 de vida por visita, menos que a R2 (ícone 2, 1,40), e a R4 (ícone 2) era a pior sala (2,50); subir só a R4 não bastava. Depois: ícone 1 = R1/R3 (0,00/1,00) < ícone 2 = R5/R2 (1,14/1,29) < ícone 3 = R6/R4 (2,00/2,50). A B1 fica 3 e fora da trava (chefe, porta única, sem escolha). Efeito colateral medido: com os ícones novos o bot com relíquia escolhe mais R3 → R2, as duas salas com ladrão, e o C5 caiu de 86% para 78% antes do ajuste "cuidado depois da 1ª rachadura" da decisão 18.
+
 ## Achados para o design (precisam de decisão do Vinicius)
 
 - **Duração.** O bot fecha um contrato em 13–36 s e a campanha inteira em ~3 min de jogo. O GDD (§2, §6) conta com contratos de 4–6 min e sessões de 4–9 min. Mesmo que um jogador novo leve 2–3× o tempo do bot, um contrato fica em ~1 min. O formato do contrato (sala 9 × 14 que cabe na tela, 2–4 camadas) gera contratos curtos; para chegar a 4–6 min é preciso mais camadas, ondas por sala ou salas maiores. Decisão de design, não de número.
-- **A relíquia quase nunca racha** (0–0,08 rachadura por contrato; 0,49 no C8 por causa do Ogro): só Bruto e Ogro acertam carga, e o bot sai do telegraph. Hoje a relíquia joga como uma caixa que paga 40% a mais. Propostas: o dash ou a queda (ladrão atingido) racham a relíquia; morcego que toca o courier com a relíquia nas mãos racha.
 - **O ladrão nunca leva a carga do bot** (fuga 0–0,01 por contrato, 100% recuperada): fugir a 1,6 m/s + 1 s na borda dá tempo de sobra. Para humanos pode ser diferente; medir no diário (`thief_grab` × `cargo_drop` motivo 2).
-- **Ícone de ameaça da R4 (2)** está abaixo do dano real (é a sala que mais tira vida). Proposta: ícone 3, ou 3 morcegos.
-- **H1 do bot** fica em 33–74% de salas com luta com agressividade 0,5 (C6 e C8 passam um pouco de 70%). É um indicador do bot; o H1 de verdade é do playtest.
+- **O ícone conta o dano ao courier, não o risco para a carga.** Para a relíquia, as salas mais perigosas são as do ladrão (R3 ícone 1, R2 ícone 2), porque a queda racha; quem segue as caveiras leva a relíquia justo para elas. Proposta: um 2º ícone na porta (mão/ladrão), ou o ícone contar também o risco da carga. Mexe com o H2 ("a carga muda a rota").
+- **H1 do bot** fica em 28–95% de salas com luta com agressividade 0,5: a relíquia faz o C7 lutar em 95% das salas (passa dos 70% do H1) e o C5 em 66%, qualquer que seja a agressividade. É o verbo funcionando, mas no playtest o H1 tem de ser lido por carga. O H1 de verdade é do playtest.

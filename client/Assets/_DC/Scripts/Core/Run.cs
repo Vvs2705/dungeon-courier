@@ -287,6 +287,7 @@ namespace DC.Core
                 {
                     g.State = CargoState.Ground; g.Pos = c.Pos; g.AloneT = 0f;   // larga no ponto de partida
                     Emit(Ev.CargoDrop, g.Id, 1, g.Pos);
+                    if (g.Type == CargoType.Relic) Crack(g);   // reliquia que cai racha (pousar nao: e pousar com cuidado)
                 }
             c.State = CourierState.Dashing; c.DashDir = dir; c.Facing = dir; c.DashT = Balance.DashTime;
             c.DashCd = c.DashCdMax; c.DashCount++;
@@ -354,7 +355,8 @@ namespace DC.Core
             }
         }
 
-        void DamageCourier(int dmg)
+        /// <summary>cargoHit = o golpe ja rachou a carga nas maos (Bruto pelas costas): a reliquia nao racha duas vezes no mesmo golpe.</summary>
+        void DamageCourier(int dmg, bool cargoHit = false)
         {
             var c = Courier;
             if (c.State == CourierState.Dead) return;
@@ -366,7 +368,10 @@ namespace DC.Core
                 c.Hp = 0; c.State = CourierState.Dead; DeathRoom = Room.Id;
                 Emit(Ev.DeathRoom, Room.Id, 0);
                 Finish(Outcome.Died);
+                return;
             }
+            if (!cargoHit)   // qualquer golpe no courier (toque de morcego inclusive) racha a reliquia que ele carrega
+                foreach (Cargo g in Cargos) if (g.State == CargoState.Held && g.Type == CargoType.Relic) Crack(g);
         }
 
         void DamagePet()
@@ -479,6 +484,7 @@ namespace DC.Core
             e.Carry = null; e.State = EnemyState.Chase; e.ExitT = 0f;
             g.State = CargoState.Ground; g.Pos = FreeNear(Room, e.Pos, Balance.CargoR); g.AloneT = 0f;
             Emit(Ev.CargoDrop, g.Id, reason, g.Pos);
+            if (g.Type == CargoType.Relic) Crack(g);   // caiu da mao do ladrao (tiro ou empurrao do dash)
         }
 
         void Escape(Enemy e)
@@ -519,9 +525,9 @@ namespace DC.Core
             if (c.State != CourierState.Dead && V2.Dist(e.Pos, c.Pos) - Balance.CourierR <= d.Reach)
             {
                 // golpe do Bruto pelas costas com a carga nas maos acerta tambem a carga
-                if (e.Type == EnemyType.Brute && V2.Dot(c.Facing, e.Pos - c.Pos) < 0f)
-                    foreach (Cargo g in Cargos) if (g.State == CargoState.Held) Crack(g);
-                DamageCourier(d.Damage);
+                bool back = e.Type == EnemyType.Brute && V2.Dot(c.Facing, e.Pos - c.Pos) < 0f;
+                if (back) foreach (Cargo g in Cargos) if (g.State == CargoState.Held) Crack(g);
+                DamageCourier(d.Damage, back);
             }
             if (e.Type != EnemyType.Guard)   // Bruto e Ogro acertam a carga no chao dentro do alcance
                 foreach (Cargo g in Cargos) if (g.State == CargoState.Ground && V2.Dist(e.Pos, g.Pos) <= d.Reach) Crack(g);

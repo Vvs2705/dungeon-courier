@@ -346,7 +346,7 @@ namespace DC.Tests
         [Test]
         public void Bruto_GolpePelasCostasComCargaNasMaos_RachaACarga_DeLadoNao()
         {
-            var sim = NewSim(); Run r = Start(sim, 4);
+            var sim = NewSim(); Run r = Start(sim, 0);   // Caixa (a reliquia racha com qualquer golpe: teste proprio)
             r.Courier.Hp = 99;
             r.Courier.Pos = new V2(2.0f, 5.4f);
             Steps(sim, 2, Up);   // empurrando o pilar da R1 (y 5,9): anda sem sair do lugar, de frente para cima
@@ -362,6 +362,72 @@ namespace DC.Tests
             for (int i = 0; i < StepsFor(0.8f); i++) Steps(sim, 1, Up);
             Assert.AreEqual(CargoState.Held, r.Main.State);
             Assert.AreEqual(1, r.Main.Cracks, "golpe pelas costas nao acertou a carga nas maos");
+        }
+
+        [Test]
+        public void Reliquia_RachaAoCair_DashELadrao_PousarNao()
+        {
+            var sim = NewSim(); Run r = Start(sim, 4);   // C5: reliquia
+            r.Courier.Hp = 99;
+            Steps(sim, 3, Up);
+            Steps(sim, 1, Up, true);   // dash larga a reliquia
+            Assert.AreEqual(CargoState.Ground, r.Main.State);
+            Assert.AreEqual(1, r.Main.Cracks, "a reliquia nao rachou ao cair do dash");
+            r.Courier.Pos = r.Main.Pos + new V2(0.5f, 0f); Steps(sim, 1, Up);   // pega
+            Steps(sim, 6, V2.Zero);   // pousa
+            Assert.AreEqual(CargoState.Ground, r.Main.State);
+            Assert.AreEqual(1, r.Main.Cracks, "pousar nao pode rachar");
+
+            Enemy t = r.Spawn(EnemyType.Thief, r.Main.Pos + new V2(0.2f, 0f));
+            r.Courier.Pos = new V2(1f, 12f);
+            for (int i = 0; i < StepsFor(1f) && t.Carry == null; i++) Steps(sim, 1, i % 20 < 10 ? Left : Right);
+            Assert.AreEqual(CargoState.Stolen, r.Main.State);
+            Assert.AreEqual(1, r.Main.Cracks, "o ladrao pegar nao racha");
+            r.Courier.Pos = t.Pos + new V2(0f, 3f);
+            for (int i = 0; i < StepsFor(1.5f) && r.Main.State == CargoState.Stolen; i++) Steps(sim, 1, V2.Zero);   // atira: ele derruba
+            Assert.AreEqual(CargoState.Ground, r.Main.State);
+            Assert.AreEqual(2, r.Main.Cracks, "a reliquia nao rachou ao cair do ladrao atingido");
+
+            var sim2 = NewSim(); Run r2 = Start(sim2, 4);   // empurrao do dash no ladrao que leva a reliquia
+            Steps(sim2, 3, Up); Steps(sim2, 6, V2.Zero);
+            Enemy t2 = r2.Spawn(EnemyType.Thief, r2.Main.Pos + new V2(0.2f, 0f));
+            r2.Courier.Pos = new V2(1f, 12f);
+            for (int i = 0; i < StepsFor(1f) && t2.Carry == null; i++) Steps(sim2, 1, i % 20 < 10 ? Left : Right);
+            r2.Courier.Pos = t2.Pos - new V2(0f, 1.5f); r2.Courier.DashCd = 0f;
+            Steps(sim2, 4, Up, true);
+            Assert.AreEqual(CargoState.Ground, r2.Main.State);
+            Assert.AreEqual(1, r2.Main.Cracks, "a reliquia nao rachou ao cair do ladrao empurrado");
+
+            var box = NewSim(); Run rb = Start(box, 0);   // Caixa: cair nao racha
+            Steps(box, 3, Up); Steps(box, 1, Up, true);
+            Assert.AreEqual(0, rb.Main.Cracks);
+        }
+
+        [Test]
+        public void Reliquia_GolpeNoCourierQueACarrega_Racha_IncluiMorcego()
+        {
+            var sim = NewSim(); Run r = Start(sim, 4);
+            r.Courier.Hp = 99; r.Courier.Pos = new V2(4.5f, 3f);
+            r.Spawn(EnemyType.Bat, r.Courier.Pos);
+            List<SimEvent> evs = Steps(sim, 2, Left);   // andando com a reliquia nas maos: o morcego encosta
+            Assert.IsTrue(Has(evs, Ev.DamageTaken));
+            Assert.AreEqual(CargoState.Held, r.Main.State);
+            Assert.AreEqual(1, r.Main.Cracks, "toque de morcego no courier nao rachou a reliquia nas maos");
+
+            var box = NewSim(); Run rb = Start(box, 0);   // Caixa nas maos: o golpe nao racha
+            rb.Courier.Hp = 99; rb.Courier.Pos = new V2(4.5f, 3f);
+            rb.Spawn(EnemyType.Bat, rb.Courier.Pos);
+            Assert.IsTrue(Has(Steps(box, 2, Left), Ev.DamageTaken));
+            Assert.AreEqual(0, rb.Main.Cracks);
+
+            var back = NewSim(); Run rk = Start(back, 4);   // Bruto pelas costas com a reliquia: 1 rachadura por golpe, nao 2
+            rk.Courier.Hp = 99; rk.Courier.Pos = new V2(2.0f, 5.4f);
+            Steps(back, 2, Up);
+            Enemy b = rk.Spawn(EnemyType.Brute, new V2(2.0f, 4.4f)); b.Hp = 999;
+            int strikes = 0;
+            for (int i = 0; i < StepsFor(0.8f); i++) foreach (SimEvent e in Steps(back, 1, Up)) if (e.Kind == Ev.Strike) strikes++;
+            Assert.AreEqual(1, strikes);
+            Assert.AreEqual(1, rk.Main.Cracks, "golpe pelas costas rachou a reliquia duas vezes");
         }
 
         // ------------------------------------------------------------------ ovo
