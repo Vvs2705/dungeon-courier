@@ -64,7 +64,9 @@ namespace DC
         RectTransform _pauseMain, _pauseConfirm;
         ContractResult _res;
         float _cutT;
-        Image _cutMouth, _cutLid, _cutItem, _cutItemCracks;
+        Image _cutMouth, _cutLid, _cutItem, _cutItemCracks, _cutClient;
+        GameObject _cutProc;
+        SpriteSheet _cutSheet;
         readonly Image[] _sparks = new Image[5];
         Text _cutText;
         Text _resTitle, _resSub, _resNote;
@@ -148,6 +150,9 @@ namespace DC
             _cutItem.color = r.Hatched ? Art.Pet : Art.CargoColor(t);
             _cutItemCracks.enabled = !r.Hatched && r.Cracks > 0;
             if (r.Cracks > 0) _cutItemCracks.sprite = Art.Cracks(r.Cracks);
+            _cutSheet = SpriteSheet.Get("cliente");
+            _cutProc.SetActive(_cutSheet == null);
+            _cutClient.gameObject.SetActive(_cutSheet != null);
             _cutText.text = "";
             TickCut(0f);
         }
@@ -321,6 +326,13 @@ namespace DC
             bool react = t >= 2f;
             bool happy = _res.Hatched || _res.Cracks <= 1;
             _cutMouth.sprite = !react ? Art.Flat() : happy ? Art.Smile() : _res.Cracks >= 3 ? Art.Frown() : Art.Flat();
+            if (_cutSheet != null)
+            {
+                // mesma reacao do mundo (WorldView): 0 rachadura comemora, 1 ou ovo chocado agradece, 2+ da de ombros
+                string reacao = _res.Hatched || _res.Cracks == 1 ? "Thankful" : _res.Cracks == 0 ? "Cheering" : "Shrug";
+                int clip = _cutSheet.Pick(react ? reacao : "Idle");
+                _cutClient.sprite = _cutSheet.Frame(clip, 0, _cutSheet.FrameAt(clip, react ? t - 2f : t, true));
+            }
             if (react && _cutText.text.Length == 0) _cutText.text = Textos.Reacao(_res);
             bool perfect = react && !_res.Hatched && _res.Cracks == 0;
             for (int i = 0; i < _sparks.Length; i++)
@@ -586,10 +598,14 @@ namespace DC
                 Vector2 p = new Vector2(0.5f + 0.3f * Mathf.Cos(a), 0.64f + 0.17f * Mathf.Sin(a));
                 _sparks[i] = Art.Img(c, "Brilho", Art.Star(), Art.Coin, p - new Vector2(0.04f, 0.025f), p + new Vector2(0.04f, 0.025f));
             }
-            Art.Img(c, "Cliente", Art.Disc(), Art.Client, new Vector2(0.32f, 0.53f), new Vector2(0.68f, 0.75f));
-            Art.Img(c, "Chapeu", Art.Triangle(), Art.Gold, new Vector2(0.36f, 0.71f), new Vector2(0.64f, 0.8f));
-            Art.Img(c, "Olhos", Art.Eyes(), Art.Tinta, new Vector2(0.4f, 0.63f), new Vector2(0.6f, 0.68f));
-            _cutMouth = Art.Img(c, "Boca", Art.Flat(), Art.Tinta, new Vector2(0.43f, 0.565f), new Vector2(0.57f, 0.615f));
+            // cliente: sprite do Tripo (Resources/Sprites/cliente) quando existe; o desenho procedural fica de reserva
+            _cutProc = Art.Node(c, "ClienteProcedural", Vector2.zero, Vector2.one).gameObject;
+            Transform p0 = _cutProc.transform;
+            Art.Img(p0, "Cliente", Art.Disc(), Art.Client, new Vector2(0.32f, 0.53f), new Vector2(0.68f, 0.75f));
+            Art.Img(p0, "Chapeu", Art.Triangle(), Art.Gold, new Vector2(0.36f, 0.71f), new Vector2(0.64f, 0.8f));
+            Art.Img(p0, "Olhos", Art.Eyes(), Art.Tinta, new Vector2(0.4f, 0.63f), new Vector2(0.6f, 0.68f));
+            _cutMouth = Art.Img(p0, "Boca", Art.Flat(), Art.Tinta, new Vector2(0.43f, 0.565f), new Vector2(0.57f, 0.615f));
+            _cutClient = Art.Img(c, "ClienteSprite", Art.Disc(), Color.white, new Vector2(0.22f, 0.44f), new Vector2(0.78f, 0.86f));
             _cutItem = Art.Img(c, "Item", Art.Rounded(), Color.white, new Vector2(0.43f, 0.4f), new Vector2(0.57f, 0.47f));
             _cutItemCracks = Art.Img(_cutItem.transform, "Rachaduras", Art.Cracks(1), Art.Crack, Vector2.zero, Vector2.one);
             Art.Img(c, "Caixa", Art.Rounded(), Art.CargoColor(CargoType.Box), new Vector2(0.37f, 0.33f), new Vector2(0.63f, 0.46f)).preserveAspect = false;

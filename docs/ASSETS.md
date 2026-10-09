@@ -224,16 +224,32 @@ Pasta: `client/Assets/_DC/Resources/Sprites/<pasta>/`, com `<Clipe>.png` + `meta
 | `caixa`, `reliquia`, `ovo` | #6, #12, #13 | 1 | 112 / 96 / 96 | largura 0,50 m / altura 0,55 m / altura 0,55 m | Static |
 | `bau`, `bau_aberto`, `arco` | #7, #8, #9 | 1 | 160 / 160 / 448 | largura 0,80 / 0,80 / 2,20 m | Static |
 
-Medir na folha depois do render e anotar aqui:
+Medir na folha depois do render e anotar aqui. Medido em 2026-10-09 (raia D) nas folhas `client/Builds/sprites_contact/<ator>_folhas.png`; quadros contados a partir de 0:
 
 | Clipe | Quadro de impacto | Passada natural (m/s) |
 |---|---|---|
-| courier/Throw | a medir | — |
-| guarda/Bash | a medir | — |
-| bruto/Smash | a medir | — |
-| ogro/Slam | a medir | — |
-| courier/CarryRun e Run | — | a medir |
-| ladrao/Run e CarryRun | — | a medir |
+| courier/Throw (8 quadros) | **3**: 1º quadro com o braço estendido à frente (soltura do projétil). O 4 é a soltura completa; 0–2 são pronto e carga atrás, 5–7 acompanham e voltam | — |
+| guarda/Bash (12 quadros) | **6**: escudo à frente nas 3 linhas. Antecipação 0–5 (esticar por `Tele` 0,5 s); 6–11 em 0,15 s | — |
+| bruto/Smash | a medir (Lote 2) | — |
+| ogro/Slam | a medir (Lote 2) | — |
+| courier/CarryRun e Run (Sprint do ARKANA, 6 quadros, ciclo 0,53 s) | — | **3,56**, no `meta.json` como `stride_mps`. Na Sim: 4,2 → **1,18×**; 4,83 (+15%) → **1,36×** |
+| ladrao/Run e CarryRun (Running do ARKANA, 10 quadros, ciclo 0,80 s) | — | **1,02**. Na Sim: 2,0 → **1,96×**; fuga 1,6 → **1,57×** |
+
+**Conjuntos do Lote 1 renderizados (2026-10-09).**
+- Fonte dos clipes: `PROVENIENCIA.md` §3.
+- Memória em ASTC 6×6 a 0,444 B/px, ainda HIPÓTESE até medir no aparelho.
+- Folhas de conferência em `client/Builds/sprites_contact/`.
+
+| Conjunto | Clipes (quadros) | Fonte | Folha mais larga | Memória ASTC |
+|---|---|---|---|---|
+| `courier` (5 linhas × 224) | CarryIdle 12, CarryRun 6, Run 6, Idle 12, Throw 8, Dash 6, Hit 6 | Run/CarryRun = reuso ARKANA (Sprint); Idle/CarryIdle = reuso Forge (Breathing Idle); Throw, Dash, Hit e `Hold` = Blender | 2 688 px | ~6,2 MB |
+| `courier_fim` (1 × 320) | Cheering 12, Dying 12 | Cheering = reuso Forge; Dying = reuso ARKANA (Standing React Death Backward) | 3 840 px | ~1,1 MB |
+| `ladrao` (3 × 160) | Run 10, CarryRun 10, Lurk 12, Grab 9 | Run/CarryRun = reuso ARKANA (Running); Lurk = reuso Forge (Looking Around); Grab = Blender (termina no `Hold`) | 1 920 px | ~1,4 MB |
+| `guarda` (3 × 224), **com escudo** | Idle 12, Bash 12 | os dois do Blender; escudo do Tripo preso ao `LeftForeArm` (`--attach`, `RENDER_SPRITES.md` §9) | 2 688 px | ~1,6 MB |
+| `cliente` (1 × 192) | Idle 12, Cheering 12, Thankful 12, Shrug 12, Waving 6 | reuso Forge (Shrug = Looking Around, que não é um "dar de ombros") | 2 304 px | ~0,9 MB |
+| `caixa`, `bau`, `arco`, `morcego` | Static 1 | Tripo | 448 px | ~0,1 MB |
+
+**Total do Lote 1:** ~11,3 MB em ASTC (a `ART_BIBLE.md` §5 estimava ~12,3 MB para estes conjuntos). PNG em disco: 9,3 MB.
 
 ## 6. Comandos de render (depois do aval, dos downloads e do veredito do modelo)
 

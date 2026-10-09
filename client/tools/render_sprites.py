@@ -8,13 +8,18 @@ estatico para props). O que o DC acrescenta (docs/RENDER_SPRITES.md):
   --hold FBX         os clipes "Carry*" levam a pose dos bracos (ombro..dedos) do quadro --hold-frame deste clipe
   --outline PX       contorno de tinta (INK) assado na folha, por baixo do sprite
   --contact PNG      folha de conferencia fora de Resources (Resources vai inteiro para o APK)
+  --attach SPEC      prop preso a um osso (escudo no antebraco): FBX:osso:dx,dy,dz:rx,ry,rz:tamanho (repetivel)
   meta.json "hands"  por clipe: ponto entre as maos (x, y em px na celula; 1 = na frente do corpo) por direcao x quadro
+  meta.json "stride_mps"  clipe em laco com deslocamento do quadril: velocidade natural (m/s) na escala do ator
+Quadril: o deslocamento horizontal comeca na origem (1o quadro) e, em clipe em laco, a deriva linear sai (clipe com
+root motion vira "in place"; o pe nao patina se a View tocar no ritmo de stride_mps).
 
 Uso (Blender 5.2; render_sprites.ps1 ao lado monta esta linha):
   blender.exe -b --factory-startup --python-exit-code 1 --python render_sprites.py --
       --model Model.fbx --out saida/ (--anims pasta_com_fbx/ | --self) [--preset courier] [--hold Segurar.fbx]
       [--elev 60] [--dirs 4|8] [--mirror] [--fps 12] [--size 128] [--scale PX_POR_METRO] [--height M | --width M]
       [--yaw 0] [--light flat|matcap|studio] [--shadow] [--aa 8] [--outline 3] [--src-fps 30] [--contact x.png]
+      [--attach Escudo.fbx:LeftForeArm:0.09,0,0.06:90,180,0:0.75]
 Saida: <Clipe>.png (linha = direcao, coluna = quadro; linha 0 em cima), meta.json, contact.png.
 Direcoes em sentido horario a partir de S (de frente para a camera = para baixo na tela):
   4 -> S, W, N, E      8 -> S, SW, W, NW, N, NE, E, SE      --mirror: so S..N pelo oeste (4 -> 3 linhas, 8 -> 5)
@@ -24,7 +29,7 @@ em Z e transladada no plano da camera (em ORTHO a translacao no plano nao muda a
 """
 import argparse, glob, json, math, os, re, sys, time
 import bpy
-from mathutils import Matrix, Vector
+from mathutils import Euler, Matrix, Vector
 
 DIRS = {1: ["S"], 4: ["S", "W", "N", "E"], 8: ["S", "SW", "W", "NW", "N", "NE", "E", "SE"]}
 LIGHT = {"flat": ("FLAT", None), "matcap": ("MATCAP", "toon_light.exr"), "studio": ("STUDIO", "Default")}
@@ -32,6 +37,8 @@ BONE_RE = re.compile(r'pose\.bones\["([^"]+)"\]')
 LOOP_RE = re.compile(r"idle|walk|run|lurk", re.I)  # ponytail: laco por nome; o Unity pode sobrescrever
 ARM_RE = re.compile(r"(Left|Right)(Shoulder|\w*Arm|Hand)")  # ombro, braco, antebraco, mao, dedos (Mixamo e placeholder COE)
 HAND_RE = re.compile(r"(Left|Right)Hand$")
+# FBX:osso:dx,dy,dz:rx,ry,rz:tamanho (o osso pode vir com prefixo "mixamorig:"; caminho do Windows tem "C:")
+ATTACH_RE = re.compile(r"^(.+?\.(?:fbx|glb|gltf)):(?:\w+:)?(\w+):([-\d.]+,[-\d.]+,[-\d.]+):([-\d.]+,[-\d.]+,[-\d.]+):([\d.]+)$", re.I)
 INK = (0x1B / 255.0, 0x17 / 255.0, 0x24 / 255.0)  # tinta do contorno, ART_BIBLE sec. 3
 
 # Padroes genericos e tabela de atores do DC. Um argumento na linha vence o preset, que vence BASE.
@@ -76,6 +83,10 @@ def parse_args():
     p.add_argument("--contact", help="caminho do contact.png (padrao: <out>/contact.png)")
     p.add_argument("--src-fps", type=int, default=30, help="fps dos clipes de origem")
     p.add_argument("--shadow", action="store_true", help="auto-sombra do Workbench (nao ha sombra no chao)")
+    p.add_argument("--attach", action="append", default=[],
+                   help="prop preso a osso: FBX:osso:dx,dy,dz:rx,ry,rz:tamanho; deslocamento (m) a partir da cabeca do "
+                        "osso e giro (graus, Euler XYZ) em eixos do mundo NO REPOUSO (T) do modelo ja normalizado; "
+                        "tamanho = maior medida do prop em m; o centro da caixa do prop fica no ponto")
     # sem valor na linha: vem do --preset, senao de BASE
     p.add_argument("--elev", type=float, help="graus da camera sobre o chao (90 = de cima)")
     p.add_argument("--dirs", type=int, choices=(1, 4, 8))
@@ -152,6 +163,39 @@ def normalize(model, meshes, a):
     return k
 
 
+def attach(spec, arm):
+    """Prende um prop (escudo) a um osso. O lugar e dado no REPOUSO: deslocamento a partir da cabeca do osso e giro,
+    em eixos do mundo, com o modelo ja normalizado. Pai = osso (o Blender usa a CAUDA do osso como origem do pai);
+    o inverso do pai e o do repouso, entao em cada quadro o prop recebe o mesmo delta do osso."""
+    m = ATTACH_RE.match(spec)
+    if not m:
+        die("--attach invalido (FBX:osso:dx,dy,dz:rx,ry,rz:tamanho): " + spec)
+    path, bone, off, rot, size = m.groups()
+    b = next((b for b in arm.data.bones if b.name.split(":")[-1] == bone), None) if arm else None
+    if b is None:
+        die("--attach: osso %s nao existe no modelo" % bone)
+    objs = import_file(os.path.abspath(path))
+    meshes = [o for o in objs if o.type == "MESH"]
+    if not meshes:
+        die("--attach sem malha: " + path)
+    bpy.context.view_layer.update()
+    pts = [o.matrix_world @ v.co for o in meshes for v in o.data.vertices]
+    lo, hi = (Vector([f(p[i] for p in pts) for i in range(3)]) for f in (min, max))
+    k = float(size) / max(hi - lo)
+    M = (Matrix.Translation(arm.matrix_world @ b.head_local + Vector([float(x) for x in off.split(",")]))
+         @ Euler([math.radians(float(x)) for x in rot.split(",")], "XYZ").to_matrix().to_4x4()
+         @ Matrix.Scale(k, 4) @ Matrix.Translation(-(lo + hi) / 2))
+    P = arm.matrix_world @ b.matrix_local @ Matrix.Translation((0, b.length, 0))  # pai no repouso
+    for o in objs:
+        if o.parent is None:
+            mw = M @ o.matrix_world
+            o.parent, o.parent_type, o.parent_bone = arm, "BONE", b.name
+            o.matrix_parent_inverse = P.inverted()
+            o.matrix_basis = mw
+    print("ATTACH %s -> %s: tamanho %.2f m (x%.3f)" % (os.path.basename(path), b.name, float(size), k))
+    return objs, meshes
+
+
 def hold_pose(path, frame):
     """Rotacao de cada osso do braco relativa ao pai (delta sobre o repouso, no mundo) num quadro do clipe de segurar."""
     objs = import_file(path)
@@ -176,7 +220,10 @@ def retarget(src, tgt, name, hold=None):
     Mixamo do Tripo e o X Bot do Mixamo diferem (bracos subiam acima da cabeca, 2026-10-06). O quadril tambem
     leva o deslocamento, escalado pela razao das alturas do quadril. Com `hold`, os ossos do braco trocam o delta
     do clipe pelo delta do pai neste quadro x a pose relativa do clipe de segurar: pernas e tronco correm, bracos
-    seguram a carga."""
+    seguram a carga.
+    Quadril: o deslocamento horizontal parte da origem no 1o quadro e, em clipe em laco, perde a deriva linear (os
+    runs do ARKANA vem com root motion: o quadril anda 2,2 m e o boneco sairia da celula). A deriva retirada, na
+    escala do alvo, vira action["stride_mps"] = velocidade em que o pe nao patina."""
     sact = src.animation_data.action
     s, e = (int(round(x)) for x in sact.frame_range)
     tb, sb = tgt.data.bones, src.data.bones
@@ -190,6 +237,13 @@ def retarget(src, tgt, name, hold=None):
     root = order[0]
     hs = (Ws @ sb[root].head_local).z if root in sb else 0.0
     k = (Wt @ tb[root].head_local).z / hs if hs > 1e-6 else 1.0
+
+    def root_xy(f):
+        bpy.context.scene.frame_set(f)
+        v = (Ws @ src.pose.bones[root].matrix).translation - (Ws @ sb[root].matrix_local).translation
+        return Vector((v.x, v.y, 0.0))
+    anchor = root_xy(s) if root in sb else Vector()
+    drift = root_xy(e) - anchor if (root in sb and LOOP_RE.search(name)) else Vector()
     ad = tgt.animation_data or tgt.animation_data_create()
     ad.action = bpy.data.actions.new(name)
     for pb in tgt.pose.bones:
@@ -210,13 +264,15 @@ def retarget(src, tgt, name, hold=None):
                 rot = qWt_inv @ d @ (Wt @ b.matrix_local).to_quaternion()
                 head = attach.translation
                 if not b.parent:
-                    head = head + Wt3_inv @ ((spose.translation - srest.translation) * k)
+                    off = spose.translation - srest.translation - anchor - drift * ((f - s) / max(e - s, 1))
+                    head = head + Wt3_inv @ (off * k)
                 m = Matrix.Translation(head) @ rot.to_matrix().to_4x4()
             pose[n] = m
             pb.matrix_basis = attach.inverted() @ m
             pb.keyframe_insert("rotation_quaternion", frame=f)
             if not b.parent:
                 pb.keyframe_insert("location", frame=f)
+    ad.action["stride_mps"] = drift.length * k * bpy.context.scene.render.fps / max(e - s, 1)
     return ad.action
 
 
@@ -284,7 +340,10 @@ def hand_anchor(arm, hands, root, theta, ppu, size, pivot_y, right, up):
     R, W = Matrix.Rotation(theta, 4, "Z"), arm.matrix_world
     p = R @ (sum((W @ h.head + W @ h.tail for h in hands), Vector()) / (2.0 * len(hands)))
     hip = R @ (W @ root.head)
-    return [round(size / 2.0 + p.dot(right) * ppu, 1), round(pivot_y + p.dot(up) * ppu, 1), 1 if p.y < hip.y else 0]
+    # de perfil (W) a mao fica quase no plano do quadril e a corrida a leva para tras e para a frente: sem folga a
+    # carga piscava por cima/por baixo de um quadro para o outro. Ate 15% da altura do quadril atras ainda e frente.
+    tol = 0.15 * hip.z
+    return [round(size / 2.0 + p.dot(right) * ppu, 1), round(pivot_y + p.dot(up) * ppu, 1), 1 if p.y < hip.y + tol else 0]
 
 
 def ink(path, px):
@@ -339,7 +398,11 @@ def main():
         die("modelo precisa de malha(s) e no maximo 1 armature; achei %d armature(s) e %d malha(s)" % (len(arms), len(meshes)))
     arm = arms[0] if arms else None
     k_model = normalize(model, meshes, a)
-    hold = hold_pose(os.path.abspath(a.hold), a.hold_frame) if (a.hold and arm and not a.self_) else None
+    for spec in a.attach:  # depois de normalizar: o prop tem tamanho proprio e nao entra na altura do ator
+        objs, extra = attach(spec, arm)
+        model += objs
+        meshes += extra
+    hold =hold_pose(os.path.abspath(a.hold), a.hold_frame) if (a.hold and arm and not a.self_) else None
     # sem armature = prop estatico: 1 quadro "Static", mesma camera e escala dos personagens
     clips = [(n, act, sample_frames(act, a)) for n, act in load_clips(a, arm, hold)] if arm else [("Static", None, [0.0])]
     rows = DIRS[a.dirs][: a.dirs // 2 + 1] if (a.mirror and a.dirs > 1) else DIRS[a.dirs]
@@ -379,7 +442,7 @@ def main():
             "row0": "top", "elev": a.elev, "yaw": a.yaw, "ppu": round(ppu, 2), "pivot_px": [a.size / 2.0, round(pivot_y, 1)],
             "pivot": [0.5, round(pivot_y / a.size, 4)], "light": a.light, "outline_px": a.outline, "src_fps": a.src_fps,
             "preset": a.preset or "", "model_scale": round(k_model, 4), "hold": os.path.basename(a.hold) if hold else "",
-            "clips": []}  # listas planas: JsonUtility nao le lista de listas
+            "attach": [os.path.basename(s) for s in a.attach], "clips": []}  # listas planas: JsonUtility nao le lista de listas
     keep = []
     for name, act, frames in clips:
         t0 = time.time()
@@ -400,9 +463,12 @@ def main():
                 "fps": round(len(frames) / dur, 3), "duration_s": round(dur, 3), "src_frames": int(round(span))}
         if hands:
             clip["hands"] = anchors  # (row * frames + frame) * 3 -> x, y, frente
+        stride = act.get("stride_mps", 0.0) if act else 0.0
+        if loop and stride > 0.3:  # ponytail: so locomocao com root motion; clipe "in place" de origem fica sem
+            clip["stride_mps"] = round(stride, 3)
         meta["clips"].append(clip)
-        print("CLIP %-20s frames=%2d linhas=%d folha=%dx%d px loop=%s t=%.1fs" % (
-            name, len(frames), len(rows), len(frames) * a.size, len(rows) * a.size, loop, time.time() - t0))
+        print("CLIP %-20s frames=%2d linhas=%d folha=%dx%d px loop=%s passada=%.2fm/s t=%.1fs" % (
+            name, len(frames), len(rows), len(frames) * a.size, len(rows) * a.size, loop, stride, time.time() - t0))
     for j, (name, act, frames) in enumerate(clips):  # contact.png: 1o frame de cada clipe, direcao S
         set_action(arm, act)
         place(meshes, frames[0], math.radians(a.yaw), right * ((j + 0.5 - len(clips) / 2.0) * cell) - up * vc, keep)
