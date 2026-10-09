@@ -287,6 +287,8 @@ Cargas precisam ser visíveis no personagem/mochila para reforçar fantasy.
 
 **PROPOSTA 2026-10-09 (decisão do Vinicius):** greybox em 2D top-down com arte procedural, como no Forge Street, e courier como **mascote sem rig humano** (um mímico que anda ou um goblin de mochila enorme, animado por squash and stretch), com a carga visível em cima dele. Corta o rig humanoide (Mixamo) e os inimigos rigados, o maior custo apontado pela raia C. Testar mascote × courier humano em criativo antes de decidir (§27, C5). O 3D oblíquo só entra se a tese validar.
 
+**DECISÃO 2026-10-09 (Vinicius):** o courier é **humano**, e a arte vem do **Tripo com créditos** (lote só com aval do custo), no pipeline do Forge Street: Tripo → Mixamo → Blender (`client/tools/render_sprites.py`) → sprites 2D com câmera a 60°. A proposta de mascote acima e o C5 do §27 ficam como histórico. Detalhe em [`ART_BIBLE.md`](ART_BIBLE.md) e [`ASSETS.md`](ASSETS.md).
+
 # 12. ÁUDIO
 
 - footsteps;
