@@ -68,10 +68,10 @@ Bônus por integridade na entrega: 0 rachaduras ×1,5; 1 ×1,2; 2 ×1,0.
 |---|---|---|---|
 | C1 | Caixa | R1 (Guarda) → R2 (1º Ladrão) → D1 | FTUE §3: dica de pousar; 1ª bifurcação na R1 |
 | C2 | Caixa | 2 camadas + D1 | 1º upgrade da guilda liberado antes |
-| C3 | Ovo | 2 camadas + D1 | tempo-alvo 90 s |
+| C3 | Ovo | 2 camadas + D1 | tempo-alvo 30 s (era 90 s: o ovo nunca chocava; BALANCE.md decisão 1) |
 | C4 | Caixa | 3 camadas + D1 | Bruto aparece |
 | C5 | Relíquia | 3 camadas + D1 | |
-| C6 | Ovo | 3 camadas + D1 | Guarda + Ladrão juntos (1ª derrota provável) |
+| C6 | Ovo | 3 camadas + D1 | tempo-alvo 45 s; Guarda + Ladrão juntos (1ª derrota provável) |
 | C7 | Relíquia | 3 camadas + D1 | |
 | C8 | Caixa | 3 camadas + B1 + D1 | chefe |
 
