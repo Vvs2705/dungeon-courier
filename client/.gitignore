@@ -1,0 +1,16 @@
+/Library/
+/Temp/
+/Logs/
+/obj/
+/Builds/*
+# fotos e logs de validação entram por pasta: !/Builds/validation_<versao>/
+__pycache__/
+/UserSettings/
+/tools/coretests/bin/
+/tools/coretests/obj/
+*.csproj
+!/tools/coretests/*.csproj
+!/tools/viewcheck/**/*.csproj
+*.sln
+/Builds/**/*.log
+/.utmp/
