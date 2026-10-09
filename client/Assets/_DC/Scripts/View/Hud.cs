@@ -21,6 +21,10 @@ namespace DC
         /// <summary>Fracao de cima da area segura reservada a HUD: a camera e o joystick nao usam essa faixa.</summary>
         public const float Band = 0.15f;
         const float CutTime = 3.6f;
+        // caixa da entrega com o sprite: centro (o da caixa procedural), lado da celula em px de referencia e centro da tampa (fracao da
+        // celula acima do centro). O topo da silhueta, medido no PNG, fica a 0,375 (linha 14 de 112); a tampa de 26 px assenta nele
+        static readonly Vector2 CratePos = new Vector2(0.5f, 0.395f);
+        const float CrateCell = 450f, CrateTop = 0.36f;
         public enum Tela { Board, Play, Cutscene, Result }
 
         readonly Game _g;
@@ -63,8 +67,9 @@ namespace DC
         Image _offerIcon;
         RectTransform _pauseMain, _pauseConfirm;
         ContractResult _res;
-        float _cutT;
-        Image _cutMouth, _cutLid, _cutItem, _cutItemCracks, _cutClient;
+        float _cutT, _cutItemK = 1f;
+        Vector2 _cutLidAt;
+        Image _cutMouth, _cutLid, _cutItem, _cutItemCracks, _cutClient, _cutBox, _cutStrap, _cutCrate;
         GameObject _cutProc;
         SpriteSheet _cutSheet;
         readonly Image[] _sparks = new Image[5];
@@ -146,8 +151,29 @@ namespace DC
             Current = Tela.Cutscene; Only(_cut);
             _cutT = 0f;
             CargoType t = S.Run != null ? S.Run.Contract.Cargo : CargoType.Box;
-            _cutItem.sprite = r.Hatched ? Art.Disc() : Art.CargoSprite(t);
-            _cutItem.color = r.Hatched ? Art.Pet : Art.CargoColor(t);
+            // item que sobe: sprite da reliquia/ovo/filhote quando a folha existe (a caixa de dentro da caixa fica procedural)
+            SpriteSheet item = r.Hatched ? SpriteSheet.Get("filhote") : t != CargoType.Box ? SpriteSheet.Get(WorldView.CargoSheet[(int)t]) : null;
+            _cutItem.sprite = item != null ? item.Frame(item.Pick("Static"), 0, 0) : r.Hatched ? Art.Disc() : Art.CargoSprite(t);
+            _cutItem.color = item != null ? Color.white : r.Hatched ? Art.Pet : Art.CargoColor(t);
+            _cutItemK = item != null ? 1.6f : 1f;   // a celula do sprite tem margem: o objeto ocupa ~60% dela
+            // caixa da entrega: o sprite `caixa` (carga Caixa) no lugar do retangulo com cinta; a tampa procedural fica no topo dele
+            SpriteSheet crate = t == CargoType.Box ? SpriteSheet.Get("caixa") : null;
+            _cutBox.enabled = _cutStrap.enabled = crate == null;
+            _cutCrate.enabled = crate != null;
+            RectTransform lid = _cutLid.rectTransform;
+            if (crate != null)
+            {
+                _cutCrate.sprite = crate.Frame(crate.Pick("Static"), 0, 0);
+                lid.anchorMin = lid.anchorMax = CratePos;
+                lid.sizeDelta = new Vector2(0.6f * CrateCell, 26f);
+                _cutLidAt = new Vector2(0f, CrateTop * CrateCell);
+            }
+            else
+            {
+                lid.anchorMin = new Vector2(0.36f, 0.455f); lid.anchorMax = new Vector2(0.64f, 0.48f);
+                lid.sizeDelta = Vector2.zero;
+                _cutLidAt = Vector2.zero;
+            }
             _cutItemCracks.enabled = !r.Hatched && r.Cracks > 0;
             if (r.Cracks > 0) _cutItemCracks.sprite = Art.Cracks(r.Cracks);
             _cutSheet = SpriteSheet.Get("cliente");
@@ -320,9 +346,9 @@ namespace DC
             float t = _cutT;
             float lid = Mathf.Clamp01((t - 0.8f) / 0.5f), item = Mathf.Clamp01((t - 1.3f) / 0.6f);
             _cutLid.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 35f * lid);
-            _cutLid.rectTransform.anchoredPosition = new Vector2(30f * lid, 70f * lid);
+            _cutLid.rectTransform.anchoredPosition = _cutLidAt + new Vector2(30f * lid, 70f * lid);
             _cutItem.rectTransform.anchoredPosition = new Vector2(0f, 150f * item);
-            _cutItem.rectTransform.localScale = Vector3.one * item;
+            _cutItem.rectTransform.localScale = Vector3.one * (item * _cutItemK);
             bool react = t >= 2f;
             bool happy = _res.Hatched || _res.Cracks <= 1;
             _cutMouth.sprite = !react ? Art.Flat() : happy ? Art.Smile() : _res.Cracks >= 3 ? Art.Frown() : Art.Flat();
@@ -608,8 +634,15 @@ namespace DC
             _cutClient = Art.Img(c, "ClienteSprite", Art.Disc(), Color.white, new Vector2(0.22f, 0.44f), new Vector2(0.78f, 0.86f));
             _cutItem = Art.Img(c, "Item", Art.Rounded(), Color.white, new Vector2(0.43f, 0.4f), new Vector2(0.57f, 0.47f));
             _cutItemCracks = Art.Img(_cutItem.transform, "Rachaduras", Art.Cracks(1), Art.Crack, Vector2.zero, Vector2.one);
-            Art.Img(c, "Caixa", Art.Rounded(), Art.CargoColor(CargoType.Box), new Vector2(0.37f, 0.33f), new Vector2(0.63f, 0.46f)).preserveAspect = false;
-            Art.Img(c, "Cinta", Art.Square(), Art.BoxStrap, new Vector2(0.485f, 0.33f), new Vector2(0.515f, 0.46f)).preserveAspect = false;
+            _cutBox = Art.Img(c, "Caixa", Art.Rounded(), Art.CargoColor(CargoType.Box), new Vector2(0.37f, 0.33f), new Vector2(0.63f, 0.46f));
+            _cutBox.preserveAspect = false;
+            _cutStrap = Art.Img(c, "Cinta", Art.Square(), Art.BoxStrap, new Vector2(0.485f, 0.33f), new Vector2(0.515f, 0.46f));
+            _cutStrap.preserveAspect = false;
+            // sprite `caixa`: celula quadrada de CrateCell px de referencia no centro da caixa procedural (a silhueta ocupa 70 x 83 de 112 px
+            // e fica centrada na celula: ~280 px de largura, como o retangulo)
+            _cutCrate = Art.Img(c, "CaixaSprite", null, Color.white, CratePos, CratePos);
+            _cutCrate.rectTransform.sizeDelta = Vector2.one * CrateCell;
+            _cutCrate.enabled = false;
             _cutLid = Art.Img(c, "Tampa", Art.Square(), Art.Hex(0x8A5A32), new Vector2(0.36f, 0.455f), new Vector2(0.64f, 0.48f));
             _cutLid.preserveAspect = false;
             _cutText = Art.Outlined(Art.NewText(c, "Reacao", 50, new Vector2(0.04f, 0.18f), new Vector2(0.96f, 0.29f)), 3f);

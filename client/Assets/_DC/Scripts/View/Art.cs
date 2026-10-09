@@ -234,6 +234,42 @@ namespace DC
             return s;
         }
 
+        // ---------- sprite com flash branco e contorno (Assets/_DC/Shaders/SpriteFlash.shader) ----------
+        static Material _fx;
+        static bool _fxLoaded;
+        static MaterialPropertyBlock _fxBlock;
+        static readonly int FlashId = Shader.PropertyToID("_Flash"), OutlineId = Shader.PropertyToID("_Outline"), OutlineColorId = Shader.PropertyToID("_OutlineColor");
+
+        /// <summary>Material dos sprites dos atores e das cargas (Resources/Materials/SpriteFlash.mat: e ele que leva o shader para o
+        /// build) ou null (sem material ou shader sem suporte: a View volta a tingir com o Sprites/Default, como antes).</summary>
+        public static Material FxMat
+        {
+            get
+            {
+                if (_fxLoaded) return _fx;
+                _fxLoaded = true;
+                var m = Resources.Load<Material>("Materials/SpriteFlash");
+                _fx = m != null && m.shader != null && m.shader.isSupported ? m : null;
+                if (_fx != null) Debug.Log("DC SpriteFlash: ok (" + m.shader.name + ")");
+                else Debug.LogWarning("DC SpriteFlash: material ausente ou shader sem suporte, flash por tinta");
+                return _fx;
+            }
+        }
+
+        /// <summary>Flash (0..1, mistura a textura para branco antes da tinta do renderer) e contorno (largura em texels da folha, 0 =
+        /// sem; cor com alfa) num sprite que usa o FxMat. Sem FxMat nao faz nada. Sem alocacao (um bloco so, copiado pelo renderer).
+        /// Chamar DEPOIS de trocar o sprite do quadro.</summary>
+        public static void Fx(SpriteRenderer r, float flash, float outline = 0f, Color outlineColor = default)
+        {
+            if (FxMat == null) return;
+            if (_fxBlock == null) _fxBlock = new MaterialPropertyBlock();
+            r.GetPropertyBlock(_fxBlock);
+            _fxBlock.SetFloat(FlashId, flash);
+            _fxBlock.SetFloat(OutlineId, outline);
+            _fxBlock.SetColor(OutlineColorId, outlineColor);
+            r.SetPropertyBlock(_fxBlock);
+        }
+
         public static SpriteRenderer NewSprite(Transform parent, string name, Sprite sprite, Color color, int order, Vector2 pos, Vector2 scale)
         {
             var go = new GameObject(name);

@@ -16,7 +16,10 @@ namespace DC
     /// </summary>
     public sealed class SpriteSheet
     {
-        [Serializable] public sealed class ClipMeta { public string name, file; public int frames; public bool loop; public float fps; public float[] hands; }
+        [Serializable] public sealed class ClipMeta { public string name, file; public int frames; public bool loop; public float fps, stride_mps; public float[] hands; }
+
+        /// <summary>Teto e piso do ritmo da locomocao pela passada (teto 2,3x = receita do COE; piso: corrida travada na parede nao congela).</summary>
+        public const float MaxRate = 2.3f, MinRate = 0.5f;
         [Serializable] public sealed class Meta { public int size, dirs, rows; public bool mirror; public float ppu; public float[] pivot, pivot_px; public List<ClipMeta> clips; }
 
         static readonly Dictionary<string, SpriteSheet> Cache = new Dictionary<string, SpriteSheet>();
@@ -106,6 +109,15 @@ namespace DC
 
         public int Frames(int clip) => _clips[clip].frames;
         float Fps(int clip) => _clips[clip].fps > 0f ? _clips[clip].fps : 12f;   // fps POR CLIPE (o Idle do placeholder e 4,9)
+        public float Duration(int clip) => _clips[clip].frames / Fps(clip);
+
+        /// <summary>Multiplicador do fps do clipe para a velocidade `speed` (m/s da Sim): speed / stride_mps (o pe nao patina), entre
+        /// MinRate e MaxRate (RENDER_SPRITES §4). Clipe sem `stride_mps` (sem root motion medido): 1, o fps do meta.</summary>
+        public float Rate(int clip, float speed)
+        {
+            float s = _clips[clip].stride_mps;
+            return s > 0f ? Mathf.Clamp(speed / s, MinRate, MaxRate) : 1f;
+        }
 
         /// <summary>Quadro no tempo `t` (s desde o inicio do clipe): laco pelo `loop` do meta (ou `forceLoop`); sem laco para no ultimo.</summary>
         public int FrameAt(int clip, float t, bool forceLoop = false)
@@ -172,6 +184,9 @@ namespace DC
             if (sheet != Sheet) { Sheet = sheet; Clip = -1; }
             if (clip != Clip) { Clip = clip; T = 0f; }
         }
+
+        /// <summary>Avanca o tempo do clipe atual (chamar depois do Play); locomocao com `stride_mps` no ritmo da passada.</summary>
+        public void Step(float dt, float speed = 0f) => T += dt * Sheet.Rate(Clip, speed);
 
         public void Face(float vx, float vy) => D = Sheet.Dir(vx, vy, D);
 
