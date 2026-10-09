@@ -89,6 +89,17 @@ namespace DC.Tests
         }
 
         [Test]
+        public void AoEntrar_NaoPousaAteOPrimeiroMovimento_FTUE()
+        {
+            var sim = NewSim(); Run r = Start(sim, 0);
+            Steps(sim, StepsFor(2f), V2.Zero);   // dedo solto desde o inicio do contrato
+            Assert.AreEqual(CargoState.Held, r.Main.State, "pousou sem o jogador ter se mexido");
+            Assert.AreEqual(Hint.DragToWalk, r.Hint);
+            Steps(sim, 1, Up); Steps(sim, 6, V2.Zero);   // mexeu: a regra dos 0,2 s volta a valer
+            Assert.AreEqual(CargoState.Ground, r.Main.State);
+        }
+
+        [Test]
         public void PegaDeVolta_Ate15m_NaoAlem()
         {
             var sim = NewSim(); Run r = Start(sim, 0);
@@ -737,6 +748,7 @@ namespace DC.Tests
             var sim = NewSim(); Run r = Start(sim, 3);   // C4 comeca na R5 (bau)
             Assert.IsNotNull(r.Chest);
             r.Courier.Hp = 99;
+            Steps(sim, 1, Up);   // o pouso (e a espera no bau) so conta depois do 1o movimento na sala
             r.Courier.Pos = r.Chest.Pos + new V2(0.6f, 0f);
             int before = sim.Coins;
             List<SimEvent> evs = Steps(sim, StepsFor(1.4f), V2.Zero);
@@ -746,6 +758,7 @@ namespace DC.Tests
             Sim b = Sim.Load(sim.Save());
             Assert.IsTrue(b.Run.Chest.Opened);
             b.Run.Enemies.Clear();
+            Steps(b, 1, Up);   // sem este passo o teste passaria por construcao (dedo solto desde a entrada nao abre nada)
             b.Run.Courier.Pos = b.Run.Chest.Pos + new V2(0.6f, 0f);
             int coins = b.Coins;
             Steps(b, StepsFor(2f), V2.Zero);

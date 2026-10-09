@@ -79,7 +79,7 @@ namespace DC.Core
     public enum Outcome { Running, Delivered, Died, CargoStolen, CargoBroken, PetDied, Abandoned }
 
     /// <summary>Dica contextual da FTUE (texto em Hints.Text).</summary>
-    public enum Hint { None, PlantToFight, PickUp, Dash, Thief, DoorNeedsCargo, GuardDoor, Chest, WaitPet }
+    public enum Hint { None, PlantToFight, PickUp, Dash, Thief, DoorNeedsCargo, GuardDoor, Chest, WaitPet, DragToWalk }
 
     public static class Hints
     {
@@ -95,6 +95,7 @@ namespace DC.Core
                 case Hint.GuardDoor: return "derrote o guarda para abrir a porta";
                 case Hint.Chest: return "fique parado ao lado do baú para abrir";
                 case Hint.WaitPet: return "a porta só abre com o filhote por perto";
+                case Hint.DragToWalk: return "arraste o dedo para andar com a carga";
                 default: return "";
             }
         }

@@ -18,6 +18,18 @@
 | Data/hora | Evento | Saldo visto no site | Gasto | Obs |
 |---|---|---|---|---|
 | 2026-10-09 ~15:20 | Abertura do Lote 1 (aval do Vinicius em 2026-10-09: "Aprovo 485 (teto 550)"; orçado 485, teto 550) | **20 720** | 0 | painel conferido: "Gerar 45", 8K desligado, Privado, H3.1 - Máx. qualidade. Teto: saldo final ≥ **20 170** |
+| 2026-10-09 15:11 | Courier: imagem #3 de 4 (Nano Banana 2, 1:1, grátis) → Modelo HD H3.1 | 20 675 | 45 | task `74de35fe-bcd3-48aa-94ee-dc0e02c8f7d0` · 7 976 faces |
+| 2026-10-09 15:13 | Ladrão: imagem #3 de 4 → Modelo HD | 20 630 | 45 | task `4879e1d4-070e-4bad-a3d8-593ef0abc3b6` · 7 575 faces |
+| 2026-10-09 15:16 | Guarda v1 (com escudo e maça juntos): imagem #3 de 4 → Modelo HD | 20 585 | 45 | task `7f6e0866-137f-4422-b094-221799c3f5af` · 7 733 faces · **DESCARTADO** pela regra do Vinicius de 2026-10-09 (itens separados do personagem) |
+| 2026-10-09 15:19 | Morcego: imagem #4 de 4 → Modelo HD | 20 540 | 45 | task `c5223f88-f2d7-44d0-a912-ef848e8beef0` · 7 816 faces |
+| 2026-10-09 15:20 | Cliente: imagem #3 de 4 → Modelo HD | 20 495 | 45 | task `a8045cba-4afa-4393-bbdb-8661361e3930` · 7 536 faces |
+| 2026-10-09 15:22 | Caixa: imagem #2 de 4 → Modelo HD | 20 450 | 45 | task `4eefcbef-6735-4804-948c-f619f6653cf8` · 7 334 faces |
+| 2026-10-09 15:23 | Baú: imagem #1 de 4 → Modelo HD | 20 405 | 45 | task `9d6ba381-8afc-4eec-a9ea-27ee897d35b6` · 7 407 faces |
+| 2026-10-09 15:26 | Guarda v2 (sem escudo e sem maça): imagem #4 de 4 → Modelo HD | 20 360 | 45 | task `42fee414-ea6f-42be-9e3b-7ce474c6bfa8` · 7 675 faces |
+| 2026-10-09 15:29 | Escudo-torre (prop separado): 1ª rodada de imagens saiu com 2 peças (frente+verso), refeita com "only one object"; imagem #2 de 4 → Modelo HD | 20 315 | 45 | task `16003d6a-e49f-47c7-987c-c3e6c9b7d548` · 7 284 faces |
+| 2026-10-09 15:31 | Arco da porta: imagem #2 de 4 → Modelo HD | 20 270 | 45 | task `cf719c6f-5e9a-4c39-be8a-f853a3c61da9` |
+| 2026-10-09 15:31 | **Subtotal modelos: 10 × 45 = 450.** Baú aberto cortado. Faltam 4 rigs (80) após o veredito do Vinicius → previsto 530 | 20 270 | 450 | teto: saldo final ≥ 20 170 |
+| 2026-10-09 ~15:35 | **Veredito do Vinicius** sobre a folha `client/Builds/arte_lote1/veredito_lote1.png`: personagens "Todos aprovados"; props "Todos aprovados" | 20 270 | 0 | libera o rig dos 4 personagens e o export dos 5 props |
 | | | | | |
 
 ## 2. Registro por peça (Tripo)
@@ -44,6 +56,21 @@ Preencha cada linha. Prompt e parâmetros completos vão no bloco do §6, se a l
 Os prompts previstos estão em `ASSETS.md` §0–§3 (assunto + sufixos).
 - Registre aqui o **texto exato usado**: no Forge, o Lote 4 ficou sem o prompt exato no ledger e precisou ser reconstruído.
 - Registre um SHA para o zip e outro para o FBX extraído.
+
+
+### Prompts exatos do Lote 1 (imagem, Nano Banana 2, 1:1, 4 imagens, grátis)
+Sufixos usados exatamente como em `ASSETS.md` §0 (`[S]`+`[T]`+`[I]` nos personagens, `[P]`+`[IP]` nos props). Parâmetros 3D iguais em todas as peças: HD H3.1 - Máx. qualidade, Ultra, textura 2K, remover iluminação, PBR, triângulos, 8 000 polígonos, 8K desligado, Gerar em Partes desligado, Privado. Sem Multi-View (custo não confirmado; receita de 1 imagem validada no Forge).
+- courier: "young human courier of an adventurers' delivery guild, friendly determined face, big wide-brim blue courier cap with a small brass guild badge, short blue tunic over a cream shirt with rolled sleeves, bulky brown leather cross-body messenger satchel with buckles, short cream scarf, fingerless leather gloves, sturdy brown boots, " + [S] + [T] + [I]
+- ladrao: "asneaky goblin thief, olive green skin, long pointy ears, big greedy grin, slightly hunched, deep purple pointed hood and short ragged purple cape, dark leather vest, huge empty burlap sack tied on his back, wrapped bare feet, chunky proportions 3 heads tall with a big head, " + [S] + [T] + [I] (o "a" a mais no início foi erro de digitação do operador; ficou assim)
+- guarda v1 (descartado): "dungeon gate guard, heavy steel plate armor, closed great helm with a short dark red crest, tall rectangular steel tower shield with a dark red band strapped flat to the left forearm (not touching the body), dark red tabard, short mace hanging on the belt, " + [S] + [T] + [I]
+- guarda v2: "dungeon gate guard, heavy steel plate armor, closed great helm with a short dark red crest, dark red tabard, empty hands, no weapon, no shield, " + [S] + [T] + [I]
+- cliente: "plump cheerful merchant collector, round spectacles, curly grey mustache, wide-brim green hat with a long feather, green coat ending above the knees with gold buttons, leather boots, " + [S] + [T] + [I]
+- morcego: "chubby cartoon dungeon bat, round body, big wing membranes spread wide, large pointy ears, small fangs, big white eyes, burgundy fur and rose-pink wings, flying pose, " + [P] + [IP]
+- caixa: "sturdy wooden delivery crate, chunky planks, iron corner brackets, crossed rope straps with a carry knot on top, round blue wax guild seal on the front, blank paper label, " + [P] + [IP]
+- bau: "small dungeon treasure chest, closed, rounded wooden lid, iron bands, big brass lock, studs, " + [P] + [IP]
+- escudo (rodada 1, descartada por sair com 2 peças): "tall rectangular steel tower shield with a dark red horizontal band, slightly curved, inner arm straps on the back, front view, " + [P] + [IP]
+- escudo (rodada 2, usada): "one single tall rectangular steel tower shield standing upright, dark red horizontal band across the middle, slightly curved, riveted steel rim, seen from the front at a slight three-quarter angle, only one object in the image, stylized fantasy comic game prop, chunky beveled shapes, flat colors with soft two-tone shading, centered, no background, no text, plain light grey background, soft even light, no ground shadow"
+- arco: "dungeon doorway, chunky grey-blue stone block archway, rounded arch top with a keystone, empty dark opening, no door, " + [P] + [IP]
 
 ## 3. Clipes Mixamo
 

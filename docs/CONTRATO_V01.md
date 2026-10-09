@@ -29,6 +29,7 @@ Unidades: metros e segundos. Origem no canto inferior esquerdo da sala. Vetor pr
 1. **Carregando:** arrastar move o courier com a carga nas mãos; não ataca.
 2. **Dash:** toque rápido. Impulso de 3 m em 0,18 s na direção do último movimento, empurra inimigos 1,5 m, **larga a carga** no ponto de partida. Recarga 1,6 s (upgrade reduz). Nenhuma carga da v0.1 proíbe o dash (o bolo, que proíbe, é v0.2).
 3. **Pousar e lutar:** dedo solto por ≥ 0,2 s = parar. Se tem a carga, pousa a 0,6 m ao lado. Parado, ataca sozinho o inimigo mais próximo dentro de 5 m (projétil, 0,45 s de recarga, 1 de dano, 12 m/s).
+3b. **Ao entrar numa sala (e no início do contrato), o pouso só conta depois do 1º movimento ou dash** (FTUE §3: a 1ª lição é arrastar com a carga; dica "arraste o dedo para andar com a carga"). Achado na foto 02 do portão no PC, 2026-10-09.
 4. **Pegar de volta:** voltar a andar a até 1,5 m da carga no chão pega automaticamente.
 5. **Sem carga nas mãos andando:** anda mais rápido (+15%), não ataca.
 6. **Porta:** só atravessa com a carga nas mãos (sem ela, a porta não abre e a dica avisa). Guarda vivo mantém a porta dele fechada.

@@ -3,7 +3,8 @@
 /Logs/
 /obj/
 /Builds/*
-# fotos e logs de validação entram por pasta: !/Builds/validation_<versao>/
+# fotos de validação entram por pasta (os .log continuam fora)
+!/Builds/validation_*/
 __pycache__/
 /UserSettings/
 /tools/coretests/bin/

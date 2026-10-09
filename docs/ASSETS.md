@@ -6,6 +6,12 @@
 
 **Estilo:** `ART_BIBLE.md`. **Render:** `RENDER_SPRITES.md`. **Livro-razão:** `PROVENIENCIA.md`.
 
+## REGRA do Vinicius (2026-10-09): itens separados do personagem
+
+Personagem com item a mais (espada, escudo, maça, cajado, ferramenta) é gerado **sem o item** (prompt com "empty hands, no weapon, no shield"). O item sai como **prop separado** no Tripo e é **preso ao osso no Blender** (mão ou antebraço do rig Mixamo) antes de virar sprite no Unity. Motivo, nas palavras dele: "fazer tudo junto não está dando certo" (o Tripo funde item e mão e o rig arrasta o item errado). Roupa e bolsa vestidas (bolsa a tiracolo do courier, saco nas costas do ladrão) contam como corpo.
+
+**Animação (Vinicius, 2026-10-09):** "movimentação pode ser utilizado o Mixamo ou criar diretamente no Blender". Clipe que o Mixamo não tem (segurar a caixa, dash, arremesso, pegar do chão) pode ser animado por keyframe no Blender sobre o rig Mixamo do Tripo, com o mesmo nome de arquivo/clipe que o `render_sprites.py` espera.
+
 ## 0. Receita e base de custo
 
 **Base de custo** (medida no saldo do site no Forge Street): **45 créditos por modelo HD e 20 por Auto Rig**. Personagem rigado = **65**, prop = **45**.
@@ -58,15 +64,18 @@ O **morcego já aparece na C1** (R2/R3), por isso entra aqui. Bruto, Ogro, Relí
 |---|---|---|---|---|---|
 | 1 | Courier (`courier`, `courier_fim`) | personagem rigado, **Multi-View** | young human courier of an adventurers' delivery guild, friendly determined face, big wide-brim blue courier cap with a small brass guild badge, short blue tunic over a cream shirt with rolled sleeves, bulky brown leather cross-body messenger satchel with buckles, short cream scarf, fingerless leather gloves, sturdy brown boots `[S][T][I]` | T-pose · Auto Rig Mixamo | **65** |
 | 2 | Ladrão (`ladrao`) | personagem rigado | sneaky goblin thief, olive green skin, long pointy ears, big greedy grin, slightly hunched, deep purple pointed hood and short ragged purple cape, dark leather vest, huge empty burlap sack tied on his back, wrapped bare feet, chunky proportions 3 heads tall with a big head `[S][T][I]` | T-pose · Auto Rig Mixamo | **65** |
-| 3 | Guarda (`guarda`) | personagem rigado | dungeon gate guard, heavy steel plate armor, closed great helm with a short dark red crest, tall rectangular steel tower shield with a dark red band strapped flat to the left forearm (not touching the body), dark red tabard, short mace hanging on the belt `[S][T][I]` | T-pose · Auto Rig Mixamo | **65** |
+| 3 | Guarda (`guarda`) | personagem rigado, **sem escudo e sem maça** (regra acima) | dungeon gate guard, heavy steel plate armor, closed great helm with a short dark red crest, dark red tabard, empty hands, no weapon, no shield `[S][T][I]` | T-pose · Auto Rig Mixamo | **65** |
+| 3b | Escudo-torre (`escudo`) | prop preso ao `LeftForeArm` no Blender | tall rectangular steel tower shield with a dark red horizontal band, slightly curved, inner arm straps on the back, front view `[P][IP]` | — | **45** |
 | 4 | Cliente (`cliente`) | personagem rigado | plump cheerful merchant collector, round spectacles, curly grey mustache, wide-brim green hat with a long feather, green coat ending above the knees with gold buttons, leather boots `[S][T][I]` | T-pose · Auto Rig Mixamo | **65** |
 | 5 | Morcego (`morcego`) | prop (animado por código, §4) | chubby cartoon dungeon bat, round body, big wing membranes spread wide, large pointy ears, small fangs, big white eyes, burgundy fur and rose-pink wings, flying pose `[P][IP]` | — | **45** |
 | 6 | Caixa (`caixa`) | prop (carga) | sturdy wooden delivery crate, chunky planks, iron corner brackets, crossed rope straps with a carry knot on top, round blue wax guild seal on the front, blank paper label `[P][IP]` | — | **45** |
 | 7 | Baú fechado (`bau`) | prop | small dungeon treasure chest, closed, rounded wooden lid, iron bands, big brass lock, studs `[P][IP]` | — | **45** |
-| 8 | Baú aberto (`bau_aberto`) | prop | o mesmo assunto com "lid wide open, pile of gold coins inside with a warm glow" `[P][IP]` · **cortável:** sem ele, a abertura usa o `bau` com flash e moedas voando | — | **45** |
+| 8 | ~~Baú aberto (`bau_aberto`)~~ | **CORTADO em 2026-10-09** para pagar o escudo separado dentro do teto de 550: a abertura usa o `bau` com tampa e moedas procedurais | — | — | **0** |
 | 9 | Arco da porta (`arco`) | prop | dungeon doorway, chunky grey-blue stone block archway, rounded arch top with a keystone, empty dark opening, no door `[P][IP]` (a grade levadiça é procedural) | — | **45** |
 
-> **Lote 1: 4 personagens × 65 + 5 props × 45 = 485 créditos.**
+> **Lote 1 revisto (2026-10-09, regra dos itens separados): 4 personagens × 65 + 5 props × 45 (morcego, caixa, baú, arco, escudo) + 45 do 1º guarda com escudo junto (descartado) = 530 créditos**, dentro do teto aprovado de 550. Original: 485.
+>
+> **Lote 1 original: 4 personagens × 65 + 5 props × 45 = 485 créditos.**
 > Teto pedido no aval: **550** (485 + uma refação de personagem). Sem o baú aberto: 440.
 
 **Clipes Mixamo do Lote 1** (0 crédito, ~15 downloads; CarryRun e CarryIdle são cópias): §4 para courier, ladrão, guarda e cliente, mais o `Hold.fbx`.

@@ -103,6 +103,7 @@ namespace DC.Core
             Enemies.Clear(); Shots.Clear(); Doors.Clear(); FoughtHere = false; summonT = 0f; lastBlocked = -1;
             var c = Courier;
             c.Pos = Balance.Entrance; c.Facing = V2.Up; c.IdleT = 0f; c.DashT = 0f; c.ShotCd = 0f;
+            awaitMove = true;   // FTUE (GDD s3): ao entrar, a 1a licao e arrastar com a carga; o pouso so conta depois de mexer
             foreach (Spawn s in Room.Spawns)
             {
                 bool fixedSpot = EnemyDef.All[(int)s.Type].Locks;   // Guarda/Ogro no lugar exato; o resto varia +-0,4 m por semente
@@ -151,6 +152,10 @@ namespace DC.Core
             }
         }
 
+        /// <summary>Verdadeiro da entrada na sala ate o 1o movimento ou dash: dedo solto ainda nao pousa a carga.</summary>
+        public bool AwaitingMove => awaitMove;
+        bool awaitMove;
+
         bool HasHeld { get { foreach (Cargo g in Cargos) if (g.State == CargoState.Held) return true; return false; } }
 
         void Step(V2 move, bool dash)
@@ -164,7 +169,7 @@ namespace DC.Core
             bool moving = ml > 0.05f;
             V2 dir = moving ? move * (1f / ml) : V2.Zero;
 
-            if (dash && c.State != CourierState.Dashing && c.DashCd <= 0f) StartDash(moving ? dir : c.Facing);
+            if (dash && c.State != CourierState.Dashing && c.DashCd <= 0f) { awaitMove = false; StartDash(moving ? dir : c.Facing); }
 
             if (c.State == CourierState.Dashing)
             {
@@ -175,13 +180,13 @@ namespace DC.Core
             }
             else if (moving)
             {
-                c.IdleT = 0f; c.Facing = dir;
+                c.IdleT = 0f; c.Facing = dir; awaitMove = false;
                 float speed = Balance.CarrySpeed * (HasHeld ? 1f : Balance.FreeSpeedMul) * Math.Min(1f, ml);
                 MoveCourier(dir * (speed * dt));
                 PickUp();
                 c.State = HasHeld ? CourierState.Carrying : CourierState.Walking;
             }
-            else
+            else if (!awaitMove)
             {
                 c.IdleT += dt;
                 if (c.State != CourierState.Planted && c.IdleT >= Balance.PlantDelay - 1e-4f) Plant();
@@ -615,6 +620,7 @@ namespace DC.Core
         Hint ComputeHint()
         {
             var c = Courier;
+            if (awaitMove && Main.State == CargoState.Held) return Hint.DragToWalk;
             foreach (Enemy e in Enemies)
                 if (e.Alive && e.Type == EnemyType.Thief && (e.Carry != null || e.State == EnemyState.Grab || e.State == EnemyState.Chase)) return Hint.Thief;
             foreach (Door d in Doors)

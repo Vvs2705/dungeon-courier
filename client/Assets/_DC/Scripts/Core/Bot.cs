@@ -35,7 +35,8 @@ namespace DC.Core
                 dash = Plan(r);
                 wait = Math.Max(1, (int)Math.Round((Reaction + rng.Range(-0.08f, 0.08f)) / Balance.Step));
             }
-            V2 move = stop ? V2.Zero : r.PathDir(r.Courier.Pos, goal);
+            // ao entrar, o Core so conta o pouso depois do 1o movimento (FTUE): quem quer parar ja na entrada da um passo curto antes
+            V2 move = stop ? (r.AwaitingMove ? V2.Up * 0.3f : V2.Zero) : r.PathDir(r.Courier.Pos, goal);
             if (dash) move = (goal - r.Courier.Pos).Norm;
             sim.Tick(Balance.Step, move, dash);
         }
