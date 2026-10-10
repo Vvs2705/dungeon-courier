@@ -350,7 +350,7 @@ namespace DC.Core
         {
             new WeaponDef(Weapon.Sling, "Estilingue", "tiro teleguiado", 0, new[] { 1, 1, 2 }, new[] { 0.45f, 0.35f, 0.55f }, 5f, 0f, new[] { 0, 300, 700 }),
             new WeaponDef(Weapon.Boomerang, "Bumerangue", "vai e volta em linha e atravessa inimigos", 12, new[] { 1, 1, 2 }, new[] { 0.8f, 0.62f, 1.0f }, 5f, 0f, new[] { 0, 400, 900 }),
-            new WeaponDef(Weapon.Bomb, "Bombinha", "arco com dano em área; racha o ovo e detona o barril", 24, new[] { 2, 2, 3 }, new[] { 1.1f, 0.85f, 1.05f }, 5f, 1.5f, new[] { 0, 500, 1100 }),
+            new WeaponDef(Weapon.Bomb, "Bombinha", "arco com dano em área, lenta contra alvo rápido; racha o ovo e detona o barril", 24, new[] { 2, 2, 3 }, new[] { 1.1f, 0.85f, 1.05f }, 5f, 1.5f, new[] { 0, 500, 1100 }),
         };
     }
 

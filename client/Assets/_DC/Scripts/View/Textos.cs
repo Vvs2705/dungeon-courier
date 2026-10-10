@@ -124,7 +124,7 @@ namespace DC
             {
                 case Weapon.Sling: return "homing shot";
                 case Weapon.Boomerang: return "flies out and back in a line, piercing enemies";
-                case Weapon.Bomb: return "arcing area blast; cracks the egg and sets off the keg";
+                case Weapon.Bomb: return "slow arcing area blast, weak vs fast foes; cracks the egg and sets off the keg";
                 default: return WeaponDef.All[(int)w].Text;
             }
         }
