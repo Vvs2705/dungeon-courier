@@ -26,6 +26,7 @@ namespace DC
     ///   -shot f.png [-shotdelay s]   foto da tela depois de s segundos reais (padrao 1) e sai 0.
     ///   -contract K   K 1-based (C1..C24): libera ate K NA MEMORIA e comeca direto (aceita o resgate se houver). Use com -testsession.
     ///   -tela X       abre uma tela direto para a foto: titulo|menu|quadro|codigo|guilda|armas|config|creditos.
+    ///   -pausa        (com -testsession -contract) abre a pausa logo no inicio (foto).   -tela perk: escolha de perk de exemplo.
     ///   -weapon W     (com -testsession -contract) arma 0 estilingue, 1 bumerangue, 2 bombinha: destrava so na memoria e equipa.
     ///   -reset        apaga o save antes de carregar.   -testsession  nao le nem grava save nem diario (semente fixa 1).
     /// </summary>
@@ -127,6 +128,7 @@ namespace DC
                         Sim.Equip((Weapon)w);
                     }
                     StartContract(k, Sim.Pending != null);
+                    if (_test && Arg("-pausa") != null) _hud.ShowPause(false);   // dev: foto da pausa
                 }
                 else if (!string.IsNullOrEmpty(Arg("-tela"))) _hud.Dev(Arg("-tela"));
             }

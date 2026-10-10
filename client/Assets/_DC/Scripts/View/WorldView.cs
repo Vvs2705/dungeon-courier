@@ -1218,7 +1218,8 @@ namespace DC
                     _floaters.Add(f = new Floater { T = t });
                 }
             }
-            f.Live = true; f.Age = 0f; f.W = new Vector3(at.x, at.y + 0.5f, 0f);
+            // x preso dentro da sala: texto perto da parede nao sai cortado na borda da tela (~1,6 m = meia palavra de 50 px)
+            f.Live = true; f.Age = 0f; f.W = new Vector3(Mathf.Clamp(at.x, 1.6f, Balance.RoomW - 1.6f), at.y + 0.5f, 0f);
             f.T.text = s; f.T.color = c; f.T.fontSize = size; f.T.enabled = true;
             f.T.rectTransform.position = ToScreen(f.W);
         }
