@@ -124,6 +124,7 @@ namespace DC
                 case "armas": ShowMenu(); ShowGuild(true); break;
                 case "config": ShowMenu(); ShowSettings(); break;
                 case "creditos": ShowMenu(); ShowCredits(); break;
+                case "perk": ShowPerk(new[] { Perk.DoubleDash, Perk.Magnet, Perk.IronBoot }); break;   // o -bot escolhe sozinho: foto so por aqui
             }
         }
 
