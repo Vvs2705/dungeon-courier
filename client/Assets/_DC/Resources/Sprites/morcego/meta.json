@@ -13,11 +13,11 @@
  "ppu": 120.0,
  "pivot_px": [
   56.0,
-  35.1
+  45.4
  ],
  "pivot": [
   0.5,
-  0.3137
+  0.4051
  ],
  "light": "flat",
  "outline_px": 3,
@@ -26,6 +26,7 @@
  "model_scale": 0.7133,
  "hold": "",
  "attach": [],
+ "align_arms": false,
  "clips": [
   {
    "name": "Static",

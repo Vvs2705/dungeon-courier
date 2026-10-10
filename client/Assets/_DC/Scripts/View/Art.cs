@@ -24,7 +24,8 @@ namespace DC
         // interface e feedback
         public static readonly Color Ink = Hex(0xF7F3EA), Tinta = Hex(0x1B1724), Bad = Hex(0xFF3B30), Good = Hex(0x45C46B),
             Coin = Hex(0xF5A623), Gold = Hex(0xE0B23A), Paper = Hex(0xF3E2C0), PaperEdge = Hex(0xC9A877),
-            Bg = Hex(0x14161F), Dim = Hex(0x8A90A8), Off = Hex(0x4F5866), Dark = Hex(0x0E0F18);
+            Bg = Hex(0x14161F), Dim = Hex(0x8A90A8), Off = Hex(0x4F5866), Dark = Hex(0x0E0F18),
+            BadInk = Hex(0xA61E22);   // erro escrito sobre o papel (o #FF3B30 da 2,8:1 no papel; este da 5,8:1)
         // cenario
         public static readonly Color FloorA = Hex(0x3E4458), FloorB = Hex(0x394052), Joint = Hex(0x24273A), WallTop = Hex(0x5E6680),
             Wall = Hex(0x474D63), Skirt = Hex(0x2C3042), BlockTop = Hex(0x6B7390), Block = Hex(0x4E5570), BlockEdge = Hex(0x8A93B0),
@@ -34,14 +35,31 @@ namespace DC
             Cargo = Hex(0xFFE14D), BoxStrap = Hex(0x6E7487), Gem = Hex(0x5CE1E6), EggSpot = Hex(0xE8735A), Pet = Hex(0xE8735A),
             ThiefSkin = Hex(0x8DB255), BatWing = Hex(0xB5546A),
             Client = Hex(0x3FAE5A), Tele = Hex(0xFF3B30), Crack = Hex(0x1B1724), Chest = Hex(0x9A6432);
-        /// <summary>Cor dominante por PAPEL (indice de EnemyType): morcego vinho, ladrao roxo, guarda vermelho, bruto laranja-ferrugem, ogro musgo.</summary>
-        static readonly Color[] RoleC = { Hex(0x5B2A3A), Hex(0x8E44AD), Hex(0xB3262E), Hex(0xC8642B), Hex(0x6F8A4B) };
-        /// <summary>Corpo por carga: caixa madeira, reliquia porcelana, ovo casca.</summary>
-        static readonly Color[] CargoC = { Hex(0xC98A4B), Hex(0xF1EEE4), Hex(0xF3E3C3) };
-        public static Color Role(EnemyType t) => RoleC[(int)t];
-        public static Color CargoColor(CargoType t) => CargoC[(int)t];
-        /// <summary>Forma por carga: caixa = quadrado arredondado, reliquia = losango, ovo = oval.</summary>
-        public static Sprite CargoSprite(CargoType t) => t == CargoType.Box ? Rounded() : t == CargoType.Relic ? Diamond() : Egg();
+        /// <summary>Cor dominante por PAPEL (indice de EnemyType): morcego vinho, ladrao roxo, guarda vermelho, bruto laranja-ferrugem, ogro musgo;
+        /// v1 pelo ASSETS §8 (Lote 3): arqueiro ciano-petroleo, limo rosa-chiclete, Capitao Ladrao roxo fundo (familia do ladrao).</summary>
+        static readonly Color[] RoleC = { Hex(0x5B2A3A), Hex(0x8E44AD), Hex(0xB3262E), Hex(0xC8642B), Hex(0x6F8A4B), Hex(0x1E7A80), Hex(0xF26DB3), Hex(0x5E2A84) };
+        /// <summary>Corpo por carga: caixa madeira, reliquia porcelana, ovo casca; v1: bolo glace rosa, mensagem pergaminho, caixa pesada
+        /// madeira escura, barril siena.</summary>
+        static readonly Color[] CargoC = { Hex(0xC98A4B), Hex(0xF1EEE4), Hex(0xF3E3C3), Hex(0xF6D7E0), Hex(0xEADFC6), Hex(0x7D5A3C), Hex(0xA0522D) };
+        /// <summary>Indice fora da tabela (enum novo sem cor ainda) cai na ultima cor: nunca IndexOutOfRange no desenho.</summary>
+        public static Color Role(EnemyType t) => RoleC[Mathf.Clamp((int)t, 0, RoleC.Length - 1)];
+        public static Color CargoColor(CargoType t) => CargoC[Mathf.Clamp((int)t, 0, CargoC.Length - 1)];
+        /// <summary>Forma por carga (a forma, nao so a cor, diz qual e): caixa = quadrado arredondado, reliquia = losango, ovo = oval, bolo =
+        /// dois andares, mensagem = envelope, caixa pesada = quadrado com cintas, barril = tonel com aros.</summary>
+        public static Sprite CargoSprite(CargoType t)
+        {
+            switch (t)
+            {
+                case CargoType.Box: return Rounded();
+                case CargoType.Relic: return Diamond();
+                case CargoType.Cake: return Get("cake", (x, y) => (Mathf.Abs(x) < 0.85f && y > -0.85f && y < -0.1f) || (Mathf.Abs(x) < 0.55f && y >= -0.1f && y < 0.42f)
+                    || x * x + (y - 0.6f) * (y - 0.6f) < 0.03f);
+                case CargoType.Message: return Envelope();
+                case CargoType.Heavy: return Get("heavy", (x, y) => RoundedIn(x, y) && Mathf.Abs(Mathf.Abs(y) - 0.42f) > 0.07f);
+                case CargoType.Barrel: return Get("barrel", (x, y) => Mathf.Abs(y) < 0.92f && Mathf.Abs(x) < 0.6f + 0.2f * (1f - y * y) && Mathf.Abs(Mathf.Abs(y) - 0.5f) > 0.06f);
+                default: return Egg();
+            }
+        }
 
         // ---------- mascaras (x, y em [-1, 1]) ----------
         const int Side = 128;
@@ -72,12 +90,7 @@ namespace DC
             float rx = 0.74f - 0.14f * y;
             return x * x / (rx * rx) + y * y / 0.92f <= 1f;
         });
-        public static Sprite Star() => Get("star", (x, y) =>
-        {
-            const float seg = Mathf.PI * 2f / 5f;
-            float f = Mathf.Abs(Mathf.Repeat(Mathf.Atan2(x, y), seg) / seg * 2f - 1f);
-            return x * x + y * y <= Mathf.Pow(Mathf.Lerp(0.45f, 0.98f, f * f), 2f);
-        });
+        public static Sprite Star() => Get("star", (x, y) => StarIn(x, y));
         public static Sprite Heart() => Get("heart", (x, y) =>
         {
             float X = x * 1.2f, Y = y * 1.2f + 0.15f, a = X * X + Y * Y - 1f;
@@ -180,6 +193,43 @@ namespace DC
             return d <= 0.96f && d >= 0.66f && Mathf.Repeat(Mathf.Atan2(x, y) / (Mathf.PI * 2f), 1f) < k / 24f;
         });
         static readonly Sprite[] Arcs = new Sprite[25];
+
+        // ---------- icones das telas (menu, estrelas, armas, selo da guilda) ----------
+        static bool StarIn(float x, float y)
+        {
+            const float seg = Mathf.PI * 2f / 5f;
+            float f = Mathf.Abs(Mathf.Repeat(Mathf.Atan2(x, y), seg) / seg * 2f - 1f);
+            return x * x + y * y <= Mathf.Pow(Mathf.Lerp(0.45f, 0.98f, f * f), 2f);
+        }
+        /// <summary>Estrela vazada (so o contorno): estrela NAO ganha. A forma, e nao so a cor, diz ganhou/nao ganhou.</summary>
+        public static Sprite StarHollow() => Get("starO", (x, y) => StarIn(x, y) && !StarIn(x * 1.55f, y * 1.55f + 0.04f));
+        /// <summary>Visto (selecionado).</summary>
+        public static Sprite Check() => Get("check", (x, y) => SegD(x, y, -0.7f, 0f, -0.2f, -0.55f) < 0.15f || SegD(x, y, -0.2f, -0.55f, 0.75f, 0.6f) < 0.15f);
+        /// <summary>Estilingue: forquilha em Y com o elastico.</summary>
+        public static Sprite Sling() => Get("sling", (x, y) => SegD(x, y, 0f, -0.9f, 0f, -0.1f) < 0.13f || SegD(x, y, 0f, -0.1f, -0.55f, 0.75f) < 0.12f
+            || SegD(x, y, 0f, -0.1f, 0.55f, 0.75f) < 0.12f || SegD(x, y, -0.55f, 0.75f, 0f, 0.35f) < 0.05f || SegD(x, y, 0.55f, 0.75f, 0f, 0.35f) < 0.05f);
+        /// <summary>Bumerangue: barra em V aberto.</summary>
+        public static Sprite Boomerang() => Get("boom", (x, y) => SegD(x, y, -0.85f, -0.45f, 0f, 0.55f) < 0.17f || SegD(x, y, 0f, 0.55f, 0.85f, -0.45f) < 0.17f);
+        /// <summary>Bombinha: bola com pavio.</summary>
+        public static Sprite Bomb() => Get("bomb", (x, y) => (x + 0.1f) * (x + 0.1f) + (y + 0.15f) * (y + 0.15f) <= 0.5f
+            || SegD(x, y, 0.3f, 0.45f, 0.55f, 0.8f) < 0.08f || (x - 0.66f) * (x - 0.66f) + (y - 0.86f) * (y - 0.86f) < 0.025f);
+        /// <summary>Envelope com a aba em V (selo da guilda: envelope lacrado cruzado por uma chave, ART_BIBLE §12).</summary>
+        public static Sprite Envelope() => Get("envelope", (x, y) => Mathf.Abs(x) < 0.95f && Mathf.Abs(y) < 0.64f && Mathf.Abs(y - (0.64f - 0.75f * Mathf.Abs(x))) > 0.06f);
+        /// <summary>Chave na diagonal (argola em cima a direita, dentes embaixo a esquerda).</summary>
+        public static Sprite Key() => Get("key", (x, y) =>
+        {
+            float u = (x + y) * 0.7071f, v = (y - x) * 0.7071f, d = Mathf.Sqrt((u - 0.62f) * (u - 0.62f) + v * v);
+            return (Mathf.Abs(v) < 0.08f && u > -0.8f && u < 0.4f) || (d > 0.17f && d < 0.33f)
+                || (u > -0.8f && u < -0.66f && v < 0f && v > -0.3f) || (u > -0.56f && u < -0.44f && v < 0f && v > -0.24f);
+        });
+
+        static float SegD(float px, float py, float ax, float ay, float bx, float by)
+        {
+            float dx = bx - ax, dy = by - ay;
+            float t = Mathf.Clamp01(((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy));
+            float ex = px - (ax + t * dx), ey = py - (ay + t * dy);
+            return Mathf.Sqrt(ex * ex + ey * ey);
+        }
 
         static bool InTri(float px, float py, float ax, float ay, float bx, float by, float cx, float cy)
         {
@@ -339,99 +389,75 @@ namespace DC
             return img;
         }
 
-        /// <summary>Botao: painel arredondado + rotulo em negrito. Estados normal/aceso/apertado/desligado pelo ColorTint padrao do uGUI.</summary>
-        public static Button NewButton(Transform parent, string label, int size, Color color, Vector2 anchorMin, Vector2 anchorMax, Action onClick)
+        /// <summary>Botao: painel arredondado + rotulo em negrito. Estados normal/aceso/apertado/desligado pelo ColorTint padrao do uGUI.
+        /// som = "clique" (docs/AUDIO.md §1) ou "confirmar" nos botoes principais (jogar, comprar).</summary>
+        public static Button NewButton(Transform parent, string label, int size, Color color, Vector2 anchorMin, Vector2 anchorMax, Action onClick, string som = "clique")
         {
             Image img = Panel(parent, "Btn " + label, color, anchorMin, anchorMax);
             var b = img.gameObject.AddComponent<Button>();
             b.targetGraphic = img;
-            b.onClick.AddListener(() => { Sfx.Play("clique"); onClick(); });
+            b.onClick.AddListener(() => { Audio.Play(som); onClick(); });
             Text t = NewText(img.transform, "Rotulo", size, Vector2.zero, Vector2.one);
             t.text = label; t.color = Tinta; t.fontStyle = FontStyle.Bold;
             t.resizeTextForBestFit = true; t.resizeTextMinSize = Mathf.Max(10, size / 2); t.resizeTextMaxSize = size;
             return b;
         }
-    }
 
-    /// <summary>SFX sintetizados (padrao do Forge Street): varredura de seno com envelope, opcional ruido. Um nome por momento do GDD §2/§12.</summary>
-    public static class Sfx
-    {
-        static AudioSource _src;
-        static readonly Dictionary<string, AudioClip> Clips = new Dictionary<string, AudioClip>();
-        static readonly Dictionary<string, float> LastPlayed = new Dictionary<string, float>();
-
-        public static void Init(GameObject host)
+        /// <summary>Aumenta a area de toque de um botao pequeno sem mudar o desenho: filho transparente que recebe o raycast (o clique
+        /// sobe para o Button do pai). pad em px de referencia para cada lado.</summary>
+        public static void Toque(Component botao, float padX, float padY)
         {
-            _src = host.AddComponent<AudioSource>();
-            _src.playOnAwake = false;
-            Tone("pousar", 240, 120, 0.09f, 0.35f);     // baque curto e grave
-            Tone("pegar", 520, 980, 0.08f);            // pio subindo
-            Tone("carga", 900, 260, 0.2f, 0.7f);       // rachadura: ruido descendo
-            Tone("ladrao", 980, 380, 0.3f, 0.15f);     // escorregadio descendo
-            Tone("dash", 300, 1300, 0.15f, 0.8f);      // vento
-            Tone("tiro", 1700, 1300, 0.04f);           // disparo baixinho
-            Tone("golpe", 1200, 600, 0.06f, 0.3f);     // acertou inimigo
-            Tone("morte", 700, 160, 0.18f, 0.25f);     // inimigo caiu
-            Tone("dano", 420, 140, 0.22f, 0.3f);       // courier apanhou
-            Tone("aviso", 880, 840, 0.1f);             // telegraph
-            Tone("porta", 300, 620, 0.3f, 0.05f);      // atravessou a porta
-            Tone("bloqueio", 150, 120, 0.12f, 0.2f);   // porta fechada
-            Tone("entrega", 523, 1046, 0.7f);          // entrega
-            Tone("moedas", 1300, 2100, 0.14f);         // bau, pagamento
-            Tone("compra", 420, 1250, 0.5f);           // guilda
-            Tone("choca", 600, 1250, 0.35f, 0.05f);    // ovo chocou
-            Tone("quebra", 1400, 200, 0.4f, 0.8f);     // reliquia quebrou
-            Tone("clique", 700, 500, 0.05f);           // interface
-        }
-
-        /// <summary>Toca no maximo uma vez por `minGap` s por nome (varios golpes no mesmo quadro viram um).</summary>
-        public static void Play(string name, float pitch = 1f, float minGap = 0.05f)
-        {
-            if (_src == null || !Ajustes.Som || !Clips.TryGetValue(name, out AudioClip c)) return;
-            if (LastPlayed.TryGetValue(name, out float last) && Time.unscaledTime - last < minGap) return;
-            LastPlayed[name] = Time.unscaledTime;
-            _src.pitch = pitch;
-            _src.PlayOneShot(c, 0.55f);
-        }
-
-        static void Tone(string name, float f0, float f1, float dur, float noise = 0f)
-        {
-            const int rate = 44100;
-            int n = Mathf.CeilToInt(dur * rate);
-            var data = new float[n];
-            var rng = new System.Random(name.Length * 7919 + (int)f0);
-            double phase = 0;
-            for (int i = 0; i < n; i++)
-            {
-                float t = i / (float)n;
-                phase += 2 * Math.PI * Mathf.Lerp(f0, f1, t) / rate;
-                float env = Mathf.Min(1f, i / 200f) * Mathf.Exp(-4f * t);
-                float v = (float)Math.Sin(phase) * (1f - noise) + ((float)rng.NextDouble() * 2f - 1f) * noise;
-                data[i] = v * env * 0.5f;
-            }
-            AudioClip clip = AudioClip.Create(name, n, 1, rate, false);
-            clip.SetData(data, 0);
-            Clips[name] = clip;
+            Image hit = Node(botao.transform, "AreaDeToque", Vector2.zero, Vector2.one).gameObject.AddComponent<Image>();
+            hit.color = new Color(0f, 0f, 0f, 0f);
+            hit.rectTransform.offsetMin = new Vector2(-padX, -padY); hit.rectTransform.offsetMax = new Vector2(padX, padY);
+            hit.rectTransform.SetAsFirstSibling();
         }
     }
 
-    /// <summary>Som e Vibracao no PlayerPrefs (dc_som, dc_vibra; 1 = ligado), fora do save de progresso (valem no -testsession).
-    /// Vibracao so no Android (Handheld.Vibrate); no PC a chave aparece desligada.</summary>
+    /// <summary>Ajustes do jogador no PlayerPrefs, fora do save de progresso (valem no -testsession): volume de Som e de Musica (o Audio
+    /// guarda 0..1 em dc.som/dc.musica; a tela mostra 10 degraus), Vibracao (dc_vibra; so no Android, Handheld.Vibrate; no PC aparece
+    /// "so no celular") e Idioma (dc_idioma "pt"/"en"; 1ª abertura: portugues se o aparelho estiver em portugues, senao ingles).</summary>
     public static class Ajustes
     {
-        const string SomKey = "dc_som", VibraKey = "dc_vibra";
+        const string VibraKey = "dc_vibra", IdiomaKey = "dc_idioma", SomV01 = "dc_som";
+        public const int VolMax = 10;
         public static readonly bool TemVibra = Application.platform == RuntimePlatform.Android;
-        static int _som = -1, _vibra = -1;
+        static int _vibra = -1;
         static float _last = -99f;
 
-        public static bool Som { get => Read(SomKey, ref _som); set => Write(SomKey, ref _som, value); }
-        public static bool Vibra { get => TemVibra && Read(VibraKey, ref _vibra); set => Write(VibraKey, ref _vibra, value); }
+        /// <summary>Le o idioma; o som desligado da v0.1 (dc_som = 0) vira volume 0. Chamar no Awake, antes de montar as telas.</summary>
+        public static void Init()
+        {
+            string lang = PlayerPrefs.GetString(IdiomaKey, "");
+            Textos.En = lang == "" ? Application.systemLanguage != SystemLanguage.Portuguese : lang == "en";
+            if (!PlayerPrefs.HasKey("dc.som") && PlayerPrefs.GetInt(SomV01, 1) == 0) SetVol(0, VolMusica);
+        }
 
-        static bool Read(string key, ref int v) { if (v < 0) v = PlayerPrefs.GetInt(key, 1); return v == 1; }
-        static void Write(string key, ref int v, bool on) { v = on ? 1 : 0; PlayerPrefs.SetInt(key, v); PlayerPrefs.Save(); }
+        public static bool Ingles
+        {
+            get => Textos.En;
+            set { Textos.En = value; PlayerPrefs.SetString(IdiomaKey, value ? "en" : "pt"); PlayerPrefs.Save(); }
+        }
 
-        /// <summary>Vibra (carga atingida, entrega perfeita), no maximo 1 a cada `gap` s. ponytail: Handheld.Vibrate tem duracao fixa
-        /// (~0,4 s); se ficar longo demais no aparelho, trocar por Vibrator.vibrate(ms) via JNI como o Ajustes.Pulso do Forge Street.</summary>
+        /// <summary>0..10 (degraus da tela) sobre o Audio.Som/Musica 0..1.</summary>
+        public static int VolSom { get => Mathf.RoundToInt(Audio.Som * VolMax); set => SetVol(value, VolMusica); }
+        public static int VolMusica { get => Mathf.RoundToInt(Audio.Musica * VolMax); set => SetVol(VolSom, value); }
+
+        static void SetVol(int som, int musica)
+        {
+            Audio.SetVolumes(Mathf.Clamp(som, 0, VolMax) / (float)VolMax, Mathf.Clamp(musica, 0, VolMax) / (float)VolMax);
+            PlayerPrefs.Save();   // o Audio.SetVolumes nao grava sozinho
+        }
+
+        public static bool Vibra
+        {
+            get { if (_vibra < 0) _vibra = PlayerPrefs.GetInt(VibraKey, 1); return TemVibra && _vibra == 1; }
+            set { _vibra = value ? 1 : 0; PlayerPrefs.SetInt(VibraKey, _vibra); PlayerPrefs.Save(); }
+        }
+
+        /// <summary>Vibra (carga atingida, explosao, pancada do Ogro, entrega perfeita), no maximo 1 a cada `gap` s. ponytail:
+        /// Handheld.Vibrate tem duracao fixa (~0,4 s); se ficar longo demais no aparelho, trocar por Vibrator.vibrate(ms) via JNI como o
+        /// Ajustes.Pulso do Forge Street.</summary>
         public static void Vibrar(float gap = 0.3f)
         {
             if (!Vibra || Time.unscaledTime - _last < gap) return;

@@ -6,7 +6,7 @@ Uso (da raiz do repositorio):
 Saida: client/Builds/sprites_contact/<ator>_folhas.png (uma faixa por clipe) ou elenco.png.
 
 Cada faixa: xadrez cinza, todas as linhas (direcoes) x quadros, linha do pivo (pe) em vermelho e rotulo com
-quadros, fps, duracao, laco e passada. Nos clipes Carry*, a carga (quadro Static do conjunto --carga) entra
+quadros, fps, duracao, laco e passada; imprime a margem minima ate a borda (0 = recorte). Nos clipes Carry*, a carga (quadro Static do conjunto --carga) entra
 no ponto das maos, por cima do portador se frente = 1 e por baixo se 0, como a View faz (RENDER_SPRITES.md sec. 4).
 --escala 0.5 deixa a celula de 224 px com ~112 px: o tamanho do courier na tela de 1080 px.
 """
@@ -43,6 +43,11 @@ def strip(d, meta, clip, carga):
         label += "  passada %.2f m/s" % clip["stride_mps"]
     dr.rectangle([0, 0, n * s, 21], fill=(27, 23, 36, 255))
     dr.text((6, 5), label, fill=(247, 243, 234, 255))
+    # margem do conteudo ate a borda da celula: 0 = encosta (recorte; suba a celula do preset). Contorno incluso
+    al = sheet.split()[-1].point(lambda v: 255 if v > 8 else 0)
+    boxes = [al.crop((i * s, r * s, i * s + s, r * s + s)).getbbox() for r in range(rows) for i in range(n)]
+    margin = min((min(b[0], b[1], s - b[2], s - b[3]) for b in boxes if b), default=s)
+    print("  %s margem minima %d px%s" % (clip["name"], margin, "  AVISO encosta na borda da celula" if margin <= 0 else ""))
     hands = clip.get("hands") if (carga and clip["name"].startswith("Carry")) else None  # so quem leva a carga
     if hands:  # a flag "frente" nao pode piscar dentro de uma linha (carga por cima/por baixo a cada quadro)
         print("  %s frente: %s" % (clip["name"], " ".join("%s=%s" % (meta["dir_order"][r], "".join(

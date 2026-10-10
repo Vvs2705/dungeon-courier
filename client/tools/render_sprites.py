@@ -11,6 +11,9 @@ estatico para props). O que o DC acrescenta (docs/RENDER_SPRITES.md):
   --attach SPEC      prop preso a um osso (escudo no antebraco): FBX:osso:dx,dy,dz:rx,ry,rz:tamanho (repetivel)
   meta.json "hands"  por clipe: ponto entre as maos (x, y em px na celula; 1 = na frente do corpo) por direcao x quadro
   meta.json "stride_mps"  clipe em laco com deslocamento do quadril: velocidade natural (m/s) na escala do ator
+  preset "clips"     por clipe: frames = quadros fixos (corrida sem subquadro); range = faixa do clipe de origem
+                     (janela de laco do Breathing Idle, que inteiro tem 9,9 s); vai para o meta como "src_range"
+  --align-arms       rig em pose A (bruto, ogro): os ossos do braco partem do repouso em T do clipe
 Quadril: o deslocamento horizontal comeca na origem (1o quadro) e, em clipe em laco, a deriva linear sai (clipe com
 root motion vira "in place"; o pe nao patina se a View tocar no ritmo de stride_mps).
 
@@ -29,7 +32,7 @@ em Z e transladada no plano da camera (em ORTHO a translacao no plano nao muda a
 """
 import argparse, glob, json, math, os, re, sys, time
 import bpy
-from mathutils import Euler, Matrix, Vector
+from mathutils import Euler, Matrix, Quaternion, Vector
 
 DIRS = {1: ["S"], 4: ["S", "W", "N", "E"], 8: ["S", "SW", "W", "NW", "N", "NE", "E", "SE"]}
 LIGHT = {"flat": ("FLAT", None), "matcap": ("MATCAP", "toon_light.exr"), "studio": ("STUDIO", "Default")}
@@ -44,17 +47,37 @@ INK = (0x1B / 255.0, 0x17 / 255.0, 0x24 / 255.0)  # tinta do contorno, ART_BIBLE
 # Padroes genericos e tabela de atores do DC. Um argumento na linha vence o preset, que vence BASE.
 # ponytail: escala por ator numa tabela so; mudar aqui = re-render daquele ator, nada muda no Core
 BASE = dict(elev=60.0, dirs=4, fps=12.0, size=128, scale=0.0, yaw=0.0, light="flat", aa="8", max_frames=32,
-            height=0.0, width=0.0, mirror=False, outline=0)
+            height=0.0, width=0.0, mirror=False, outline=0, clips={}, align_arms=False)
 DC = dict(scale=120.0, outline=3, max_frames=12)  # 120 px/m na textura; a View mostra ~112 px/m (9,6 m em 1080 px)
+# Por clipe (preset "clips"): frames = quadros fixos (vence fps e teto); range = (ini, fim) quadros do clipe de origem.
+# BREATH: janela de laco do Breathing Idle (Forge, 1-299 = 9,9 s; tocado inteiro em 12 quadros dava 1,2 fps). 199-289 =
+# 3,0 s com a menor costura entre as janelas de 2-3 s: 2,2 cm na mao direita (X Bot de 1,8 m; ~1,6 cm no courier)
+BREATH = dict(range=(199, 289))
+RUN8 = dict(frames=8)  # Sprint do ARKANA: ciclo de 16 quadros de 2 em 2, sem subquadro (6 quadros pulavam 2,67)
 PRESETS = {
-    "courier": dict(DC, height=1.30, dirs=8, mirror=True, size=224),
+    "courier": dict(DC, height=1.30, dirs=8, mirror=True, size=224,
+                    clips={"Idle": BREATH, "CarryIdle": BREATH, "Run": RUN8, "CarryRun": RUN8, "Throw": dict(frames=10)}),
     "courier_fim": dict(DC, height=1.30, dirs=1, size=320),
     "ladrao": dict(DC, height=1.00, dirs=4, mirror=True, size=160),
     "guarda": dict(DC, height=1.50, dirs=4, mirror=True, size=224),
-    "cliente": dict(DC, height=1.35, dirs=1, size=192),
-    "bruto": dict(DC, height=1.80, dirs=4, mirror=True, size=256),
-    "ogro": dict(DC, height=2.80, dirs=4, mirror=True, size=384, max_frames=10),
-    "ogro_fim": dict(DC, height=2.80, dirs=1, size=448, max_frames=9),
+    "cliente": dict(DC, height=1.35, dirs=1, size=192, clips={"Idle": BREATH}),
+    # bruto e ogro: rig do Tripo feito de imagem em pose A (braco em repouso a -49,5 / -22 graus; X Bot a 0): align_arms
+    # bruto: celula 336 (era 256) porque os bracos longos no alto do Smash e o punho a frente saiam da celula (2026-10-10)
+    "bruto": dict(DC, height=1.80, dirs=4, mirror=True, size=336, align_arms=True, clips={"Idle": BREATH}),
+    # ogro: 448 x 9 (era 384 x 10): o chefe de 2,8 m com os punhos no alto do Slam nao cabia em 384 (2026-10-10)
+    "ogro": dict(DC, height=2.80, dirs=4, mirror=True, size=448, max_frames=9, align_arms=True, clips={"Idle": BREATH}),
+    # ogro_fim: 576 x 7 (era 448 x 9): o chefe deitado de costas mede ~4,3 m na tela (2026-10-10)
+    "ogro_fim": dict(DC, height=2.80, dirs=1, size=576, max_frames=7, align_arms=True),
+    # Lote 3 (2026-10-10): arqueiro com o arco preso a mao esquerda (--attach na linha), capitao com o Hold do ladrao
+    "arqueiro": dict(DC, height=1.35, dirs=4, mirror=True, size=224, clips={"Idle": BREATH}),
+    "capitao": dict(DC, height=1.25, dirs=4, mirror=True, size=192, clips={"Idle": BREATH}),
+    "limo": dict(DC, height=0.60, dirs=1, size=128),
+    "bolo": dict(DC, width=0.60, dirs=1, size=112),
+    "mensagem": dict(DC, width=0.45, dirs=1, size=96),
+    "caixa_pesada": dict(DC, width=0.70, dirs=1, size=128),
+    "barril": dict(DC, height=0.55, dirs=1, size=96),
+    "tocha": dict(DC, height=0.70, dirs=1, size=112),
+    "pilar": dict(DC, width=1.20, dirs=1, size=288),  # 1,2 m de largura -> ~2,2 m de altura (proporcao do modelo)
     "morcego": dict(DC, width=0.70, dirs=1, size=112),
     "filhote": dict(DC, height=0.50, dirs=1, size=96),
     "caixa": dict(DC, width=0.50, dirs=1, size=112),
@@ -101,9 +124,11 @@ def parse_args():
     p.add_argument("--aa", help="OFF|FXAA|5|8|11|16|32")
     p.add_argument("--max-frames", type=int, help="teto de quadros por clipe (largura da folha)")
     p.add_argument("--outline", type=int, help="px de contorno de tinta (0 = sem)")
+    p.add_argument("--align-arms", action="store_true", default=None,
+                   help="rig em pose A: os ossos do braco partem do repouso do clipe (T), nao do proprio")
     a = p.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
     for k, v in dict(BASE, **PRESETS.get(a.preset, {})).items():
-        if getattr(a, k) is None:
+        if getattr(a, k, None) is None:
             setattr(a, k, v)
     return a
 
@@ -214,7 +239,7 @@ def hold_pose(path, frame):
     return hold
 
 
-def retarget(src, tgt, name, hold=None):
+def retarget(src, tgt, name, hold=None, rng=None, align_arms=False):
     """Leva o clipe do armature `src` para `tgt` pelo DELTA de rotacao de cada osso em relacao ao proprio repouso
     (no mundo), e nao pela rotacao local crua. Copiar a action so funciona com repouso/roll identicos; o rig
     Mixamo do Tripo e o X Bot do Mixamo diferem (bracos subiam acima da cabeca, 2026-10-06). O quadril tambem
@@ -223,10 +248,26 @@ def retarget(src, tgt, name, hold=None):
     seguram a carga.
     Quadril: o deslocamento horizontal parte da origem no 1o quadro e, em clipe em laco, perde a deriva linear (os
     runs do ARKANA vem com root motion: o quadril anda 2,2 m e o boneco sairia da celula). A deriva retirada, na
-    escala do alvo, vira action["stride_mps"] = velocidade em que o pe nao patina."""
+    escala do alvo, vira action["stride_mps"] = velocidade em que o pe nao patina. Com `rng` = (ini, fim), so essa
+    faixa do clipe de origem entra (janela de laco de um idle longo)."""
     sact = src.animation_data.action
     s, e = (int(round(x)) for x in sact.frame_range)
+    if rng and not s <= rng[0] < rng[1] <= e:  # outro FBX com o mesmo nome (ex.: Idle do placeholder no -Teste)
+        print("AVISO faixa %d-%d fora do clipe %s (%d-%d): usa o clipe inteiro" % (rng[0], rng[1], name, s, e))
+        rng = None
+    if rng:
+        s, e = rng
     tb, sb = tgt.data.bones, src.data.bones
+    # Rig em pose A (Tripo a partir de imagem em A): o delta sobre o repouso levaria o braco do A tanto quanto leva o do
+    # T, e o braco entraria no corpo (~50 graus no bruto). Com align_arms, cada osso do braco primeiro gira do repouso
+    # do alvo para a direcao do repouso do clipe (arco minimo) e so entao recebe o delta: a direcao do braco = a do clipe.
+    align = {}
+    if align_arms:
+        for n in bone_order(tgt):
+            if n in sb and ARM_RE.search(n):
+                ut = ((tgt.matrix_world @ tb[n].tail_local) - (tgt.matrix_world @ tb[n].head_local)).normalized()
+                us = ((src.matrix_world @ sb[n].tail_local) - (src.matrix_world @ sb[n].head_local)).normalized()
+                align[n] = ut.rotation_difference(us)
     order = bone_order(tgt)
     found = [n for n in order if n in sb]
     if len(found) < len(order) // 2:
@@ -261,7 +302,7 @@ def retarget(src, tgt, name, hold=None):
                 if hold and n in hold and b.parent and b.parent.name in deltas:
                     d = deltas[b.parent.name] @ hold[n]
                 deltas[n] = d
-                rot = qWt_inv @ d @ (Wt @ b.matrix_local).to_quaternion()
+                rot = qWt_inv @ d @ align.get(n, Quaternion()) @ (Wt @ b.matrix_local).to_quaternion()
                 head = attach.translation
                 if not b.parent:
                     off = spose.translation - srest.translation - anchor - drift * ((f - s) / max(e - s, 1))
@@ -273,6 +314,8 @@ def retarget(src, tgt, name, hold=None):
             if not b.parent:
                 pb.keyframe_insert("location", frame=f)
     ad.action["stride_mps"] = drift.length * k * bpy.context.scene.render.fps / max(e - s, 1)
+    if rng:
+        ad.action["src_range"] = list(rng)
     return ad.action
 
 
@@ -287,7 +330,8 @@ def load_clips(a, arm, hold):
         srcs = [o for o in objs if o.type == "ARMATURE" and o.animation_data and o.animation_data.action]
         name = os.path.splitext(os.path.basename(f))[0]
         if srcs:
-            clips.append((name, retarget(srcs[0], arm, name, hold if name.lower().startswith("carry") else None)))
+            clips.append((name, retarget(srcs[0], arm, name, hold if name.lower().startswith("carry") else None,
+                                         a.clips.get(name, {}).get("range"), a.align_arms)))
         else:
             print("AVISO sem animacao: " + f)
         bpy.data.batch_remove(objs)
@@ -296,12 +340,12 @@ def load_clips(a, arm, hold):
     return clips
 
 
-def sample_frames(act, a):
+def sample_frames(act, a, name):
     s, e = act.frame_range
     span = max(e - s, 1.0)  # em clipe em laco a pose do fim == inicio: amostra [s, e)
     # ponytail: teto de quadros por clipe (folha <= max_frames*size px; 4096 e o teto seguro de textura no celular);
-    # clipe longo (Breathing Idle ~4 s) fica com fps menor, gravado por clipe no meta.json
-    n = max(1, min(a.max_frames, int(round(span / a.src_fps * a.fps))))
+    # clipe longo fica com fps menor, gravado por clipe no meta.json; "frames" do preset fixa o numero do clipe
+    n = a.clips.get(name, {}).get("frames") or max(1, min(a.max_frames, int(round(span / a.src_fps * a.fps))))
     return [s + i * span / n for i in range(n)]
 
 
@@ -311,19 +355,26 @@ def eval_meshes(meshes, fr):
     return [ob.evaluated_get(dg) for ob in meshes]
 
 
-def bounds(arm, meshes, clips, e):
-    """Raio horizontal maximo e extremos verticais na tela (valem para qualquer giro em Z) em todos os frames,
-    pelos vertices reais: a bound_box combina z do topo com o raio da mao e inflava a celula em ~40%."""
-    rho, vmin, vmax = 0.0, 0.0, 0.0
+def bounds(arm, meshes, clips, e, thetas):
+    """Meia largura maxima e extremos verticais na tela, pelos vertices reais, so nas direcoes renderizadas (`thetas`;
+    o espelho tem a mesma medida). Ate 2026-10-10 usava o raio horizontal (vale para qualquer giro) e superestimava
+    o ator que cai deitado: o ogro_fim (Dying para tras) dava 8,2 m e o pivo ia para o meio da celula, cortando o corpo."""
+    import numpy as np
+    half, vmin, vmax = 0.0, 0.0, 0.0
     for _, act, frames in clips:
         set_action(arm, act)
         for fr in frames:
             for ev in eval_meshes(meshes, fr):
-                for v in ev.data.vertices:
-                    p = ev.matrix_world @ v.co
-                    r = math.hypot(p.x, p.y)
-                    rho, vmin, vmax = max(rho, r), min(vmin, p.z * math.cos(e) - r * math.sin(e)), max(vmax, p.z * math.cos(e) + r * math.sin(e))
-    return rho, vmin, vmax
+                n = len(ev.data.vertices)
+                co = np.empty(n * 3, np.float64)
+                ev.data.vertices.foreach_get("co", co)
+                M = np.array(ev.matrix_world)
+                p = co.reshape(n, 3) @ M[:3, :3].T + M[:3, 3]
+                for th in thetas:  # giro em Z como em place(); tela: x = right, y = up = (0, sen e, cos e)
+                    x = p[:, 0] * math.cos(th) - p[:, 1] * math.sin(th)
+                    v = (p[:, 0] * math.sin(th) + p[:, 1] * math.cos(th)) * math.sin(e) + p[:, 2] * math.cos(e)
+                    half, vmin, vmax = max(half, float(np.abs(x).max())), min(vmin, float(v.min())), max(vmax, float(v.max()))
+    return half, vmin, vmax
 
 
 def place(meshes, fr, theta, shift, keep):
@@ -404,7 +455,7 @@ def main():
         meshes += extra
     hold =hold_pose(os.path.abspath(a.hold), a.hold_frame) if (a.hold and arm and not a.self_) else None
     # sem armature = prop estatico: 1 quadro "Static", mesma camera e escala dos personagens
-    clips = [(n, act, sample_frames(act, a)) for n, act in load_clips(a, arm, hold)] if arm else [("Static", None, [0.0])]
+    clips = [(n, act, sample_frames(act, a, n)) for n, act in load_clips(a, arm, hold)] if arm else [("Static", None, [0.0])]
     rows = DIRS[a.dirs][: a.dirs // 2 + 1] if (a.mirror and a.dirs > 1) else DIRS[a.dirs]
     hands = [b for b in arm.pose.bones if HAND_RE.search(b.name)] if arm else []
     root = arm.pose.bones[bone_order(arm)[0]] if arm else None
@@ -413,8 +464,8 @@ def main():
 
     e = math.radians(a.elev)
     fwd, up, right = Vector((0, math.cos(e), -math.sin(e))), Vector((0, math.sin(e), math.cos(e))), Vector((1, 0, 0))
-    rho, vmin, vmax = bounds(arm, meshes, clips, e)
-    extent = max(2 * rho, vmax - vmin) * 1.1
+    half, vmin, vmax = bounds(arm, meshes, clips, e, [math.radians(a.yaw - d * 360.0 / a.dirs) for d in range(len(rows))])
+    extent = max(2 * half, vmax - vmin) * 1.1
     ppu = a.scale or a.size / extent
     cell = a.size / ppu  # metros por celula
     if extent > cell:
@@ -442,7 +493,7 @@ def main():
             "row0": "top", "elev": a.elev, "yaw": a.yaw, "ppu": round(ppu, 2), "pivot_px": [a.size / 2.0, round(pivot_y, 1)],
             "pivot": [0.5, round(pivot_y / a.size, 4)], "light": a.light, "outline_px": a.outline, "src_fps": a.src_fps,
             "preset": a.preset or "", "model_scale": round(k_model, 4), "hold": os.path.basename(a.hold) if hold else "",
-            "attach": [os.path.basename(s) for s in a.attach], "clips": []}  # listas planas: JsonUtility nao le lista de listas
+            "attach": [os.path.basename(s) for s in a.attach], "align_arms": bool(a.align_arms), "clips": []}  # listas planas: JsonUtility nao le lista de listas
     keep = []
     for name, act, frames in clips:
         t0 = time.time()
@@ -461,6 +512,8 @@ def main():
         dur = max(span, 1.0) / a.src_fps
         clip = {"name": name, "file": name + ".png", "frames": len(frames), "loop": loop,
                 "fps": round(len(frames) / dur, 3), "duration_s": round(dur, 3), "src_frames": int(round(span))}
+        if act and act.get("src_range"):
+            clip["src_range"] = [int(x) for x in act["src_range"]]  # rastreio: faixa do clipe de origem
         if hands:
             clip["hands"] = anchors  # (row * frames + frame) * 3 -> x, y, frente
         stride = act.get("stride_mps", 0.0) if act else 0.0

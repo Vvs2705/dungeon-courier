@@ -1,5 +1,20 @@
 # RENDER_SPRITES — modelo 3D rigado → folhas de sprite 2D (Dungeon Courier)
 
+## Estado em 2026-10-10 (raia G, tech-art e animação)
+
+- **Os 24 conjuntos foram re-renderizados com os scripts finais.** Todos saíram com exit 0 e `SPRITES_OK`, e o `folhas.py` conferiu a margem até a borda da célula. Ainda sem aprovação visual do Vinicius.
+  - Lote 1: os 9 conjuntos.
+  - Lote 2: `bruto`, `ogro`, `ogro_fim`, `reliquia`, `ovo`, `filhote`.
+  - Lote 3: `arqueiro` (arco preso à mão esquerda), `capitao` (com `Punch` para o golpe que a View espera), `limo`, `bolo`, `mensagem`, `caixa_pesada`, `barril`, `tocha`, `pilar`.
+- **Polimento do Lote 1:**
+  - `Shrug` frontal do cliente (antes era o Looking Around, que vira o corpo de costas).
+  - Idle numa janela de laço de 3,0 s (antes 9,9 s a 1,2 fps).
+  - Corrida do courier com 8 quadros, sem subquadro.
+  - Throw, Dash, Hit, Bash e Grab refeitos: antecipação, follow-through, tronco e cabeça, pé no chão em todo quadro (§9).
+- **No `render_sprites.py`:** `clips` por preset (quadros fixos e faixa do clipe), `--align-arms` para rig em pose A (bruto e ogro) e limites medidos só nas direções renderizadas (§1).
+- **Medidas para a View** (quadro de impacto ou de soltura e passada): `ASSETS.md` §5.
+- **Proveniência:** `PROVENIENCIA.md` §3 e §5.
+
 ## Estado em 2026-10-09 (raia D, tech-art)
 
 - **EXECUTADO no Lote 1, sem aprovação visual do Vinicius ainda.** O `-Teste` (§6) passou com exit 0. Os 9 conjuntos do Lote 1 saíram com exit 0 e `SPRITES_OK`: `courier`, `courier_fim`, `ladrao`, `guarda` (com o escudo preso), `cliente`, `caixa`, `bau`, `arco` e `morcego`. Ficam em `client/Assets/_DC/Resources/Sprites/`.
@@ -41,6 +56,9 @@ O que entra para o DC:
 | Quadril ancorado no 1º quadro; laço sem deriva (2026-10-09) | Os runs do ARKANA vêm com root motion (o quadril anda 2,2 m em 0,8 s) e o boneco sairia da célula; o Cheering do Forge vem 0,27 m deslocado do pivô |
 | `meta.json` → `stride_mps` (2026-10-09) | Passada natural medida na própria deriva do quadril: a View acerta o fps da corrida sem medir na folha |
 | `frente` com folga de 15% da altura do quadril (2026-10-09) | De perfil (W), a mão fica no plano do quadril e a carga piscava por cima e por baixo a cada quadro (`W=111000` no CarryRun) |
+| `clips` no preset (2026-10-10) | Por clipe, `frames` fixa os quadros e `range` usa só uma faixa do clipe de origem. Exemplos: Run e CarryRun do courier com 8 quadros, de 2 em 2 sem subquadro (6 pulavam 2,67); Breathing Idle de 199 a 289 = laço de 3,0 s. Faixa fora do FBX vira `AVISO` e o clipe entra inteiro (é o caso do `-Teste`) |
+| `--align-arms` (presets `bruto`, `ogro`, `ogro_fim`; 2026-10-10) | O Tripo rigou o bruto e o ogro a partir de imagem em pose A: braço em repouso a −49,5° e −22°, contra 0° no X Bot. O delta sobre o repouso levava o braço do A tanto quanto o do T, e ele entrava no corpo. Agora cada osso do braço parte da direção de repouso do clipe |
+| Limites só nas direções renderizadas (2026-10-10) | O raio horizontal (válido para qualquer giro) superestimava quem cai deitado. O `ogro_fim` dava 8,2 m e o pivô ia ao meio da célula, cortando o corpo. Agora é a projeção real de cada linha (numpy) |
 
 ## 2. Como usar
 
@@ -65,9 +83,26 @@ O que entra para o DC:
 python client\tools\folhas.py client\Assets\_DC\Resources\Sprites\courier client\Assets\_DC\Resources\Sprites\ladrao --carga client\Assets\_DC\Resources\Sprites\caixa
 ```
 
+**Comandos do polimento e dos Lotes 2 e 3 (2026-10-10).** Mesmas cópias em caminho curto. Os clipes do Blender saem do `anim_blender.py` (§9) e são copiados para `arte\mixamo\<conjunto>\` (tabela em `PROVENIENCIA.md` §3).
+
+```
+blender.exe -b --factory-startup --python-exit-code 1 --python client\tools\anim_blender.py -- --rig %TEMP%\dc_arte\mixamo\courier\Idle.fbx --out %TEMP%\dc_anim_v2 --only Throw,Dash,Hit,GuardIdle,Bash,Grab,Shrug,Smash,Slam,Roar,Shoot,Call
+.\client\tools\render_sprites.ps1 -Nome bruto    -Model $env:TEMP\dc_in\bruto\tripo_convert_c1fe3cb8-....fbx    -Anims $env:TEMP\dc_arte\mixamo\bruto
+.\client\tools\render_sprites.ps1 -Nome ogro     -Model $env:TEMP\dc_in\ogro\tripo_convert_b3759572-....fbx     -Anims $env:TEMP\dc_arte\mixamo\ogro
+.\client\tools\render_sprites.ps1 -Nome ogro_fim -Model (o do ogro)                                          -Anims $env:TEMP\dc_arte\mixamo\ogro_fim
+.\client\tools\render_sprites.ps1 -Nome arqueiro -Model $env:TEMP\dc_in\arqueiro\tripo_convert_85f16e73-....fbx -Anims $env:TEMP\dc_arte\mixamo\arqueiro `
+    -Extra @("--attach", "$env:TEMP\dc_in\arcoflecha\tripo_convert_c9a4beee-....fbx:LeftHand:-0.06,0,-0.015:90,180,0:0.8")
+.\client\tools\render_sprites.ps1 -Nome capitao  -Model $env:TEMP\dc_in\capitao\tripo_convert_041909b7-....fbx  -Anims $env:TEMP\dc_arte\mixamo\capitao -Hold $env:TEMP\dc_arte\mixamo\Hold.fbx
+.\client\tools\render_sprites.ps1 -Nome reliquia -Model $env:TEMP\dc_in\reliquia\tripo_convert_0a9e5d99-....fbx  (ovo, filhote, limo, bolo, mensagem, caixa_pesada, barril, tocha, pilar: idem)
+python client\tools\folhas.py client\Assets\_DC\Resources\Sprites\<ator> [--carga client\Assets\_DC\Resources\Sprites\caixa]
+```
+
+Os 9 do Lote 1 usam os comandos de cima. Os 24 conjuntos foram re-renderizados em sequência, um Blender por vez, com espera enquanto o Unity estivesse aberto.
+
 **Tempo medido** (PC de 7,7 GB):
-- Prop: 11 a 30 s.
-- Personagem: 2 a 3,5 min, quase todo no import do FBX do Tripo, que tem malha com pele.
+- Prop: 3 a 30 s.
+- Personagem: 2 a 3,5 min em 2026-10-09; de 2 a 9 min em 2026-10-10 (122 a 532 s), com ~1 GB livre.
+- O tempo vai quase todo no import do FBX do Tripo, que tem malha com pele. O `.ps1` corta em 900 s.
 
 **Onde sai cada coisa:**
 - Saída do `.ps1`: `client/Assets/_DC/Resources/Sprites/<Nome>/`.
@@ -84,6 +119,7 @@ python client\tools\folhas.py client\Assets\_DC\Resources\Sprites\courier client
 - Caminhos curtos. Se der "Please select a file", é MAX_PATH: copie o FBX para `%TEMP%`.
 - O import do FBX 2K leva 2–3 min.
 - O `Hold.fbx` fica **fora** da pasta `-Anims`. Se ficar dentro, o script pula o arquivo.
+- `OpenImageIO write failed: Could not open file ...png` (exit 1) foi uma trava passageira no PNG recém-gravado; rodar de novo resolveu (courier, 2026-10-10).
 
 | Parâmetro (`.py`) | Padrão (sem preset) | Presets do DC | O que faz |
 |---|---|---|---|
@@ -110,21 +146,28 @@ python client\tools\folhas.py client\Assets\_DC\Resources\Sprites\courier client
 
 Todos os presets usam `scale` 120, `outline` 3 e `max_frames` 12, exceto onde a tabela indica outro valor.
 
-| Preset | Normalização | Direções (linhas) | Célula | Folha mais larga |
-|---|---|---|---|---|
-| `courier` | altura 1,30 m | 8 com espelho (5) | 224 | 12 × 224 = 2 688 px |
-| `courier_fim` | altura 1,30 m | 1 | 320 | 3 840 px |
-| `ladrao` | altura 1,00 m | 4 com espelho (3) | 160 | 1 920 px |
-| `guarda` | altura 1,50 m | 4 com espelho (3) | 224 | 2 688 px |
-| `cliente` | altura 1,35 m | 1 | 192 | 2 304 px |
-| `bruto` | altura 1,80 m | 4 com espelho (3) | 256 | 3 072 px |
-| `ogro` | altura 2,80 m | 4 com espelho (3) | 384 (max 10) | 3 840 px |
-| `ogro_fim` | altura 2,80 m | 1 | 448 (max 9) | 4 032 px |
-| `morcego` / `filhote` | largura 0,70 m / altura 0,50 m | 1 | 112 / 96 | — |
-| `caixa` / `reliquia` / `ovo` | largura 0,50 m / altura 0,55 m / altura 0,55 m | 1 | 112 / 96 / 96 | — |
-| `bau` / `bau_aberto` / `arco` | largura 0,80 / 0,80 / 2,20 m | 1 | 160 / 160 / 448 | — |
+| Preset | Normalização | Direções (linhas) | Célula | Folha mais larga | Por clipe (`clips`) e extras |
+|---|---|---|---|---|---|
+| `courier` | altura 1,30 m | 8 com espelho (5) | 224 | 12 × 224 = 2 688 px | Idle e CarryIdle 199–289; Run e CarryRun 8 quadros; Throw 10 |
+| `courier_fim` | altura 1,30 m | 1 | 320 | 3 840 px | — |
+| `ladrao` | altura 1,00 m | 4 com espelho (3) | 160 | 1 920 px | — |
+| `guarda` | altura 1,50 m | 4 com espelho (3) | 224 | 2 688 px | escudo pelo `--attach` na linha |
+| `cliente` | altura 1,35 m | 1 | 192 | 2 304 px | Idle 199–289 |
+| `bruto` | altura 1,80 m | 4 com espelho (3) | **336** (era 256) | 4 032 px | Idle 199–289; `align_arms` |
+| `ogro` | altura 2,80 m | 4 com espelho (3) | **448, máx. 9** (era 384 × 10) | 4 032 px | Idle 199–289; `align_arms` |
+| `ogro_fim` | altura 2,80 m | 1 | **576, máx. 7** (era 448 × 9) | 4 032 px | `align_arms` |
+| `arqueiro` | altura 1,35 m | 4 com espelho (3) | 224 | 2 688 px | Idle 199–289; arco pelo `--attach` na linha |
+| `capitao` | altura 1,25 m | 4 com espelho (3) | 192 | 2 304 px | Idle 199–289; `--hold` |
+| `morcego` / `filhote` / `limo` | largura 0,70 m / altura 0,50 m / altura 0,60 m | 1 | 112 / 96 / 128 | — | Static |
+| `caixa` / `reliquia` / `ovo` | largura 0,50 m / altura 0,55 m / altura 0,55 m | 1 | 112 / 96 / 96 | — | Static |
+| `bolo` / `mensagem` / `caixa_pesada` / `barril` | largura 0,60 / 0,45 / 0,70 m; altura 0,55 m | 1 | 112 / 96 / 128 / 96 | — | Static |
+| `bau` / `bau_aberto` / `arco` | largura 0,80 / 0,80 / 2,20 m | 1 | 160 / 160 / 448 | — | Static |
+| `tocha` / `pilar` | altura 0,70 m / largura 1,20 m | 1 | 112 / **288** | — | Static; o pilar de 1,2 m de largura fica com ~2,2 m de altura (proporção do modelo) |
 
-As células foram calculadas pela geometria de projeto com 10% de margem.
+As células foram calculadas pela geometria de projeto com 10% de margem e conferidas na folha (o `folhas.py` imprime a margem mínima).
+- Em 2026-10-10, o bruto, o ogro, o ogro_fim e o pilar encostavam na borda e subiram de célula.
+- O teto de 4 096 px por folha obrigou a cortar quadros no ogro (9) e no ogro_fim (7).
+- A janela 199–289 do Breathing Idle vale só para esse FBX (`BREATH` no `.py`).
 - Se o log mostrar `AVISO recorte`, suba o `--size` daquele ator (pela linha ou na tabela).
 - Nunca baixe o `--scale`: todo o elenco compartilha os 120 px/m.
 
@@ -144,8 +187,8 @@ O `meta.json` usa listas planas, que o `JsonUtility` lê:
 | `mirror` | `true` se o leste é espelho |
 | `pivot` | [0,5, y/size] (normalizado, origem no canto inferior esquerdo, como o `Sprite.Create`) |
 | `pivot_px` | o mesmo em px |
-| `elev`, `yaw`, `light`, `outline_px`, `src_fps`, `preset`, `model_scale`, `hold`, `attach` | rastreio (`attach` = lista dos `--attach` sem a pasta do FBX, com osso, deslocamento, giro e tamanho; 2026-10-09) |
-| `clips[]` | `name`, `file`, `frames`, `loop` (pelo nome: idle, walk, run, lurk), `fps` (real do clipe), `duration_s`, `src_frames`, `hands` (só em ator com mãos) e `stride_mps` (opcional, ver abaixo) |
+| `elev`, `yaw`, `light`, `outline_px`, `src_fps`, `preset`, `model_scale`, `hold`, `attach`, `align_arms` | rastreio (`attach` = lista dos `--attach` sem a pasta do FBX, com osso, deslocamento, giro e tamanho; 2026-10-09. `align_arms`: 2026-10-10) |
+| `clips[]` | `name`, `file`, `frames`, `loop` (pelo nome: idle, walk, run, lurk), `fps` (real do clipe), `duration_s`, `src_frames`, `hands` (só em ator com mãos), `stride_mps` (opcional, ver abaixo) e `src_range` (opcional, 2026-10-10: [início, fim] do clipe de origem quando o preset usa só uma faixa) |
 
 **`stride_mps`** (por clipe; **campo novo de 2026-10-09**, opcional):
 - Aparece só em clipe em laço cujo quadril andava na origem (root motion) mais de 0,3 m/s.
@@ -211,7 +254,8 @@ carga.sortingOrder = portador.sortingOrder + (clip.hands[k + 2] > 0.5f ? 1 : -1)
      - O inverso do pai é a matriz de repouso do osso, pela cauda: é a origem de pai-osso do Blender.
      - Em cada quadro o prop recebe o mesmo delta do osso.
      - O prop entra nas malhas do ator: limites, render e contorno.
-4. **Limites e escala:** raio horizontal e extremos verticais pelos vértices reais de todos os quadros, válidos para qualquer giro. Com `--scale`, `ppu` é fixo e o script só avisa recorte. Pivô = origem.
+4. **Limites e escala:** meia largura e extremos verticais na tela, pelos vértices reais de todos os quadros. Desde 2026-10-10, medidos só nas direções que entram na folha, já giradas como na célula (o espelho tem a mesma medida). Com `--scale`, `ppu` é fixo e o script só avisa recorte. Pivô = origem.
+   - **`--align-arms`:** em rig em pose A, cada osso do braço (inclusive ombro e dedos) primeiro gira, pelo arco mínimo, da direção do próprio repouso para a do repouso do clipe. Só então recebe o delta, e a direção do braço fica igual à do clipe.
 5. **Câmera e render:**
    - Workbench ortográfico a `--elev`, fundo transparente, AA.
    - Por clipe, cada célula é uma cópia da malha avaliada, girada em Z (`yaw − linha × 360/dirs`) e deslocada no plano da câmera.
@@ -255,7 +299,11 @@ carga.sortingOrder = portador.sortingOrder + (clip.hands[k + 2] > 0.5f ? 1 : -1)
 - **Morte deitada** pede célula maior (o corpo sai do centro). Por isso existem os conjuntos `_fim`. Os inimigos comuns morrem de forma procedural na v0.1.
 - **O AA do Workbench varia alguns níveis entre renders:** o SHA dos PNG não é reprodutível bit a bit (Forge §6). Registre o SHA do FBX de entrada e o do `render_sprites.py`.
 - **Uma folha por clipe, sem atlas único:** são poucas texturas por ator e a memória está estimada em `ART_BIBLE.md` §5.
-- **`AVISO recorte` é conservador:** usa 2 × o raio horizontal, válido para qualquer giro. No `courier_fim`, o Dying cai de costas: o aviso diz 2,96 m contra 2,67 m de célula, mas a folha mostra o corpo inteiro dentro da célula da direção S. Confira na folha antes de subir a célula.
+- **`AVISO recorte` não é mais conservador (2026-10-10):** mede só as direções renderizadas. Até 2026-10-09, usava 2 × o raio horizontal: o `courier_fim` avisava 2,96 m contra 2,67 m sem recorte real, e o `ogro_fim` dava 8,2 m e cortava o corpo. Confira a margem que o `folhas.py` imprime.
+- **Slerp do delta sobre o T entre chaves distantes (2026-10-10):** com um braço que vai de "para trás" a "para frente" ou ao alto entre duas chaves, o meio do caminho passa pelo lado. De frente para a câmera, isso parece braço em T. Apareceu no Dash, no Slam, no Call e no Punch. A correção é uma chave de passagem (braço por baixo ou pela frente), com menos de 90° entre chaves. A folha de palitos do §9 mostra isso em 3 s.
+- **A 60°, "para trás" sobe na tela:** braço para trás e para baixo aparece na horizontal, e tronco inclinado para trás afasta os ombros do eixo. No Slam, os punhos saíam do topo da célula do ogro; o tronco ficou quase reto no alto.
+- **Janela do Idle:** o Breathing Idle não tem um laço curto perfeito. A janela 199–289 tem a menor costura (2,2 cm na mão direita do X Bot, ~1,6 cm no courier, ~1 px na tela). Com outro FBX de Idle, refaça a busca.
+- **Rig em pose A:** confira a direção de repouso do braço ao receber um rig novo do Tripo (bruto −49,5°, ogro −22°, arqueiro −9°, capitão −3°). Acima de ~15°, use `align_arms` no preset.
 - **O `--attach` usa o repouso:** deslocamento e giro valem na pose em T. A conta para o escudo está em §9; se a pose do braço do guarda mudar, refaça a conta e confira a folha.
 - **Chapéu do courier a 60°:** a aba larga cobre o tronco nas vistas S e N, e na corrida S só se veem o chapéu e um pé. É do modelo e da câmera (`ART_BIBLE.md` §2), não do clipe. Com a caixa por cima (frente = 1), a leitura "courier com carga" continua.
 
@@ -266,6 +314,7 @@ carga.sortingOrder = portador.sortingOrder + (clip.hands[k + 2] > 0.5f ? 1 : -1)
 **`<ator>_folhas.png`:** uma faixa por clipe, sobre xadrez cinza, com todas as linhas e quadros.
 - Linha do pivô em vermelho.
 - Rótulo com quadros, fps, duração, laço e `stride_mps`.
+- O script imprime a **margem mínima** de cada clipe até a borda da célula (contorno incluso). Com `AVISO encosta`, suba a célula do preset (2026-10-10).
 - Nos clipes `Carry*`, o quadro `Static` da caixa entra no ponto `hands`: por cima do portador com frente = 1, por baixo com 0, como a View faz.
 - O script imprime a flag `frente` por linha. Exemplo: `CarryRun frente: S=111111 SW=111111 W=111111 NW=000000 N=000000`. A flag não pode piscar dentro de uma linha.
 - Com `--escala 0.5`, a célula de 224 px vira ~112 px, que é o tamanho do courier na tela de 1080 px.
@@ -281,19 +330,34 @@ carga.sortingOrder = portador.sortingOrder + (clip.hands[k + 2] > 0.5f ? 1 : -1)
 blender.exe -b --factory-startup --python-exit-code 1 --python client\tools\anim_blender.py -- --rig %TEMP%\dc_arte\mixamo\courier\Idle.fbx --out %TEMP%\dc_anim [--only Hold,Throw]
 ```
 
+**Pé no chão (2026-10-10):** em todo quadro, a altura do quadril sai das pernas. O pé mais baixo fica na altura do repouso; o `z` de `loc` é só o ponto de partida, e agachar é dobrar o joelho.
+- Antes, o quadril baixo afundava o pé (−11 cm no Grab, −8 cm na carga do Bash) e o alto fazia o boneco flutuar (+5 cm no Dash).
+- Medido no X Bot: tornozelo a ±0,1 cm do repouso nas chaves. O Grab afunda 2,1 cm no subquadro 7,5 (≈ 1,4 px no ladrão).
+
 **Base:** o armature do X Bot de qualquer clipe Mixamo Without Skin (aqui, o Breathing Idle reaproveitado do Forge). A animação do clipe de origem é descartada.
 
 **Clipes** (`CLIPS` no `.py`; 30 fps; saída copiada para `arte/mixamo/_blender/` e depois para o conjunto):
 
-| Clipe | Quadros (s) | Uso | Chaves |
+**Chaves nos quadros amostrados:** a pose extrema que não cai num quadro que o render amostra some da folha. Quadros amostrados = `ini + i × vão / n`; o quadro de impacto da View é `round(ImpactFrac × n)`.
+
+| Clipe | Quadros (s) → folha | Uso | Chaves (2026-10-10) |
 |---|---|---|---|
-| `Hold` | 10 (0,30) | `--hold` dos `Carry*` (courier e ladrão) | Pose fixa: braços à frente do peito, cotovelos dobrados, palmas para dentro |
-| `Throw` | 21 (0,67) | courier | Pronto (0) → carrega atrás (6) → solta (10, "out") → acompanha (14) → pronto (20) |
-| `Dash` | 16 (0,50) | courier | Agacha (3) → corpo inclinado 46° com os braços para trás (7, "out") → freia (11) → pronto (15) |
-| `Hit` | 15 (0,47) | courier | Tranco para trás com braços soltos (3, "out") → volta (8–14) |
-| `GuardIdle` → `guarda/Idle` | 60 (1,97), laço | guarda | Escudo atravessado à frente, respiração (0 = 59) |
-| `Bash` | 30 (0,97) | guarda | Pronto (0) → recolhe o escudo e gira o ombro para trás (12) → empurra com passo (17, "out") → segura (21) → pronto (29) |
-| `Grab` | 24 (0,77) | ladrão | Agacha e alcança (8) → fecha as mãos na carga (13) → sobe para a pose do `Hold` (23), que emenda no `CarryRun` |
+| `Hold` | 10 (0,30) | `--hold` dos `Carry*` (courier, ladrão, capitão) | Pose fixa: braços à frente do peito, cotovelos dobrados, palmas para dentro (sem mudança desde 2026-10-09) |
+| `Throw` | 21 (0,67) → 10 de 2 em 2 | courier; a View toca em laço no compasso do tiro | Pronto (0) → antecipação: afunda e o braço desce para trás (4) → carregado: tronco torcido para trás, mão alta atrás da cabeça, mão esquerda no alvo (8) → **solta (10, "out") = quadro 5** → acompanha cruzando o corpo (14) → volta com sobra (17) → pronto (20 = 0) |
+| `Dash` | 16 (0,50) → 6 | courier, o clipe inteiro nos 0,18 s | Pronto → agacha com os braços à frente (3) → impulso: tronco projetado, braços para trás (5, "out") → desliza (8) → passagem com os braços por baixo (10) → freia com o tronco para trás e a cabeça à frente (12) → pronto (15) |
+| `Hit` | 15 (0,47) → 6 | courier e arqueiro | Pronto → tranco: cabeça e tronco para trás, braços jogados à frente (2, "out") → rebote: dobra à frente e a cabeça cai (5) → assenta com sobra (9) → pronto (14) |
+| `GuardIdle` → `guarda/Idle` | 60 (1,97), laço → 12 | guarda | Escudo atravessado à frente, respiração (0 = 59) |
+| `Bash` | 30 (0,97) → 12 | guarda | Guarda → ergue o peito e recolhe o escudo (5) → carga: agacha, ombro para trás (9) → segura a carga, cabeça atrás do escudo (12 = fim do telegraph) → **impacto com passo longo (15, "out") = quadro 6** → passa do ponto (18) → recolhe (22) → guarda (29) |
+| `Grab` | 16 (0,50) → 6 | ladrão e capitão, em 0,5 s (= `ThiefGrab`) | Pronto → olha a carga (2) → agacha e alcança (5) → fecha as mãos (7) → ergue com sobra para trás (10) → pose do `Hold` (15), que emenda no `CarryRun`. Antes tinha 0,77 s e a View cortava a subida aos 0,5 s |
+| `Shrug` | 49 (1,60) → 12 de 4 em 4 | cliente, em laço (2 rachaduras) | Calmo → ombros caem e os joelhos cedem (8) → **dá de ombros: ombros sobem, palmas para cima com giro de 180°, cabeça de lado (16, "out")** → segura, inclinando mais (28) → solta com sobra (38) → calmo (48 = 0) |
+| `Smash` | 30 (0,97) → 12 | bruto | Pronto → punhos ao peito (6) → manopla direita no alto atrás da cabeça (11–15 = fim do telegraph) → **soco no chão com passo (17, "out") = quadro 7** → passa do ponto (20) → recolhe (24) → pronto (29) |
+| `Slam` | 31 (1,00) → 9 de 3,3 em 3,3 | ogro | Pronto → afunda e joga os braços para baixo e para trás (4) → passam por baixo (6) e pela frente (8) → punhos juntos no alto, tronco quase reto (11–14) → **pancada no chão agachado (17, "out") = quadro 5** → afunda mais (20) → levanta (24) → pronto (30) |
+| `Roar` | 41 (1,33) → 9 | ogro (a View toca uma vez ao chamar um ladrão) | Pronto → inspira para trás (8) → **ruge: tronco à frente, cabeça projetada, punhos fechados à frente do peito (16, "out")** → segura tremendo (28) → volta (34) → pronto (40). Braços abertos liam como T e passavam da célula |
+| `Shoot` | 37 (1,20) → 12 de 3 em 3 | arqueiro | Pronto → ergue o arco (6) → braço do arco no alvo, em eixos do mundo, e a mão na corda (12) → puxa até a bochecha (18) → mira (21 = fim do telegraph) → **solta: a mão escapa para trás da orelha (24, "out") = quadro 8** → baixa o arco (29) → pronto (36) |
+| `Punch` | 30 (0,97) → 12 | capitão (`CaptainHit` da View) | Pronto → o antebraço passa pela frente (2) → arma o punho no ombro, tronco torcido (5–12 = fim do telegraph) → **soco esticado com passo (15, "out") = quadro 6** → passa do ponto (19) → recolhe (24) → pronto (29) |
+| `Call` | 31 (1,00) → 12 | capitão (`CaptainCall`) | Pronto → inspira, mão direita à boca (6) → braço esquerdo sobe pela frente (9) → **grita: mão em concha na boca e braço esquerdo erguido (12, "out")** → acena para fora (18) e para dentro (24) → desce o braço pela frente (27) → pronto (30) |
+
+**Folha de palitos para iterar** (2026-10-10, fora do repositório, em `%TEMP%`): `dc_prev.py` no Blender grava as juntas projetadas a 60° de cada FBX de clipe por direção e quadro amostrado, e imprime a altura do tornozelo. `dc_prev_draw.py` (Pillow) desenha os bonecos. Leva ~3 s, contra 3 a 8 min de um render com a malha do Tripo, e serviu para achar braço em T, pé afundando e pose fora do quadro amostrado.
 
 **Como a pose é escrita:** o personagem olha para −Y, +X é a esquerda dele e +Z é cima.
 - `("rot", (eixo, graus), ...)`: giro relativo ao pai, em eixos do mundo do repouso.
@@ -315,4 +379,12 @@ blender.exe -b --factory-startup --python-exit-code 1 --python client\tools\anim
   - o giro é Euler XYZ (90, 180, 0).
 - **Ponto:** meio do antebraço (+0,09 m em X) e 0,06 m para fora (+Z).
 - **Tamanho:** 0,75 m, do joelho ao queixo no guarda de 1,50 m.
-- **Conferido na folha `guarda_folhas.png`:** escudo preso ao antebraço nas 3 linhas e nos 24 quadros. Na antecipação do Bash ele fica de pé, e no impacto vai à frente do corpo. Não flutua nem atravessa o tronco.
+- **Conferido na folha `guarda_folhas.png`:** escudo preso ao antebraço nas 3 linhas e nos 24 quadros. Na antecipação do Bash ele fica de pé, e no impacto vai à frente do corpo. Não flutua nem atravessa o tronco. Re-conferido em 2026-10-10 com o Bash novo.
+
+**Arco do arqueiro (`--attach`, conta de 2026-10-10):**
+- **Pose do tiro:** o braço esquerdo aponta o alvo em eixos do mundo (−Y), com giro −90° no antebraço e na mão. A palma fica para dentro, segurando o punho do arco na vertical.
+- **Arco do Tripo:** o comprido fica em Z (0,99 m). A corda fica em +X (as pontas curvam para +X) e o punho em −X.
+- **Desfazendo o delta da mão:** no repouso em T, o comprido deve ir para −Y e a corda para −X (para o corpo). Isso dá Euler XYZ (90, 180, 0), o mesmo giro do escudo, por coincidência.
+- **Ponto:** o centro da caixa fica entre o punho e a corda. O punho na palma (+0,035 m em X, −0,015 m em Z) põe o centro em (−0,06; 0; −0,015) a partir da cabeça da mão.
+- **Tamanho:** 0,80 m.
+- **Conferido na folha `arqueiro_folhas.png`:** no Shoot (W), o arco fica na mão esquerda, com a barriga para o alvo e a corda para o arqueiro. A mão direita puxa até a bochecha e escapa para trás na soltura. No Idle e no Walk, o arco pende do lado esquerdo.

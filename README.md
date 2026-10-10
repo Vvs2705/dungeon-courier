@@ -9,11 +9,12 @@
 **Como vai ser jogar:** "entregue e saia vivo"; o pagamento melhora a guilda e o equipamento.
 
 ## Situação
-**v0.1 em desenvolvimento (2026-10-09), jogável no PC.** 8 contratos com a regra de carregar/pousar, 3 cargas, 4 inimigos + chefe, resgate da carga perdida e guilda; núcleo com 49 testes e bot de balance; arte do Lote 1 (Tripo → Blender → sprites) no jogo. Testes no PC primeiro; o celular vem depois de mais avanços.
+**v1.0-beta (2026-10-10): versão completa para teste com jogadores reais, jogável no PC.** Região 1 "Porões da Guilda" com 24 contratos, 7 cargas, 7 inimigos (com o mini-chefe Capitão Ladrão e o chefe Ogro), 3 armas, 10 perks, salas secretas, estrelas, contrato do dia e por código, guilda 4×8, save v2, áudio, pt-BR/EN e diário local de teste (nada sai do aparelho sem o jogador exportar). Núcleo com 76 testes; o bot fecha a campanha. Arte dos Lotes 1–3 (Tripo → Blender → sprites). Sem anúncios nem compras.
 
-- **Escopo e números da v0.1:** [`docs/CONTRATO_V01.md`](docs/CONTRATO_V01.md) · **Balance medido pelo bot:** [`docs/BALANCE.md`](docs/BALANCE.md)
-- **Arte:** [`docs/ART_BIBLE.md`](docs/ART_BIBLE.md), [`docs/ASSETS.md`](docs/ASSETS.md), [`docs/RENDER_SPRITES.md`](docs/RENDER_SPRITES.md), [`docs/PROVENIENCIA.md`](docs/PROVENIENCIA.md)
-- **Jogar no PC:** abra o projeto `client/` no Unity 6000.3.23f1 e rode `DC/Aplicar settings`, ou gere o build com `Unity -batchmode -quit -projectPath client -executeMethod DC.EditorTools.Setup.BuildWindows` e abra `client/Builds/win/DungeonCourier.exe` (arraste com o mouse ou WASD; Espaço = dash).
+- **Escopo da v1.0-beta:** [`docs/CONTRATO_V1.md`](docs/CONTRATO_V1.md) · **Balance medido pelo bot:** [`docs/BALANCE.md`](docs/BALANCE.md) · v0.1: [`docs/CONTRATO_V01.md`](docs/CONTRATO_V01.md)
+- **Teste com jogadores:** [`docs/TESTE_JOGADORES.md`](docs/TESTE_JOGADORES.md), [`docs/PERGUNTAS_PLAYTEST.md`](docs/PERGUNTAS_PLAYTEST.md); relatório dos diários: `python client/tools/diario_report.py <pasta>`
+- **Arte e áudio:** [`docs/ART_BIBLE.md`](docs/ART_BIBLE.md), [`docs/ASSETS.md`](docs/ASSETS.md), [`docs/RENDER_SPRITES.md`](docs/RENDER_SPRITES.md), [`docs/PROVENIENCIA.md`](docs/PROVENIENCIA.md), [`docs/AUDIO.md`](docs/AUDIO.md); UI: [`docs/UI_V1.md`](docs/UI_V1.md), mundo: [`docs/VIEW_V1_MUNDO.md`](docs/VIEW_V1_MUNDO.md)
+- **Jogar no PC:** abra o projeto `client/` no Unity 6000.3.23f1 e rode `DC/Aplicar settings`, ou gere o build com `Unity -batchmode -quit -projectPath client -executeMethod DC.EditorTools.Setup.BuildWindowsRelease` e abra `client/Builds/win-release/DungeonCourier.exe` (arraste com o mouse ou WASD; Espaço = dash). APK de teste: `Setup.BuildAndroidRelease` (fica só o APK atual).
 
 - **GDD:** [`docs/GDD.md`](docs/GDD.md) (revisão competitiva de 2026-10-09 no topo).
 - **Comparativo com jogos similares e diferenciais:** [`docs/COMPETITIVO.md`](docs/COMPETITIVO.md).

@@ -14,9 +14,9 @@ namespace DC
     /// Camera ortografica fixa com a sala inteira + paredes + placas das portas, abaixo da faixa da HUD e dentro da area segura (Fit).
     /// Sprites reais (Resources/Sprites/&lt;preset&gt;, SpriteSheet) por entidade, no Paint*; sem folha, o procedural de sempre. Ficam
     /// procedurais por cima (ART_BIBLE §11): sombra de contato, contorno limao piscando da carga, rachaduras, telegraph, grade e
-    /// cadeado da porta, aneis, numeros.
+    /// cadeado da porta, aneis, numeros. Conteudo da v1.0-beta (inimigos, cargas, armas, salas, ambiente, VFX) em WorldViewV1.cs.
     /// </summary>
-    public sealed class WorldView
+    public sealed partial class WorldView
     {
         // projecao: tela_y = Tilt*y + Lift*z (z = altura sobre o chao)
         const float Tilt = 0.866f, Lift = 0.5f;
@@ -37,17 +37,23 @@ namespace DC
         const int OFloor = 0, OMark = 1, OShadow = 2, OBlock = 3, OWall = 4, OActShadow = 7, ORing = 8, ODoor = 10, OPlate = 14, OChest = 10,
             OCargo = 12, OPet = 14, OEnemy = 16, OCourier = 20, OActor = 100, OShot = 4000, OPart = 4100;
 
-        static readonly string[] EnemySheet = { "morcego", "ladrao", "guarda", "bruto", "ogro" };
+        // Tabelas por indice do enum (EnemyType / CargoType). Leia SEMPRE por At(): valor novo do enum sem linha aqui cai no default
+        // (sem folha = procedural), nunca IndexOutOfRange. Lote 3 (ASSETS §8): arqueiro, limo, capitao; bolo, mensagem, caixa_pesada, barril.
+        static readonly string[] EnemySheet = { "morcego", "ladrao", "guarda", "bruto", "ogro", "arqueiro", "limo", "capitao" };
         static readonly string[] AttackClip = { null, null, "Bash", "Smash", "Slam" };
         // quadro de impacto / quadros do golpe, medido na folha (ASSETS §5): guarda/Bash 6 de 12.
-        // ponytail: bruto/Smash e ogro/Slam ficam em 0,6 (estimativa) ate medir as folhas do Lote 2
-        static readonly float[] ImpactFrac = { 0f, 0f, 6f / 12f, 0.6f, 0.6f };
+        // ponytail: bruto/Smash e ogro/Slam 0,6, arqueiro (soltar a flecha) 0,7 e Capitao 0,5 sao estimativa ate medir as folhas
+        static readonly float[] ImpactFrac = { 0f, 0f, 6f / 12f, 0.6f, 0.6f, 0.7f, 0f, 0.5f };
         /// <summary>Altura de projeto por papel (ART_BIBLE §4): barra de vida acima da cabeca do sprite.</summary>
-        static readonly float[] EnemyH = { 0.7f, 1.0f, 1.5f, 1.8f, 2.8f };
-        internal static readonly string[] CargoSheet = { "caixa", "reliquia", "ovo" };
+        static readonly float[] EnemyH = { 0.7f, 1.0f, 1.5f, 1.8f, 2.8f, 1.3f, 0.6f, 1.25f };
+        internal static readonly string[] CargoSheet = { "caixa", "reliquia", "ovo", "bolo", "mensagem", "caixa_pesada", "barril" };
         // lado da carga na tela (m): rachaduras e contorno de reserva, e o passo da pilha nas maos. Caixa medida no PNG (silhueta 0,58 x
-        // 0,69 m); ponytail: reliquia e ovo pela ART_BIBLE §4 ate as folhas do Lote 2
-        static readonly float[] CargoSize = { 0.6f, 0.5f, 0.5f };
+        // 0,69 m); ponytail: reliquia, ovo e as do Lote 3 pela ART_BIBLE §4 / prompt do ASSETS §8 ate medir as folhas
+        static readonly float[] CargoSize = { 0.6f, 0.5f, 0.5f, 0.6f, 0.45f, 0.7f, 0.55f };
+
+        static T At<T>(T[] a, int i, T fallback) => i >= 0 && i < a.Length ? a[i] : fallback;
+        /// <summary>Folha do papel/carga i, ou null (sem nome na tabela ou sem pasta): o procedural.</summary>
+        static SpriteSheet SheetAt(string[] names, int i) { string n = At(names, i, null); return n != null ? SpriteSheet.Get(n) : null; }
         // flash sem o shader DC/SpriteFlash (FxMat null): o Sprites/Default so multiplica a cor, entao vira tinta
         static readonly Color Flash = new Color(1f, 0.55f, 0.55f), Ghost = new Color(1f, 1f, 1f, 0.45f);
 
@@ -55,17 +61,21 @@ namespace DC
         {
             public Transform Root, Up, Dir; public SortingGroup G;
             public SpriteRenderer Body, Deco, Eyes, Pupils, Ring, Fill, HpBg, HpFill, Arc, Line, Shadow, Spr;
+            // v1: mira do arqueiro (chao), enfeite procedural (arco do arqueiro, chapeu do Capitao), estrelas de atordoado
+            public SpriteRenderer AimLine, AimFill, Extra, StunA, StunB;
             public int Type = -1, Id = -1; public Color BodyC = Color.white;
             public SpriteAnim Anim;   // null = procedural
-            public Vector2 Last, Hand; public bool HasHand, HandFront = true, FlipX; public float StrikeT, RoarT;
+            public Vector2 Last, Hand; public bool HasHand, HandFront = true, FlipX; public float StrikeT, RoarT, SpawnT;
         }
         sealed class CargoV
         {
             public Transform Root, Up, Vis; public SortingGroup G;
             public SpriteRenderer Range, Outline, Body, Deco, Cracks, Seal, Star, Count, Spr;
+            // v1: alcance e enchimento da explosao do barril, faisca do pavio, brilho da carga acolchoada, contagem 3-2-1
+            public SpriteRenderer Blast, BlastFill, Spark, Pad; public Text Num; public int NumShown = -1; public float NumPop;
             public CargoType Type; public bool Rescue, Painted; public float HitT, PulseT; public SpriteSheet Sheet;
         }
-        sealed class DoorV { public SpriteRenderer Frame, Bars, Glow, Lock; public Door D; }
+        sealed class DoorV { public SpriteRenderer Frame, Bars, Glow, Lock, Env; public Door D; public bool Was; public Vector2 LockAt; }
         sealed class Part { public SpriteRenderer R; public Vector2 P, V; public float Age, Life, S0, S1; public Color C; public bool Live; }
         sealed class Floater { public Text T; public Vector3 W; public float Age; public bool Live; }
 
@@ -87,7 +97,6 @@ namespace DC
         readonly List<DoorV> _doors = new List<DoorV>();
         readonly List<Ent> _enemies = new List<Ent>();
         readonly Dictionary<int, float> _enemyHit = new Dictionary<int, float>();
-        readonly List<Ent> _shots = new List<Ent>();
         readonly List<Part> _parts = new List<Part>();
         readonly List<Floater> _floaters = new List<Floater>();
 
@@ -113,6 +122,7 @@ namespace DC
             PaintPet(_pet);
             SpriteSheet pet = SpriteSheet.Get("filhote");
             if (pet != null) UseSprite(_pet, pet, Balance.PetR);
+            BuildCourierFx();
             _root.gameObject.SetActive(false);
         }
 
@@ -155,11 +165,15 @@ namespace DC
             _cam.transform.position = _camBase + (Vector3)sh;
 
             DrawCourier(run, dt);
+            DrawCourierFx(run, dt);
             DrawEnemies(run, dt);   // antes das cargas: a carga roubada vai na ancora do ladrao deste quadro
             DrawCargos(run, dt);
             DrawPet(run, dt);
             DrawShots(run);
+            DrawArrows(run);
+            DrawPuddles(run);
             DrawRoomState(run, dt);
+            DrawRoomV1(run, dt);
             TickParts(dt);
             TickFloaters(dt);
             for (int i = 0; i < _roomLabels.Count; i++) _roomLabels[i].rectTransform.position = _cam.WorldToScreenPoint(_roomLabelPos[i]);
@@ -187,7 +201,8 @@ namespace DC
             {
                 AnimCourier(run, c, dt);
                 bool flash = _courierHit > 0.52f;   // 0,08 s de branco (shader) ou de tinta (sem ele), depois pisca
-                _courier.Spr.color = flash ? Art.FxMat != null ? Color.white : Flash : blink ? Ghost : Color.white;
+                // na poca do limo: tinta rosada (com a gosma no pe e as gotas do DrawCourierFx)
+                _courier.Spr.color = flash ? Art.FxMat != null ? Color.white : Flash : blink ? Ghost : c.Slowed ? SlowTint : Color.white;
                 Art.Fx(_courier.Spr, flash ? 1f : 0f);
                 return;
             }
@@ -201,7 +216,7 @@ namespace DC
                 s = new Vector2(1f - 0.06f * k, 1f + 0.08f * k);   // squash and stretch andando
             }
             _courier.Body.transform.localScale = new Vector3(d * s.x, d * s.y, 1f);
-            Color body = c.State == CourierState.Dead ? Art.Dim : Art.Courier;
+            Color body = c.State == CourierState.Dead ? Art.Dim : c.Slowed ? Color.Lerp(Art.Courier, SlimePink, 0.35f) : Art.Courier;
             _courier.Body.color = _courierHit > 0.52f ? Color.white : blink ? Art.A(body, 0.45f) : body;
         }
 
@@ -267,7 +282,7 @@ namespace DC
                 if (!on) continue;
                 if (!v.Painted || v.Type != g.Type || v.Rescue != g.Rescue) PaintCargo(v, g.Type, g.Rescue);
                 bool ground = g.State == CargoState.Ground, spr = v.Sheet != null, fx = spr && Art.FxMat != null;
-                float size = CargoSize[(int)g.Type];
+                float size = At(CargoSize, (int)g.Type, 0.5f);
                 // nas maos (courier ou ladrao) pela ancora `hands`; no chao pelo pe, ordenada por y como os atores
                 int order;
                 Vector2 pos;
@@ -292,44 +307,54 @@ namespace DC
                     v.Spr.transform.localScale = Vector3.one * pop;
                     v.Spr.transform.localPosition = ground ? Vector3.zero : (Vector3)(-v.Sheet.Center);   // nas maos: centro na ancora
                 }
-                // ovo nos ultimos 5 s antes de chocar: balanca +-8 graus a 4 Hz
+                // ovo nos ultimos 5 s antes de chocar: balanca +-8 graus a 4 Hz; bolo com o dash negado: +-14 graus a 6 Hz morrendo em 0,6 s
                 float wob = g.Type == CargoType.Egg && run.EggLeft > 0f && run.EggLeft < 5f ? Mathf.Sin(_time * 25f) * 8f : 0f;
+                if (g.Wobble > 0f) wob = Mathf.Sin(_time * 40f) * 14f * (g.Wobble / Balance.CakeWobble);
+                if (g.State == CargoState.Held && g.Type == CargoType.Heavy) wob += Mathf.Sin(_time * 14f) * 3f * Mathf.Clamp01(_courierSpd / 2f);   // peso balancando
                 v.Vis.localRotation = v.Spr.transform.localRotation = Quaternion.Euler(0f, 0f, wob);
                 // rachou: flash branco de 0,06 s (shader) ou a tinta de sempre (procedural branco; sprite sem shader, Flash)
                 bool flash = v.HitT > 0.24f;
                 Color baseC = spr ? Color.white : Art.CargoColor(g.Type), tint = flash && !fx ? spr ? Flash : Color.white : baseC;
                 if (g.Type == CargoType.Relic && g.Cracks == Balance.RelicBreak - 1)   // a proxima quebra: pulsa branco e vermelho
                     tint = Color.Lerp(Color.white, Art.Bad, 0.5f + 0.5f * Mathf.Sin(_time * 10f));
+                // barril aceso (Fuse > 0 so depois de armado): pisca vermelho cada vez mais rapido, de 2 a 8 Hz
+                float fuse = g.Type == CargoType.Barrel && ground ? g.Fuse : 0f;
+                if (fuse > 0f && Mathf.Repeat(_time * (2f + 6f * fuse / Balance.BarrelFuse), 1f) < 0.5f) tint = Color.Lerp(tint, Art.Bad, 0.55f);
                 if (spr) v.Spr.color = tint; else v.Body.color = tint;
                 v.Cracks.enabled = g.Cracks > 0;
                 if (g.Cracks > 0) v.Cracks.sprite = Art.Cracks(g.Cracks);
+                float top = v.Vis.localPosition.y + 0.45f * (spr ? size : ground ? 0.62f : 0.5f);   // topo do objeto (m de tela, no EmPe)
+                DrawCargoV1(run, v, g, ground, pos, top, dt);
 
-                // no chao: contorno limao piscando a 2 Hz quando longe (> AloneDist); vermelho pulsando dentro de um telegraph. Com o
-                // shader, segue a silhueta do sprite (CargoLine de largura); sem ele, o retangulo arredondado atras da carga
-                float far = V2.Dist(g.Pos, c.Pos);
-                bool alone = ground && far > Balance.AloneDist, danger = ground && InTelegraph(run, g.Pos);
+                // no chao: contorno limao piscando a 2 Hz quando longe (> AloneDist); vermelho pulsando dentro de um telegraph ou com o
+                // pavio aceso. Com o shader, segue a silhueta do sprite (CargoLine de largura); sem ele, o retangulo atras da carga
+                float far = V2.Dist(g.Pos, c.Pos), pr = run.Sim.PickupRange;   // raio de pegar com a Mochila
+                bool alone = ground && far > Balance.AloneDist, danger = ground && (fuse > 0f || InTelegraph(run, g.Pos));
                 float a = !ground ? 0f : danger ? 0.6f + 0.4f * Mathf.Sin(_time * 18f) : alone ? (Mathf.Repeat(_time * Blink, 1f) < 0.5f ? 1f : 0.15f) : 0.9f;
                 Color line = Art.A(danger ? Art.Bad : Art.Cargo, a);
                 v.Outline.color = line;
                 v.Outline.enabled = !fx;
                 if (fx) Art.Fx(v.Spr, flash ? 1f : 0f, ground ? CargoLine * v.Sheet.Ppu : 0f, line);
-                // anel de contagem nos ultimos 3 s antes de nascer o ladrao: do limao ao roxo
-                float left = Balance.AloneTime - g.AloneT;
-                bool count = ground && alone && left < 3f;
-                v.Count.enabled = count;
-                if (count)
+                // anel de contagem nos ultimos 3 s antes de nascer o ladrao (do limao ao roxo; com o Vigia o prazo e 4 s maior); caixa
+                // pesada sendo pega (+0,2 s): o mesmo anel, limao, enchendo no PickT
+                float left = Balance.AloneTime + (run.Has(Perk.Lookout) ? Balance.PerkLookout : 0f) - g.AloneT;
+                bool pick = ground && g.PickT > 0f, count = ground && alone && left < 3f;
+                v.Count.enabled = pick || count;
+                if (pick) { v.Count.sprite = Art.Arc(g.PickT / Balance.HeavyPick); v.Count.color = Art.Cargo; }
+                else if (count)
                 {
                     float k = 1f - left / 3f;
                     v.Count.sprite = Art.Arc(k);
                     v.Count.color = Color.Lerp(Art.Cargo, Art.Role(EnemyType.Thief), k);
                 }
-                // anel de pegar (PickupRange): expande ao pousar (0,35 s) e fica fraco enquanto a carga esta no chao
+                // anel de pegar (sim.PickupRange): expande ao pousar (0,35 s) e fica fraco enquanto a carga esta no chao
                 v.PulseT = Mathf.Max(0f, v.PulseT - dt);
                 v.Range.enabled = ground && c.State != CourierState.Dead;
                 float pk = v.PulseT > 0f ? 1f - v.PulseT / PulseTime : 1f;
-                v.Range.transform.localScale = Vector3.one * (2f * Balance.PickupRange * pk);
-                v.Range.color = Art.A(Art.Cargo, v.PulseT > 0f ? 0.9f * (1f - pk) + 0.2f : far <= Balance.PickupRange ? 0.4f : 0.18f);
+                v.Range.transform.localScale = Vector3.one * (2f * pr * pk);
+                v.Range.color = Art.A(Art.Cargo, v.PulseT > 0f ? 0.9f * (1f - pk) + 0.2f : far <= pr ? 0.4f : 0.18f);
             }
+            DrawPadded(run);
         }
 
         /// <summary>Carga nas maos de `who` (no pe `at`): na ancora `hands` do quadro, logo acima do portador (frente) ou logo abaixo
@@ -347,10 +372,20 @@ namespace DC
             return at + new Vector2(0f, (procY + 0.4f * k) / Tilt);
         }
 
+        /// <summary>A carga no chao em p leva o golpe em preparo? Bruto/Ogro: dentro do circulo do Reach (Run.Strike); arqueiro: na linha
+        /// da mira (a flecha acerta a carga no chao). Guarda e Capitao so acertam o courier.</summary>
         static bool InTelegraph(Run run, V2 p)
         {
             foreach (Enemy e in run.Enemies)
-                if (e.Alive && e.State == EnemyState.Telegraph && e.Type != EnemyType.Guard && V2.Dist(e.Pos, p) <= e.Def.Reach) return true;
+            {
+                if (!e.Alive || e.State != EnemyState.Telegraph) continue;
+                if (e.Type == EnemyType.Archer)
+                {
+                    float len = AimLen(run.Room, e.Pos, e.Aim);
+                    if (V2.SegDist(p, e.Pos, e.Pos + e.Aim * len) <= Balance.CargoR + Balance.ArrowR + 0.1f) return true;
+                }
+                else if ((e.Type == EnemyType.Brute || e.Type == EnemyType.Ogre) && V2.Dist(e.Pos, p) <= e.Def.Reach) return true;
+            }
             return false;
         }
 
@@ -403,13 +438,25 @@ namespace DC
                 bool on = e != null && e.Alive;
                 if (v.Root.gameObject.activeSelf != on) v.Root.gameObject.SetActive(on);
                 if (!on) continue;
-                if (v.Type != (int)e.Type) PaintEnemy(v, e.Type);
+                if (v.Type != (int)e.Type) PaintEnemy(v, e.Type, e.Def);
                 Vector2 p = V(e.Pos);
-                if (v.Id != e.Id) { v.Id = e.Id; v.Last = p; v.StrikeT = v.RoarT = 0f; if (v.Anim != null) v.Anim.Clip = -1; }   // lista encolheu: outro inimigo
+                if (v.Id != e.Id)   // lista encolheu (outro inimigo neste lugar) ou inimigo novo
+                {
+                    v.Id = e.Id; v.Last = p; v.StrikeT = v.RoarT = v.SpawnT = 0f;
+                    if (v.Anim != null) v.Anim.Clip = -1;
+                    v.Up.localScale = UpScale();
+                    if (_seen.Add(e.Id) && e.Wave) SpawnFx(v, e);   // reforco: entra com fumaca e pop
+                }
                 Vector2 vel = p - v.Last;
                 v.Last = p;
                 v.StrikeT = Mathf.Max(0f, v.StrikeT - dt);
                 v.RoarT = Mathf.Max(0f, v.RoarT - dt);
+                if (v.SpawnT > 0f)
+                {
+                    v.SpawnT = Mathf.Max(0f, v.SpawnT - dt);
+                    float k = 1f - v.SpawnT / SpawnTime, sc = 1f + 0.25f * Mathf.Sin(k * Mathf.PI) - 0.7f * (1f - k) * (1f - k);   // 0,3 -> 1,1 -> 1
+                    v.Up.localScale = UpScale(sc, sc);
+                }
                 v.G.sortingOrder = Depth(e.Pos.Y);
                 EnemyDef d = e.Def;
                 float hit = _enemyHit.TryGetValue(e.Id, out float h) ? h : 0f;
@@ -433,33 +480,62 @@ namespace DC
                     v.Pupils.transform.localPosition = v.Eyes.transform.localPosition + (Vector3)(look * 0.06f * d.Radius);
                     if (e.Type == EnemyType.Bat)   // asa por escala X de 1,0 a 0,65 a 10 Hz
                         v.Body.transform.localScale = new Vector3(d.Radius * 4.8f * (0.65f + 0.35f * Mathf.Abs(Mathf.Sin(_time * 31.4f + e.Phase * 6f))), d.Radius * 4.8f, 1f);
+                    else if (e.Type == EnemyType.Slime)   // limo: squash e estica a ~1 Hz (mais rapido andando)
+                    {
+                        float k = Mathf.Sin(_time * (vel.sqrMagnitude > 1e-6f ? 9f : 5f) + e.Phase * 6f);
+                        v.Body.transform.localScale = new Vector3(2.2f * d.Radius * (1f + 0.12f * k), 1.8f * d.Radius * (1f - 0.12f * k), 1f);
+                    }
+                    else if (e.Type == EnemyType.Archer)   // arco virado para a mira (fixa no telegraph) ou para o courier
+                    {
+                        V2 to = tele || v.StrikeT > 0f ? e.Aim : run.Courier.Pos - e.Pos;
+                        float ang = Mathf.Atan2(Tilt * to.Y, to.X) * Mathf.Rad2Deg;
+                        v.Extra.transform.localRotation = Quaternion.Euler(0f, 0f, ang);
+                        v.Extra.transform.localPosition = Quaternion.Euler(0f, 0f, ang) * new Vector3(0.62f * d.Radius, 0f, 0f);
+                    }
                     v.Body.color = hit > 0.06f ? Color.white : warn ? Color.Lerp(v.BodyC, Art.Bad, 0.3f) : v.BodyC;
                 }
-                // telegraph (ART_BIBLE §7): circulo de raio Reach no chao; enchimento a 25% crescendo com TeleProgress; borda a 90%, branca no ultimo 0,1 s
-                v.Ring.enabled = v.Fill.enabled = tele;
-                if (tele)
+                // telegraph (ART_BIBLE §7): circulo de raio Reach no chao; enchimento a 25% crescendo com TeleProgress; borda a 90%, branca no
+                // ultimo 0,1 s. Arqueiro: a mesma regra numa LINHA de mira ate a parede/obstaculo (o circulo de 7 m cobriria a sala)
+                bool aim = tele && e.Type == EnemyType.Archer;
+                v.Ring.enabled = v.Fill.enabled = tele && !aim;
+                v.AimLine.enabled = v.AimFill.enabled = aim;
+                if (aim) DrawAim(run, v, e);
+                else if (tele)
                 {
                     float r2 = 2f * d.Reach;
                     v.Ring.transform.localScale = Vector3.one * r2;
                     v.Fill.transform.localScale = Vector3.one * (r2 * Mathf.Max(0.05f, e.TeleProgress));
                     v.Ring.color = e.Tele < 0.1f ? Color.white : Art.A(Art.Tele, 0.9f);
                 }
-                // vida: so depois do 1o golpe (sempre no Guarda/Ogro, que trancam a porta); com sprite, acima da cabeca
-                bool bar = e.Hp < d.Hp || d.Locks;
+                // vida: so depois do 1o golpe (sempre em quem tranca a porta); com sprite, acima da cabeca. Maximo com o nivel do contrato
+                // (Balance.HpMul): sem ele a barra passava de 100% do C4 em diante
+                int max = MaxHp(e, run);
+                float headY = v.Anim != null ? Lift * At(EnemyH, (int)e.Type, 1f) : d.Radius;
+                bool bar = e.Hp < max || d.Locks;
                 v.HpBg.enabled = v.HpFill.enabled = bar;
                 if (bar)
                 {
-                    float w = Mathf.Max(0.6f, 2.2f * d.Radius), f = (float)e.Hp / d.Hp, y = v.Anim != null ? Lift * EnemyH[(int)e.Type] + 0.25f : d.Radius + 0.22f;
+                    float w = Mathf.Max(0.6f, 2.2f * d.Radius), f = (float)e.Hp / max, y = headY + (v.Anim != null ? 0.25f : 0.22f);
                     v.HpBg.transform.localPosition = new Vector3(0f, y, 0f);
                     v.HpBg.transform.localScale = new Vector3(w + 0.06f, 0.14f, 1f);
                     v.HpFill.transform.localPosition = new Vector3(-w * 0.5f + w * f * 0.5f, y, 0f);
                     v.HpFill.transform.localScale = new Vector3(w * f, 0.08f, 1f);
                 }
-                // ladrao: anel roxo pegando a carga (0,5 s), saindo pela borda (1 s), e linha roxa de intencao ate a carga no chao
+                // atordoado (Bota de ferro): 2 estrelas douradas girando sobre a cabeca
+                bool stun = e.Stun > 0f;
+                v.StunA.enabled = v.StunB.enabled = stun;
+                if (stun)
+                {
+                    float sa = _time * 9f, sy = headY + 0.12f;
+                    v.StunA.transform.localPosition = new Vector3(0.3f * Mathf.Cos(sa), sy + 0.08f * Mathf.Sin(sa), 0f);
+                    v.StunB.transform.localPosition = new Vector3(-0.3f * Mathf.Cos(sa), sy - 0.08f * Mathf.Sin(sa), 0f);
+                }
+                // ladrao e Capitao: anel roxo pegando a carga (0,5 s), saindo pela borda (1 s), e linha roxa de intencao ate a carga no chao
+                bool thief = e.Type == EnemyType.Thief || e.Type == EnemyType.Captain;
                 float arc = e.State == EnemyState.Grab ? e.GrabT / Balance.ThiefGrab : e.Carry != null && e.ExitT > 0f ? e.ExitT / Balance.ThiefExit : 0f;
                 v.Arc.enabled = arc > 0f;
                 if (arc > 0f) { v.Arc.sprite = Art.Arc(arc); v.Arc.transform.localScale = Vector3.one * (2f * d.Radius + 0.5f); }
-                Cargo target = e.Type == EnemyType.Thief && e.Carry == null && (e.State == EnemyState.Chase || e.State == EnemyState.Grab) ? NearestGround(run, e.Pos) : null;
+                Cargo target = thief && e.Carry == null && (e.State == EnemyState.Chase || e.State == EnemyState.Grab) ? NearestGround(run, e.Pos) : null;
                 v.Line.enabled = target != null;
                 if (target != null)
                 {
@@ -471,17 +547,26 @@ namespace DC
             }
         }
 
+        /// <summary>Vida cheia do inimigo no contrato (a mesma conta do Run.Spawn: Def.Hp x Balance.HpMul(Tier)).</summary>
+        static int MaxHp(Enemy e, Run run) => Mathf.Max(e.Hp, System.Math.Max(1, (int)System.Math.Round(e.Def.Hp * Balance.HpMul(run.Contract.Tier))));
+
         /// <summary>Estado do Core -> clipe do inimigo com folha. Morcego: estatico, asa por escala X 1,0 -> 0,65 a 10 Hz, flutua a 1 m
-        /// (+-0,06 a 3 Hz) sobre a sombra, flipX pelo movimento. Ladrao: Run correndo para a carga, Lurk rondando, Grab pegando (o clipe
-        /// inteiro nos 0,5 s do Core), CarryRun fugindo com ela. Guarda/Bruto/Ogro: Idle; Walk perseguindo; golpe com os quadros
-        /// [0, impacto) esticados pelo TeleProgress e [impacto, fim) em 0,15 s depois do Strike (ART_BIBLE §7); ogro: Roar ao chamar o
-        /// ladrao. Locomocao no ritmo da passada (stride_mps) na velocidade do Core.</summary>
+        /// (+-0,06 a 3 Hz) sobre a sombra, flipX pelo movimento. Limo: estatico, squash e estica por codigo, flipX pelo movimento. Ladrao:
+        /// Run correndo para a carga, Lurk rondando, Grab pegando (o clipe inteiro nos 0,5 s do Core), CarryRun fugindo com ela. Capitao: o
+        /// mesmo do ladrao + golpe (Attack/Slash/Punch/Bash) pelo telegraph e grito (Roar/Call/Shout) ao chamar ladroes. Arqueiro: Idle;
+        /// Walk/Run recuando de frente para o courier; tiro (Shoot/Aim/Draw) com [0, soltar) esticado nos 0,8 s da mira e o resto em 0,15 s
+        /// depois do ArrowShot. Guarda/Bruto/Ogro: Idle; Walk perseguindo; golpe com os quadros [0, impacto) esticados pelo TeleProgress e
+        /// [impacto, fim) em 0,15 s depois do Strike (ART_BIBLE §7); ogro: Roar ao chamar o ladrao. Locomocao no ritmo da passada
+        /// (stride_mps) na velocidade do Core. Clipe que a folha nao tem cai no Pick (Idle / 1o clipe), nunca em erro.</summary>
         void AnimEnemy(Ent v, Enemy e, Vector2 p, Vector2 vel, Vector2 cp, float dt)
         {
             SpriteAnim a = v.Anim; SpriteSheet s = a.Sheet;
             Vector2 face = vel;
             int clip, frame = -1;
-            float speed = e.Carry != null ? Balance.ThiefFlee : e.Def.Speed;   // m/s do Core (quem anda, anda na velocidade cheia)
+            bool tele = e.State == EnemyState.Telegraph, captain = e.Type == EnemyType.Captain;
+            float impact = At(ImpactFrac, (int)e.Type, 0.6f);
+            // m/s do Core (quem anda, anda na velocidade cheia)
+            float speed = e.Carry != null ? captain ? Balance.CaptainFlee : Balance.ThiefFlee : e.Def.Speed;
             switch (e.Type)
             {
                 case EnemyType.Bat:
@@ -491,19 +576,40 @@ namespace DC
                     v.Up.localPosition = new Vector3(0f, (Lift * BatZ + bob) / Tilt, 0f);
                     v.Spr.transform.localScale = new Vector3(0.825f + 0.175f * Mathf.Sin(_time * 62.83f + e.Phase * 6f), 1f, 1f);
                     break;
+                case EnemyType.Slime:
+                    clip = s.Pick("Static");
+                    if (Mathf.Abs(vel.x) > 1e-4f) v.FlipX = vel.x > 0f;
+                    float sq = Mathf.Sin(_time * (vel.sqrMagnitude > 1e-6f ? 9f : 5f) + e.Phase * 6f);   // pivo no pe: estica sem sair do chao
+                    v.Spr.transform.localScale = new Vector3(1f + 0.1f * sq, 1f - 0.1f * sq, 1f);
+                    break;
                 case EnemyType.Thief:
+                case EnemyType.Captain:
                     if (e.Carry != null) clip = s.Pick("CarryRun", "Run");
                     else if (e.State == EnemyState.Grab && (clip = s.Clip("Grab")) >= 0)
                         frame = (int)(e.GrabT / Balance.ThiefGrab * s.Frames(clip));   // termina no Hold, que emenda no CarryRun
-                    else clip = e.State == EnemyState.Chase ? s.Pick("Run") : s.Pick("Lurk");
+                    else if (captain && (tele || v.StrikeT > 0f) && (clip = First(s, CaptainHit)) >= 0)
+                    {
+                        frame = StrikeFrame(s, clip, impact, tele, e.TeleProgress, v.StrikeT);
+                        face = cp - p;
+                    }
+                    else if (captain && v.RoarT > 0f && (clip = First(s, Shout)) >= 0) face = cp - p;
+                    else if (e.State == EnemyState.Chase) clip = s.Pick("Run", "Walk");
+                    else { clip = s.Pick("Lurk"); if (captain) face = cp - p; }
+                    break;
+                case EnemyType.Archer:
+                    if ((tele || v.StrikeT > 0f) && (clip = First(s, ArcherShoot)) >= 0)
+                    {
+                        frame = StrikeFrame(s, clip, impact, tele, e.TeleProgress, v.StrikeT);
+                        face = V(e.Aim);
+                    }
+                    else if (e.State == EnemyState.Flee) { clip = s.Pick("Walk", "Run"); face = cp - p; }   // recua de frente para o courier
+                    else { clip = s.Pick("Idle"); face = cp - p; }
                     break;
                 default:
-                    bool tele = e.State == EnemyState.Telegraph;
-                    clip = tele || v.StrikeT > 0f ? s.Clip(AttackClip[(int)e.Type]) : -1;
+                    clip = tele || v.StrikeT > 0f ? s.Clip(At(AttackClip, (int)e.Type, null) ?? "Attack") : -1;
                     if (clip >= 0)
                     {
-                        int n = s.Frames(clip), k = Mathf.Max(1, Mathf.Min(n - 1, Mathf.RoundToInt(ImpactFrac[(int)e.Type] * n)));
-                        frame = tele ? Mathf.Min((int)(e.TeleProgress * k), k - 1) : k + (int)((1f - v.StrikeT / StrikeHold) * (n - k));
+                        frame = StrikeFrame(s, clip, impact, tele, e.TeleProgress, v.StrikeT);
                         face = cp - p;
                     }
                     else if (v.RoarT > 0f && (clip = s.Clip("Roar")) >= 0) face = cp - p;   // o clipe inteiro, uma vez (OnEvent)
@@ -515,8 +621,15 @@ namespace DC
             a.Step(dt, speed);
             a.Face(face.x, face.y);
             a.Show(frame);
-            if (e.Type == EnemyType.Bat) v.Spr.flipX = v.FlipX;
+            if (e.Type == EnemyType.Bat || e.Type == EnemyType.Slime) v.Spr.flipX = v.FlipX;
             v.HasHand = a.Hands(out v.Hand, out v.HandFront);
+        }
+
+        /// <summary>Quadro do golpe: [0, impacto) esticados pelo telegraph; depois [impacto, fim) em StrikeHold (ART_BIBLE §7).</summary>
+        static int StrikeFrame(SpriteSheet s, int clip, float impact, bool tele, float progress, float strikeT)
+        {
+            int n = s.Frames(clip), k = Mathf.Max(1, Mathf.Min(n - 1, Mathf.RoundToInt(impact * n)));
+            return tele ? Mathf.Min((int)(progress * k), k - 1) : k + (int)((1f - strikeT / StrikeHold) * (n - k));
         }
 
         static Cargo NearestGround(Run run, V2 from)
@@ -529,32 +642,6 @@ namespace DC
                 if (dd < bd) { bd = dd; best = g; }
             }
             return best;
-        }
-
-        void DrawShots(Run run)
-        {
-            List<Shot> list = run.Shots;
-            while (_shots.Count < list.Count)
-            {
-                var s = new Ent { Root = new GameObject("Tiro").transform };
-                s.Root.SetParent(_root, false);
-                // projetil procedural (ART_BIBLE §9): nucleo branco com halo azul de 0,25 m e rastro de 0,4 m
-                s.Deco = Art.NewSprite(s.Root, "Rastro", Art.Glow(), Art.A(Art.Shot, 0.7f), OShot, new Vector2(0f, -0.2f), new Vector2(0.22f, 0.5f));
-                s.Ring = Art.NewSprite(s.Root, "Halo", Art.Glow(), Art.Shot, OShot + 1, Vector2.zero, Vector2.one * 0.4f);
-                s.Body = Art.NewSprite(s.Root, "Nucleo", Art.Disc(), Color.white, OShot + 2, Vector2.zero, Vector2.one * 0.14f);
-                _shots.Add(s);
-            }
-            float lift = _courier.Anim != null ? Lift * ShotZ / Tilt : 0f;   // com sprite, voa na altura do peito (0,9 m)
-            for (int i = 0; i < _shots.Count; i++)
-            {
-                Ent v = _shots[i];
-                bool on = i < list.Count && list[i].Target != null;
-                if (v.Root.gameObject.activeSelf != on) v.Root.gameObject.SetActive(on);
-                if (!on) continue;
-                Shot s = list[i];
-                v.Root.localPosition = V(s.Pos) + new Vector2(0f, lift);
-                v.Root.localRotation = Quaternion.Euler(0f, 0f, Angle(s.Target.Pos - s.Pos));
-            }
         }
 
         void DrawRoomState(Run run, float dt)
@@ -613,24 +700,28 @@ namespace DC
             _roomLabels.Clear(); _roomLabelPos.Clear(); _doors.Clear(); _enemyHit.Clear();
             _chest = _chestLock = _chestArc = _deliverRing = null; _chestShut = _chestOpen = null; _client = _corpse = null;
             foreach (CargoV v in _cargos) v.PulseT = 0f;
+            ClearRoomV1();
             Transform r = _roomRoot;
             Transform up = Upright(r, "EmPe", Vector2.zero);   // placas e arcos (sem SortingGroup: ficam atras dos atores)
             RoomDef room = run.Room;
             float W = Balance.RoomW, H = Balance.RoomH;
 
-            // cenario so em azul-violeta-cinza (ART_BIBLE §3): piso em lajes, parede com tampo e face, obstaculo com tampo e aresta
-            SpriteRenderer floor = Art.NewSprite(r, "Piso", Art.Floor(), Color.white, OFloor, new Vector2(W / 2f, H / 2f), Vector2.one);
+            // cenario so em azul-violeta-cinza (ART_BIBLE §3): piso em lajes (textura `piso` tingida para o #3E4458, ou as lajes
+            // procedurais), parede de fundo de tijolos (`parede`), paredes laterais com tampo, obstaculo com tampo e aresta (ou pilar)
+            LoadTextures();
+            SpriteRenderer floor = Art.NewSprite(r, "Piso", _floorTex != null ? _floorTex : Art.Floor(), _floorTex != null ? FloorTint : Color.white,
+                OFloor, new Vector2(W / 2f, H / 2f), Vector2.one);
             floor.drawMode = SpriteDrawMode.Tiled; floor.size = new Vector2(W, H);
             Rect(r, "ParedeEsq", -WallT / 2f, H / 2f, WallT, H + 2f * WallT, Art.WallTop, OWall);
             Rect(r, "ParedeDir", W + WallT / 2f, H / 2f, WallT, H + 2f * WallT, Art.WallTop, OWall);
             Rect(r, "ParedeBaixo", W / 2f, -WallT / 2f, W + 2f * WallT, WallT, Art.WallTop, OWall);
-            Rect(r, "ParedeCima", W / 2f, H + TopWall / 2f, W + 2f * WallT, TopWall, Art.Wall, OWall);
-            Rect(r, "TampoCima", W / 2f, H + TopWall - 0.06f, W + 2f * WallT, 0.12f, Art.WallTop, OWall + 1);
+            BuildBackWall(up);
             Rect(r, "Rodape", W / 2f, H + 0.04f, W, 0.08f, Art.Skirt, OWall + 1);
             Rect(r, "Entrada", Balance.Entrance.X, -WallT / 2f, 2f * Balance.DoorHalf, WallT, Art.DoorIn, OWall + 1);
             foreach (Core.Rect o in room.Obstacles)
             {
                 Rect(r, "Sombra", o.C.X + 0.1f, o.C.Y - 0.1f, 2f * o.H.X, 2f * o.H.Y, Art.A(Art.Dark, 0.35f), OShadow);
+                if (BuildPillar(r, o)) continue;   // bloco quadrado de 1-1,2 m com a folha `pilar`: o pilar em pe no lugar do bloco
                 Rect(r, "Face", o.C.X, o.C.Y, 2f * o.H.X, 2f * o.H.Y, Art.Block, OBlock);
                 float top = Mathf.Max(0.1f, 2f * o.H.Y - 0.3f);   // tampo em cima, face de 0,3 m embaixo
                 Rect(r, "Tampo", o.C.X, o.C.Y + o.H.Y - top / 2f, 2f * o.H.X, top, Art.BlockTop, OBlock + 1);
@@ -639,6 +730,7 @@ namespace DC
             foreach (Door d in run.Doors) BuildDoor(r, up, d);
             if (run.Chest != null) PaintChest(r, run.Chest.Pos);
             if (room.Delivery) PaintClient(r);
+            BuildRoomV1(run, r, up);
             _root.gameObject.SetActive(true);
         }
 
@@ -658,12 +750,17 @@ namespace DC
             else Rect(r, "Vao", x, gy, w, gh, Art.DoorIn, ODoor + 1);
             dv.Bars = Art.NewSprite(r, "Grade", Art.Bars(), Art.Steel, ODoor + 2, new Vector2(x, gy), new Vector2(gw, gh));
             dv.Lock = Art.NewSprite(up, "Cadeado", Art.Lock(), Art.Role(EnemyType.Guard), ODoor + 3, new Vector2(x, Tilt * gy), Vector2.one * 0.38f);
+            // mensagem: envelope ao lado do cadeado do Guarda/reforco ("a mensagem abre esta porta"); o cadeado que cai sai daqui
+            dv.Env = Art.NewSprite(up, "Envelope", Art.Envelope(), Art.CargoColor(CargoType.Message), ODoor + 3, new Vector2(x + 0.42f, Tilt * gy + 0.05f), new Vector2(0.36f, 0.3f));
+            dv.Env.enabled = false;
+            dv.LockAt = new Vector2(x, gy); dv.Was = d.Locked;
             _doors.Add(dv);
 
             RoomDef to = Content.Rooms[d.Room];
             const float icon = 0.36f, gap = 0.04f;
-            bool special = to.Delivery || to.Boss;
+            bool special = to.Delivery || to.Boss || to.Mini;   // chifres tambem no Capitao (M1)
             float pw = 3 * (icon + gap) + 0.16f + (special ? icon + gap : 0f);
+            RiskBadge(up, x, pw, d.Risk);   // risco para a carga (CONTRATO_V1 §7), separado das caveiras
             Rect(up, "PlacaBorda", x, _plateS, pw + 0.08f, PlateH + 0.08f, Art.Tinta, OPlate);
             Rect(up, "Placa", x, _plateS, pw, PlateH, Art.Plate, OPlate + 1);
             float x0 = x - pw / 2f + 0.08f + icon / 2f;
@@ -732,16 +829,22 @@ namespace DC
             e.Fill = Art.NewSprite(e.Root, "TelegraphCheio", Art.Disc(), Art.A(Art.Tele, 0.25f), ORing - 1, Vector2.zero, Vector2.one);
             e.Line = Art.NewSprite(e.Root, "Intencao", Art.Square(), Art.A(Art.Role(EnemyType.Thief), 0.6f), ORing, Vector2.zero, Vector2.one);
             e.Arc = Art.NewSprite(e.Root, "Arco", Art.Arc(1f), Art.Role(EnemyType.Thief), ORing + 1, Vector2.zero, Vector2.one);
+            e.AimFill = Art.NewSprite(e.Root, "MiraCheia", Art.Square(), Art.A(Art.Tele, 0.25f), ORing - 1, Vector2.zero, Vector2.one);
+            e.AimLine = Art.NewSprite(e.Root, "Mira", Art.Square(), Art.Tele, ORing, Vector2.zero, Vector2.one);
             // em pe
             e.Body = Art.NewSprite(e.Dir, "Corpo", Art.Disc(), Color.white, order, Vector2.zero, Vector2.one);
             e.Deco = Art.NewSprite(e.Dir, "Enfeite", Art.Disc(), Color.white, order + 1, Vector2.zero, Vector2.one);
+            e.Extra = Art.NewSprite(e.Dir, "Extra", Art.Square(), Color.white, order + 4, Vector2.zero, Vector2.one);
             e.Eyes = Art.NewSprite(e.Up, "Olhos", Art.Eyes(), Color.white, order + 2, Vector2.zero, Vector2.one);
             e.Pupils = Art.NewSprite(e.Up, "Pupilas", Art.Eyes(), Art.Tinta, order + 3, Vector2.zero, Vector2.one);
             e.HpBg = Art.NewSprite(e.Up, "VidaFundo", Art.Square(), Art.A(Art.Tinta, 0.85f), order + 4, Vector2.zero, Vector2.one);
             e.HpFill = Art.NewSprite(e.Up, "Vida", Art.Square(), Art.Bad, order + 5, Vector2.zero, Vector2.one);
+            e.StunA = Art.NewSprite(e.Up, "Tonto", Art.Star(), Art.Gold, order + 6, Vector2.zero, Vector2.one * 0.18f);
+            e.StunB = Art.NewSprite(e.Up, "Tonto", Art.Star(), Art.Gold, order + 6, Vector2.zero, Vector2.one * 0.14f);
             e.Spr = Art.NewSprite(e.Up, "Sprite", null, Color.white, order, Vector2.zero, Vector2.one);
             if (Art.FxMat != null) e.Spr.sharedMaterial = Art.FxMat;   // flash branco (Art.Fx)
             e.Ring.enabled = e.Fill.enabled = e.Line.enabled = e.HpBg.enabled = e.HpFill.enabled = e.Arc.enabled = e.Shadow.enabled = e.Spr.enabled = false;
+            e.AimLine.enabled = e.AimFill.enabled = e.Extra.enabled = e.StunA.enabled = e.StunB.enabled = false;
             return e;
         }
 
@@ -775,14 +878,17 @@ namespace DC
 
         /// <summary>Inimigo por papel, cor E forma (ART_BIBLE §3/§4): Morcego = asas de membrana com corpo vinho; Ladrao = capuz roxo
         /// pontudo com rosto verde; Guarda = elmo quadrado vermelho com viseira de aco; Bruto = bloco laranja-ferrugem largo com manoplas
-        /// de pedra; Ogro = disco musgo grande com chifres de osso. Com a folha do papel (Resources/Sprites/&lt;preset&gt;), o sprite.</summary>
-        static void PaintEnemy(Ent v, EnemyType t)
+        /// de pedra; Ogro = disco musgo grande com chifres de osso. v1 (ASSETS §8): Arqueiro = manto ciano-petroleo com caveira de osso
+        /// (os olhos sao os furos dela) e o arco virado para a mira; Limo = gota rosa-chiclete com brilho, squash e estica; Capitao = capuz
+        /// roxo maior com tricornio dourado. Papel sem desenho proprio (enum novo): disco na cor do papel. Com a folha do papel
+        /// (Resources/Sprites/&lt;preset&gt;), o sprite.</summary>
+        static void PaintEnemy(Ent v, EnemyType t, EnemyDef def)
         {
             v.Type = (int)t;
             v.Id = -1;
-            v.BodyC = Art.Role(t);
-            float r = EnemyDef.All[(int)t].Radius, d = 2f * r;
-            UseSprite(v, SpriteSheet.Get(EnemySheet[(int)t]), r);
+            v.BodyC = Papel(t);
+            float r = def.Radius, d = 2f * r;
+            UseSprite(v, SheetAt(EnemySheet, (int)t), r);
             v.Body.sprite = Art.Disc();
             v.Body.transform.localScale = Vector3.one * d;
             v.Deco.sprite = Art.Disc();
@@ -793,6 +899,8 @@ namespace DC
             v.Eyes.transform.localScale = Vector3.one * (d * 0.55f);
             v.Pupils.transform.localScale = Vector3.one * (d * 0.28f);
             v.Eyes.color = Color.white;
+            v.Extra.enabled = false;
+            v.Extra.transform.localRotation = Quaternion.identity;
             switch (t)
             {
                 case EnemyType.Bat:
@@ -814,10 +922,33 @@ namespace DC
                     v.Body.sprite = Art.Rounded(); v.Body.transform.localScale = new Vector3(d * 1.15f, d * 0.92f, 1f);
                     v.Deco.sprite = Art.Fists(); v.Deco.color = Art.SteelDark; v.Deco.transform.localScale = Vector3.one * (d * 1.5f);
                     break;
-                default:   // Ogro
+                case EnemyType.Ogre:
                     v.Deco.sprite = Art.Horns(); v.Deco.color = Art.Bone;
                     v.Deco.sortingOrder = v.Body.sortingOrder - 1;
                     v.Deco.transform.localScale = Vector3.one * (d * 1.45f);
+                    break;
+                case EnemyType.Archer:
+                    v.Deco.sprite = Art.Skull(); v.Deco.color = Art.Bone;
+                    v.Deco.transform.localPosition = new Vector3(0f, 0.1f * r, 0f); v.Deco.transform.localScale = Vector3.one * (d * 0.72f);
+                    v.Eyes.enabled = v.Pupils.enabled = false;   // os furos da caveira mostram o manto ciano: olhos acesos
+                    v.Extra.enabled = v.Anim == null;
+                    v.Extra.sprite = Art.Arc(0.5f); v.Extra.color = ArcherBow;   // meio anel com a barriga para +x: girado para a mira
+                    v.Extra.transform.localScale = Vector3.one * (d * 0.95f);
+                    break;
+                case EnemyType.Slime:
+                    v.Deco.color = Art.A(Color.white, 0.7f);   // brilho de geleia
+                    v.Deco.transform.localPosition = new Vector3(-0.32f * r, 0.28f * r, 0f); v.Deco.transform.localScale = Vector3.one * (d * 0.26f);
+                    v.Eyes.transform.localScale = Vector3.one * (d * 0.5f);
+                    break;
+                case EnemyType.Captain:
+                    v.Body.sprite = Art.Hood(); v.Body.transform.localScale = Vector3.one * (d * 1.15f);
+                    v.Deco.color = Art.ThiefSkin; v.Deco.transform.localPosition = new Vector3(0f, -0.08f * r, 0f); v.Deco.transform.localScale = Vector3.one * (d * 0.6f);
+                    v.Extra.enabled = v.Anim == null;
+                    v.Extra.sprite = Art.Triangle(); v.Extra.color = Art.Gold;   // tricornio dourado (roxo = roubo, dourado = chefe)
+                    v.Extra.transform.localPosition = new Vector3(0f, 0.95f * r, 0f); v.Extra.transform.localScale = new Vector3(d * 1.25f, d * 0.5f, 1f);
+                    break;
+                default:   // papel novo sem desenho: disco na cor do papel, com olhos
+                    v.Deco.enabled = false;
                     break;
             }
         }
@@ -829,8 +960,14 @@ namespace DC
             // no chao: anel de pegar e contagem do ladrao
             v.Range = Art.NewSprite(v.Root, "Alcance", Art.DashedRing(), Art.A(Art.Cargo, 0.2f), ORing, Vector2.zero, Vector2.one);
             v.Count = Art.NewSprite(v.Root, "Contagem", Art.Arc(0f), Art.Cargo, ORing + 1, Vector2.zero, Vector2.one * 1.05f);
+            // barril aceso: o alcance real da explosao (2,5 m) com o enchimento crescendo no pavio, como um telegraph
+            v.BlastFill = Art.NewSprite(v.Root, "ExplosaoCheia", Art.Disc(), Art.A(Art.Bad, 0.16f), ORing - 1, Vector2.zero, Vector2.one);
+            v.Blast = Art.NewSprite(v.Root, "Explosao", Art.ThinRing(), Art.Bad, ORing, Vector2.zero, Vector2.one * (2f * Balance.BarrelRadius));
             // em pe: Vis = forma procedural (escala = tamanho da carga) e, com sprite, o contorno e as rachaduras por cima dele
             v.Up = Upright(v.Root, "EmPe", Vector2.zero, out v.G);
+            v.Pad = Art.NewSprite(v.Up, "Acolchoada", Art.Glow(), Art.Cream, -1, Vector2.zero, Vector2.one);
+            v.Spark = Art.NewSprite(v.Up, "Pavio", Art.Glow(), Flame, 6, Vector2.zero, Vector2.one * 0.3f);
+            v.Blast.enabled = v.BlastFill.enabled = v.Pad.enabled = v.Spark.enabled = false;
             v.Vis = new GameObject("Forma").transform; v.Vis.SetParent(v.Up, false);
             v.Outline = Art.NewSprite(v.Vis, "Contorno", Art.Rounded(), Art.Cargo, 0, Vector2.zero, Vector2.one * 1.22f);
             v.Body = Art.NewSprite(v.Vis, "Corpo", Art.Rounded(), Color.white, 1, Vector2.zero, Vector2.one);
@@ -846,12 +983,13 @@ namespace DC
         }
 
         /// <summary>Carga (ART_BIBLE §3/§6): caixa de madeira com cinta, reliquia de porcelana com gema, ovo com pintas (escala 1 = tamanho
-        /// dela). Resgate: selo creme numa medalha escura (o roxo e so do ladrao). Com a folha (`caixa`; `reliquia` e `ovo` no Lote 2), o
-        /// sprite, e o contorno segue a silhueta pelo shader (DrawCargos); sem o shader, o retangulo arredondado atras dele.</summary>
+        /// dela); v1: bolo de 2 andares com coracao, envelope com lacre dourado, caixa pesada com chapa de ferro, barril com caveira pintada.
+        /// Resgate: selo creme numa medalha escura (o roxo e so do ladrao). Com a folha (CargoSheet), o sprite, e o contorno segue a
+        /// silhueta pelo shader (DrawCargos); sem o shader, o retangulo arredondado atras dele.</summary>
         static void PaintCargo(CargoV v, CargoType t, bool rescue)
         {
             v.Painted = true; v.Type = t; v.Rescue = rescue;
-            v.Sheet = SpriteSheet.Get(CargoSheet[(int)t]);
+            v.Sheet = SheetAt(CargoSheet, (int)t);
             bool spr = v.Sheet != null;
             v.Body.sprite = Art.CargoSprite(t);
             v.Outline.sprite = spr ? Art.Rounded() : v.Body.sprite;
@@ -868,7 +1006,23 @@ namespace DC
                     v.Deco.sprite = Art.Diamond(); v.Deco.color = Art.Gem;
                     v.Deco.transform.localPosition = new Vector3(0f, 0.08f, 0f); v.Deco.transform.localScale = Vector3.one * 0.32f;
                     break;
-                default:
+                case CargoType.Cake:
+                    v.Deco.sprite = Art.Heart(); v.Deco.color = CakeHeart;
+                    v.Deco.transform.localPosition = new Vector3(0f, 0.3f, 0f); v.Deco.transform.localScale = Vector3.one * 0.22f;   // topo do andar de cima
+                    break;
+                case CargoType.Message:
+                    v.Deco.sprite = Art.Disc(); v.Deco.color = Art.Gold;   // lacre de cera dourado
+                    v.Deco.transform.localPosition = new Vector3(0f, 0.05f, 0f); v.Deco.transform.localScale = Vector3.one * 0.3f;
+                    break;
+                case CargoType.Heavy:
+                    v.Deco.sprite = Art.Square(); v.Deco.color = Art.SteelDark;   // chapa de ferro rebitada no meio
+                    v.Deco.transform.localPosition = Vector3.zero; v.Deco.transform.localScale = new Vector3(0.92f, 0.22f, 1f);
+                    break;
+                case CargoType.Barrel:
+                    v.Deco.sprite = Art.Skull(); v.Deco.color = Art.Bone;   // caveira pintada (polvora)
+                    v.Deco.transform.localPosition = Vector3.zero; v.Deco.transform.localScale = Vector3.one * 0.42f;
+                    break;
+                default:   // ovo (e carga nova sem desenho: o ovo e a forma de reserva do Art.CargoSprite)
                     v.Deco.sprite = Art.Disc(); v.Deco.color = Art.EggSpot;
                     v.Deco.transform.localPosition = new Vector3(0.14f, 0.12f, 0f); v.Deco.transform.localScale = Vector3.one * 0.22f;
                     break;
@@ -909,6 +1063,9 @@ namespace DC
             _chestLock = Art.NewSprite(up, "Fecho", Art.Square(), Art.Gold, OChest + 1, new Vector2(0f, 0.1f), Vector2.one * 0.14f);
             _chestArc = Art.NewSprite(r, "Abrindo", Art.Arc(0f), Art.Coin, ORing, p, Vector2.one * 1.3f);
             _chestArc.enabled = false;
+            // perk Ima: o raio maior de abrir (2,7 m) tracejado em volta do bau
+            _chestRange = Art.NewSprite(r, "Ima", Art.DashedRing(), Art.A(Art.Coin, 0.3f), OMark + 1, p, Vector2.one * (2f * Balance.PerkMagnetRange));
+            _chestRange.enabled = false;
         }
 
         /// <summary>Cliente da entrega (D1): sprite `cliente` (Idle, Waving ao entrar, reacao na entrega) ou o procedural verde com chapeu
@@ -970,7 +1127,7 @@ namespace DC
                 case Ev.CargoBroken: Float(p, Textos.Quebrou, Art.Bad, 56); Burst(p, Art.CargoColor(CargoType.Relic), 14, 4f, 0.18f, 0.6f); Burst(p, Art.Gold, 8, 3f, 0.12f, 0.5f); Shake(0.2f, 0.3f); break;
                 case Ev.EnemyHit: _enemyHit[e.A] = 0.12f; Burst(p, Color.white, 3, 2f, 0.1f, 0.2f); break;
                 case Ev.EnemyDie:
-                    Burst(p, Art.Role((EnemyType)e.B), 12, 3.5f, 0.2f, 0.45f);
+                    Burst(p, Papel((EnemyType)e.B), 12, 3.5f, 0.2f, 0.45f);
                     if (e.B == (int)EnemyType.Ogre && _sOgroFim != null) Corpse(p);
                     break;
                 case Ev.Strike:
@@ -1004,6 +1161,7 @@ namespace DC
                     Burst(V(run.Courier.Pos), Art.Good, 14, 4f, 0.14f, 0.7f);
                     break;
             }
+            OnEventV1(e, run, p);
         }
 
         // ------------------------------------------------------------------ particulas e numeros flutuantes
@@ -1011,18 +1169,24 @@ namespace DC
         void Burst(Vector2 at, Color c, int n, float speed, float size, float life)
         {
             for (int i = 0; i < n; i++)
+                Puff(Art.Disc(), at, Random.insideUnitCircle * speed, c, size * Random.Range(0.8f, 1.3f), size * 0.3f, life * Random.Range(0.7f, 1.2f));
+        }
+
+        /// <summary>Uma particula do pool (no chao achatado do _root): sprite, velocidade (amortece), cor (alfa some no fim), escala s0 -> s1
+        /// e ordem (decalque do chao = OMark; o resto OPart). Pool cheio: a particula some, nunca trava nem aloca.</summary>
+        void Puff(Sprite s, Vector2 at, Vector2 vel, Color c, float s0, float s1, float life, int order = OPart)
+        {
+            Part p = null;
+            foreach (Part x in _parts) if (!x.Live) { p = x; break; }
+            if (p == null)
             {
-                Part p = null;
-                foreach (Part x in _parts) if (!x.Live) { p = x; break; }
-                if (p == null)
-                {
-                    if (_parts.Count >= 120) return;   // ponytail: teto do pool; pico de efeitos perde particulas, nunca trava
-                    p = new Part { R = Art.NewSprite(_root, "Particula", Art.Disc(), Color.white, OPart, Vector2.zero, Vector2.one) };
-                    _parts.Add(p);
-                }
-                p.Live = true; p.R.enabled = true; p.Age = 0f; p.Life = life * Random.Range(0.7f, 1.2f);
-                p.P = at; p.V = Random.insideUnitCircle * speed; p.C = c; p.S0 = size * Random.Range(0.8f, 1.3f); p.S1 = size * 0.3f;
+                if (_parts.Count >= MaxParts) return;   // ponytail: teto do pool; pico de efeitos perde particulas, nunca trava
+                p = new Part { R = Art.NewSprite(_root, "Particula", s, Color.white, order, Vector2.zero, Vector2.one) };
+                _parts.Add(p);
             }
+            p.Live = true; p.R.enabled = true; p.R.sprite = s; p.R.sortingOrder = order; p.Age = 0f; p.Life = Mathf.Max(0.01f, life);
+            p.P = at; p.V = vel; p.C = c; p.S0 = s0; p.S1 = s1;
+            p.R.transform.localPosition = at; p.R.transform.localScale = Vector3.one * s0; p.R.color = c;
         }
 
         void TickParts(float dt)
@@ -1080,6 +1244,7 @@ namespace DC
             foreach (Text t in _roomLabels) Object.Destroy(t.gameObject);
             _roomLabels.Clear(); _roomLabelPos.Clear();
             _roomKey = -1;
+            HideLabelsV1();
         }
 
         static Vector2 V(V2 v) => new Vector2(v.X, v.Y);

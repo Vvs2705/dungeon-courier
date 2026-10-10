@@ -6,7 +6,7 @@ namespace DC.Tests
 {
     /// <summary>Regras do CONTRATO_V01 §3-§8 e o catalogo de exploits do GDD §28. Cada teste monta a situacao pelo estado publico do
     /// Run (posicoes, vida, inimigos) e avanca pelo mesmo Tick que a View e o bot usam.</summary>
-    public class CoreTests
+    public partial class CoreTests
     {
         const float Dt = Balance.Step;
         static readonly V2 Up = new V2(0f, 1f), Left = new V2(-1f, 0f), Right = new V2(1f, 0f), Down = new V2(0f, -1f);
@@ -49,6 +49,7 @@ namespace DC.Tests
             Run r = sim.Run;
             for (int guard = 0; guard < 20 && sim.InContract; guard++)
             {
+                if (r.PerkOffer != null) sim.PickPerk(0);   // v1: escolha de perk depois das camadas 2 e 4 (o jogo fica parado nela)
                 r.Enemies.Clear();
                 foreach (Cargo g in r.Cargos)
                     if (g.State == CargoState.Ground) { r.Courier.Pos = g.Pos + new V2(0.3f, 0f); Steps(sim, 1, new V2(0f, 0.2f)); }
@@ -58,12 +59,12 @@ namespace DC.Tests
                 {
                     r.Courier.Pos = Balance.Client - new V2(0f, 1f);
                     if (r.Pet != null) r.Pet.Pos = r.Courier.Pos;
-                    Steps(sim, 2, Up);
+                    for (int i = 0; i < 5 && sim.InContract; i++) Steps(sim, 1, Up);   // para no passo da entrega (sim.Events guarda o fim)
                     break;
                 }
                 r.Courier.Pos = new V2(r.Doors[System.Math.Min(door, r.Doors.Count - 1)].Pos.X, 13.4f);
                 if (r.Pet != null) r.Pet.Pos = r.Courier.Pos;
-                for (int i = 0; i < 10 && r.Layer == layer; i++) Steps(sim, 1, Up);
+                for (int i = 0; i < 150 && r.Layer == layer; i++) { r.Enemies.Clear(); Steps(sim, 1, Up); }   // v1: a emboscada solta a porta quando o reforco cai
                 Assert.Greater(r.Layer, layer, "nao passou pela porta na sala " + r.Room.Code);
             }
             Assert.IsFalse(sim.InContract);
@@ -158,8 +159,8 @@ namespace DC.Tests
             for (int i = 0; i < StepsFor(0.2f); i++) Steps(sim, 1, Up, true);
             Assert.AreEqual(2, r.Courier.DashCount, "dash nao voltou em 1,7 s");
 
-            var sim2 = NewSim(); sim2.Levels[(int)Upgrade.Dash] = 5;
-            Assert.AreEqual(0.8f, sim2.DashCooldown, 1e-4f);
+            var sim2 = NewSim(); sim2.Levels[(int)Upgrade.Dash] = Balance.UpgradeMax;   // v1: 8 niveis de -6% (era 5 de -10%)
+            Assert.AreEqual(1.6f * (1f - 0.06f * 8), sim2.DashCooldown, 1e-4f);
             Run r2 = Start(sim2, 0);
             Steps(sim2, 1, Up, true);
             for (int i = 0; i < StepsFor(0.85f); i++) Steps(sim2, 1, Up, true);
@@ -513,8 +514,8 @@ namespace DC.Tests
             var relic = NewSim(); Run r = Start(relic, 4);
             r.Main.Cracks = 1;
             ContractResult c5 = DeliverFrom(relic);
-            Assert.AreEqual(109, c5.Payment, "C5: 65 x 1,4 x 1,2");
-            Assert.AreEqual(137, Deliver(NewSim(), 4).Payment, "C5 perfeita: 65 x 1,4 x 1,5 = 136,5 -> 137 (sem erro de float)");
+            Assert.AreEqual(126, c5.Payment, "C5: 75 x 1,4 x 1,2");
+            Assert.AreEqual(158, Deliver(NewSim(), 4).Payment, "C5 perfeita: 75 x 1,4 x 1,5 = 157,5 -> 158 (sem erro de float: em float daria 157)");
             var bag3 = NewSim(); bag3.Levels[(int)Upgrade.Bag] = 3;
             Assert.AreEqual(88, Deliver(bag3, 1).Payment, "C2 com Bolsa 3: 45 x 1,5 x 1,3 = 87,75 -> 88 (um arredondamento so)");
         }
@@ -534,8 +535,9 @@ namespace DC.Tests
         [Test]
         public void Guilda_CustoDosUpgrades_ECompra()
         {
-            int[] expected = { 60, 95, 155, 245, 395 };
-            for (int i = 0; i < 5; i++) Assert.AreEqual(expected[i], Balance.UpgradeCost(i));
+            int[] expected = { 60, 90, 135, 205, 305, 455, 685, 1025 };   // v1: 8 niveis, 60 x 1,5^n (era 5 niveis, 1,6^n)
+            Assert.AreEqual(expected.Length, Balance.UpgradeMax);
+            for (int i = 0; i < expected.Length; i++) Assert.AreEqual(expected[i], Balance.UpgradeCost(i));
             var sim = new Sim(1) { Coins = 5000 };
             Assert.IsFalse(sim.Buy(Upgrade.Life), "guilda abre so depois do C1");
             sim.Reputation = 1;
@@ -543,10 +545,10 @@ namespace DC.Tests
             Assert.AreEqual(4940, sim.Coins);
             Assert.AreEqual(Balance.BaseHp + 1, sim.MaxHp);
             Assert.IsTrue(Has(sim.Events, Ev.GuildUpgrade)); Assert.IsTrue(Has(sim.Events, Ev.CurrencySink));
-            for (int i = 0; i < 4; i++) Assert.IsTrue(sim.Buy(Upgrade.Life));
+            for (int i = 0; i < Balance.UpgradeMax - 1; i++) Assert.IsTrue(sim.Buy(Upgrade.Life));
             Assert.AreEqual(-1, sim.UpgradeCost(Upgrade.Life));
-            Assert.IsFalse(sim.Buy(Upgrade.Life), "passou do nivel 5");
-            Assert.AreEqual(5000 - 950, sim.Coins);
+            Assert.IsFalse(sim.Buy(Upgrade.Life), "passou do nivel maximo");
+            Assert.AreEqual(5000 - 2960, sim.Coins);
             var poor = new Sim(1) { Coins = 59, Reputation = 1 };
             Assert.IsFalse(poor.Buy(Upgrade.Bag));
             Assert.AreEqual(59, poor.Coins);
@@ -642,12 +644,13 @@ namespace DC.Tests
             sim.Levels[0] = 2; sim.Levels[1] = 1; sim.Levels[2] = 5;
             sim.Pending = new LostCargo { Id = 11, Type = CargoType.Relic, Cracks = 2, Room = Content.R5, Value = 91, Contract = 4 };
             sim.RescuedIds.Add(3); sim.RescuedIds.Add(8);
+            sim.Levels[3] = 7;
             string a = sim.Save();
-            StringAssert.StartsWith("v=1\n", a);
+            StringAssert.StartsWith("v=2\n", a);
             Assert.IsFalse(sim.Dirty);
             Sim b = Sim.Load(a);
             Assert.AreEqual(321, b.Coins); Assert.AreEqual(4, b.Reputation); Assert.AreEqual(77, b.Seed);
-            Assert.AreEqual(new[] { 2, 1, 5 }, b.Levels);
+            Assert.AreEqual(new[] { 2, 1, 5, 7 }, b.Levels);
             Assert.AreEqual(11, b.Pending.Id); Assert.AreEqual(CargoType.Relic, b.Pending.Type); Assert.AreEqual(2, b.Pending.Cracks); Assert.AreEqual(91, b.Pending.Value);
             Assert.IsTrue(b.RescuedIds.Contains(3) && b.RescuedIds.Contains(8));
             Assert.AreEqual(a, b.Save());
@@ -673,15 +676,15 @@ namespace DC.Tests
             Sim s = Sim.Load("coins=120\nlv=1,0,2\nrep=3\n");
             Assert.IsFalse(s.SaveRefused);
             Assert.AreEqual(120, s.Coins); Assert.AreEqual(3, s.Reputation);
-            Assert.AreEqual(new[] { 1, 0, 2 }, s.Levels);
-            Assert.IsTrue(s.Dirty, "migracao tem de regravar em v1");
-            StringAssert.StartsWith("v=1\n", s.Save());
+            Assert.AreEqual(new[] { 1, 0, 2, 0 }, s.Levels);
+            Assert.IsTrue(s.Dirty, "migracao tem de regravar em v2");
+            StringAssert.StartsWith("v=2\n", s.Save());
         }
 
         [Test]
         public void Save_VersaoFuturaRecusada_SemApagar()
         {
-            const string future = "v=2\ncoins=999\nrep=8\nlv=5,5,5\n";
+            const string future = "v=3\ncoins=999\nrep=8\nlv=5,5,5,5\n";
             Sim s = Sim.Load(future);
             Assert.IsTrue(s.SaveRefused);
             Assert.AreEqual(0, s.Coins, "devolve estado novo");
@@ -695,9 +698,12 @@ namespace DC.Tests
         [Test]
         public void Save_LixoViraEstadoValido()
         {
-            Sim s = Sim.Load("v=1\ncoins=-50\nrep=999\nlv=9,x,-3\nrun=7,9,9,abc\npend=x\n");
+            Sim s = Sim.Load("v=2\ncoins=-50\nrep=999\nlv=9,x,-3\nrun=7,9,9,abc\npend=x\nstars=9z3\nwpn=7\nwlv=9,-1\ndseen=20261399\nrk=x\n");
             Assert.AreEqual(0, s.Coins); Assert.AreEqual(Sim.Contracts.Length, s.Reputation);
-            Assert.AreEqual(new[] { Balance.UpgradeMax, 0, 0 }, s.Levels);
+            Assert.AreEqual(new[] { Balance.UpgradeMax, 0, 0, 0 }, s.Levels);
+            Assert.AreEqual(3, s.Stars, "estrela fora de 0-3 vira 0");
+            Assert.AreEqual(Weapon.Sling, s.Equipped);
+            Assert.AreEqual(0, s.LastDateSeen);
             Assert.IsNull(s.Run); Assert.IsNull(s.Pending);
         }
 
@@ -724,7 +730,7 @@ namespace DC.Tests
             Assert.AreEqual(Content.R1, b.Run.Room.Id);
             Assert.AreEqual(CargoState.Held, b.Run.Main.State);
             Assert.AreEqual(EnemyType.Guard, b.Run.Enemies[0].Type);
-            Assert.AreEqual(5, b.Run.Enemies[0].Hp, "a sala volta inteira (inimigos de novo)");
+            Assert.AreEqual(EnemyDef.All[(int)EnemyType.Guard].Hp, b.Run.Enemies[0].Hp, "a sala volta inteira (inimigos de novo)");
         }
 
         [Test]
@@ -851,13 +857,14 @@ namespace DC.Tests
                     int code = p;
                     while (sim.InContract)
                     {
+                        if (r.PerkOffer != null) sim.PickPerk(0);
                         r.Enemies.Clear(); r.Courier.Hp = 99;
                         int layer = r.Layer;
                         if (r.Chest != null) WalkTo(sim, r.Chest.Pos, 1.0f, "C" + (c + 1) + " " + r.Room.Code + " bau");
                         if (r.Room.Delivery) { WalkTo(sim, Balance.Client, 0.5f, "C" + (c + 1) + " cliente"); break; }
                         int door = code % r.Doors.Count; code /= r.Doors.Count;
                         V2 target = new V2(r.Doors[door].Pos.X, Balance.RoomH);
-                        for (int i = 0; i < StepsFor(15f) && r.Layer == layer; i++) Steps(sim, 1, r.PathDir(r.Courier.Pos, target));
+                        for (int i = 0; i < StepsFor(15f) && r.Layer == layer; i++) { r.Enemies.Clear(); Steps(sim, 1, r.PathDir(r.Courier.Pos, target)); }   // reforco da emboscada sai da fila e cai
                         Assert.Greater(r.Layer, layer, "C" + (c + 1) + " " + r.Room.Code + " porta " + door + " nao alcancada");
                     }
                     Assert.AreEqual(Outcome.Delivered, sim.LastResult.Outcome, "C" + (c + 1) + " caminho " + p);
