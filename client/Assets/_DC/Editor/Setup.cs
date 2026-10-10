@@ -11,7 +11,10 @@ namespace DC.EditorTools
     /// Settings, cena e builds por script (mesmo padrao do Forge Street / Rune Relay). Idempotente. Em batch:
     ///   Unity -batchmode -quit -projectPath client -executeMethod DC.EditorTools.Setup.Apply
     ///   Unity -batchmode -quit -projectPath client -executeMethod DC.EditorTools.Setup.BuildWindows (ou BuildAndroidDev)
+    ///   Release (CONTRATO_V1 §14): ... -executeMethod DC.EditorTools.Setup.BuildAndroidRelease (ou BuildWindowsRelease)
     /// A cena e' artefato gerado e vazia: o Game nasce sozinho (RuntimeInitializeOnLoadMethod).
+    /// Assinatura do APK de release: a chave de DEBUG padrao do Unity (teste com jogadores por APK direto). A Play exige chave propria
+    /// (keystore de upload fora do repo, senha por variavel de ambiente) e AAB: isso entra quando for subir para a loja.
     /// </summary>
     public static class Setup
     {
@@ -19,13 +22,28 @@ namespace DC.EditorTools
         public const string AppId = "br.com.vstack.dungeoncourier";
         const string Scene = "Assets/_DC/Scenes/Main.unity";
         const string ApkDir = "Builds/android";
+        /// <summary>Versao mostrada ao jogador (Application.version) e no diario.</summary>
+        public const string Version = "1.0.0-beta";
+
+        /// <summary>versionCode do Android, gerado da versao (nunca editado a mao, nunca reutilizado): (maior*10000 + menor*100 + patch)*10
+        /// + estagio (alpha 1, beta 2, rc 5, final 9). 1.0.0-beta = 100002; 1.0.0 = 100009; 1.0.1-beta = 100012. A v0.1 usava 1.</summary>
+        public static int VersionCode(string v)
+        {
+            int dash = v.IndexOf('-');
+            string[] n = (dash < 0 ? v : v.Substring(0, dash)).Split('.');
+            string tag = dash < 0 ? "" : v.Substring(dash + 1);
+            int stage = tag.StartsWith("alpha") ? 1 : tag.StartsWith("beta") ? 2 : tag.StartsWith("rc") ? 5 : 9;
+            int Part(int i) => i < n.Length && int.TryParse(n[i], out int x) ? x : 0;
+            return (Part(0) * 10000 + Part(1) * 100 + Part(2)) * 10 + stage;
+        }
 
         [MenuItem("DC/Aplicar settings")]
         public static void Apply()
         {
             PlayerSettings.companyName = "V-STACK";
             PlayerSettings.productName = "Dungeon Courier";
-            PlayerSettings.bundleVersion = "0.1.0";
+            PlayerSettings.bundleVersion = Version;
+            PlayerSettings.Android.bundleVersionCode = VersionCode(Version);
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, AppId);
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Standalone, AppId);
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
@@ -37,7 +55,7 @@ namespace DC.EditorTools
             PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevelAuto;
             PlayerSettings.Android.predictiveBackSupport = true; // API 36: o voltar chega ao jogo como Esc (Input legado, ver activeInputHandler)
 
-            // Windows so' de dev: janela retrato para jogar e fotografar no PC.
+            // Windows: janela retrato 540x960 (dev e release) para jogar e fotografar no PC.
             PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
             PlayerSettings.defaultScreenWidth = 540;
             PlayerSettings.defaultScreenHeight = 960;
@@ -56,13 +74,16 @@ namespace DC.EditorTools
             }
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(Scene, true) };
             AssetDatabase.SaveAssets();
-            Debug.Log("DC Setup: ok (" + AppId + ", retrato, Android ARM64 IL2CPP API 26+, Input System)");
+            Debug.Log("DC Setup: ok (" + AppId + " " + Version + " code " + VersionCode(Version) + ", retrato, Android ARM64 IL2CPP API 26+, Input System)");
         }
 
-        public static void BuildWindows() => Build(BuildTarget.StandaloneWindows64, "Builds/win/DungeonCourier.exe");
-        public static void BuildAndroidDev() => Build(BuildTarget.Android, ApkDir + "/DungeonCourier-dev.apk");
+        public static void BuildWindows() => Build(BuildTarget.StandaloneWindows64, "Builds/win/DungeonCourier.exe", false);
+        public static void BuildAndroidDev() => Build(BuildTarget.Android, ApkDir + "/DungeonCourier-dev.apk", false);
+        /// <summary>APK de release: nao-development, ARM64, IL2CPP (Apply), chave de debug do Unity; apaga os APKs anteriores.</summary>
+        public static void BuildAndroidRelease() => Build(BuildTarget.Android, ApkDir + "/DungeonCourier-" + Version + ".apk", true);
+        public static void BuildWindowsRelease() => Build(BuildTarget.StandaloneWindows64, "Builds/win-release/DungeonCourier.exe", true);
 
-        static void Build(BuildTarget target, string path)
+        static void Build(BuildTarget target, string path, bool release)
         {
             Apply();
             BuildReport r = null;
@@ -75,15 +96,18 @@ namespace DC.EditorTools
                     // o empacotamento incremental do Gradle reaproveita o APK anterior e ja' deixou buracos/sem libunity no Forge Street
                     const string gradleOut = "Library/Bee/Android/Prj/IL2CPP/Gradle/launcher/build";
                     if (Directory.Exists(gradleOut)) Directory.Delete(gradleOut, true);
+                    EditorUserBuildSettings.buildAppBundle = false;            // APK para instalar direto no aparelho do testador
+                    PlayerSettings.Android.useCustomKeystore = false;          // chave de debug do Unity (a da Play vem depois)
+                    if (release) PlayerSettings.SetIl2CppCompilerConfiguration(NamedBuildTarget.Android, Il2CppCompilerConfiguration.Release);
                 }
                 r = BuildPipeline.BuildPlayer(new BuildPlayerOptions
                 {
                     scenes = new[] { Scene },
                     locationPathName = path,
                     target = target,
-                    options = BuildOptions.Development,
+                    options = release ? BuildOptions.None : BuildOptions.Development,
                 });
-                Debug.Log($"BuildSummary({target}): result={r.summary.result} errors={r.summary.totalErrors} size={r.summary.totalSize} path={path}");
+                Debug.Log($"BuildSummary({target}{(release ? " release" : " dev")} {Version}): result={r.summary.result} errors={r.summary.totalErrors} size={r.summary.totalSize} path={path}");
             }
             catch (System.Exception e) { Debug.LogError("DC Setup: build abortado: " + e.Message); }
             if (Application.isBatchMode) EditorApplication.Exit(r != null && r.summary.result == BuildResult.Succeeded ? 0 : 1);

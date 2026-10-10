@@ -28,7 +28,7 @@ Números iniciais são hipóteses: o bot mede e o `BALANCE.md` registra antes/de
 Morcego, Ladrão, Guarda, Bruto (v0.1) e:
 - **Arqueiro:** parado ou recuando; mira com linha de telegraph (0,8 s) e dispara projétil em linha reta que acerta courier **e carga**; obstáculos bloqueiam. Vida 3.
 - **Limo:** lento (1,2 m/s), toque 1 de dano; ao morrer deixa poça por 4 s que reduz a velocidade em 40%. Vida 4.
-- **Mini-chefe Capitão Ladrão (M1):** rápido (2,6 m/s); prioriza a carga no chão; com ela, foge e chama 2 ladrões; atingido 2× derruba. Vida 14.
+- **Mini-chefe Capitão Ladrão (M1):** rápido (2,6 m/s); prioriza a carga no chão; com ela, foge e chama 2 ladrões; atingido 2× derruba. Vida 24 (§16).
 - **Chefe Ogro (B1):** como na v0.1 (pancada em área, chama ladrão), vida 30 → ajustar pelo bot.
 
 ## 5. Armas (3, escolhidas na Guilda; troca fora do contrato)
@@ -75,3 +75,9 @@ Lotes 1 e 2 integrados. **Lote 3** (Tripo, com registro em PROVENIENCIA): arquei
 
 ## 15. Portões (toda leva)
 `dotnet test client/tools/coretests` · `dotnet build client/tools/viewcheck/view` (0/0) · Unity EditMode · build Windows · `-autoplay 24` (campanha inteira do bot) · fotos 540×960 conferidas · BALANCE atualizado. Merge na `main` por PR com CI verde.
+
+## 16. Ajustes medidos na implementação (2026-10-10, raia do núcleo; detalhes no BALANCE §v1)
+- **Duração:** o bot fecha C13–C24 em 87–181 s (dentro); C4–C12 em 57–97 s e os de Mensagem em ~30 s (curtos por desenho). Decisão do coordenador (autonomia dada pelo Vinicius em 2026-10-10): **aceitar ~1–1,5 min de bot no C4–C12** (humano estimado 2–4 min) e **medir humanos no playtest** pelo `contract_end` do diário antes de mexer. Mais perseguidores matavam o bot; Guarda em mais salas quebrava a relíquia.
+- **Números revistos pelo bot:** Capitão vida 14 → **24**; Guarda vida 5 → **16**; Limo recarga 1,6 s e recuo de 1,5 m por toque; Bolo racha só ao cair e com pancada/flecha no chão (golpe no courier não racha); Reforço 1–2 por visita, em fila, teto de 10 vivos; **cura de 1 vida ao entrar em sala nova**.
+- **Save v1 com contrato em curso** perde esse contrato na migração (os contratos mudaram).
+- **Avisar na UI:** bombinha nível 1 é fraca contra o Capitão (C12) — tradeoff da arma.
