@@ -3,8 +3,10 @@
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões em [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
+
+## [1.0.0-beta] - 2026-10-10
 ### Adicionado
-- **v1.0-beta (2026-10-10)**, versão completa para teste com jogadores reais (`docs/CONTRATO_V1.md`):
+- **v1.0-beta**, versão completa para teste com jogadores reais (`docs/CONTRATO_V1.md`):
   - núcleo: 24 contratos na região "Porões da Guilda" (16 salas + 2 secretas + M1 + B1 + D1), cargas bolo, mensagem, caixa pesada e barril; arqueiro, limo, Capitão Ladrão (M1); armas estilingue, bumerangue e bombinha; 10 perks (escolha 1 de 3 após as camadas 2 e 4, sorteio pela semente, sem pagamento); reforço com teto; estrelas; contrato do dia e por código de 6 caracteres; guilda 4×8; save v2 com migração; 76 testes;
   - telas: título, menu, quadro, código, guilda/armas, configurações (som, música, vibração, idioma), créditos, pausa, perks; pt-BR e EN;
   - mundo: piso e parede texturizados, tochas, pilares, mira do arqueiro, poças do limo, barril com contagem, sala secreta, barra do chefe, VFX em pool;
@@ -16,3 +18,6 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões e
 - Arte do Lote 1 pelo Tripo (530 créditos com aval): courier, ladrão, guarda (escudo como peça separada), cliente, morcego, caixa, baú, arco; sprites renderizados no Blender com clipes Mixamo reaproveitados e animações feitas no Blender.
 - `Setup.BuildAndroidDev` apaga os APKs anteriores antes de gerar (fica só o atual).
 - Repositório criado (2026-10-09) com o GDD revisado (comparativo de mercado no topo), `docs/COMPETITIVO.md` e a estrutura de pastas do projeto Unity.
+
+[Unreleased]: https://github.com/Vvs2705/dungeon-courier/compare/v1.0.0-beta...HEAD
+[1.0.0-beta]: https://github.com/Vvs2705/dungeon-courier/releases/tag/v1.0.0-beta
