@@ -39,6 +39,11 @@
 | 2026-10-09 17:34–17:36 | Auto Rig humanoide Mixamo no bruto e no ogro (pose A; o rig aceitou) | **19 925** | 40 | export FBX predefinição Mixamo 2K |
 | 2026-10-09 17:36–17:41 | 5 exports e downloads; props com predefinição Blender 2K (a relíquia foi exportada 2× por dúvida de predefinição: arquivos idênticos byte a byte, duplicata apagada) | 19 925 | 0 | arquivos em `arte/tripo/<asset>/` do checkout principal |
 | 2026-10-09 17:41 | **Lote 2 FECHADO: 265 créditos** (5 × 45 + 2 × 20); 20 190 → 19 925 | 19 925 | 265 | dentro do teto de 330 |
+| 2026-10-10 ~16:35 | **Abertura do Lote 3** (aval do Vinicius em 2026-10-10: "sem pausas, sem solicitações ... quero avanço sempre continue, seja na arte"); orçado 490 (ASSETS §8), teto 550 | **19 925** | 0 | teto: saldo final ≥ **19 375** |
+| 2026-10-10 16:30–16:40 | 10 Modelos HD H3.1 (imagens grátis Nano Banana 2): arqueiro #3 (`3e0e3a23-b2fe-412c-bc8d-10e983bb474a`, 7 704 faces), capitao #3 (`21467b7c-64d5-4901-9e49-2988fa6358e7`, 7 539), arcoflecha #4 (`0b74c8a3-fdd1-45e8-be40-aad423f5217b`), limo #2 (`472ae4d5-91f7-492b-a3d2-33d9ce806cc6`), bolo #4 (`c93b8272-ba6d-4987-b9f8-7e0082025ff9`), mensagem #2 (`1f0a3224-35b1-452a-9592-57bfa8d8fb7b`), caixa_pesada #2 (`de82a310-1f85-4891-867b-b244d5cb232c`), barril #1 (`0e6575ae-280c-49d4-b441-f392244255f3`), tocha #3 (`fa9f4dd2-732b-457d-af7e-ec05ca36c5e1`), pilar #2 (`ae5e9068-69a0-4945-8670-19edd91de1b4`) | 19 475 | 450 | receita conferida: "Gerar 45", Privado, 8K off |
+| 2026-10-10 16:42 | Auto Rig humanoide Mixamo no arqueiro e no capitão (o Tripo avisou "não pronto para rigging automático"; os modelos estavam em pose T e o rig saiu coerente nos dois) | **19 435** | 40 | export FBX predefinição Mixamo 2K |
+| 2026-10-10 16:44–16:54 | 10 exports e downloads (props com predefinição Blender 2K); 2 texturas grátis (piso #3, parede #3) em `arte/tripo/texturas/` | 19 435 | 0 | `limo` e `bolo` exportados 2× por clique lento/504 (duplicata idêntica apagada); o barril chegou como `barril (1).zip` porque já havia um `barril.zip` de outro projeto na pasta Downloads (não tocado) |
+| 2026-10-10 16:55 | **Lote 3 FECHADO: 490 créditos** (10 × 45 + 2 × 20); 19 925 → 19 435 | 19 435 | 490 | dentro do teto de 550 |
 | | | | | |
 
 ## 2. Registro por peça (Tripo)
@@ -62,6 +67,16 @@ Preencha cada linha. Prompt e parâmetros completos vão no bloco do §6, se a l
 | reliquia | 2/#12 | 2026-10-09 | Tripo Studio: imagem → HD H3.1 → FBX Blender 2K | #1 de 4 | `0948a1dd-bc40-473f-b005-2cfef384216a` | §2.1 | 45 / 45 | `arte/tripo/reliquia/reliquia.zip` (4265990 B) → `tripo_convert_0a9e5d99-77bc-472c-b6fa-75f76fbe67f6.fbx` | zip `84d72bb486e05c1df320550b9ab0906ca8f47230f839c06c2ba955709fea492c` · fbx `dfbfda6edac8f1a74f739ba78254ffac0f015092a614f51e2026622161801639` | tripo_pago | privada |
 | ovo | 2/#13 | 2026-10-09 | Tripo Studio: imagem → HD H3.1 → FBX Blender 2K | #1 de 4 | `97947289-c235-4d6b-93d8-42aa551e54c7` | §2.1 | 45 / 45 | `arte/tripo/ovo/ovo.zip` (3139249 B) → `tripo_convert_85fb4d88-0e9a-4616-b2d1-e30625fb9f2b.fbx` | zip `ae4224e2f5a2e8e5e0f69804535d3ae7cdb103bcf608a68abafc90ca3a9d654e` · fbx `c1027189d6aa9533d08584677ca057d4a562ff6a9b422fd3b2a52c1a4abac0b6` | tripo_pago | privada |
 | filhote | 2/#14 | 2026-10-09 | Tripo Studio: imagem → HD H3.1 → FBX Blender 2K | #4 de 4 | `5b382495-08dc-46b0-837f-5c00ff987ebf` | §2.1 | 45 / 45 | `arte/tripo/filhote/filhote.zip` (2550100 B) → `tripo_convert_06e11dbc-91ec-402d-a13a-925df6df8ae2.fbx` | zip `6ff001f0be9b9c2c7103c3dd1a2d471d20fc375bf8493fc22341fe2920c6da5e` · fbx `42770dbe778dadc3f94ebe8ff10ec625cc7670b07b85e690c0d704980eaf106d` | tripo_pago | privada |
+| arqueiro | 3/#21 | 2026-10-10 | Tripo Studio: imagem → HD H3.1 → Auto Rig Mixamo → FBX Mixamo 2K (arco como item separado: `arcoflecha`) | #3 de 4 (Nano Banana 2) | `3e0e3a23-b2fe-412c-bc8d-10e983bb474a` | ASSETS §8 | 65 / 65 | `arte/tripo/arqueiro/arqueiro.zip` (27701976 B) → `tripo_convert_85f16e73-1d33-4f0e-96ba-1abd3556e020.fbx` | zip `c99497aa1fd12f2377cff4614d62fde7a3fe0add40f5122f2d03fad98e5b5d58` · fbx `7187bd401688c661d846b7459c91f3e5e4453b0d621e67609cda38c582d063ee` | tripo_pago | privada |
+| arcoflecha | 3/#22 | 2026-10-10 | Tripo Studio: imagem → HD H3.1 → FBX Blender 2K (item da mão do arqueiro) | #4 de 4 (Nano Banana 2) | `0b74c8a3-fdd1-45e8-be40-aad423f5217b` | ASSETS §8 | 45 / 45 | `arte/tripo/arcoflecha/arcoflecha.zip` (3388533 B) → `tripo_convert_c9a4beee-cb41-4ea4-82f8-07bcf0f4033b.fbx` | zip `f70f9bc5d2c0e1c1094642e279ee754c59fbac2bd4d7a50ff8a5a8f9310b00dc` · fbx `3ddcbd98bea2f96ee038a13fee36c90bd853f23becd06bfc24d91088961cb966` | tripo_pago | privada |
+| capitao | 3/#23 | 2026-10-10 | Tripo Studio: imagem → HD H3.1 → Auto Rig Mixamo → FBX Mixamo 2K | #3 de 4 (Nano Banana 2) | `21467b7c-64d5-4901-9e49-2988fa6358e7` | ASSETS §8 | 65 / 65 | `arte/tripo/capitao/capitao.zip` (26121892 B) → `tripo_convert_041909b7-7bab-4de0-9d28-6afe3ac6d296.fbx` | zip `150dfc89bec20cbc9010a2807b284286648d214ec9b2afb6d941420eed28483b` · fbx `722a974c2928fe56a057131bae40204c53838c08824a6c8f6cb6e79e16f40f4f` | tripo_pago | privada |
+| limo | 3/#24 | 2026-10-10 | Tripo Studio: imagem → HD H3.1 → FBX Blender 2K | #2 de 4 (Nano Banana 2) | `472ae4d5-91f7-492b-a3d2-33d9ce806cc6` | ASSETS §8 | 45 / 45 | `arte/tripo/limo/limo.zip` (2215772 B) → `tripo_convert_abe03ed7-4684-4de3-8924-dc237855e7c8.fbx` | zip `c345270623a51bb186b42b8e23f3c72afb143803de976745ed5ab164efc797dc` · fbx `6ff02af36652904e5db4ea5b1fa62d2f702327cbc40155155d2155f7f2005eba` | tripo_pago | privada |
+| bolo | 3/#25 | 2026-10-10 | Tripo Studio: imagem → HD H3.1 → FBX Blender 2K | #4 de 4 (Nano Banana 2) | `c93b8272-ba6d-4987-b9f8-7e0082025ff9` | ASSETS §8 | 45 / 45 | `arte/tripo/bolo/bolo.zip` (3063760 B) → `tripo_convert_26283e7d-301a-4497-a1f3-0153c67eb2eb.fbx` | zip `af2382dfcf6c630613013a00264a732dd3e51762fa188c21ccfd5db895d9743a` · fbx `c7d5b90429ebcf521e0636bee87031d06c243327b4e6fea32f3eceed2af42a80` | tripo_pago | privada |
+| mensagem | 3/#26 | 2026-10-10 | Tripo Studio: imagem → HD H3.1 → FBX Blender 2K | #2 de 4 (Nano Banana 2) | `1f0a3224-35b1-452a-9592-57bfa8d8fb7b` | ASSETS §8 | 45 / 45 | `arte/tripo/mensagem/mensagem.zip` (3667107 B) → `tripo_convert_faa6da00-0aa7-4e32-9185-9d35387b1262.fbx` | zip `0dc89049da49142d97bef7ffeea03a0be21590839f48c99e2f0fd21c82977281` · fbx `c425fa80a9cc2d89f491582950b742804bd177f9b6614d57baa0bf8b08d71709` | tripo_pago | privada |
+| caixa_pesada | 3/#27 | 2026-10-10 | Tripo Studio: imagem → HD H3.1 → FBX Blender 2K | #2 de 4 (Nano Banana 2) | `de82a310-1f85-4891-867b-b244d5cb232c` | ASSETS §8 | 45 / 45 | `arte/tripo/caixa_pesada/caixa_pesada.zip` (4710099 B) → `tripo_convert_338430a8-acd6-444e-ba0b-976809db7699.fbx` | zip `f7268e972d46922bafaadbc046a246b49d63dc5dca5e22c34308812ac1cb1392` · fbx `f8f8722cc848202cb98b6aae86209185e77c33ff8296197800c92082f2e67625` | tripo_pago | privada |
+| barril | 3/#28 | 2026-10-10 | Tripo Studio: imagem → HD H3.1 → FBX Blender 2K | #1 de 4 (Nano Banana 2) | `0e6575ae-280c-49d4-b441-f392244255f3` | ASSETS §8 | 45 / 45 | `arte/tripo/barril/barril.zip` (3468737 B) → `tripo_convert_56311beb-78aa-403f-8415-33351a27b027.fbx` | zip `117932df02c3409237b6d66f4e0fd8658b10b9f84d0d10f39e5b9b4e500852c1` · fbx `0325c075e5deb11982471ba07ea05af09db8752f4b5538549aa06608b082a41f` | tripo_pago | privada |
+| tocha | 3/#29 | 2026-10-10 | Tripo Studio: imagem → HD H3.1 → FBX Blender 2K | #3 de 4 (Nano Banana 2) | `fa9f4dd2-732b-457d-af7e-ec05ca36c5e1` | ASSETS §8 | 45 / 45 | `arte/tripo/tocha/tocha.zip` (3467689 B) → `tripo_convert_34fd9e82-5f85-4270-a812-3e9b8489131f.fbx` | zip `25c05c67b02e6db4b7bc771861a1d5ca294a598aceda0bb083f661f562cf0413` · fbx `1730741ae56e1c3c491bcf81cfab1bf45896784a14a6ea82d0d5dcb0062f8606` | tripo_pago | privada |
+| pilar | 3/#30 | 2026-10-10 | Tripo Studio: imagem → HD H3.1 → FBX Blender 2K | #2 de 4 (Nano Banana 2) | `ae5e9068-69a0-4945-8670-19edd91de1b4` | ASSETS §8 | 45 / 45 | `arte/tripo/pilar/pilar.zip` (4229056 B) → `tripo_convert_429920c7-f106-4bc9-8ce6-94a05d54681b.fbx` | zip `250dce793adf50e549471e97ab91bc602fd3898bdb40b7252cb35f5029d3e48e` · fbx `1e74509a7b40faebe626a122b3093318e48865d96250eee3e41f4357808b2b27` | tripo_pago | privada |
 
 Os prompts previstos estão em `ASSETS.md` §0–§3 (assunto + sufixos).
 - Registre aqui o **texto exato usado**: no Forge, o Lote 4 ficou sem o prompt exato no ledger e precisou ser reconstruído.
@@ -134,10 +149,88 @@ Fonte dos originais: mixamo.com, nas contas Adobe do Vinicius (X Bot no Forge, Y
 
 | Arquivo | Ferramenta / origem | Prompt ou URL | Escolhida | Data | SHA-256 | Licença |
 |---|---|---|---|---|---|---|
-| `piso` (textura) | Tripo, gerador de imagem embutido | | #_ de 4 | | | tripo_pago |
-| `parede` (textura) | idem | | | | | tripo_pago |
+| `piso` (textura) | Tripo, gerador de imagem embutido (Nano Banana 2, 1:1, 1024×1024) | "seamless tileable texture of stylized dungeon stone floor slabs seen straight from above, top-down orthographic, square grey-blue stone tiles with dark mortar lines and subtle cracks, hand-painted stylized game texture, flat even lighting, no shadows, no perspective, no objects, fills the whole image edge to edge" | #3 de 4 | 2026-10-10 | `e43eb2fd096eeba3968d2b88e1bb2e37ed2aa26ffaada0e91710e7e8e98f18d8` | tripo_pago |
+| `parede` (textura) | idem | "seamless tileable texture of stylized dungeon brick wall seen straight on, orthographic, chunky grey-blue stone bricks with dark mortar, hand-painted stylized game texture, flat even lighting, no shadows, no perspective, no objects, fills the whole image edge to edge" | #3 de 4 | 2026-10-10 | `d8822c377c2b3da0e5700096fe77407c3d22e4627891549206a1d96c2922c501` | tripo_pago |
 | Lilita One | Google Fonts (github.com/google/fonts, `ofl/lilitaone`) | — | — | | | SIL OFL 1.1 |
 | Nunito | Google Fonts (`ofl/nunito`) | — | — | | | SIL OFL 1.1 |
+
+### 4.1 Áudio sintetizado (raia J, 0 crédito, sem asset de terceiros)
+
+Gerado em 2026-10-10 por `client/tools/audio_gen.py` (Python 3.14.4, numpy 2.4.6, scipy 1.18.1), sem rede, sem serviço externo, sem amostra gravada: osciladores, ruído, filtros e Karplus-Strong escritos no script. Semente fixa por arquivo (crc32 do nome): rodar de novo dá o mesmo SHA (conferido em 2 rodadas do zero).
+- `audio_gen.py`: SHA-256 `124f3ce16588af128a75480c3ada511e3fc1026651dc046423f2775859c79450` (calculado com fim de linha LF, o mesmo com checkout CRLF).
+- Comando: `python client/tools/audio_gen.py --md` (gera os arquivos, confere pico/DC/laço e imprime estas linhas).
+- Licença: própria (sintetizado). Os `.meta` de import do Unity saem do mesmo script e não entram na tabela. Detalhe de uso em `AUDIO.md`.
+
+| Arquivo (`Resources/`) | Ferramenta | SHA-256 do script | SHA-256 do WAV | Licença |
+|---|---|---|---|---|
+| `Audio/sfx/passo_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `f39a5b154edcbcce986ad141d83bbbe18f6308533592ed79cbee7d1771c86560` | própria (sintetizado) |
+| `Audio/sfx/passo_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `fb4b60e6f335420ed3e37c8a64453abb8f561ca77b5b431337f879d1ed287d21` | própria (sintetizado) |
+| `Audio/sfx/passo_3.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `f2644359e58b0838a04167b606f4e6a0a28cf1b63bbca509c6c9bd9fbe76e492` | própria (sintetizado) |
+| `Audio/sfx/pousar_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `caba1bd2e6143d75d9693af52ec92b5afd25f43d8ba74391a15fa20beac75d69` | própria (sintetizado) |
+| `Audio/sfx/pousar_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `8da83944f0517b7bf900aed0310c2e18a4c42e109e986006f26f6fa5f5fcdc76` | própria (sintetizado) |
+| `Audio/sfx/pegar_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `d87e844b80d1b4cdd3da100c3e66b72ff63cd562f771d7b1d455139c5615cc0b` | própria (sintetizado) |
+| `Audio/sfx/pegar_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `f4c579864f281b532d02caab15af7145de23ed3f20c96ca1c7f90e035b9dc76b` | própria (sintetizado) |
+| `Audio/sfx/carga_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `24112aea47cba80316d48c91555399cb4b73993c41c5c30bc3d00ba9768076a9` | própria (sintetizado) |
+| `Audio/sfx/carga_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `93a52e393f37f6476bb19e425d3161def5cc9daecb65334ee224715283c52bfa` | própria (sintetizado) |
+| `Audio/sfx/carga_3.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `c7289474fddb98b39aaf074d2c67fc35f9c389b2b1185bcbf8dcf0f4eac5bc08` | própria (sintetizado) |
+| `Audio/sfx/racha_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `60ff11cd1391140f92bbf6508a63466b11a57b034fc34cc067b52715cabcb1d1` | própria (sintetizado) |
+| `Audio/sfx/racha_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `6df7f0a62df42575abfef7e8bd7579b592a8cc16822a68083c9caedf02f4fb98` | própria (sintetizado) |
+| `Audio/sfx/quebra_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `2afad2670936675d63dc845d00c96d69dd30859bc0aa4ef82c54f05089759689` | própria (sintetizado) |
+| `Audio/sfx/ladrao_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `4985289d39f229529adda7273bf5f9c9b276a84f3b6c6303a22f23de02afe594` | própria (sintetizado) |
+| `Audio/sfx/ladrao_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `1c8b275418ae0e0697dc2b95fd95c00d120ad66e071cbff72ee32926a354b2ca` | própria (sintetizado) |
+| `Audio/sfx/dash_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `b5cbf7b557fc299cdf33e03e7c9eb320747ca9fdefaee3cb91c57a7142140d27` | própria (sintetizado) |
+| `Audio/sfx/dash_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `b5819fe0e133f07e58591a9b98a6e0bdc298e56e38dc5044d8ef95d52ef98a2d` | própria (sintetizado) |
+| `Audio/sfx/golpe_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `2fac15dc7eaf2f310fcd791dbc405bff255756182be4537c9a881d8142764495` | própria (sintetizado) |
+| `Audio/sfx/golpe_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `a66092a0d34894f156c1dab36b9c26897814e78b1e62d618c81145d6253ae806` | própria (sintetizado) |
+| `Audio/sfx/golpe_3.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `612fd224b4f322a483a8e966df581784e782af74690ba5c8cdc5575278b2ab60` | própria (sintetizado) |
+| `Audio/sfx/tiro_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `527f8eafc1b20590b77353b2cd4aefa0ea96102fd2b26d8e2f932a29b32ad4f7` | própria (sintetizado) |
+| `Audio/sfx/tiro_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `f8f3ed4ef2a0d44c022e52b9cc3eb2d915607d5a8060c5c1489a8916bc92c9ca` | própria (sintetizado) |
+| `Audio/sfx/tiro_3.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `3e9f14dc22dde30ba9de36a6c2ccbeb70392ff303269fadc694da1e02da0c29f` | própria (sintetizado) |
+| `Audio/sfx/flecha_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `60ddff054642ad74b5f7da08239a4098166ef58e593e32ea5e76f407c80f8176` | própria (sintetizado) |
+| `Audio/sfx/flecha_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `b160af4303b184e37191f2d544ee22b4a2fe55ea2f8552bf97e36eb85f234295` | própria (sintetizado) |
+| `Audio/sfx/mira_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `eb014c551f0c0695995096b7d827c4851c7045458ba21f515be8490bc315a130` | própria (sintetizado) |
+| `Audio/sfx/bumerangue_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `084efbebd19d010a25cdcecff0bb5dcbcceea44781868daa126ae1b862ec2897` | própria (sintetizado) |
+| `Audio/sfx/bomba_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `440501e522360c7670c91258c13c860696e72d50852982a6cc3ecddf3033de89` | própria (sintetizado) |
+| `Audio/sfx/bomba_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `c458288e4168e95ac82653bdef367eba15f03ab3812a09bf5a5d3514d549f044` | própria (sintetizado) |
+| `Audio/sfx/explosao_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `cd5da4ed08379211d17e500a3458833527781538e8424282c15017f8803011d4` | própria (sintetizado) |
+| `Audio/sfx/explosao_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `7d75fb6ea7e4223731188c88511309f2025015227f3e3530271fc9b221482dbe` | própria (sintetizado) |
+| `Audio/sfx/morte_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `7eece042c8c01e63d242ed9c587f445d6cc06b01bd815ca4cb9f9c5a01b24f3c` | própria (sintetizado) |
+| `Audio/sfx/morte_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `ad52a97e2efc897e39657023c0bba5531331c53ccc34dfcada599673e923af7c` | própria (sintetizado) |
+| `Audio/sfx/morte_3.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `92443cf53c8233f4d0e812d367c52612cb24df68fda840acd8ec3532a14fd5f5` | própria (sintetizado) |
+| `Audio/sfx/dano_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `c3935d2bf3e4f0c1728248efa495aef23a3a09aca9d246e3fe9c21aa261f9234` | própria (sintetizado) |
+| `Audio/sfx/dano_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `a71dae1261d9a64f0b61e92991f050b999761909ab9a7d1210681114626a4d4f` | própria (sintetizado) |
+| `Audio/sfx/aviso_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `a7f8da0a2f9bd6c30052c39515d73718bbac29140514346d6b5e70e0fe3923aa` | própria (sintetizado) |
+| `Audio/sfx/porta_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `d4ae973f3b3297b3d016ce5565f90c4b808cdec7e741f90b019a34596a0b7987` | própria (sintetizado) |
+| `Audio/sfx/porta_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `dcfa7c01a72255521450b2826b3a9cf3ed25c43a3cfe70ea3cb14bb98f60bac1` | própria (sintetizado) |
+| `Audio/sfx/bloqueio_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `115bdeae985df153e9eb46bad5f410d1f2a4bc99793af7c07bc66959f9183adc` | própria (sintetizado) |
+| `Audio/sfx/bloqueio_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `65451516b5724d65f439e14da645bf5a96f0547582e3b2fbefe1a047b2874b5c` | própria (sintetizado) |
+| `Audio/sfx/bau_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `88085f10e8245dc5bebe631d1746a681566332cc1727bd876ee169fc4e51dcdb` | própria (sintetizado) |
+| `Audio/sfx/moedas_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `ecc152e366309549fe810f4b4aac660554f4e9c623326dfa219576dd93dd0698` | própria (sintetizado) |
+| `Audio/sfx/moedas_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `609883b6ee767f794ee7a41ae3135abef21a1aa499c6df9a5f870fd93f4fe820` | própria (sintetizado) |
+| `Audio/sfx/moedas_3.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `5202e7cd769341243a8e72f061505bc018498c1e6d9116ffe8c3c297cc4ea369` | própria (sintetizado) |
+| `Audio/sfx/entrega_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `6c0e9413895a163d2d85e0db9737d300c901ab1bd7359aa1eb5681c3f4bde163` | própria (sintetizado) |
+| `Audio/sfx/entrega_rachada_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `dd0b4e48510c1d365d61440fb3fcf6602caa19576d3d96af89dde564cf052ba5` | própria (sintetizado) |
+| `Audio/sfx/falha_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `808eb78cd82af89ba03add1f1329dd9bb9899dfd808be3557c45ecc61de1c844` | própria (sintetizado) |
+| `Audio/sfx/perk_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `f2c7d207930f2180924b1c3cb5ee962c76c3c92d747b2da4c2bacd463fc96a6a` | própria (sintetizado) |
+| `Audio/sfx/clique_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `c0aae326cfdd98d122de1280af05b2adf98a7492c50e2434866022a530082875` | própria (sintetizado) |
+| `Audio/sfx/clique_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `19f29c0acb9f2fb4a7a513ccfd5a0cc3ea69caf4f6811b2c37b16c78ffc7b455` | própria (sintetizado) |
+| `Audio/sfx/confirmar_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `88c95212c1b1a3311a4913bdd6afcd5965c3eded685b785b6f0c22f5827429cb` | própria (sintetizado) |
+| `Audio/sfx/estrela_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `85bf9fd9bd8fda48d95c6fc48a1c7a7fc99020493da93de0696c559123438733` | própria (sintetizado) |
+| `Audio/sfx/choca_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `dc6aea35a7dc9943f1afb007aa916f4e159db2dd10d5c000d4ba6a32dd620ba1` | própria (sintetizado) |
+| `Audio/sfx/limo_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `024ac6ca45fd03524105f07d31d3204834d0a5df46050d5e5e7b2e90fd98e39b` | própria (sintetizado) |
+| `Audio/sfx/limo_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `d7144f8a7ad9a90f01550eb947e646ccfe7f80826d0953c9a46a91283f165b0c` | própria (sintetizado) |
+| `Audio/sfx/limo_3.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `dc53389329f9ee30cdfa87591c43198e2c6238f1dd688033583604ca9787624e` | própria (sintetizado) |
+| `Audio/sfx/rugido_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `8948597d3455a177b3bb99cc930dee952dca01469d32066fb63223b985a46bd2` | própria (sintetizado) |
+| `Audio/sfx/pancada_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `2e937e8ee384dfa2416936297a58a9d250085535a4914255b723217d260b6df1` | própria (sintetizado) |
+| `Audio/sfx/pancada_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `2e896aea86b5fc20c62988af65837aba0684c7f37aa770d45353a6e0102647ef` | própria (sintetizado) |
+| `Audio/sfx/compra_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `b6f721fe69ecb29a3e583702d59a5567634191349e4ca438676753116f358089` | própria (sintetizado) |
+| `Audio/sfx/tique_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `63f45014592d6206a6a9bc42c89e0e391fc2eba66eb3bb33c81b216dda46c41e` | própria (sintetizado) |
+| `Audio/sfx/tique_2.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `db10f9c7b280e3f0f1024c62c4dcf693e3ea8534b9b07adb34f341f84c251e0d` | própria (sintetizado) |
+| `Audio/sfx/segredo_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `ae6d1416a7a9e98bddb54af29516b074c5a614687d7508e8dee5f317dedbb44f` | própria (sintetizado) |
+| `Audio/sfx/balanca_1.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `193d2c21118e59b8c98c828163429656fa04f01f45cc085ede0088c1903b018e` | própria (sintetizado) |
+| `Audio/musica/menu.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `fa788d2ac63ce783097d04adbd95e51b71fe12d5f540cad730fc031fd90d76b8` | própria (sintetizado) |
+| `Audio/musica/masmorra.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `f4c8c2f281928ef8bcc7c928efd2d8a26ad1046dd60f6a182fda21f5a4c7cc2e` | própria (sintetizado) |
+| `Audio/musica/chefe.wav` | `client/tools/audio_gen.py` (numpy/scipy) | `124f3ce1…9450` | `0cafb9d8deaa7ac7bd2d72e4b4229fef1d646065eea23d5e4ec987962fe36cf2` | própria (sintetizado) |
 
 ## 5. Sprites renderizados (0 crédito)
 

@@ -267,3 +267,23 @@ Rodar da raiz do repositório, **um ator por vez**, com o Unity fechado (PC de 7
 Para o `Hold.fbx` de fallback (Clapping), acrescente `-Extra @("--hold-frame","<n>")`, com o quadro escolhido na folha.
 
 **Antes do elenco:** compare a luz `flat` com a `matcap` (`ART_BIBLE.md` §2). Rode `-Nome courier_matcap -Preset courier -Extra @("--light","matcap") ...` e apague a pasta perdedora antes do commit.
+
+## 8. Lote 3 da v1.0-beta (2026-10-10) — conteúdo novo do CONTRATO_V1
+
+Aval: mensagem do Vinicius em 2026-10-10 ("sem pausas, sem solicitações ... quero avanço sempre continue, seja na arte"). Teto do lote: **550 créditos**. Cores de papel (ART_BIBLE §3): arqueiro = osso + **ciano-petróleo** (cor livre no elenco); limo = **rosa-chiclete** (cor livre); Capitão Ladrão = **roxo** com dourado (família do ladrão: roxo = roubo). Itens separados do corpo (regra do Vinicius): o arco do arqueiro sai como prop e é preso à mão no Blender.
+
+| # | Asset | Tipo | Assunto do prompt (+ sufixos `[S][T][I]` ou `[P][IP]`) | Cr |
+|---|---|---|---|---|
+| 21 | `arqueiro` | personagem rigado | skinny skeleton archer, bone-white skull with glowing teal eye sockets, tattered dark teal hooded cloak, leather quiver on the back, bony hands, empty hands, no bow, no weapon | 65 |
+| 22 | `arcoflecha` | prop (item da mão esquerda do arqueiro) | wooden short bow with dark teal grip wrappings, string attached, single object | 45 |
+| 23 | `capitao` | personagem rigado | goblin thief captain, taller and leaner than a goblin, deep purple long coat with gold trim, purple tricorn hat with a feather, eye patch, big greedy grin, olive green skin, empty hands, no weapon | 65 |
+| 24 | `limo` | prop (animado por código: squash e estica) | cute bubblegum-pink slime blob monster, glossy jelly body, two big eyes and a small mouth, a few bubbles inside, rounded dome shape | 45 |
+| 25 | `bolo` | prop (carga) | three-tier white wedding cake with pink frosting flowers and a small heart topper, on a round golden tray with two handles | 45 |
+| 26 | `mensagem` | prop (carga) | rolled royal parchment scroll letter with a big gold wax seal and a gold ribbon, urgent delivery | 45 |
+| 27 | `caixa_pesada` | prop (carga) | massive reinforced cargo crate with thick riveted iron plates over dark wood, very heavy looking, two big side handles | 45 |
+| 28 | `barril` | prop (carga) | small wooden gunpowder barrel with iron hoops, painted skull mark and a short fuse on top, black powder dusting | 45 |
+| 29 | `tocha` | prop (decoração) | iron wall sconce holding a burning torch with a stylized flame | 45 |
+| 30 | `pilar` | prop (decoração) | squat dungeon stone pillar made of chunky grey-blue blocks with cracked edges | 45 |
+| — | texturas `piso`, `parede` | imagem grátis (gerador do Tripo) | seamless tileable stylized dungeon floor slabs / brick wall, top-down, grey-blue, hand-painted, flat light | 0 |
+
+> **Lote 3: 2 × 65 + 8 × 45 = 490 créditos** (teto 550).
