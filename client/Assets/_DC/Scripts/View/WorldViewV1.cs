@@ -706,7 +706,7 @@ namespace DC
                 case Ev.Stun: Burst(p + new Vector2(0f, 0.6f / Tilt), Art.Gold, 5, 2f, 0.08f, 0.3f); break;
                 case Ev.CaptainCall:
                     Puff(Art.ThinRing(), p, Vector2.zero, Art.A(Art.Role(EnemyType.Thief), 0.9f), 0.6f, 7f, 0.55f, ORing);
-                    Float(p, "!!", Art.Role(EnemyType.Thief), 64);
+                    Float(p + new Vector2(0f, 1.1f / Tilt), "!!", Art.Role(EnemyType.Thief), 64);   // acima da cabeca: nao cobre o "ladrao!" do ThiefGrab no mesmo ponto
                     Shake(0.12f, 0.25f);
                     foreach (Ent x in _enemies)
                         if (x.Id == e.A && x.Anim != null) { int k = First(x.Anim.Sheet, Shout); if (k >= 0) x.RoarT = x.Anim.Sheet.Duration(k); }

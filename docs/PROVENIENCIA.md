@@ -104,44 +104,65 @@ Sufixos usados exatamente como em `ASSETS.md` §0 (`[S]`+`[T]`+`[I]` nos persona
 
 ## 3. Clipes Mixamo
 
-**Estado (2026-10-09, raia D):** nenhum clipe foi baixado para o DC.
+**Estado (2026-10-10, raia G):** nenhum clipe foi baixado para o DC. Os clipes dos Lotes 2 e 3 vêm de reuso (Forge, ARKANA) ou foram animados no Blender. Os clipes do Blender de 2026-10-09 foram refeitos no polimento.
 
 **Reuso:** aval do Vinicius em 2026-10-09 para reusar os clipes Mixamo já no disco em outros projetos dele, como cópia e sem alterar a origem. Valem duas notas:
 - **"reuso 03_FORGE_STREET"**: arquivo, nome e SHA conferidos com `03_FORGE_STREET/docs/PROVENIENCIA.md`, bloco "clips Mixamo". São X Bot, FBX Binary, Without Skin, 30 fps, sem redução, baixados em 2026-10-06.
-- **"reuso ARKANA"**: origem em `ARKANA/mobile-unity/Assets/_Arkana/Resources/mixamo-*.fbx`, nome exibido conforme `ARKANA/design/pipeline/MIXAMO.md`. São Y Bot, FBX for Unity, Without Skin, 30 fps, baixados em 2026-10-04. Os dois runs vêm **com root motion**, apesar do "In Place" do MIXAMO.md: o quadril anda 2,2 m e 3,1 m. O `render_sprites.py` tira a deriva.
+- **"reuso ARKANA"**: origem em `ARKANA/mobile-unity/Assets/_Arkana/Resources/mixamo-*.fbx`, nome exibido conforme `ARKANA/design/pipeline/MIXAMO.md`. São Y Bot, FBX for Unity, Without Skin, 30 fps, baixados em 2026-10-04.
+  - Os runs e os walks vêm **com root motion**, apesar do "In Place" do MIXAMO.md: o quadril anda 2,2 m e 3,1 m nos runs e 1,39 m no `loc-andar-frente`.
+  - O `render_sprites.py` tira a deriva e a converte em `stride_mps`.
+- SHA das origens conferido em 2026-10-10: igual ao das cópias da tabela.
 
-O esqueleto `mixamorig:` (65 ossos, repouso em T) é o mesmo nos dois bonecos e no rig do Tripo, conferido no Blender.
+O esqueleto `mixamorig:` (65 ossos, repouso em T) é o mesmo nos dois bonecos e nos rigs do Tripo (conferido no Blender).
+- **Exceção:** o bruto e o ogro foram rigados pelo Tripo a partir de imagem em pose A, com o braço em repouso a −49,5° e −22°.
+- O render alinha os braços deles ao T do clipe (`--align-arms`, `RENDER_SPRITES.md` §1).
 
 **Clipes criados no Blender** (o que não havia no disco): keyframes por script em `client/tools/anim_blender.py`, sobre o armature do X Bot de `courier/Idle.fbx` (reuso Forge).
-- SHA do script: `e77d98c92d9799952680c930ec6f4dfcc50a6b83c48e210fea7a394a467ddfa3`.
+- **SHA do script final:** `4422531b31abbe815e2a697267a671a468b40b218713d4fb4624a39aed0ea24e`.
+- Os 12 clipes de 2026-10-10 (todos, menos o `Punch`) saíram num só export (`ANIM_OK 12 clipe(s)`, com a checagem `verify()` de repouso e de 1º e último quadro). Esse export usou a versão anterior do script, `7d61397ed10c5acc2f4066990da517402c3ffd686f8fda26368632f2d75d6b7b`.
+- A versão final só acrescenta o clipe `Punch`, exportado depois dela; as chaves dos outros clipes não mudaram.
+- **Exceção:** o `Hold.fbx` é o export de 2026-10-09.
 - Saída canônica em `arte/mixamo/_blender/`, copiada para o conjunto.
-- Licença: animação original do estúdio; nomes e repouso do esqueleto Mixamo.
+- **Licença:** animação original do estúdio; nomes e repouso do esqueleto Mixamo.
 - O SHA do FBX muda a cada export (o FBX grava data). Re-rodar o script gera um arquivo equivalente, não idêntico.
 
 | Arquivo (`arte/mixamo/...`) | Conjunto | Origem (nome exibido) | Configuração | Data | SHA-256 |
 |---|---|---|---|---|---|
-| `Hold.fbx` (= `_blender/Hold.fbx`) | courier, ladrao (`--hold`) | **criado no Blender** (`anim_blender.py`, clipe `Hold`) | 10 quadros, 30 fps, só armature | 2026-10-09 | `b7813e2469fbb2346a3f6c8832f3d975f903ad472020fc921b7c970cedc62674` |
-| `courier/Run.fbx`, `courier/CarryRun.fbx` | courier | **reuso ARKANA**: `mixamo-loc-sprint.fbx` = "Sprint — Standard Sprint" | Y Bot, root motion (tirado no render) | 2026-10-09 (origem 2026-10-04) | `fd00884dc16483779fe2d0eec446dae812a26b6bb86b3497a7f44459aeba4ad7` |
-| `courier/Idle.fbx`, `courier/CarryIdle.fbx`, `cliente/Idle.fbx` | courier, cliente | **reuso 03_FORGE_STREET**: `arte/mixamo/Idle.fbx` = Breathing Idle | X Bot | 2026-10-09 (origem 2026-10-06) | `befaa0fa9c5684a4e82dd229b04710588b1f32bc026704cc1856cae9c80f4220` |
-| `courier/Throw.fbx` (= `_blender/Throw.fbx`) | courier | **criado no Blender** (`Throw`) | 21 quadros | 2026-10-09 | `1e2df0fde14c2ba16feba09323a3a6e81bd7b78931e60f32b72a92f9fc0585c4` |
-| `courier/Dash.fbx` (= `_blender/Dash.fbx`) | courier | **criado no Blender** (`Dash`) | 16 quadros | 2026-10-09 | `881ec5c391fe7224fde56f33c2ad705c8fbc1f89fff3f2ca45e13256b08ed19d` |
-| `courier/Hit.fbx` (= `_blender/Hit.fbx`) | courier | **criado no Blender** (`Hit`) | 15 quadros | 2026-10-09 | `da459460e82ccf9d1b430d57138f576821ad76f568386b6bbac2b49dceefece5` |
+| `Hold.fbx` (= `_blender/Hold.fbx`) | courier, ladrao, capitao (`--hold`) | **criado no Blender** (`Hold`; export de 2026-10-09, script `e77d98c9…ddfa3`, sem mudança) | 10 quadros, 30 fps, só armature | 2026-10-09 | `b7813e2469fbb2346a3f6c8832f3d975f903ad472020fc921b7c970cedc62674` |
+| `courier/Run.fbx`, `courier/CarryRun.fbx` | courier | **reuso ARKANA**: `mixamo-loc-sprint.fbx` = "Sprint — Standard Sprint" | Y Bot, root motion (tirado no render); 8 quadros de 2 em 2 (preset) | 2026-10-09 (origem 2026-10-04) | `fd00884dc16483779fe2d0eec446dae812a26b6bb86b3497a7f44459aeba4ad7` |
+| `courier/Idle.fbx`, `courier/CarryIdle.fbx`, `cliente/Idle.fbx`, `bruto/Idle.fbx`, `ogro/Idle.fbx`, `arqueiro/Idle.fbx`, `capitao/Idle.fbx` | courier, cliente, bruto, ogro, arqueiro, capitao | **reuso 03_FORGE_STREET**: `arte/mixamo/Idle.fbx` = Breathing Idle | X Bot; o render usa só os quadros 199–289 (laço de 3,0 s, preset `BREATH`) | 2026-10-09 e 2026-10-10 (origem 2026-10-06) | `befaa0fa9c5684a4e82dd229b04710588b1f32bc026704cc1856cae9c80f4220` |
+| `courier/Throw.fbx` (= `_blender/Throw.fbx`) | courier | **criado no Blender** (`Throw`, refeito: antecipação, chicote, acompanhamento) | 21 quadros | 2026-10-10 | `0ceb6b0140ca7d4d369a008976007b673eea6cb2bab10e52536bb5674c9ef02b` |
+| `courier/Dash.fbx` (= `_blender/Dash.fbx`) | courier | **criado no Blender** (`Dash`, refeito) | 16 quadros | 2026-10-10 | `28b796c7f2af88d8f8f26cfe79191939c384d3b694ff26c8756aa31fcdd4f466` |
+| `courier/Hit.fbx`, `arqueiro/Hit.fbx` (= `_blender/Hit.fbx`) | courier, arqueiro | **criado no Blender** (`Hit`, refeito: braços à frente, sem T) | 15 quadros | 2026-10-10 | `d68760582fda4d4dcf6a444f66a6cbf7f50720ebd69969b23d2498704cb29a63` |
 | `courier_fim/Cheering.fbx`, `cliente/Cheering.fbx` | courier_fim, cliente | **reuso 03_FORGE_STREET**: `Cheering.fbx` = Cheering (Male Cheering With Two Fists Pump) | X Bot | 2026-10-09 | `239cecccd1f25fd48e4ae1cbf88d79957402afe32032cb7bd1dbdc4d66c72985` |
-| `courier_fim/Dying.fbx` | courier_fim | **reuso ARKANA**: `mixamo-standing-react-death-backward.fbx` = "Standing React Death Backward" (Pro Magic Pack) | Y Bot | 2026-10-09 | `9b78551d6a64216f444b7b46b10b567e3e9bd02a5916317195e531e20d3c04ac` |
-| `ladrao/Run.fbx`, `ladrao/CarryRun.fbx` | ladrao | **reuso ARKANA**: `mixamo-loc-correr-frente.fbx` = "Unarmed Run Forward — Running Forward" | Y Bot, root motion (tirado no render) | 2026-10-09 | `797cd01c22279321164ae497a5552fd4102df974bd8910db8e355d0930f3143d` |
-| `ladrao/Lurk.fbx`, `cliente/Shrug.fbx` | ladrao, cliente | **reuso 03_FORGE_STREET**: `LookingAround.fbx` = Looking Around (Idle Stand Looking Around); no cliente, substitui o "Shrug", que não existe no disco | X Bot | 2026-10-09 | `9c80441200a9e6c3c13b570e65183b7d3faeb6ff0f0dc1a94785a4dab144d930` |
-| `ladrao/Grab.fbx` (= `_blender/Grab.fbx`) | ladrao | **criado no Blender** (`Grab`, pega com as 2 mãos e termina no `Hold`) | 24 quadros | 2026-10-09 | `a88cc18285f76bf5091ac2ad7cb06cfcd2944874a17c1864eb092acefda18364` |
-| `guarda/Idle.fbx` (= `_blender/GuardIdle.fbx`) | guarda | **criado no Blender** (`GuardIdle`, escudo à frente, laço) | 60 quadros | 2026-10-09 | `ea85fc1f5ff678efbe974e73202138a0d876584bb8f596cdd9ca87451651e838` |
-| `guarda/Bash.fbx` (= `_blender/Bash.fbx`) | guarda | **criado no Blender** (`Bash`) | 30 quadros | 2026-10-09 | `57cfdd68fe81201e4fb0d1c24d26277df195de1b8679367e27402bb55899ee24` |
+| `courier_fim/Dying.fbx`, `ogro_fim/Dying.fbx` | courier_fim, ogro_fim | **reuso ARKANA**: `mixamo-standing-react-death-backward.fbx` = "Standing React Death Backward" (Pro Magic Pack) | Y Bot | 2026-10-09 e 2026-10-10 | `9b78551d6a64216f444b7b46b10b567e3e9bd02a5916317195e531e20d3c04ac` |
+| `ladrao/Run.fbx`, `ladrao/CarryRun.fbx`, `capitao/Run.fbx`, `capitao/CarryRun.fbx` | ladrao, capitao | **reuso ARKANA**: `mixamo-loc-correr-frente.fbx` = "Unarmed Run Forward — Running Forward" | Y Bot, root motion (tirado no render) | 2026-10-09 e 2026-10-10 | `797cd01c22279321164ae497a5552fd4102df974bd8910db8e355d0930f3143d` |
+| `ladrao/Lurk.fbx` | ladrao | **reuso 03_FORGE_STREET**: `LookingAround.fbx` = Looking Around (Idle Stand Looking Around) | X Bot | 2026-10-09 | `9c80441200a9e6c3c13b570e65183b7d3faeb6ff0f0dc1a94785a4dab144d930` |
+| `ladrao/Grab.fbx`, `capitao/Grab.fbx` (= `_blender/Grab.fbx`) | ladrao, capitao | **criado no Blender** (`Grab`, refeito: 0,5 s = `ThiefGrab`, termina no `Hold`) | 16 quadros | 2026-10-10 | `0c431dbde330dba2aa06f8c3bc8a456316bea18f37c9003492379f3cf22684b5` |
+| `guarda/Idle.fbx` (= `_blender/GuardIdle.fbx`) | guarda | **criado no Blender** (`GuardIdle`, re-exportado com o pé no chão) | 60 quadros, laço | 2026-10-10 | `0cc84d852d5c12efd2c3484601c2e494492935de0d1f2a3b477a4a07a3b6635a` |
+| `guarda/Bash.fbx` (= `_blender/Bash.fbx`) | guarda | **criado no Blender** (`Bash`, refeito: impacto no quadro 6 de 12) | 30 quadros | 2026-10-10 | `3ec55e39369447e8df0ea9399306eabb54e5fe4e9d3d796f8b45512423d3f2fd` |
+| `cliente/Shrug.fbx` (= `_blender/Shrug.fbx`) | cliente | **criado no Blender** (`Shrug`: dar de ombros de frente; substitui o Looking Around) | 49 quadros | 2026-10-10 | `3d8ab75e6c9c3a23bfe4ef5af12cb631cddbf4b1ec58aa8ad60d7fa6852112cd` |
 | `cliente/Thankful.fbx` | cliente | **reuso 03_FORGE_STREET**: Thankful | X Bot | 2026-10-09 | `5462c4529ed06b88caaa877918be24535b2474731489daa027c365b91bfe7e88` |
 | `cliente/Waving.fbx` | cliente | **reuso 03_FORGE_STREET**: Waving | X Bot | 2026-10-09 | `d8f9444653475b44541eea77beb8e64f3eb3ee9b6ea1366460480e4489b91367` |
+| `bruto/Walk.fbx`, `ogro/Walk.fbx` | bruto, ogro | **reuso ARKANA**: `mixamo-loc-andar-frente.fbx` = "Unarmed Walk Forward — Walking Forward" | Y Bot, root motion 1,39 m em 1,37 s (tirado no render) | 2026-10-10 (origem 2026-10-04) | `d3c8434bae7c51771b343f80b0f4b567408d8e268b0aa2343a8454d23629967f` |
+| `bruto/Smash.fbx` (= `_blender/Smash.fbx`) | bruto | **criado no Blender** (`Smash`: manopla de cima para baixo) | 30 quadros | 2026-10-10 | `2d41f9f832b2666def5ce35444bcc1a02fc428543d7788d150e287568f84961d` |
+| `ogro/Slam.fbx` (= `_blender/Slam.fbx`) | ogro | **criado no Blender** (`Slam`: dois punhos no chão) | 31 quadros | 2026-10-10 | `a3d3c9990d2458550c980c7002945c04ccf9ed3a15c300c89bcf870ac812aa1e` |
+| `ogro/Roar.fbx` (= `_blender/Roar.fbx`) | ogro | **criado no Blender** (`Roar`: ruge com os punhos à frente do peito) | 41 quadros | 2026-10-10 | `98d3e82c39f485bafb058ba6590ff3a05a76ea79da8cb9a30a091decd75d3476` |
+| `arqueiro/Walk.fbx` | arqueiro | **reuso ARKANA**: `mixamo-loc-andar-tras.fbx` = "Unarmed Walk Back — Walking Backwards" (recua de frente para o courier) | Y Bot, root motion (tirado no render) | 2026-10-10 (origem 2026-10-04) | `031fc26f5a72d41ddef545e1f47d4615df5ebb6de848e83469e5949c3afe958b` |
+| `arqueiro/Shoot.fbx` (= `_blender/Shoot.fbx`) | arqueiro | **criado no Blender** (`Shoot`: puxa o arco e solta) | 37 quadros | 2026-10-10 | `843ea4bca4ae69c698a1fd156ea84a135653031b1c4ce83505664cad6a16760f` |
+| `capitao/Call.fbx` (= `_blender/Call.fbx`) | capitao | **criado no Blender** (`Call`: grita com a mão na boca e acena) | 31 quadros | 2026-10-10 | `ce937b89e6f9d9a01a19eaeeadd80ff71cbb74091d608455ede3190f3f981ef9` |
+| `capitao/Punch.fbx` (= `_blender/Punch.fbx`) | capitao | **criado no Blender** (`Punch`: soco direto; o `CaptainHit` da View; script final) | 30 quadros | 2026-10-10 | `2f94ac1aae15c18c42dfe4dc3e702e78cc77c9ab84b850aa303ea9ecee541023` |
 
-**Testados e não usados** (ficam no ARKANA, sem cópia em `arte/mixamo/`):
-- Renderizados numa folha de teste e descartados:
+**Testados e não usados** (ficam na origem, sem cópia em `arte/mixamo/`):
+- Renderizados numa folha de teste e descartados (2026-10-09):
   - `mixamo-standing-run-forward.fbx`: braço erguido de magia.
   - `mixamo-standing-react-small-from-front.fbx`: o Hit do Blender lê melhor a ~100 px.
   - `mixamo-standing-1h-magic-attack-01.fbx`: 2,3 s e lê como feitiço.
-- Só inspecionado, sem render: `mixamo-pegar.fbx` ("Picking Up An Object With One Hand"), descartado por ter 3,5 s e usar uma mão só.
+- Só inspecionados, sem render:
+  - `mixamo-pegar.fbx` ("Picking Up An Object With One Hand"), descartado por ter 3,5 s e usar uma mão só.
+  - 2026-10-10, na folha de palitos do `RENDER_SPRITES.md` §9:
+    - Forge `Angry.fbx`: 19 s de raiva parada, fraco para o Roar.
+    - ARKANA `mixamo-standing-2h-magic-area-attack-01/02.fbx`: pancada no chão com pose de feitiço; o impacto não cai em 0,6 do clipe.
 
 Fonte dos originais: mixamo.com, nas contas Adobe do Vinicius (X Bot no Forge, Y Bot no ARKANA). Nenhum modelo nosso foi enviado.
 
@@ -234,24 +255,43 @@ Gerado em 2026-10-10 por `client/tools/audio_gen.py` (Python 3.14.4, numpy 2.4.6
 
 ## 5. Sprites renderizados (0 crédito)
 
-Renderizado em 2026-10-09 pela raia D: Blender 5.2.1 LTS headless, 0 crédito, sem rede.
-- `render_sprites.py`: SHA-256 `6d435e163f14842947a35c314a227c8f257c27aa3ed47fa84b85848f4a6e1ec9`, o mesmo nos 9 conjuntos.
-- `render_sprites.ps1`: `aa22a3a3638d40bfb0d90374ec17132afec0e3a86a549b21d1635747ec499fca`.
-- Os FBX de entrada são cópias de `arte/tripo/` em `%TEMP%\dc_in\` (caminho curto). O SHA bate com o §2.
+**Re-render de 2026-10-10 pela raia G** (polimento + Lotes 2 e 3): Blender 5.2.1 LTS headless, 0 crédito, sem rede. Os 24 conjuntos saíram com os mesmos scripts:
+- `render_sprites.py`: SHA-256 `b463a929ceec5b25e12be59c76b898dad18876b8fb1dffa41a3a1f53fba8ea7d`.
+- `render_sprites.ps1`: `aa22a3a3638d40bfb0d90374ec17132afec0e3a86a549b21d1635747ec499fca` (sem mudança).
+- `folhas.py`: `0a8849115c628d3da9e2cb93de2a4852aadcd661e74b982e0d53bda8ccb9268b`.
+- Clipes: tabela do §3.
+
+Os FBX de entrada são cópias de `arte/tripo/` em `%TEMP%\dc_in\` (caminho curto). O SHA bate com o §2 nos 24 arquivos (conferido em 2026-10-10).
 - Comandos: `RENDER_SPRITES.md` §2.
 - Licença: tripo_pago + clipes do §3. Visibilidade: privada.
+- O render de 2026-10-09 (raia D, script `6d435e16…1ec9`) foi substituído por este.
 
-| Pasta `Resources/Sprites/` | Data | Entrada (FBX + SHA-256) | Clipes / Hold | SHA-256 do `render_sprites.py` | Comando | Folha de conferência |
-|---|---|---|---|---|---|---|
-| `courier` | 2026-10-09 | `tripo/courier/tripo_convert_f2e9a770-….fbx` `21b7bafc…8f9b` | CarryIdle, CarryRun, Dash, Hit, Idle, Run, Throw / `Hold.fbx` | `6d435e16…1ec9` | `-Nome courier -Anims mixamo\courier -Hold mixamo\Hold.fbx` | `sprites_contact/courier.png`, `courier_folhas.png` |
-| `courier_fim` | 2026-10-09 | o mesmo FBX do courier | Cheering, Dying | `6d435e16…1ec9` | `-Nome courier_fim -Anims mixamo\courier_fim` | `courier_fim.png`, `courier_fim_folhas.png` |
-| `ladrao` | 2026-10-09 | `tripo/ladrao/tripo_convert_78892eb1-….fbx` `a72377a9…b5ff` | CarryRun, Grab, Lurk, Run / `Hold.fbx` | `6d435e16…1ec9` | `-Nome ladrao -Anims mixamo\ladrao -Hold mixamo\Hold.fbx` | `ladrao.png`, `ladrao_folhas.png` |
-| `guarda` | 2026-10-09 | `tripo/guarda/tripo_convert_77906b18-….fbx` `b7e80be1…60b2` + escudo `tripo/escudo/tripo_convert_80524815-….fbx` `11e7df9c…c04d` (`--attach`) | Bash, Idle | `6d435e16…1ec9` | `-Nome guarda -Anims mixamo\guarda -Extra @("--attach","<escudo>:LeftForeArm:0.09,0,0.06:90,180,0:0.75")` | `guarda.png`, `guarda_folhas.png` |
-| `cliente` | 2026-10-09 | `tripo/cliente/tripo_convert_cb64fb7a-….fbx` `9dded3b6…125b` | Cheering, Idle, Shrug, Thankful, Waving | `6d435e16…1ec9` | `-Nome cliente -Anims mixamo\cliente` | `cliente.png`, `cliente_folhas.png` |
-| `caixa` | 2026-10-09 | `tripo/caixa/tripo_convert_dc019326-….fbx` `9ee57b86…d09ced1c` | Static | `6d435e16…1ec9` | `-Nome caixa` | `caixa.png` |
-| `bau` | 2026-10-09 | `tripo/bau/tripo_convert_70aa8043-….fbx` `c3e05b91…17e0` | Static | `6d435e16…1ec9` | `-Nome bau` | `bau.png` |
-| `arco` | 2026-10-09 | `tripo/arco/tripo_convert_5ef411ad-….fbx` `6eda5093…26ca` | Static | `6d435e16…1ec9` | `-Nome arco` | `arco.png` |
-| `morcego` | 2026-10-09 | `tripo/morcego/tripo_convert_ad567423-….fbx` `793e39a1…d230` | Static | `6d435e16…1ec9` | `-Nome morcego` | `morcego.png` |
+| Pasta `Resources/Sprites/` | Data | Entrada (FBX + SHA-256) | Clipes (quadros) / Hold | Comando | Folha de conferência |
+|---|---|---|---|---|---|
+| `courier` | 2026-10-10 | `tripo/courier/tripo_convert_f2e9a770….fbx` `21b7bafc…8f9b` | CarryIdle 12, CarryRun 8, Dash 6, Hit 6, Idle 12, Run 8, Throw 10 / `Hold.fbx` | `-Nome courier -Anims mixamo\courier -Hold mixamo\Hold.fbx` | `courier.png`, `courier_folhas.png` |
+| `courier_fim` | 2026-10-10 | o mesmo FBX do courier | Cheering 12, Dying 12 | `-Nome courier_fim -Anims mixamo\courier_fim` | `courier_fim.png`, `courier_fim_folhas.png` |
+| `ladrao` | 2026-10-10 | `tripo/ladrao/tripo_convert_78892eb1….fbx` `a72377a9…b5ff` | CarryRun 10, Grab 6, Lurk 12, Run 10 / `Hold.fbx` | `-Nome ladrao -Anims mixamo\ladrao -Hold mixamo\Hold.fbx` | `ladrao.png`, `ladrao_folhas.png` |
+| `guarda` | 2026-10-10 | `tripo/guarda/tripo_convert_77906b18….fbx` `b7e80be1…60b2` + escudo `tripo/escudo/…` `11e7df9c…c04d` (`--attach`) | Bash 12, Idle 12 | `-Nome guarda -Anims mixamo\guarda -Extra @("--attach","<escudo>:LeftForeArm:0.09,0,0.06:90,180,0:0.75")` | `guarda.png`, `guarda_folhas.png` |
+| `cliente` | 2026-10-10 | `tripo/cliente/tripo_convert_cb64fb7a….fbx` `9dded3b6…125b` | Cheering 12, Idle 12, Shrug 12, Thankful 12, Waving 6 | `-Nome cliente -Anims mixamo\cliente` | `cliente.png`, `cliente_folhas.png` |
+| `bruto` | 2026-10-10 | `tripo/bruto/tripo_convert_c1fe3cb8….fbx` `70dd563a…db56` | Idle 12, Smash 12, Walk 12 | `-Nome bruto -Anims mixamo\bruto` | `bruto.png`, `bruto_folhas.png` |
+| `ogro` | 2026-10-10 | `tripo/ogro/tripo_convert_b3759572….fbx` `1049c655…c912` | Idle 9, Roar 9, Slam 9, Walk 9 | `-Nome ogro -Anims mixamo\ogro` | `ogro.png`, `ogro_folhas.png` |
+| `ogro_fim` | 2026-10-10 | o mesmo FBX do ogro | Dying 7 | `-Nome ogro_fim -Anims mixamo\ogro_fim` | `ogro_fim.png`, `ogro_fim_folhas.png` |
+| `arqueiro` | 2026-10-10 | `tripo/arqueiro/tripo_convert_85f16e73….fbx` `7187bd40…63ee` + arcoflecha `tripo/arcoflecha/…` `3ddcbd98…b966` (`--attach`) | Hit 6, Idle 12, Shoot 12, Walk 12 | `-Nome arqueiro -Anims mixamo\arqueiro -Extra @("--attach","<arcoflecha>:LeftHand:-0.06,0,-0.015:90,180,0:0.8")` | `arqueiro.png`, `arqueiro_folhas.png` |
+| `capitao` | 2026-10-10 | `tripo/capitao/tripo_convert_041909b7….fbx` `722a974c…0f4f` | Call 12, CarryRun 10, Grab 6, Idle 12, Punch 12, Run 10 / `Hold.fbx` | `-Nome capitao -Anims mixamo\capitao -Hold mixamo\Hold.fbx` | `capitao.png`, `capitao_folhas.png` |
+| `caixa` | 2026-10-10 | `tripo/caixa/tripo_convert_dc019326….fbx` `9ee57b86…ed1c` | Static 1 | `-Nome caixa` | `caixa.png`, `caixa_folhas.png` |
+| `bau` | 2026-10-10 | `tripo/bau/tripo_convert_70aa8043….fbx` `c3e05b91…17e0` | Static 1 | `-Nome bau` | `bau.png`, `bau_folhas.png` |
+| `arco` | 2026-10-10 | `tripo/arco/tripo_convert_5ef411ad….fbx` `6eda5093…26ca` | Static 1 | `-Nome arco` | `arco.png`, `arco_folhas.png` |
+| `morcego` | 2026-10-10 | `tripo/morcego/tripo_convert_ad567423….fbx` `793e39a1…d230` | Static 1 | `-Nome morcego` | `morcego.png`, `morcego_folhas.png` |
+| `reliquia` | 2026-10-10 | `tripo/reliquia/tripo_convert_0a9e5d99….fbx` `dfbfda6e…1639` | Static 1 | `-Nome reliquia` | `reliquia.png`, `reliquia_folhas.png` |
+| `ovo` | 2026-10-10 | `tripo/ovo/tripo_convert_85fb4d88….fbx` `c1027189…c0b6` | Static 1 | `-Nome ovo` | `ovo.png`, `ovo_folhas.png` |
+| `filhote` | 2026-10-10 | `tripo/filhote/tripo_convert_06e11dbc….fbx` `42770dbe…106d` | Static 1 | `-Nome filhote` | `filhote.png`, `filhote_folhas.png` |
+| `limo` | 2026-10-10 | `tripo/limo/tripo_convert_abe03ed7….fbx` `6ff02af3…5eba` | Static 1 | `-Nome limo` | `limo.png`, `limo_folhas.png` |
+| `bolo` | 2026-10-10 | `tripo/bolo/tripo_convert_26283e7d….fbx` `c7d5b904…2a80` | Static 1 | `-Nome bolo` | `bolo.png`, `bolo_folhas.png` |
+| `mensagem` | 2026-10-10 | `tripo/mensagem/tripo_convert_faa6da00….fbx` `c425fa80…1709` | Static 1 | `-Nome mensagem` | `mensagem.png`, `mensagem_folhas.png` |
+| `caixa_pesada` | 2026-10-10 | `tripo/caixa_pesada/tripo_convert_338430a8….fbx` `f8f8722c…7625` | Static 1 | `-Nome caixa_pesada` | `caixa_pesada.png`, `caixa_pesada_folhas.png` |
+| `barril` | 2026-10-10 | `tripo/barril/tripo_convert_56311beb….fbx` `0325c075…a41f` | Static 1 | `-Nome barril` | `barril.png`, `barril_folhas.png` |
+| `tocha` | 2026-10-10 | `tripo/tocha/tripo_convert_34fd9e82….fbx` `1730741a…8606` | Static 1 | `-Nome tocha` | `tocha.png`, `tocha_folhas.png` |
+| `pilar` | 2026-10-10 | `tripo/pilar/tripo_convert_429920c7….fbx` `1e74509a…2b27` | Static 1 | `-Nome pilar` | `pilar.png`, `pilar_folhas.png` |
 
 O SHA dos PNG não é reprodutível bit a bit, porque o AA do Workbench varia alguns níveis entre renders (Forge §6). Registre o SHA da entrada e o do script.
 
