@@ -202,6 +202,9 @@ namespace DC.Core
         SecondWind, GearUse, GearUnlock, GearUpgrade, BlueprintFound, MasteryUp, Milestone, ModifierPick, EventStart, EventEnd, EventReward,
         SeasonProgress, SeasonClaim, RareOffer, RareStart, Reroll, EndlessStart, EndlessEnd, RewardedOffer, RewardedGrant, RewardedResume,
         InterstitialShow, IapPurchase, DeviceFps, OutfitEquip,
+        // regiao 2 (raia R2: insira abaixo desta linha)
+        // regiao 3 (raia R3: insira abaixo desta linha)
+        // regiao 4 (raia R4: insira abaixo desta linha)
     }
 
     public struct SimEvent

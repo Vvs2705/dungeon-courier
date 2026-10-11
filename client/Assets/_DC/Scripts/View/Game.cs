@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using DC.Core;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -30,6 +32,10 @@ namespace DC
     ///   -weapon W     (com -testsession -contract) arma 0 estilingue, 1 bumerangue, 2 bombinha: destrava so na memoria e equipa.
     ///   -reset        apaga o save antes de carregar.   -testsession  nao le nem grava save nem diario (semente fixa 1).
     ///   -lang L       (com -testsession) pt|en|es|id: forca o idioma so na memoria (fotos por idioma; a escolha gravada nao muda).
+    ///   -record dir [-recordfps 30] [-recordsecs 20] [-recordfrom 0]   (com -testsession) criativos de UA (docs/CRIATIVOS.md): tempo fixo
+    ///                 por quadro (Time.captureFramerate), pula `recordfrom` s de jogo sem gravar, grava `recordsecs` s em dir/00000.png...
+    ///                 no tamanho da janela (540x960 no build Windows) e o som do jogo em dir/audio.wav (AudioRenderer); sai 0 no fim.
+    ///                 Nao pausa ao perder o foco. Montagem: client/tools/criativos.py.
     /// </summary>
     public sealed class Game : MonoBehaviour
     {
@@ -54,6 +60,7 @@ namespace DC
         Joystick _joy;
         Camera _cam;
         float _speed = 1f, _botAcc, _endT, _backT;
+        int _recFps;   // > 0 = -record ativo (quadros por segundo de jogo)
         bool _test, _headless, _botDrive, _paused, _skipDt, _started;
         string _diary, _sid;
         Vector2Int _screen;
@@ -78,6 +85,14 @@ namespace DC
             _diary = Path.Combine(Application.persistentDataPath, "diario.csv");
             if (!_test) { InstallId = Install(); RotateDiary(); }
             _speed = Mathf.Clamp(ArgF("-speed", 1f), 0.1f, 20f);
+            string rec = Arg("-record");
+            if (rec != null && (!_test || rec.Length == 0)) Debug.Log("RECORD ignorado: use -testsession -record <pasta>");
+            else if (rec != null)
+            {
+                _recFps = Mathf.Clamp(Mathf.RoundToInt(ArgF("-recordfps", 30f)), 10, 60);
+                Time.captureFramerate = _recFps;   // o tempo do jogo anda 1/fps por quadro, por mais que o PNG demore
+                Application.runInBackground = true;
+            }
             Audio.Init(gameObject);
             Ajustes.Init();   // idioma e volumes antes de montar as telas
             if (_test && Textos.DeCodigo(Arg("-lang")) is Textos.Lingua lang) Textos.Lang = lang;   // dev: fotos por idioma, sem gravar
@@ -137,12 +152,13 @@ namespace DC
             _started = true;
             string shot = Arg("-shot");
             if (!string.IsNullOrEmpty(shot)) StartCoroutine(Shot(shot));
+            if (_recFps > 0) StartCoroutine(Record(Arg("-record")));
         }
 
         void Update()
         {
             if (_headless) return;
-            float dt = Mathf.Min(Time.unscaledDeltaTime, 0.1f);
+            float dt = _recFps > 0 ? 1f / _recFps : Mathf.Min(Time.unscaledDeltaTime, 0.1f);   // -record: passo fixo, repetivel
             if (_skipDt) { dt = 0f; _skipDt = false; }
             if (_screen.x != Screen.width || _screen.y != Screen.height) Fit();
             BackKey();
@@ -438,7 +454,7 @@ namespace DC
         /// <summary>App saiu da frente: grava e abre a pausa (o contrato fica sem Tick ate CONTINUAR). Voltou: descarta o dt do quadro.</summary>
         void Away(bool away)
         {
-            if (_headless || Sim == null || !_started) return;
+            if (_headless || Sim == null || !_started || _recFps > 0) return;   // -record: segue gravando sem foco (runInBackground)
             if (away)
             {
                 if (!_paused) Log("app_background", Time.realtimeSinceStartup.ToString("0", Inv));   // fim de sessao no Android (o quit raramente chega)
@@ -551,6 +567,61 @@ namespace DC
             yield return null;
             yield return null;
             Application.Quit(0);
+        }
+
+        /// <summary>-record dir: pula -recordfrom s de jogo (cada quadro = 1/fps s), grava -recordsecs s de quadros PNG (00000.png...) e o
+        /// som do jogo (AudioRenderer, no mesmo passo do captureFramerate) em audio.wav PCM 16 bits; loga RECORD inicio/fim e sai 0.
+        /// ponytail: PCM inteiro na memoria (30 s estereo 48 kHz = ~11 MB) e PNG sincrono no quadro (o tempo do jogo nao anda enquanto isso).</summary>
+        IEnumerator Record(string dir)
+        {
+            Directory.CreateDirectory(dir);
+            int skip = Mathf.Max(0, Mathf.RoundToInt(ArgF("-recordfrom", 0f) * _recFps));
+            int n = Mathf.Max(1, Mathf.RoundToInt(ArgF("-recordsecs", 20f) * _recFps));
+            for (int i = 0; i < skip; i++) yield return null;
+            Debug.Log(string.Format(Inv, "RECORD inicio {0} quadro={1} {2}", dir, skip, Estado()));
+            AudioSpeakerMode sm = AudioSettings.speakerMode;
+            int ch = sm == AudioSpeakerMode.Mono ? 1 : sm == AudioSpeakerMode.Quad ? 4 : sm == AudioSpeakerMode.Surround ? 5
+                : sm == AudioSpeakerMode.Mode5point1 ? 6 : sm == AudioSpeakerMode.Mode7point1 ? 8 : 2;
+            var pcm = new List<float>();
+            bool som = AudioRenderer.Start();
+            for (int i = 0; i < n; i++)
+            {
+                yield return new WaitForEndOfFrame();
+                Texture2D t = ScreenCapture.CaptureScreenshotAsTexture();
+                File.WriteAllBytes(Path.Combine(dir, i.ToString("00000", Inv) + ".png"), t.EncodeToPNG());
+                Destroy(t);
+                if (!som) continue;
+                using (var buf = new NativeArray<float>(AudioRenderer.GetSampleCountForCaptureFrame() * ch, Allocator.Temp))
+                {
+                    AudioRenderer.Render(buf);
+                    pcm.AddRange(buf);
+                }
+            }
+            if (som) { AudioRenderer.Stop(); Wav(Path.Combine(dir, "audio.wav"), pcm, ch, AudioSettings.outputSampleRate); }
+            Debug.Log(string.Format(Inv, "RECORD fim {0} quadros={1} fps={2} som={3} {4}x{5} {6}", dir, n, _recFps, som ? ch + "ch" : "nao",
+                Screen.width, Screen.height, Estado()));
+            Application.Quit(0);
+        }
+
+        string Estado()
+        {
+            Run r = Sim.Run;
+            bool inRun = r != null && _mode != Mode.Board;
+            return string.Format(Inv, "tela={0} contrato={1} sala={2} t={3:0.0}", _hud.Current, inRun ? r.Contract.Code : "-", inRun ? r.Room.Code : "-",
+                inRun ? r.Time : 0f);
+        }
+
+        /// <summary>WAV PCM 16 bits intercalado (o ffmpeg do criativos.py le direto).</summary>
+        static void Wav(string path, List<float> s, int ch, int rate)
+        {
+            using (var w = new BinaryWriter(File.Create(path)))
+            {
+                int bytes = s.Count * 2;
+                w.Write("RIFF".ToCharArray()); w.Write(36 + bytes); w.Write("WAVEfmt ".ToCharArray());
+                w.Write(16); w.Write((short)1); w.Write((short)ch); w.Write(rate); w.Write(rate * ch * 2); w.Write((short)(ch * 2)); w.Write((short)16);
+                w.Write("data".ToCharArray()); w.Write(bytes);
+                foreach (float f in s) w.Write((short)Mathf.Clamp(f * 32767f, -32768f, 32767f));
+            }
         }
 
         static float ArgF(string name, float def) => float.TryParse(Arg(name), NumberStyles.Float, Inv, out float v) ? v : def;

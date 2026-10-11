@@ -227,6 +227,12 @@ Pasta: `client/Assets/_DC/Resources/Sprites/<pasta>/`, com `<Clipe>.png` + `meta
 | `bolo`, `mensagem`, `caixa_pesada`, `barril` | #25–#28 | 1 | 112 / 96 / 128 / 96 | largura 0,60 / 0,45 / 0,70 m (= `CargoSize` da View) / altura 0,55 m | Static |
 | `bau`, `bau_aberto`, `arco` | #7, #8, #9 | 1 | 160 / 160 / 448 | largura 0,80 / 0,80 / 2,20 m | Static |
 | `tocha`, `pilar` | #29, #30 | 1 | 112 / 288 | altura 0,70 m / largura 1,20 m (`PilarW`; ~2,2 m de altura) | Static |
+| `goblin_mineiro` (= `mineiro` do `CONTEUDO_REGIOES` §12.1) | Lote 4 + `arte/mixamo/goblin_mineiro/` + picareta (`--attach`) | 3 | 192 | 1,00 m | Idle, Walk (recua), **Run** (persegue), Throw, Sleep, Wake, Hit |
+| `toupeira` | Lote 4 + `arte/mixamo/toupeira/` | 3 | 192 | 0,90 m | Idle, Look, Emerge, Burrow, Hit |
+| `rainha_toupeira` / `rainha_toupeira_fim` (= `rainha` / `rainha_fim`) | Lote 4 + `arte/mixamo/rainha_toupeira/` e `_fim/` | 3 / 1 | 304 / 320 | 1,60 m | Idle, Emerge, Burrow, Swipe, Call, Hit / Dying |
+| `golem` / `golem_fim` | Lote 4 + `arte/mixamo/golem/` e `golem_fim/` | 3 / 1 | 448 × 9 quadros / 576 × 7 | 2,60 m | Idle, Walk, Slam, Charge, Stun / Dying |
+| `picareta`, `coracao`, `gaiola`, `lanterna_mina` | Lote 4 | 1 | 96 | altura 0,45 / 0,45 / 0,50 / 0,50 m | Static |
+| `sapo`, `besouro`, `vagonete`, `cristal`, `escora` | Lote 4 | 1 | 144 / 112 / 208 / 96 / 176 | largura 0,90 / 0,60 / 1,20 / 0,50 / 1,20 m | Static |
 
 **Medidas nas folhas** (`client/Builds/sprites_contact/<ator>_folhas.png`), quadros contados a partir de 0. Re-medidas em 2026-10-10 (raia G) com os clipes novos. O quadro de impacto do Blender foi posto de propósito em `round(ImpactFrac × quadros)` da View (`WorldView.cs`), então a View não precisa mudar:
 
@@ -238,12 +244,19 @@ Pasta: `client/Assets/_DC/Resources/Sprites/<pasta>/`, com `<Clipe>.png` + `meta
 | ogro/Slam (9) | **5** (= round(0,6 × 9)): dois punhos no chão, agachado. 0–4: braços sobem pela frente até o alto (telegraph 1 s); 5–8: afunda e levanta | — |
 | arqueiro/Shoot (12) | **8** = soltura (= round(0,7 × 12)): a mão da corda escapa para trás. 0–7: ergue o arco, puxa até a bochecha e mira (telegraph 0,8 s); 8–11: acompanha e baixa | — |
 | capitao/Punch (12) | **6** (= 0,5 × 12): braço direito esticado à frente. 0–5: arma o punho no ombro (telegraph 0,5 s) | — |
+| goblin_mineiro/Throw (12) | **7** = soltura (= round(0,6 × 12)): a picareta sai à frente. 0–6: antecipação e picareta no alto atrás da cabeça (telegraph 0,9 s); 7–11: acompanha e volta | — |
+| rainha_toupeira/Swipe (12) | **6** (= 0,5 × 12): patada cruzando o corpo com passo. 0–5: garra direita no alto e tronco torcido (telegraph 0,6 s) | — |
+| golem/Slam (9) | **5** (= round(0,6 × 9)), o mesmo Slam do ogro: dois punhos no chão. 0–4: braços sobem pela frente até o alto (telegraph 1,1 s) | — |
+| toupeira e rainha_toupeira/Emerge e Burrow (6 quadros, 0,3 s) | — (a parte enterrada já sai cortada no chão: `ground_cut`) | — |
 | courier/CarryRun e Run (Sprint do ARKANA, **8 quadros**, ciclo 0,53 s) | — | **3,56**, no `meta.json` como `stride_mps`. Na Sim: 4,2 → **1,18×**; 4,83 (+15%) → **1,36×** |
 | ladrao/Run e CarryRun (Running do ARKANA, 10 quadros, ciclo 0,80 s) | — | **1,02**. Na Sim: 2,0 → **1,96×**; fuga 1,6 → **1,57×** |
 | capitao/Run e CarryRun (Running do ARKANA, 10 quadros, 0,80 s) | — | **1,64**. Na Sim: 2,6 → **1,58×** |
 | bruto/Walk (Walking Forward do ARKANA, 12 quadros, 1,37 s) | — | **0,93**. Na Sim: 1,6 → **1,72×** |
 | ogro/Walk (o mesmo, 9 quadros) | — | **1,40**. Na Sim: 1,2 → **0,86×** |
 | arqueiro/Walk (Walking Backwards do ARKANA, 12 quadros, 1,30 s) | — | **0,59** (para trás). Na Sim: 1,4 → 2,38×, acima do teto de 2,3× da View: o pé patina ~3% |
+| goblin_mineiro/Run (Running Forward do ARKANA, 10 quadros, 0,80 s; persegue) | — | **1,10**. Na Sim: 1,4 → **1,27×** |
+| goblin_mineiro/Walk (Running Backwards do ARKANA, 9 quadros, 0,77 s; recua) | — | **0,86** (para trás). Na Sim: 1,4 → **1,63×**. O Walking Backwards pedido no §12.1 dava 0,36 m/s → 3,9×, acima do teto |
+| golem/Walk (Walking Forward do ARKANA, 9 quadros, 1,37 s) | — | **1,33**. Na Sim: 1,0 → **0,75×** (o §12.1 previa ~0,6×). O Charge (laço de 2 passos em 0,67 s, sem `stride_mps`) fica para a View tocar no ritmo da investida de 7 m/s |
 
 **Idle:** courier (Idle, CarryIdle), cliente, bruto, ogro, arqueiro e capitão usam a janela 199–289 do Breathing Idle: laço de **3,0 s** (antes 9,9 s a 1,2 fps), 12 quadros a 4 fps (ogro: 9 a 3 fps). A costura do laço é de ~1 px na tela.
 
@@ -277,7 +290,19 @@ Lote 3:
 | `capitao` (3 × 192) | Call 12, CarryRun 10, Grab 6, Idle 12, Punch 12, Run 10 | Run/CarryRun = reuso ARKANA (Running) + `Hold`; Idle = reuso Forge (janela 199–289); Grab, Call e Punch = Blender | 2 304 px | ~3,0 MB |
 | `limo`, `bolo`, `mensagem`, `caixa_pesada`, `barril`, `tocha`, `pilar` | Static 1 | Tripo | 288 px | ~0,1 MB |
 
-**Totais:** Lote 1 ~11,9 MB, Lote 2 ~16,1 MB, Lote 3 ~5,9 MB → **~33,9 MB** em ASTC. PNG em disco: 27,3 MB.
+Lote 4 (2026-10-11):
+
+| Conjunto | Clipes (quadros) | Fonte | Folha mais larga | Memória ASTC |
+|---|---|---|---|---|
+| `goblin_mineiro` (3 × 192) | Hit 6, Idle 12, Run 10, Sleep 12, Throw 12, Wake 5, Walk 9 | Idle (janela 199–289), Run = reuso ARKANA (Running Forward), **Walk = reuso ARKANA (Running Backwards)**; Throw, Sleep, Wake e Hit = Blender; picareta do Tripo na `RightHand` (`--attach`) | 2 304 px | ~3,2 MB |
+| `toupeira` (3 × 192) | Burrow 6, Emerge 6, Hit 6, Idle 12, Look 12 | Idle (janela 199–289), Look = reuso Forge (Looking Around); Emerge, Burrow e Hit = Blender; rig em pose A (alinhado sozinho) | 2 304 px | ~2,1 MB |
+| `rainha_toupeira` (3 × 304) | Burrow 6, Call 12, Emerge 6, Hit 6, Idle 12, Swipe 12 | Idle (janela 199–289); Emerge, Burrow, Swipe e Hit = Blender; Call = Roar do ogro (Blender); rig em pose A | 3 648 px | ~6,6 MB |
+| `rainha_toupeira_fim` (1 × 320) | Dying 12 | Dying = reuso ARKANA (Standing React Death Backward) | 3 840 px | ~0,5 MB |
+| `golem` (3 × 448) | Charge 8, Idle 9, Slam 9, Stun 9, Walk 9 | Walk = reuso ARKANA (Walking Forward); Idle (janela 199–289); Slam = o do ogro; Charge e Stun = Blender; rig em pose A | 4 032 px | ~11,8 MB |
+| `golem_fim` (1 × 576) | Dying 7 | Dying = Blender (`Collapse`: desmorona de bruços) | 4 032 px | ~1,0 MB |
+| `picareta`, `sapo`, `besouro`, `vagonete`, `coracao`, `cristal`, `gaiola`, `lanterna_mina`, `escora` | Static 1 | Tripo | 208 px | ~0,1 MB |
+
+**Totais:** Lote 1 ~11,9 MB, Lote 2 ~16,1 MB, Lote 3 ~5,9 MB → **~33,9 MB** em ASTC. PNG em disco: 27,3 MB. Lote 4: **~25,4 MB** (o golem sozinho ~11,8 MB; só no B2).
 - O Lote 1 subiu de ~11,3 para ~11,9 MB: a corrida passou a ter 8 quadros e o Throw 10.
 - O ogro sozinho tem ~9,6 MB e só aparece no B1.
 - Se faltar memória, o primeiro corte é `clips` no preset do ogro (Idle e Walk com 6 quadros, por exemplo), sem mexer no golpe.
@@ -348,3 +373,35 @@ Aval: mensagem do Vinicius em 2026-10-10 ("sem pausas, sem solicitações ... se
 Na picareta, o assunto já trazia "single object" antes do "only one object in the image". O trilho do CONTRATO §8 ficou de fora: é procedural, como os obstáculos.
 
 > **Lote 4: 4 × 65 + 9 × 45 = 665 créditos** (teto 750). Saldo 19 435 → 18 770 (`PROVENIENCIA.md` §1). Sem refação e sem duplicata.
+
+## 10. Lote 5 da v1.0 (2026-10-11) — região 3 "Cripta Assombrada" (`CONTEUDO_REGIOES.md` §12.2)
+
+Aval: a mesma autonomia do Vinicius de 2026-10-10 ("sem pausas, sem solicitações ... seja na arte") e o pedido do jogo completo pelo GDD; teto do lote **850 créditos**, repassado pelo coordenador. Cores de papel (`CONTEUDO_REGIOES.md` §12): **verde `#7CFF9E`** = morto-vivo (olhos e runas do esqueleto, da múmia e do necromante); **lilás** = mexe na carga (brilho do fantasma, ampulheta da viúva); gárgula em pedra verde-acinzentada com olhos vermelhos. Itens separados do corpo (regra do Vinicius): a clava do esqueleto e o cajado do necromante saem como props e são presos à `RightHand` no Blender. As asas da gárgula são corpo.
+
+**Texto exato enviado ao gerador** (Nano Banana 2, 1:1, 4 imagens, grátis): os trechos abaixo foram unidos por ", ", nesta ordem, igual à §9.
+- Personagem: assunto + `[S]` + `[T]` + `[I]`.
+- Prop: assunto + "only one object in the image" + `[P]` + `[IP]`.
+- Modelo: HD H3.1 - Máx. qualidade, Ultra, 2K, PBR, remover iluminação, triângulos, 8 000 polígonos, 8K off, Gerar em Partes off, Privado ("Gerar 45" conferido em cada peça). Sem Multi-View.
+
+| # | Asset | Tipo | Assunto do prompt (texto exato, antes dos sufixos) | Imagem | Cr |
+|---|---|---|---|---|---|
+| 44 | `esqueleto` | personagem rigado | undead skeleton warrior, bone-white bones, dented dark iron helmet, tattered dark green rags, glowing green eye sockets, empty hands, no weapon, no shield | #1 | 65 |
+| 45 | `clava` | prop (item da mão direita do esqueleto) | one single crude bone club wrapped with rope, single object | #2 | 45 |
+| 46 | `mumia` | personagem rigado | shambling mummy wrapped in dirty beige bandages, loose bandage strips, glowing green eyes through the wraps, hunched, empty hands | #2 | 65 |
+| 47 | `gargula` | personagem rigado (asas = corpo) | stone gargoyle demon, grey-green weathered stone skin with cracks, folded bat wings on the back, small horns, claws, glowing red eyes, empty hands | #3 | 65 |
+| 48 | `necromante` | personagem rigado (chefe) | gaunt necromancer, black hooded robe ending above the knees over dark trousers, sickly green glowing trims and runes, bony pale hands, skull belt buckle, glowing green eyes under the hood, empty hands, no staff | #3 | 65 |
+| 49 | `cajado` | prop (item da mão direita do necromante) | one single necromancer staff, twisted black wood topped with a horned skull and a glowing green gem, single object | #4 | 45 |
+| 50 | `fantasma` | prop (animado por código) | cute spooky ghost, floating white-cyan sheet body with a wavy tail, no legs, big dark eye holes, small grin, faint lilac glow | #2 | 45 |
+| 51 | `aranha` | prop (animado por código) | big cartoon dungeon spider, round dark violet-black body, eight thick hairy legs, many shiny eyes | #1 | 45 |
+| 52 | `viuva` | prop (mini-chefe, animado por código) | giant widow spider queen, glossy black body with a glowing lilac hourglass mark, long thin legs, crown-like spikes on the head, many red eyes | #3 | 45 |
+| 53 | `lanterna` | prop (carga) | old brass hand lantern with a glass globe and a warm flame, carrying ring on top | #1 | 45 |
+| 54 | `espelho` | prop (carga) | enchanted hand mirror, oval silver mirror in an ornate gold frame with small cyan gems, sturdy handle, glowing surface | #1 | 45 |
+| 55 | `balao` | prop (carga) | big round gas balloon with sunny yellow and cream stripes, small wicker basket tied with ropes | #2 | 45 |
+| 56 | `lapide` | prop (decoração) | cracked rounded stone tombstone with a carved skull and moss | #3 | 45 |
+| 57 | `vela` | prop (decoração) | cluster of melted candles on an iron candelabra, small flames | #2 | 45 |
+| 58 | `sarcofago` | prop (decoração) | stone sarcophagus with a carved mummy face lid, cracks | #2 | 45 |
+| — | texturas `piso_cripta`, `parede_cripta` | imagem grátis (gerador do Tripo) | texto exato em `PROVENIENCIA.md` §4 (lajes azul-cinza frias, valor médio legível / tijolo azul-cinza com nichos em arco) | #3 / #3 | 0 |
+
+Na clava e no cajado, o assunto já trazia "one single ... single object" antes do "only one object in the image". Teia, véu do escuro, runa, raio, fio, casulo, bancos e estantes ficam procedurais (0 crédito).
+
+> **Lote 5: 4 × 65 + 11 × 45 = 755 créditos** (teto 850). Saldo 18 770 → 18 015 (`PROVENIENCIA.md` §1). Sem refação e sem duplicata.
