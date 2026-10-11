@@ -1,0 +1,41 @@
+{
+ "size": 144,
+ "fps": 12.0,
+ "dirs": 1,
+ "rows": 1,
+ "dir_order": [
+  "S"
+ ],
+ "mirror": false,
+ "row0": "top",
+ "elev": 60.0,
+ "yaw": 0.0,
+ "ppu": 120.0,
+ "pivot_px": [
+  72.0,
+  60.5
+ ],
+ "pivot": [
+  0.5,
+  0.42
+ ],
+ "light": "flat",
+ "outline_px": 3,
+ "src_fps": 30,
+ "preset": "sapo",
+ "model_scale": 0.9182,
+ "hold": "",
+ "attach": [],
+ "align_arms": false,
+ "clips": [
+  {
+   "name": "Static",
+   "file": "Static.png",
+   "frames": 1,
+   "loop": false,
+   "fps": 30.0,
+   "duration_s": 0.033,
+   "src_frames": 0
+  }
+ ]
+}

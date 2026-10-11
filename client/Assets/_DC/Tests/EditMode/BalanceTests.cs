@@ -104,7 +104,7 @@ namespace DC.Tests
         public void Reliquia_VerboAparece_SemTornarOsContratosInviaveis()
         {
             double cracks = 0; int n = 0;
-            for (int c = 0; c < Sim.Contracts.Length; c++)
+            for (int c = 0; c < Table().Length; c++)   // regiao 1 (a tabela)
             {
                 if (Sim.Contracts[c].Cargo != CargoType.Relic) continue;
                 Bot.Stats s = Table()[c];
@@ -128,7 +128,7 @@ namespace DC.Tests
             var mean = new double[4]; var count = new int[4];
             foreach (RoomDef a in Content.Rooms)
             {
-                if (!a.Normal) continue;
+                if (!a.Normal || a.Region != 1) continue;   // a tabela e da regiao 1 (as outras: BALANCE_REGIAON.md)
                 Assert.GreaterOrEqual(visits[a.Id], 60, a.Code + ": poucas visitas para medir");
                 mean[a.Threat] += dmg[a.Id] / visits[a.Id]; count[a.Threat]++;
             }
@@ -136,7 +136,7 @@ namespace DC.Tests
             for (int t = 1; t < 3; t++) Assert.Greater(mean[t + 1] - mean[t], 0.3, "icones " + t + " e " + (t + 1) + " sem folga de dano");
             foreach (RoomDef a in Content.Rooms)
             {
-                if (!a.Normal) continue;
+                if (!a.Normal || a.Region != 1) continue;   // a tabela e da regiao 1 (as outras: BALANCE_REGIAON.md)
                 double d = dmg[a.Id] / visits[a.Id];
                 if (a.Threat < 3) Assert.Less(d, mean[a.Threat + 1], a.Code + " (icone " + a.Threat + ") tira mais vida que a media do icone " + (a.Threat + 1));
                 if (a.Threat > 1) Assert.Greater(d, mean[a.Threat - 1], a.Code + " (icone " + a.Threat + ") tira menos vida que a media do icone " + (a.Threat - 1));
@@ -225,7 +225,7 @@ namespace DC.Tests
             sb.AppendLine(line.ToString());
             Bot.Route r0 = Route();
             var h2 = new StringBuilder(string.Format(ci, "H2: bifurcações em que a carga não muda a porta {0:0.0}% de {1} · porta mais escolhida {2:0.0}% · porta com ladrão escolhida:", r0.SameDoorPct, r0.ForkCount, r0.ModalPct));
-            for (int i = 0; i < CargoDef.All.Length; i++) h2.Append(string.Format(ci, " {0} {1:0}%", CargoDef.All[i].Name, r0.ThiefPct[i]));
+            for (int i = 0; i < RegionDef.Of(1).CargoCount; i++) h2.Append(string.Format(ci, " {0} {1:0}%", CargoDef.All[i].Name, r0.ThiefPct[i]));
             sb.AppendLine(h2.ToString());
             var h1 = new StringBuilder("H1 (guilda 3, estilingue 2, C4-C24, 20 sementes): % salas com luta por agressividade");
             foreach (float ag in new[] { 0.1f, 0.5f, 0.9f })
@@ -246,7 +246,7 @@ namespace DC.Tests
             Bot.Stats g = Bot.MeasureGenerated(60);
             sb.AppendLine(string.Format(ci, "Gerados (código, guilda 0, 60 payloads): entrega {0:0}% · morte {1:0}% · {2:0}s", g.Pct(g.Delivered), g.Pct(g.Died), g.AvgTime));
             TestContext.WriteLine(sb.ToString());
-            Assert.AreEqual(Sim.Contracts.Length, t.Length);
+            Assert.AreEqual(RegionDef.Of(1).Contracts.Length, t.Length);
         }
     }
 }

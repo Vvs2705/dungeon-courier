@@ -646,7 +646,7 @@ namespace DC.Tests
             sim.RescuedIds.Add(3); sim.RescuedIds.Add(8);
             sim.Levels[3] = 7;
             string a = sim.Save();
-            StringAssert.StartsWith("v=2\n", a);
+            StringAssert.StartsWith("v=3\n", a);
             Assert.IsFalse(sim.Dirty);
             Sim b = Sim.Load(a);
             Assert.AreEqual(321, b.Coins); Assert.AreEqual(4, b.Reputation); Assert.AreEqual(77, b.Seed);
@@ -677,14 +677,14 @@ namespace DC.Tests
             Assert.IsFalse(s.SaveRefused);
             Assert.AreEqual(120, s.Coins); Assert.AreEqual(3, s.Reputation);
             Assert.AreEqual(new[] { 1, 0, 2, 0 }, s.Levels);
-            Assert.IsTrue(s.Dirty, "migracao tem de regravar em v2");
-            StringAssert.StartsWith("v=2\n", s.Save());
+            Assert.IsTrue(s.Dirty, "migracao tem de regravar em v3");
+            StringAssert.StartsWith("v=3\n", s.Save());
         }
 
         [Test]
         public void Save_VersaoFuturaRecusada_SemApagar()
         {
-            const string future = "v=3\ncoins=999\nrep=8\nlv=5,5,5,5\n";
+            const string future = "v=4\ncoins=999\nrep=8\nlv=5,5,5,5\n";
             Sim s = Sim.Load(future);
             Assert.IsTrue(s.SaveRefused);
             Assert.AreEqual(0, s.Coins, "devolve estado novo");
@@ -788,6 +788,7 @@ namespace DC.Tests
         static string Fingerprint(int seed, int contract)
         {
             var sim = new Sim(seed) { Reputation = Sim.Contracts.Length };
+            sim.DevStars(999);   // regioes 2-4 abertas (estrelas)
             ContractResult res = Bot.Play(sim, contract, false, new Bot(seed, 0.6f, 0.25f));
             return res.Outcome + "|" + res.Time.ToString("R") + "|" + res.Total + "|" + res.RoomsFought + "|" + sim.Run.Courier.Pos + "|" + sim.Save();
         }
@@ -853,7 +854,7 @@ namespace DC.Tests
                 for (int l = 1; l < layers.Length; l++) paths *= layers[l].Length;
                 for (int p = 0; p < paths; p++)
                 {
-                    var sim = NewSim(); Run r = Start(sim, c);
+                    var sim = NewSim(); sim.DevStars(999); Run r = Start(sim, c);   // estrelas: regioes 2-4 abertas
                     int code = p;
                     while (sim.InContract)
                     {

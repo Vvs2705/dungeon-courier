@@ -69,12 +69,29 @@ namespace DC.Core
 
     // ------------------------------------------------------------------ enums (salvos por indice: so crescem no FIM)
 
-    public enum CargoType { Box, Relic, Egg, Cake, Message, Heavy, Barrel }
-    public enum EnemyType { Bat, Thief, Guard, Brute, Ogre, Archer, Slime, Captain }
+    /// <summary>Lancamento (CONTRATO_LANCAMENTO §3): 8 cargas novas no fim. Sem comportamento proprio ainda = carga normal (como a Caixa);
+    /// as raias de regiao implementam o verbo em Run.RegiaoN.cs.</summary>
+    public enum CargoType { Box, Relic, Egg, Cake, Message, Heavy, Barrel, ArcaneHeart, IceCrystal, GriffinCage, Lantern, Mirror, Balloon, Flytrap, TreasureMap }
+    /// <summary>Lancamento (§4): 14 inimigos e 6 chefes novos no fim. Sem comportamento proprio ainda = persegue e golpeia (Melee).</summary>
+    public enum EnemyType
+    {
+        Bat, Thief, Guard, Brute, Ogre, Archer, Slime, Captain,
+        GoblinMiner, Mole, BogFrog, BombBeetle, Minecart, Ghost, Skeleton, Spider, Mummy, Gargoyle, Salamander, Imp, KoboldBomber, MagmaElemental,
+        MoleQueen, StoneGolem, SpiderWidow, Necromancer, KoboldForeman, ElderDragon,
+        // variacoes (nao contam nos 20): brasa do elemental de magma e ovo de salamandra do Dragao (CONTEUDO_REGIOES §5)
+        MagmaShard, SalamanderEgg,
+    }
     public enum Upgrade { Life, Dash, Bag, Pack }
     public enum Weapon { Sling, Boomerang, Bomb }
-    public enum Perk { LightStep, QuickPlant, DoubleDash, Padded, QuickHand, Magnet, ExtraHeart, Lookout, IronBoot, ChestLuck }
-    public enum ContractKind { Campaign, Daily, Code }
+    /// <summary>Lancamento (§5): 15 perks novos no fim; so entram no sorteio de contrato da regiao 2 em diante (PerkDef.Region), para a
+    /// regiao 1 continuar com as mesmas ofertas.</summary>
+    public enum Perk
+    {
+        LightStep, QuickPlant, DoubleDash, Padded, QuickHand, Magnet, ExtraHeart, Lookout, IronBoot, ChestLuck,
+        Spring, SecondWind, ChestSense, SureFoot, Insulated, FirmGrip, Counter, Hunter, ThickSkin, CatEyes, Whistle, FirstAid, Runner, CargoShield, Scout,
+    }
+    /// <summary>Rare = contrato raro (volta depois de 8 h); Event = contrato do quadro de eventos; Endless = desafio sem fim.</summary>
+    public enum ContractKind { Campaign, Daily, Code, Rare, Event, Endless }
     /// <summary>Quando o reforco da sala chega: Half = o courier passou da metade da sala; CargoDown = a carga do contrato ficou
     /// Balance.WaveDownTime s no chao nesta sala.</summary>
     public enum RoomTrigger { None, Half, CargoDown }
@@ -93,10 +110,17 @@ namespace DC.Core
 
     public enum EnemyState { Idle, Chase, Lurk, Grab, Flee, Telegraph, Recover }
 
-    public enum Outcome { Running, Delivered, Died, CargoStolen, CargoBroken, PetDied, Abandoned, TimeUp, Exploded }
+    /// <summary>Lancamento: Melted = o cristal de gelo derreteu; Escaped = o balao escapou (espelho quebrado e balao estourado = CargoBroken).</summary>
+    public enum Outcome { Running, Delivered, Died, CargoStolen, CargoBroken, PetDied, Abandoned, TimeUp, Exploded, Melted, Escaped }
 
     /// <summary>Dica contextual da FTUE (texto em Hints.Text).</summary>
-    public enum Hint { None, PlantToFight, PickUp, Dash, Thief, DoorNeedsCargo, GuardDoor, Chest, WaitPet, DragToWalk, CakeNoDash, BarrelFuse, ArcherAim, SecretWall, MessageDoor }
+    public enum Hint
+    {
+        None, PlantToFight, PickUp, Dash, Thief, DoorNeedsCargo, GuardDoor, Chest, WaitPet, DragToWalk, CakeNoDash, BarrelFuse, ArcherAim, SecretWall, MessageDoor,
+        // lancamento (CONTEUDO_REGIOES §1.4): as raias de regiao ligam pelo gancho HintRn (Run.cs); Dark, MapReveal e Asleep o nucleo ja liga
+        Water, CartBell, Asleep, MoleTrail, FrogTongue, BeetleFuse, HeartPull, IceMelt, CageScream, Dark, LanternOut, Web, GhostCargo, SkeletonRise,
+        MummyGrab, GargoyleWake, MirrorFront, BalloonRise, Lava, Vent, PlantBite, MapReveal, ImpSwap,
+    }
 
     public static class Hints
     {
@@ -118,6 +142,29 @@ namespace DC.Core
                 case Hint.ArcherAim: return "arqueiro mirando: saia da linha";
                 case Hint.SecretWall: return "parede rachada: atravesse com a carga";
                 case Hint.MessageDoor: return "a mensagem abre a porta trancada";
+                case Hint.Water: return "água freia todo mundo: o ladrão também";
+                case Hint.CartBell: return "vagonete! saia do trilho";
+                case Hint.Asleep: return "mineiro dormindo: passe a mais de 2 m";
+                case Hint.MoleTrail: return "toupeira por baixo: carregue a carga";
+                case Hint.FrogTongue: return "sapo: não pouse a menos de 3 m dele";
+                case Hint.BeetleFuse: return "besouro vai explodir: dash ou atire de longe";
+                case Hint.HeartPull: return "o coração atrai inimigos e moedas";
+                case Hint.IceMelt: return "o gelo derrete: passe pela água";
+                case Hint.CageScream: return "o grifinho vai gritar: o dash acalma";
+                case Hint.Dark: return "no escuro só se mira o que está na luz";
+                case Hint.LanternOut: return "a lanterna apagou: leve-a até uma tocha";
+                case Hint.Web: return "teia: o dash rasga";
+                case Hint.GhostCargo: return "o fantasma está levando a carga: pegue de volta";
+                case Hint.SkeletonRise: return "lute perto da carga: o esqueleto não volta";
+                case Hint.MummyGrab: return "agarrado: dash ou pouse e lute";
+                case Hint.GargoyleWake: return "a gárgula acorda com a carga por perto";
+                case Hint.MirrorFront: return "o espelho reflete o que vem de frente";
+                case Hint.BalloonRise: return "balão no chão escapa em 4 s: pegue!";
+                case Hint.Lava: return "empurre inimigos na lava com o dash";
+                case Hint.Vent: return "respiro brilhando: vai sair fogo";
+                case Hint.PlantBite: return "a planta morde quem fica perto: dê um passo";
+                case Hint.MapReveal: return "o mapa mostra baús enterrados";
+                case Hint.ImpSwap: return "diabrete vai trocar de lugar com a carga";
                 default: return "";
             }
         }
@@ -150,7 +197,17 @@ namespace DC.Core
         Shot, EnemyHit, EnemyDie, Telegraph, Strike, Dash, Plant, DoorBlocked, ThiefSpawn, ThiefEscape, Hatch, PetHit, CargoBroken,
         Deliver, ChestOpen,
         PerkOffer, PerkPick, WeaponEquip, WeaponUpgrade, WeaponUnlock, ContractStars, DailyStart, DailyEnd, CodeStart,
-        RoomEvent, Explosion, ArrowShot, ArrowHit, PuddleSpawn, CakeWobble, SecretFound, FuseLit, TimeWarning, MessageDoor, Stun, CaptainCall
+        RoomEvent, Explosion, ArrowShot, ArrowHit, PuddleSpawn, CakeWobble, SecretFound, FuseLit, TimeWarning, MessageDoor, Stun, CaptainCall,
+        // lancamento (CONTRATO_LANCAMENTO §6-§7); A/B em Ev2 (comentario de MetaDefs.cs)
+        SecondWind, GearUse, GearUnlock, GearUpgrade, BlueprintFound, MasteryUp, Milestone, ModifierPick, EventStart, EventEnd, EventReward,
+        SeasonProgress, SeasonClaim, RareOffer, RareStart, Reroll, EndlessStart, EndlessEnd, RewardedOffer, RewardedGrant, RewardedResume,
+        InterstitialShow, IapPurchase, DeviceFps, OutfitEquip,
+        // regiao 2 (raia R2: insira abaixo desta linha)
+        CageScream, CageCalm, Burrow, Summon, RockFall,   // A/B no topo de Run.Regiao2.cs
+        // regiao 3 (raia R3: insira abaixo desta linha)
+        EnemyRevive, BonesScatter, Webbed, Raise, Blink, LanternOut, LanternLit, Reflect, WebTorn,   // A/B no topo de Run.Regiao3.cs
+        // regiao 4 (raia R4: insira abaixo desta linha)
+        BossPhase, TakeOff, Land, PlantBite, LavaBurn, VentFire, EggHatch, ForemanCall,   // A/B no topo de Run.Regiao4.cs
     }
 
     public struct SimEvent
@@ -186,6 +243,31 @@ namespace DC.Core
                 case Ev.DailyStart: return "daily_start";
                 case Ev.DailyEnd: return "daily_end";
                 case Ev.CodeStart: return "code_start";
+                // lancamento (§6.9)
+                case Ev.GearUse: return "gear_use";
+                case Ev.GearUnlock: return "gear_unlock";
+                case Ev.GearUpgrade: return "gear_upgrade";
+                case Ev.BlueprintFound: return "blueprint_found";
+                case Ev.MasteryUp: return "mastery_up";
+                case Ev.Milestone: return "milestone_claim";
+                case Ev.ModifierPick: return "modifier_pick";
+                case Ev.EventStart: return "event_start";
+                case Ev.EventEnd: return "event_end";
+                case Ev.EventReward: return "event_reward";
+                case Ev.SeasonProgress: return "season_progress";
+                case Ev.SeasonClaim: return "season_claim";
+                case Ev.RareOffer: return "rare_offer";
+                case Ev.RareStart: return "rare_start";
+                case Ev.Reroll: return "reroll";
+                case Ev.EndlessStart: return "endless_start";
+                case Ev.EndlessEnd: return "endless_end";
+                case Ev.RewardedOffer: return "rewarded_offer";
+                case Ev.RewardedGrant: return "rewarded_grant";
+                case Ev.RewardedResume: return "rewarded_resume";
+                case Ev.InterstitialShow: return "interstitial_show";
+                case Ev.IapPurchase: return "iap_purchase";
+                case Ev.DeviceFps: return "device_fps_bucket";
+                case Ev.OutfitEquip: return "outfit_equip";
                 default: return null;
             }
         }
@@ -193,7 +275,8 @@ namespace DC.Core
 
     // ------------------------------------------------------------------ numeros (CONTRATO_V01 §3-§7 + CONTRATO_V1; hipoteses medidas em BALANCE.md)
 
-    public static class Balance
+    /// <summary>Numeros (partial: os do lancamento estao em MetaDefs.cs).</summary>
+    public static partial class Balance
     {
         public const float Step = 1f / 30f;                 // passo fixo da simulacao
         public const float MaxFrame = 0.25f;                // dt maior que isto e cortado (app voltando do fundo)
@@ -294,11 +377,16 @@ namespace DC.Core
 
     // ------------------------------------------------------------------ defs de conteudo
 
+    /// <summary>Carga. Region = regiao em que estreia (o sorteio dos contratos gerados de uma regiao usa as cargas ate ela). Fragile = carga
+    /// que falha ou racha (Fragile Week). Provisional = numeros ainda nao medidos pelo bot (as raias de regiao ajustam e desligam).</summary>
     public sealed class CargoDef
     {
         public readonly CargoType Type; public readonly string Name, Verb; public readonly float PayMul, HatchedMul;
+        public bool Provisional { get; internal set; }
         public CargoDef(CargoType t, string name, float payMul, float hatchedMul = 0f, string verb = "")
         { Type = t; Name = name; PayMul = payMul; HatchedMul = hatchedMul; Verb = verb; }
+        public int Region => Type <= CargoType.Barrel ? 1 : Type <= CargoType.GriffinCage ? 2 : Type <= CargoType.Balloon ? 3 : 4;
+        public bool Fragile => Type == CargoType.Relic || Type == CargoType.Egg || Type == CargoType.Cake || Type == CargoType.IceCrystal || Type == CargoType.Mirror;
         public static readonly CargoDef[] All =
         {
             new CargoDef(CargoType.Box, "Caixa", 1.0f, 0f, "nenhum: aprenda a carregar"),
@@ -308,6 +396,15 @@ namespace DC.Core
             new CargoDef(CargoType.Message, "Mensagem urgente", 1.25f, 0f, "cronômetro; abre portas trancadas"),
             new CargoDef(CargoType.Heavy, "Caixa pesada", 1.6f, 0f, "-25% de velocidade; pousar e pegar mais lentos"),
             new CargoDef(CargoType.Barrel, "Barril de pólvora", 1.5f, 0f, "no chão por 3 s explode"),
+            // ---- lancamento (CONTRATO_LANCAMENTO §3): PROVISORIAS (pagamento chutado; verbo ainda nao implementado = carga normal)
+            new CargoDef(CargoType.ArcaneHeart, "Coração arcano", 1.35f, 0f, "ímã de moedas e de inimigos num raio de 4 m"),   // regiao 2 (Run.Regiao2.cs)
+            new CargoDef(CargoType.IceCrystal, "Cristal de gelo", 1.45f, 0f, "derrete com o tempo; a água recongela, a lava acelera"),
+            new CargoDef(CargoType.GriffinCage, "Gaiola do grifinho", 1.30f, 0f, "grita a cada 6 s e atrai inimigos; o dash acalma"),
+            new CargoDef(CargoType.Lantern, "Lanterna", 1.20f, 0f, "ilumina a sala escura; derrubada apaga e só reacende numa tocha"),   // regiao 3 (Run.Regiao3.cs)
+            new CargoDef(CargoType.Mirror, "Espelho encantado", 1.45f, 0f, "reflete flecha, teia e raio de frente; cada reflexo racha (3 = quebra)"),
+            new CargoDef(CargoType.Balloon, "Balão de gás", 1.35f, 0f, "+15% de velocidade; no chão escapa em 4 s; ladrão não alcança"),
+            new CargoDef(CargoType.Flytrap, "Planta carnívora", 1.3f, 0f, "no chão morde inimigos perto; morde o courier parado ao lado dela"),   // regiao 4 (Run.Regiao4.cs)
+            new CargoDef(CargoType.TreasureMap, "Mapa do tesouro", 1.2f, 0f, "revela baús e paredes rachadas; ladrões o preferem"),
         };
     }
 
@@ -317,23 +414,67 @@ namespace DC.Core
     {
         public readonly EnemyType Type; public readonly string Name; public readonly int Hp, Damage;
         public readonly float Speed, Radius, Reach, Trigger, Tele, Cooldown; public readonly bool Locks;
-        public EnemyDef(EnemyType t, string name, int hp, float speed, float radius, int dmg, float reach, float trigger, float tele, float cd, bool locks)
-        { Type = t; Name = name; Hp = hp; Speed = speed; Radius = radius; Damage = dmg; Reach = reach; Trigger = trigger; Tele = tele; Cooldown = cd; Locks = locks; }
-        /// <summary>Chefe (Ogro, Capitao): a mensagem nao abre a porta dele e o dash do Ogro nao empurra.</summary>
-        public bool Boss => Type == EnemyType.Ogre || Type == EnemyType.Captain;
+        /// <summary>Provisional = numeros chutados e sem comportamento proprio (persegue e golpeia como o Bruto); a raia da regiao ajusta.
+        /// Region = regiao em que aparece (1-4).</summary>
+        public bool Provisional { get; internal set; }
+        public int Region { get; internal set; } = 1;
+        readonly bool boss; readonly CargoRisk risk;
+        public EnemyDef(EnemyType t, string name, int hp, float speed, float radius, int dmg, float reach, float trigger, float tele, float cd, bool locks,
+                        bool boss = false, CargoRisk risk = CargoRisk.None)
+        { Type = t; Name = name; Hp = hp; Speed = speed; Radius = radius; Damage = dmg; Reach = reach; Trigger = trigger; Tele = tele; Cooldown = cd; Locks = locks; this.boss = boss; this.risk = risk; }
+        /// <summary>Chefe ou mini-chefe (Ogro, Capitao e os 6 novos): a mensagem nao abre a porta dele e o dash nao o empurra (menos o Capitao).</summary>
+        public bool Boss => boss;
+        /// <summary>Mini-chefe (Capitao, Rainha Toupeira, Viuva Aranha, Capataz Kobold).</summary>
+        public bool Mini => Type == EnemyType.Captain || Type == EnemyType.MoleQueen || Type == EnemyType.SpiderWidow || Type == EnemyType.KoboldForeman;
+        /// <summary>Perigo, nao inimigo (vagonete): nao e alvo, nao conta no teto de vivos nem acorda ninguem.</summary>
+        public bool Hazard => Type == EnemyType.Minecart;
         /// <summary>Risco que este inimigo traz para a carga (icone da porta).</summary>
-        public CargoRisk Risk => Type == EnemyType.Thief || Type == EnemyType.Captain ? CargoRisk.Thief : Type == EnemyType.Archer ? CargoRisk.Archer
-                               : Type == EnemyType.Brute || Type == EnemyType.Ogre ? CargoRisk.Smash : CargoRisk.None;
+        public CargoRisk Risk => risk | (Type == EnemyType.Thief || Type == EnemyType.Captain ? CargoRisk.Thief : Type == EnemyType.Archer ? CargoRisk.Archer
+                               : Type == EnemyType.Brute || Type == EnemyType.Ogre ? CargoRisk.Smash : CargoRisk.None);
+        const bool L = true, B = true; const CargoRisk Th = CargoRisk.Thief, Ar = CargoRisk.Archer, Sm = CargoRisk.Smash, No = CargoRisk.None;
         public static readonly EnemyDef[] All =
         {
             new EnemyDef(EnemyType.Bat,     "Morcego",        2,  2.4f, 0.30f, 1, 0f,   0f,   0f,   1.0f, false),
             new EnemyDef(EnemyType.Thief,   "Ladrão",         3,  2.0f, 0.35f, 0, 0f,   0f,   0f,   0f,   false),
             new EnemyDef(EnemyType.Guard,   "Guarda",         16, 0f,   0.45f, 1, 1.2f, 1.2f, 0.5f, 1.0f, true),
             new EnemyDef(EnemyType.Brute,   "Bruto",          6,  1.6f, 0.55f, 2, 1.2f, 1.0f, 0.6f, 1.2f, false),
-            new EnemyDef(EnemyType.Ogre,    "Ogro",           45, 1.2f, 0.90f, 3, 2.0f, 1.6f, 1.0f, 2.0f, true),
+            new EnemyDef(EnemyType.Ogre,    "Ogro",           45, 1.2f, 0.90f, 3, 2.0f, 1.6f, 1.0f, 2.0f, true, B),
             new EnemyDef(EnemyType.Archer,  "Arqueiro",       3,  1.4f, 0.35f, 1, 7.0f, 7.0f, 0.8f, 2.2f, false),
             new EnemyDef(EnemyType.Slime,   "Limo",           4,  1.2f, 0.40f, 1, 0f,   0f,   0f,   1.6f, false),
-            new EnemyDef(EnemyType.Captain, "Capitão Ladrão", 24, 2.6f, 0.50f, 1, 1.0f, 0.9f, 0.5f, 1.2f, true),
+            new EnemyDef(EnemyType.Captain, "Capitão Ladrão", 24, 2.6f, 0.50f, 1, 1.0f, 0.9f, 0.5f, 1.2f, true, B),
+            // ---- lancamento (CONTRATO_LANCAMENTO §4): PROVISORIOS. Numeros chutados; sem comportamento = Melee (persegue e golpeia).
+            //      O vagonete fica parado e sem dano ate a raia R2 o por nos trilhos. hp, vel, raio, dano, alcance, gatilho, telegraph, recarga, tranca
+            // regiao 2 (CONTEUDO_REGIOES §5; comportamento em Run.Regiao2.cs). Mineiro: alcance/gatilho do arremesso; toupeira: velocidade por
+            // baixo, alcance do monte, recarga = tempo fora; sapo: lingua; besouro: alcance = raio da explosao, telegraph = pavio; vagonete:
+            // velocidade no trilho, dano no courier (6 em inimigo), telegraph = sino, recarga = tunel (invulneravel, nao e alvo)
+            new EnemyDef(EnemyType.GoblinMiner,    "Goblin mineiro",     4,  1.5f, 0.35f, 1, 6.0f, 6.0f, 0.9f, 2.6f, false, false, Ar) { Region = 2 },
+            new EnemyDef(EnemyType.Mole,           "Toupeira",           3,  2.2f, 0.35f, 1, 0.9f, 0f,   0.8f, 2.0f, false, false, Sm) { Region = 2 },
+            new EnemyDef(EnemyType.BogFrog,        "Sapo do lodo",       5,  0f,   0.45f, 1, 3.0f, 3.0f, 0.7f, 2.5f, false, false, Th) { Region = 2 },
+            new EnemyDef(EnemyType.BombBeetle,     "Besouro-bomba",      2,  3.0f, 0.30f, 2, 1.5f, 0.8f, 1.0f, 0f,   false, false, Sm) { Region = 2 },
+            new EnemyDef(EnemyType.Minecart,       "Vagonete",           99, 6.0f, 0.60f, 2, 0.6f, 0f,   1.2f, 2.0f, false, false, Sm) { Region = 2 },
+            // regiao 3 (CONTEUDO_REGIOES §5; comportamento em Run.Regiao3.cs). Fantasma: alcance = possuir; aranha: alcance/telegraph/recarga
+            // da mordida (cuspe em Balance.Spit*); gargula: velocidade 0 (mergulho Balance.GargSpeed), alcance = faixa, gatilho com a carga
+            new EnemyDef(EnemyType.Ghost,          "Fantasma",           3,  1.8f, 0.35f, 1, 0.5f, 0f,   0.6f, 1.5f, false, false, Th) { Region = 3 },
+            new EnemyDef(EnemyType.Skeleton,       "Esqueleto",          5,  1.5f, 0.40f, 1, 1.0f, 0.9f, 0.5f, 1.2f, false, false, No) { Region = 3 },
+            new EnemyDef(EnemyType.Spider,         "Aranha",             3,  2.0f, 0.35f, 1, 0.8f, 0.7f, 0.4f, 1.4f, false, false, No) { Region = 3 },
+            new EnemyDef(EnemyType.Mummy,          "Múmia",              9,  1.0f, 0.45f, 1, 0.9f, 0.8f, 0.6f, 2.0f, false, false, No) { Region = 3 },
+            new EnemyDef(EnemyType.Gargoyle,       "Gárgula",            8,  0f,   0.50f, 2, 6.0f, 3.0f, 0.9f, 4.0f, false, false, Sm) { Region = 3 },
+            // regiao 4 (CONTEUDO_REGIOES §5; comportamento em Run.Regiao4.cs)
+            new EnemyDef(EnemyType.Salamander,     "Salamandra",         4,  2.4f, 0.35f, 1, 0f,   0f,   0f,   1.2f, false, false, Sm) { Region = 4 },
+            new EnemyDef(EnemyType.Imp,            "Diabrete",           3,  2.0f, 0.30f, 1, 0.8f, 0.7f, 1.0f, 5.0f, false, false, Th) { Region = 4 },
+            new EnemyDef(EnemyType.KoboldBomber,   "Kobold incendiário", 4,  1.6f, 0.35f, 1, 6.0f, 6.0f, 0.9f, 3.0f, false, false, Ar) { Region = 4 },
+            new EnemyDef(EnemyType.MagmaElemental, "Elemental de magma", 10, 1.2f, 0.60f, 2, 1.2f, 1.0f, 0.8f, 1.6f, false, false, Sm) { Region = 4 },
+            // Rainha: velocidade por baixo, alcance da patada (monte 1,4 m em Run.Regiao2), telegraph do monte (patada 0,6), recarga = tempo fora.
+            // Golem: vida em MEIOS pontos (80 = 40 de vida): de frente o tiro tira metade, pelas costas x2 (ponto fraco).
+            new EnemyDef(EnemyType.MoleQueen,      "Rainha Toupeira",    22, 2.4f, 0.70f, 2, 1.2f, 1.2f, 1.0f, 3.5f, L, B, Th) { Region = 2 },
+            new EnemyDef(EnemyType.StoneGolem,     "Golem de Pedra",     80, 1.0f, 1.00f, 3, 2.2f, 1.8f, 1.1f, 2.2f, L, B, Sm) { Region = 2 },
+            // Viuva: mordida (fio, leque e teto em Balance.Widow*); Necromante: nao anda (salta), alcance/gatilho/telegraph/recarga do raio
+            new EnemyDef(EnemyType.SpiderWidow,    "Viúva Aranha",       20, 1.8f, 0.70f, 2, 1.1f, 1.0f, 0.6f, 1.5f, L, B, Th) { Region = 3 },
+            new EnemyDef(EnemyType.Necromancer,    "Necromante",         36, 0f,   0.50f, 2, 9.0f, 9.0f, 1.2f, 3.0f, L, B, Ar) { Region = 3 },
+            new EnemyDef(EnemyType.KoboldForeman,  "Capataz Kobold",     18, 1.8f, 0.55f, 2, 3.0f, 2.6f, 0.7f, 1.8f, L, B, Ar | Th) { Region = 4 },
+            new EnemyDef(EnemyType.ElderDragon,    "Dragão Ancião",      48, 0.8f, 1.30f, 3, 6.0f, 6.0f, 1.4f, 3.0f, L, B, Sm) { Region = 4 },
+            new EnemyDef(EnemyType.MagmaShard,     "Brasa de magma",     4,  1.8f, 0.40f, 1, 0.8f, 0.7f, 0.5f, 1.2f, false, false, No) { Region = 4 },
+            new EnemyDef(EnemyType.SalamanderEgg,  "Ovo de salamandra",  2,  0f,   0.30f, 0, 0f,   0f,   6.0f, 0f,   false, false, No) { Region = 4 },
         };
     }
 
@@ -359,6 +500,8 @@ namespace DC.Core
     {
         public readonly Perk Type; public readonly string Name, Text;
         public PerkDef(Perk t, string name, string text) { Type = t; Name = name; Text = text; }
+        /// <summary>Regiao a partir da qual o perk entra no sorteio: os 10 da v1 = 1; os novos = 2 (Olhos de gato = 3, a do escuro).</summary>
+        public int Region => Type < Perk.Spring ? 1 : Type == Perk.CatEyes ? 3 : 2;
         public static readonly PerkDef[] All =
         {
             new PerkDef(Perk.LightStep, "Passo leve", "+10% de velocidade carregando"),
@@ -371,30 +514,86 @@ namespace DC.Core
             new PerkDef(Perk.Lookout, "Vigia", "o ladrão da carga sozinha demora +4 s"),
             new PerkDef(Perk.IronBoot, "Bota de ferro", "dash empurra mais e atordoa 0,6 s"),
             new PerkDef(Perk.ChestLuck, "Sorte de baú", "+30% de moedas de baú"),
+            // ---- lancamento (CONTRATO_LANCAMENTO §5)
+            new PerkDef(Perk.Spring, "Mola", "dash +40% de distância"),
+            new PerkDef(Perk.SecondWind, "Segundo fôlego", "1x por contrato, volta com 2 de vida"),
+            new PerkDef(Perk.ChestSense, "Faro de baú", "a porta mostra o conteúdo do baú"),
+            new PerkDef(Perk.SureFoot, "Pé firme", "água, lama e teia não freiam"),
+            new PerkDef(Perk.Insulated, "Isolamento", "gelo derrete 40% mais devagar; o ovo choca 20% mais tarde"),
+            new PerkDef(Perk.FirmGrip, "Alça firme", "o 1º dash de cada sala leva a carga junto"),
+            new PerkDef(Perk.Counter, "Contragolpe", "dash em quem segura a carga a derruba"),
+            new PerkDef(Perk.Hunter, "Caçador", "+2 moedas por inimigo derrotado"),
+            new PerkDef(Perk.ThickSkin, "Couro grosso", "-1 no dano de golpes de 2 ou mais"),
+            new PerkDef(Perk.CatEyes, "Olhos de gato", "luz do courier +60% no escuro"),
+            new PerkDef(Perk.Whistle, "Assobio", "ladrão que pega a carga fica parado 1,5 s"),
+            new PerkDef(Perk.FirstAid, "Primeiros socorros", "+1 de vida ao abrir baú"),
+            new PerkDef(Perk.Runner, "Corredor", "+20% de velocidade sem a carga"),
+            new PerkDef(Perk.CargoShield, "Escudo da carga", "o 1º golpe em cada sala na carga pousada é ignorado"),
+            new PerkDef(Perk.Scout, "Batedor", "as portas mostram o número exato de inimigos"),
         };
     }
 
+    /// <summary>Inimigo da sala. Asleep = nasce dormindo (zZ): nao age ate acordar (courier a Balance.WakeRange, golpe nele, explosao a
+    /// Balance.WakeBlast, vizinho acordado a Balance.WakeNeighbor por Balance.WakeDelay s, ou Run.Wake de um grito); o 1o golpe dobra.</summary>
     public struct Spawn
     {
-        public EnemyType Type; public V2 Pos;
-        public Spawn(EnemyType t, float x, float y) { Type = t; Pos = new V2(x, y); }
+        public EnemyType Type; public V2 Pos; public bool Asleep;
+        public Spawn(EnemyType t, float x, float y, bool asleep = false) { Type = t; Pos = new V2(x, y); Asleep = asleep; }
     }
+
+    // ---- terreno das salas (CONTEUDO_REGIOES §1.1). So os dados; o comportamento de cada um fica com a raia da regiao (Run.RegiaoN.cs),
+    //      menos o que e comum e ja esta no nucleo: lava solida para andar e transparente para tiro, agua que freia, luz/mira no escuro,
+    //      bau enterrado e parede rachada disfarcada.
+    /// <summary>Teia no chao (Webs): centro e raio.</summary>
+    public struct Web { public V2 Pos; public float Radius; public Web(float x, float y, float r) { Pos = new V2(x, y); Radius = r; } }
+    /// <summary>Respiro de fogo (Vents): centro, raio e fase do ciclo (s).</summary>
+    public struct Vent { public V2 Pos; public float Radius, Phase; public Vent(float x, float y, float r, float phase) { Pos = new V2(x, y); Radius = r; Phase = phase; } }
+    /// <summary>Trilho do vagonete (Rails): de A a B e fase do ciclo (s).</summary>
+    public struct Rail { public V2 A, B; public float Phase; public Rail(float x1, float y1, float x2, float y2, float phase) { A = new V2(x1, y1); B = new V2(x2, y2); Phase = phase; } }
+    /// <summary>Bau enterrado (Buried): so aparece com o Mapa nas maos, o perk Faro de bau ou o Treasure Detour; moedas fixas.</summary>
+    public struct BuriedChest { public V2 Pos; public int Coins; public BuriedChest(float x, float y, int coins) { Pos = new V2(x, y); Coins = coins; } }
 
     /// <summary>Sala 9 x 14 m. Entrada embaixo no centro (Balance.Entrance); as portas da parede de cima saem do contrato (uma por sala
     /// da proxima camada). Threat = caveiras no icone da porta (0-3); Risk = icone de risco para a carga; ChestCoins = moedas do bau
     /// (0 = sem bau). Wave = reforco (1 por visita) quando WaveTrigger acontece; WaveLocks = as portas fecham ate o reforco morrer.
     /// Secret = sala secreta atras da parede rachada em SecretPos (parede lateral), ou -1.</summary>
+    /// <summary>Sala. Code: a 1a letra diz o tipo (R normal, S secreta, M mini-chefe, B chefe, D entrega) e o resto o nome (R1, S2, M1,
+    /// B1, D1 na regiao 1; ex. R2-3, S2-1, M2, B2, D2 nas outras). Id = indice global em Content.Rooms (nas regioes 2-4 o arquivo da regiao
+    /// usa ids LOCAIS 0..n-1 e o registro soma a base; idem Secret). Region = 1-4.</summary>
     public sealed class RoomDef
     {
-        public readonly int Id; public readonly string Code, Name, Lesson; public readonly int Threat;
+        public int Id { get; internal set; }
+        public readonly string Code, Name, Lesson; public readonly int Threat;
         public readonly Rect[] Obstacles; public readonly Spawn[] Spawns;
         public readonly V2 ChestPos; public readonly int ChestCoins; public readonly V2 RescueSpot;
         public readonly Spawn[] Wave; public readonly RoomTrigger WaveTrigger; public readonly bool WaveLocks;
-        public readonly int Secret; public readonly V2 SecretPos;
-        public readonly CargoRisk Risk;
-        public bool Delivery => Code == "D1";
-        public bool Boss => Code == "B1";
-        public bool Mini => Code == "M1";
+        public int Secret { get; internal set; }
+        public readonly V2 SecretPos;
+        readonly CargoRisk risk;
+        /// <summary>Icone de risco da carga: o dos inimigos da sala e do reforco (+ Pancada se ha lava ou respiro).</summary>
+        public CargoRisk Risk => risk | (Lava.Length > 0 || Vents.Length > 0 ? CargoRisk.Smash : CargoRisk.None);
+        public int Region { get; internal set; } = 1;
+        // terreno (CONTEUDO_REGIOES §1.1), escrito no inicializador da sala: new RoomDef(...) { Water = new[] { ... } }
+        /// <summary>Sala escura (luz em volta do courier, das tochas e da lanterna; a mira so pega o que esta na luz). Torches = tochas nas paredes.</summary>
+        public bool Dark { get; set; }
+        public V2[] Torches { get; set; } = NoPoints;
+        /// <summary>Agua (nao solida: freia quem anda nela) e lava (solida para andar, transparente para tiro).</summary>
+        public Rect[] Water { get; set; } = NoRects;
+        public Rect[] Lava { get; set; } = NoRects;
+        public Web[] Webs { get; set; } = new Web[0];
+        public Vent[] Vents { get; set; } = new Vent[0];
+        public Rail[] Rails { get; set; } = new Rail[0];
+        public BuriedChest[] Buried { get; set; } = new BuriedChest[0];
+        /// <summary>Parede rachada disfarcada: so aparece e so abre com o Mapa, o Faro de bau ou o Treasure Detour.</summary>
+        public bool SecretHidden { get; set; }
+        /// <summary>Pontos de salto do Necromante (B3).</summary>
+        public V2[] Blinks { get; set; } = NoPoints;
+        /// <summary>Projeto de equipamento no bau desta sala (CONTEUDO_REGIOES §8): sai na 1a abertura e a porta o mostra enquanto nao foi pego.</summary>
+        public Gear Blueprint { get; set; }
+        static readonly V2[] NoPoints = new V2[0]; static readonly Rect[] NoRects = new Rect[0];
+        public bool Delivery => Code[0] == 'D';
+        public bool Boss => Code[0] == 'B';
+        public bool Mini => Code[0] == 'M';
         public bool IsSecret => Code[0] == 'S';
         public bool Normal => Code[0] == 'R';
         public RoomDef(int id, string code, string name, string lesson, int threat, Rect[] obstacles, Spawn[] spawns, V2 rescueSpot, V2 chestPos = default, int chestCoins = 0,
@@ -402,9 +601,8 @@ namespace DC.Core
         {
             Id = id; Code = code; Name = name; Lesson = lesson; Threat = threat; Obstacles = obstacles; Spawns = spawns; RescueSpot = rescueSpot; ChestPos = chestPos; ChestCoins = chestCoins;
             Wave = wave ?? new Spawn[0]; WaveTrigger = wave == null ? RoomTrigger.None : trigger; WaveLocks = waveLocks; Secret = secret; SecretPos = secretPos;
-            foreach (Spawn s in Spawns) Risk |= EnemyDef.All[(int)s.Type].Risk;
-            foreach (Spawn s in Wave) Risk |= EnemyDef.All[(int)s.Type].Risk;
-            if (code == "B1") Risk |= CargoRisk.Thief;   // o Ogro chama ladroes
+            foreach (Spawn s in Spawns) { risk |= EnemyDef.All[(int)s.Type].Risk; if (s.Type == EnemyType.Ogre) risk |= CargoRisk.Thief; }   // o Ogro chama ladroes
+            foreach (Spawn s in Wave) risk |= EnemyDef.All[(int)s.Type].Risk;
         }
     }
 
@@ -413,8 +611,17 @@ namespace DC.Core
     /// ParTime = tempo-alvo da 3a estrela; TimeLimit = cronometro da mensagem (0 = sem). Gerados (dia/codigo): Index = -1.</summary>
     public sealed class ContractDef
     {
-        public readonly int Index; public readonly string Code, Note; public readonly CargoType Cargo; public readonly int Pay; public readonly float EggTarget;
+        /// <summary>Indice global na campanha (Content.Contracts: regiao 1 = 0-23, depois as outras na ordem); -1 = gerado.</summary>
+        public int Index { get; internal set; }
+        public readonly string Code, Note; public readonly CargoType Cargo; public readonly int Pay; public readonly float EggTarget;
         public readonly int[][] Layers;
+        /// <summary>Regiao (1-4): tema da View, cargas/perks do sorteio. No desafio sem fim = a maior regiao misturada.</summary>
+        public int Region { get; internal set; } = 1;
+        /// <summary>Template do evento (contrato do quadro de eventos) e a vaga dele no quadro (0-4); None/0 nos outros.</summary>
+        public LiveEvent Event { get; internal set; }
+        public int Slot { get; internal set; }
+        /// <summary>Cristal de gelo: tempo (s) para derreter do cheio ao zero fora da agua = o campo EggTarget do contrato (0 nas outras cargas).</summary>
+        public float MeltTime => Cargo == CargoType.IceCrystal ? EggTarget : 0f;
         public ContractKind Kind { get; internal set; }
         public string Name { get; internal set; }
         public float ParTime { get; internal set; }
@@ -437,6 +644,11 @@ namespace DC.Core
             Layers[layers.Length] = new[] { Content.D1 };
         }
         internal ContractDef(string code, CargoType cargo, int pay, float eggTarget, string note, int[][] layers) : this(-1, cargo, pay, eggTarget, note, layers) { Code = code; }
+        /// <summary>Contrato com a sala de entrega `delivery` no fim (regioes 2-4 e gerados de outra regiao).</summary>
+        internal ContractDef(int index, string code, CargoType cargo, int pay, float eggTarget, string note, int delivery, int[][] layers) : this(index, cargo, pay, eggTarget, note, layers)
+        {
+            Code = code; Layers[Layers.Length - 1] = new[] { delivery };
+        }
         /// <summary>Salas ate a entrega, contando a D1.</summary>
         public int Rooms => Layers.Length;
     }
@@ -491,185 +703,5 @@ namespace DC.Core
 
         /// <summary>Codigo novo a partir de qualquer entropia da View (ex.: ticks do relogio): o Core continua deterministico.</summary>
         public static string Random(uint entropy) => Encode((int)(Rng.Hash((int)entropy, 0x5EED) & MaxPayload));
-    }
-
-    /// <summary>Conteudo como dados. Ids de sala e indices de contrato sao estaveis (vao para o save): so crescem no fim.</summary>
-    public static class Content
-    {
-        public const string RegionName = "Porões da Guilda";
-        public const int R1 = 0, R2 = 1, R3 = 2, R4 = 3, R5 = 4, R6 = 5, B1 = 6, D1 = 7;
-        public const int R7 = 8, R8 = 9, R9 = 10, R10 = 11, R11 = 12, R12 = 13, R13 = 14, R14 = 15, R15 = 16, R16 = 17, S1 = 18, S2 = 19, M1 = 20;
-        /// <summary>Salas normais da regiao (sorteio dos contratos gerados).</summary>
-        public static readonly int[] NormalRooms = { R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, R15, R16 };
-
-        static Rect O(float cx, float cy, float hx, float hy) => new Rect(cx, cy, hx, hy);
-        static Spawn S(EnemyType t, float x, float y) => new Spawn(t, x, y);
-        static V2 P(float x, float y) => new V2(x, y);
-        const EnemyType Bat = EnemyType.Bat, Thief = EnemyType.Thief, Guard = EnemyType.Guard, Brute = EnemyType.Brute, Ogre = EnemyType.Ogre,
-                        Archer = EnemyType.Archer, Slime = EnemyType.Slime, Captain = EnemyType.Captain;
-        const RoomTrigger Half = RoomTrigger.Half, Down = RoomTrigger.CargoDown;
-
-        // Icone de ameaca (Threat) = terco do dano medio por visita do bot na campanha (BalanceTests.IconeDeAmeaca_AcompanhaODanoMedido):
-        // 1 = R3, R7, R12, R13 · 2 = R1, R2, R5, R6, R9, R10, R14, R15 · 3 = R4, R8, R11, R16. B1/M1 = 3 (chefes, porta unica).
-        // Risk (icone de risco da carga) sai dos inimigos da sala e do reforco: ladrao em R2, R3, R6, R9, R10, R13, R16 (+B1, M1, S2);
-        // sem risco: R1, R4, R8, R12, R14.
-        // Reforco de "metade da sala" sem emboscada chega POR TRAS (cantos de baixo): quem corre para a porta escapa (lutar e escolha, H1);
-        // emboscada e reforco de carga no chao chegam por cima, perto das portas.
-        // Regras de desenho (medidas em CoreTests.LevelDesign_*): nada solido na faixa das portas (y > 12,2) nem na entrada; spawn (e
-        // reforco) a 4 m+ da entrada; toda porta, bau, ponto de resgate e parede rachada alcancaveis; so Guarda/Ogro/Capitao/emboscada
-        // obrigam a lutar, o resto se atravessa andando.
-        public static readonly RoomDef[] Rooms =
-        {
-            new RoomDef(R1, "R1", "Sala do Guarda", "FTUE: solte o dedo para pousar e lutar; voltar a andar pega a carga", 2,
-                new[] { O(2.0f, 6.5f, 0.6f, 0.6f), O(7.0f, 6.5f, 0.6f, 0.6f) },
-                new[] { S(Guard, 4.5f, 12.4f) }, P(2.0f, 3.0f),
-                wave: new[] { S(Bat, 1.5f, 12.5f), S(Slime, 7.5f, 12.5f) }, trigger: Down),
-            new RoomDef(R2, "R2", "Sala do 1º Ladrão", "FTUE: o ladrão corre para a carga pousada; lute perto dela ou leve-a; dash", 2,
-                new[] { O(4.5f, 7.0f, 1.4f, 0.5f) },
-                new[] { S(Thief, 7.8f, 4.2f), S(Bat, 2.0f, 11.0f), S(Bat, 7.0f, 11.5f) }, P(2.0f, 3.0f),
-                wave: new[] { S(Thief, 8.0f, 12.5f), S(Bat, 1.0f, 12.8f) }, trigger: Down),
-            new RoomDef(R3, "R3", "Rota longa com baú", "bifurcação: baú custa parar 1 s com a carga no chão; parede rachada à direita", 1,
-                new[] { O(3.0f, 5.0f, 3.0f, 0.3f), O(6.0f, 9.5f, 3.0f, 0.3f) },
-                new[] { S(Thief, 8.0f, 7.5f), S(Bat, 4.5f, 12.0f) }, P(1.5f, 2.5f), P(0.9f, 11.0f), 25,
-                wave: new[] { S(Slime, 0.8f, 3.5f) }, trigger: Half, secret: S1, secretPos: P(Balance.RoomW, 3.2f)),
-            new RoomDef(R4, "R4", "Enxame", "morcegos enchem a sala: atravessar correndo ou pousar e limpar", 3,
-                new[] { O(2.5f, 5.5f, 0.5f, 0.5f), O(6.5f, 5.5f, 0.5f, 0.5f), O(4.5f, 9.0f, 0.8f, 0.8f) },
-                new[] { S(Bat, 1.5f, 11.0f), S(Bat, 3.5f, 12.0f), S(Bat, 5.5f, 12.0f), S(Bat, 7.5f, 11.0f) }, P(1.5f, 2.5f), P(8.2f, 3.0f), 20,
-                wave: new[] { S(Bat, 0.8f, 3.6f), S(Slime, 8.2f, 3.6f) }, trigger: Half),
-            new RoomDef(R5, "R5", "Sala do Bruto", "telegraph: saia do golpe; golpe pelas costas acerta a carga (1 morcego só: ver BALANCE.md)", 2,
-                new[] { O(2.2f, 7.0f, 1.2f, 0.4f), O(6.8f, 7.0f, 1.2f, 0.4f) },
-                new[] { S(Brute, 4.5f, 10.5f), S(Bat, 7.5f, 12.0f) }, P(2.0f, 2.5f), P(0.8f, 9.5f), 35,
-                wave: new[] { S(Slime, 1.0f, 12.5f), S(Bat, 8.0f, 12.8f) }, trigger: Down),
-            new RoomDef(R6, "R6", "Guarda e Ladrão", "luta obrigatória com a carga no chão: o ladrão vem buscá-la", 2,
-                new[] { O(4.5f, 6.0f, 1.6f, 0.4f) },
-                new[] { S(Guard, 4.5f, 12.4f), S(Thief, 1.0f, 8.5f), S(Bat, 7.5f, 10.0f) }, P(7.0f, 2.5f),
-                wave: new[] { S(Thief, 8.0f, 12.5f) }, trigger: Down),
-            new RoomDef(B1, "B1", "Covil do Ogro", "chefe: pancada em área (2 m) e chama ladrões a cada 10 s", 3,
-                new[] { O(2.0f, 4.5f, 0.5f, 0.5f), O(7.0f, 4.5f, 0.5f, 0.5f), O(2.0f, 9.5f, 0.5f, 0.5f), O(7.0f, 9.5f, 0.5f, 0.5f) },
-                new[] { S(Ogre, 4.5f, 10.5f) }, P(2.0f, 2.5f)),
-            new RoomDef(D1, "D1", "Entrega", "o cliente espera no topo", 0,
-                new[] { O(2.0f, 7.0f, 0.5f, 0.5f), O(7.0f, 7.0f, 0.5f, 0.5f) },
-                new Spawn[0], P(2.0f, 2.5f)),
-            // ---- v1.0-beta: R7-R16, S1-S2, M1 (CONTRATO_V1 §7)
-            new RoomDef(R7, "R7", "Corredor do Arqueiro", "a flecha não atravessa pilar: avance de cobertura em cobertura", 1,
-                new[] { O(2.5f, 5.0f, 0.6f, 0.6f), O(6.5f, 5.0f, 0.6f, 0.6f), O(2.5f, 8.5f, 0.6f, 0.6f), O(6.5f, 8.5f, 0.6f, 0.6f) },
-                new[] { S(Archer, 4.5f, 11.2f), S(Bat, 1.5f, 10.5f) }, P(1.5f, 2.5f),
-                wave: new[] { S(Archer, 8.2f, 3.2f), S(Bat, 0.8f, 3.2f) }, trigger: Half),
-            new RoomDef(R8, "R8", "Poça de Limo", "o limo morto deixa poça que atrasa: não pouse em cima dela", 3,
-                new[] { O(4.5f, 6.5f, 2.0f, 0.4f) },
-                new[] { S(Slime, 2.5f, 9.5f), S(Slime, 6.5f, 9.5f) }, P(1.5f, 2.5f), P(8.2f, 4.0f), 30,
-                wave: new[] { S(Slime, 0.8f, 3.5f), S(Slime, 8.2f, 3.5f) }, trigger: Half),
-            new RoomDef(R9, "R9", "Galeria dos Arqueiros", "dois arqueiros cruzam a sala; parede rachada à esquerda", 2,
-                new[] { O(2.0f, 7.0f, 1.2f, 0.4f), O(7.0f, 7.0f, 1.2f, 0.4f), O(4.5f, 10.0f, 0.6f, 0.6f) },
-                new[] { S(Archer, 1.5f, 11.5f), S(Archer, 7.5f, 11.5f), S(Bat, 4.5f, 12.5f) }, P(7.0f, 2.5f),
-                wave: new[] { S(Thief, 1.0f, 12.8f), S(Bat, 8.0f, 12.8f) }, trigger: Down, secret: S1, secretPos: P(0f, 4.0f)),
-            new RoomDef(R10, "R10", "Emboscada", "passar da metade chama reforço e a porta fecha até ele cair", 2,
-                new[] { O(2.5f, 6.0f, 0.5f, 0.5f), O(6.5f, 6.0f, 0.5f, 0.5f) },
-                new[] { S(Bat, 2.0f, 10.0f) }, P(2.0f, 2.5f),
-                wave: new[] { S(Thief, 1.5f, 12.5f), S(Bat, 7.5f, 12.5f), S(Thief, 4.5f, 12.8f) }, trigger: Half, waveLocks: true),
-            new RoomDef(R11, "R11", "Bruto e Arqueiro", "o arqueiro cobre o Bruto: não pouse na linha dele", 3,
-                new[] { O(4.5f, 7.5f, 0.8f, 0.8f), O(1.5f, 10.0f, 0.5f, 0.5f) },
-                new[] { S(Brute, 4.5f, 10.5f), S(Archer, 7.5f, 12.0f) }, P(2.0f, 2.5f), P(0.8f, 7.5f), 40,
-                wave: new[] { S(Bat, 0.8f, 3.5f), S(Slime, 8.2f, 3.5f) }, trigger: Half),
-            new RoomDef(R12, "R12", "Guarda das Poças", "luta obrigatória entre limos: escolha onde pousar", 1,
-                new[] { O(2.5f, 5.5f, 0.5f, 0.5f), O(6.5f, 5.5f, 0.5f, 0.5f) },
-                new[] { S(Guard, 4.5f, 12.4f), S(Slime, 2.0f, 9.0f) }, P(2.0f, 2.5f),
-                wave: new[] { S(Slime, 7.0f, 12.0f) }, trigger: Down),
-            new RoomDef(R13, "R13", "Ladrões em Dupla", "dois ladrões e um arqueiro: leve a carga ou guarde-a; parede rachada à direita", 1,
-                new[] { O(4.5f, 6.0f, 1.5f, 0.4f) },
-                new[] { S(Thief, 1.0f, 8.0f), S(Thief, 8.0f, 9.0f), S(Archer, 4.5f, 12.0f) }, P(2.0f, 2.5f), P(0.8f, 11.0f), 30,
-                wave: new[] { S(Bat, 1.0f, 12.8f), S(Slime, 8.0f, 12.5f) }, trigger: Down, secret: S2, secretPos: P(Balance.RoomW, 10.5f)),
-            new RoomDef(R14, "R14", "Labirinto", "três paredes em zigue-zague: carga 3 s no chão chama reforço e fecha a porta; parede rachada à esquerda", 2,
-                new[] { O(3.0f, 4.5f, 3.0f, 0.3f), O(6.0f, 8.0f, 3.0f, 0.3f), O(3.0f, 11.0f, 3.0f, 0.3f) },
-                new[] { S(Bat, 1.5f, 6.5f), S(Slime, 7.5f, 9.6f), S(Bat, 4.5f, 12.5f) }, P(7.0f, 2.5f), P(0.8f, 9.6f), 35,
-                wave: new[] { S(Slime, 1.0f, 12.5f), S(Slime, 8.0f, 12.5f) }, trigger: Down, waveLocks: true, secret: S2, secretPos: P(0f, 2.6f)),
-            new RoomDef(R15, "R15", "Guarda Duplo", "dois guardas e um arqueiro: mate um de cada vez fora do alcance", 2,
-                new[] { O(4.5f, 7.0f, 1.0f, 0.5f) },
-                new[] { S(Guard, 2.5f, 12.4f), S(Guard, 6.5f, 12.4f), S(Archer, 4.5f, 10.4f) }, P(2.0f, 2.5f),
-                wave: new[] { S(Bat, 4.5f, 12.8f), S(Slime, 1.0f, 11.0f) }, trigger: Down),
-            new RoomDef(R16, "R16", "Salão Final", "Bruto, arqueiro e limo; passar da metade chama reforço e fecha a porta", 3,
-                new[] { O(2.0f, 6.0f, 0.6f, 0.6f), O(7.0f, 6.0f, 0.6f, 0.6f), O(4.5f, 9.0f, 0.6f, 0.6f) },
-                new[] { S(Brute, 3.0f, 10.5f), S(Archer, 7.5f, 11.5f), S(Slime, 6.0f, 8.5f) }, P(2.0f, 2.5f), P(8.2f, 8.0f), 45,
-                wave: new[] { S(Bat, 1.0f, 12.5f), S(Slime, 8.0f, 12.5f), S(Thief, 4.5f, 12.8f) }, trigger: Half, waveLocks: true),
-            new RoomDef(S1, "S1", "Depósito Secreto", "sala secreta: baú extra", 0,
-                new[] { O(2.0f, 6.0f, 0.5f, 0.5f), O(7.0f, 6.0f, 0.5f, 0.5f) },
-                new[] { S(Bat, 2.0f, 11.0f) }, P(2.0f, 2.5f), P(4.5f, 9.0f), 60),
-            new RoomDef(S2, "S2", "Tesouro Escondido", "sala secreta: baú grande guardado por um ladrão", 1,
-                new[] { O(4.5f, 6.5f, 1.2f, 0.4f) },
-                new[] { S(Thief, 8.0f, 8.0f) }, P(2.0f, 2.5f), P(4.5f, 10.0f), 80),
-            new RoomDef(M1, "M1", "Toca do Capitão", "mini-chefe: o Capitão rouba a carga do chão e chama ladrões; acerte-o 2x para soltar", 3,
-                new[] { O(2.0f, 5.0f, 0.5f, 0.5f), O(7.0f, 5.0f, 0.5f, 0.5f), O(4.5f, 8.0f, 1.0f, 0.4f) },
-                new[] { S(Captain, 4.5f, 11.5f), S(Bat, 1.5f, 11.0f), S(Bat, 7.5f, 11.0f) }, P(2.0f, 2.5f)),
-        };
-
-        static ContractDef C(int index, CargoType cargo, int pay, string note, float par, float egg, float limit, params int[][] layers)
-            => new ContractDef(index, cargo, pay, egg, note, layers) { ParTime = par, TimeLimit = limit, Waves = index >= Balance.OpenAfter };
-        static int[] L(params int[] rooms) => rooms;
-        const CargoType Box = CargoType.Box, Relic = CargoType.Relic, Egg = CargoType.Egg, Cake = CargoType.Cake, Msg = CargoType.Message,
-                        Heavy = CargoType.Heavy, Barrel = CargoType.Barrel;
-
-        // C1-C3 tutoriais (2-3 camadas); C4+ com 5-6 camadas; cada carga nova estreia num contrato proprio (Reliquia C5, Bolo C7,
-        // Caixa pesada C9, Mensagem C10, Barril C13); C12 = mini-chefe; C24 = chefe. Tempos pela mediana do bot na campanha (BALANCE.md
-        // v1): ParTime (3a estrela) = 1,6x; EggTarget = 2x (quem joga na metade do ritmo do bot choca ~50%); TimeLimit = 2,5x.
-        public static readonly ContractDef[] Contracts =
-        {
-            C(0,   Box,   40,  "FTUE: pousar para lutar; 1ª bifurcação; 1º ladrão", 35f, 0f, 0f, L(R1), L(R2, R3)),
-            C(1,   Box,   45,  "1º upgrade da guilda liberado antes", 25f, 0f, 0f, L(R2), L(R4, R3)),
-            C(2,   Egg,   50,  "ovo: choca no tempo-alvo; 1º perk", 45f, 55f, 0f, L(R1), L(R2, R4), L(R3, R5)),
-            C(3,   Box,   70,  "Bruto aparece; 1ª emboscada", 85f, 0f, 0f, L(R5), L(R4, R3), L(R2, R1), L(R6, R10), L(R3, R4)),
-            C(4,   Relic, 75,  "relíquia frágil", 125f, 0f, 0f, L(R1), L(R5, R3), L(R8, R2), L(R12, R10), L(R1, R4)),
-            C(5,   Egg,   80,  "arqueiro aparece; ovo com Guarda e Ladrão", 100f, 125f, 0f, L(R6), L(R7, R3), L(R5, R2, R4), L(R10, R1), L(R7, R9)),
-            C(6,   Cake,  85,  "bolo de casamento: sem dash", 105f, 0f, 0f, L(R1), L(R7, R4), L(R9, R5), L(R10, R2), L(R3, R6)),
-            C(7,   Relic, 95,  "relíquia entre arqueiros", 115f, 0f, 0f, L(R7), L(R9, R1), L(R8, R5), L(R2, R12), L(R15, R4)),
-            C(8,   Heavy, 100, "caixa pesada; limo aparece", 105f, 0f, 0f, L(R8), L(R4, R3), L(R12, R7), L(R5, R10), L(R2, R6), L(R11, R9)),
-            C(9,   Msg,   105, "mensagem urgente: cronômetro, abre portas trancadas", 45f, 0f, 70f, L(R1), L(R6, R12), L(R15, R4), L(R10, R8), L(R3, R5), L(R13, R16)),
-            C(10,  Egg,   115, "ovo em 6 camadas", 90f, 115f, 0f, L(R8), L(R9, R3), L(R11, R5, R7), L(R14, R6), L(R16, R2), L(R12, R4)),
-            C(11,  Box,   140, "mini-chefe: Capitão Ladrão", 120f, 0f, 0f, L(R4), L(R13, R3), L(R11, R8), L(R10, R14), L(R9, R7), L(M1)),
-            C(12,  Barrel, 120, "barril de pólvora: no chão explode", 155f, 0f, 0f, L(R2), L(R4, R8), L(R7, R14), L(R9, R5), L(R3, R16), L(R13, R1)),
-            C(13,  Cake,  130, "bolo em 6 camadas", 135f, 0f, 0f, L(R12), L(R13, R4), L(R7, R11, R8), L(R3, R16), L(R10, R9), L(R2, R15)),
-            C(14,  Relic, 135, "relíquia em 6 camadas", 145f, 0f, 0f, L(R7), L(R2, R14), L(R13, R8), L(R9, R11), L(R12, R15), L(R1, R3)),
-            C(15,  Msg,   140, "mensagem com Guardas", 55f, 0f, 90f, L(R15), L(R10, R12), L(R6, R1), L(R13, R16, R3), L(R4, R8), L(R14, R9)),
-            C(16,  Heavy, 145, "caixa pesada em 6 camadas", 130f, 0f, 0f, L(R11), L(R14, R9), L(R3, R16), L(R12, R7), L(R10, R13), L(R4, R8)),
-            C(17,  Egg,   150, "ovo com Bruto e arqueiros", 130f, 160f, 0f, L(R16), L(R7, R4), L(R11, R8), L(R14, R13, R3), L(R6, R12), L(R9, R2)),
-            C(18,  Barrel, 160, "barril em 6 camadas", 145f, 0f, 0f, L(R13), L(R9, R10), L(R5, R14), L(R16, R8), L(R11, R2), L(R12, R7)),
-            C(19,  Cake,  170, "bolo em 6 camadas", 170f, 0f, 0f, L(R3), L(R11, R13), L(R16, R12), L(R9, R6, R2), L(R14, R15), L(R10, R7)),
-            C(20,  Relic, 180, "relíquia em 6 camadas", 140f, 0f, 0f, L(R9), L(R13, R14), L(R8, R15), L(R11, R12), L(R16, R1), L(R7, R4)),
-            C(21,  Msg,   185, "mensagem em 6 camadas", 55f, 0f, 85f, L(R12), L(R15, R6), L(R16, R13), L(R1, R10), L(R11, R14, R8), L(R9, R4)),
-            C(22,  Barrel, 195, "barril em 6 camadas", 170f, 0f, 0f, L(R14), L(R16, R11), L(R13, R9), L(R12, R10), L(R15, R8), L(R7, R3)),
-            C(23,  Box,   260, "chefe: Ogro", 270f, 0f, 0f, L(R16), L(R15, R13), L(R11, R14, R4), L(R12, R10), L(R9, R7), L(B1)),
-        };
-
-        /// <summary>Contrato gerado (dia ou codigo) a partir do payload: carga, 4-6 camadas de 2-3 salas normais da regiao, pagamento e
-        /// tempos pelas taxas medidas (Balance.Gen*). Deterministico: mesmo payload = mesmo contrato em qualquer aparelho.</summary>
-        public static ContractDef Generate(int payload, ContractKind kind, int date = 0)
-        {
-            payload &= ContractCode.MaxPayload;
-            var rng = new Rng(Rng.Hash(payload, 0x6E4));
-            var cargo = (CargoType)rng.Int(CargoDef.All.Length);
-            int layers = 4 + rng.Int(3);
-            var pool = new System.Collections.Generic.List<int>();
-            var ls = new int[layers][];
-            for (int l = 0; l < layers; l++)
-            {
-                int n = l == 0 ? 1 : 2 + rng.Int(2);
-                ls[l] = new int[n];
-                for (int i = 0; i < n; i++)
-                {
-                    if (pool.Count == 0) pool.AddRange(NormalRooms);
-                    int k = rng.Int(pool.Count);
-                    ls[l][i] = pool[k];
-                    pool.RemoveAt(k);
-                }
-            }
-            int rooms = layers + 1, pay = 40 + 22 * layers;
-            string code = ContractCode.Encode(payload);
-            var def = new ContractDef(kind == ContractKind.Daily ? "DIA" : code, cargo, pay, cargo == CargoType.Egg ? Balance.GenEggPerRoom * rooms : 0f,
-                                      (kind == ContractKind.Daily ? "contrato do dia: " : "contrato " + code + ": ") + CargoDef.All[(int)cargo].Name, ls)
-            {
-                Kind = kind, ShareCode = code, Payload = payload, Date = date, ParTime = Balance.GenParPerRoom * rooms, Tier = Balance.GenTierBase + 3 * (layers - 4),
-                TimeLimit = cargo == CargoType.Message ? Balance.GenLimitPerRoom * rooms : 0f,
-            };
-            return def;
-        }
     }
 }

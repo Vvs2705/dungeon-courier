@@ -15,7 +15,7 @@ namespace DC
     /// contrato (faixa de cima, escolha de perk, pausa) -> cena da entrega -> resultado (estrelas, pagamento, codigo para compartilhar).
     /// Este arquivo: estrutura, faixa do contrato, oferta de resgate, pausa, cena e resultado. Menus.cs: titulo, menu, quadro, codigo,
     /// guilda/armas, perk, configuracoes e creditos.
-    /// Textos: Textos.cs (pt-BR/EN; trocar o idioma chama Relocalizar). Cores: docs/ART_BIBLE.md §3/§10 (cartoes de papel com borda de
+    /// Textos: Textos.cs (pt-BR/EN/ES/ID; trocar o idioma chama Relocalizar). Cores: docs/ART_BIBLE.md §3/§10 (cartoes de papel com borda de
     /// tinta). Alvo de toque: botao com >= 144 px de referencia de altura (= 48 dp num aparelho de 360 dp de largura, porque o canvas
     /// casa a largura) ou area de toque estendida (Art.Toque). Estado nunca so por cor: cadeado, estrela vazada, visto, sublinhado.
     /// </summary>
@@ -36,13 +36,16 @@ namespace DC
         public RectTransform Labels { get; private set; }
         /// <summary>Base da faixa da HUD em px de tela (o mundo e o joystick ficam abaixo).</summary>
         public float TopPx { get; private set; }
-        /// <summary>Tela por cima do contrato que segura o jogo (pausa, configuracoes, escolha de perk): sem Tick e sem joystick.</summary>
-        public bool Blocking => _pause.gameObject.activeSelf || _settings.gameObject.activeSelf || _perk.gameObject.activeSelf;
+        /// <summary>Tela por cima do contrato que segura o jogo (pausa, configuracoes, escolha de perk, anuncio, loja de teste): sem Tick e
+        /// sem joystick.</summary>
+        public bool Blocking => _pause.gameObject.activeSelf || _settings.gameObject.activeSelf || _perk.gameObject.activeSelf || _ads.Aberto || _lojaTeste.Aberto;
         /// <summary>Segundos na tela atual (o -bot avanca sozinho por ele).</summary>
         public float TimeInScreen { get; private set; }
 
         readonly RectTransform _safe, _top, _title, _menu, _board, _guild, _code, _offer, _perk, _pause, _settings, _credits, _cut, _result;
         readonly RectTransform[] _screens, _modals;
+        /// <summary>Linhas do pagamento no resultado (Textos.Pagamento cabe nelas).</summary>
+        const int ResLinhas = 14;
         readonly Image _vignette, _fade;
         float _vigT, _fadeT;
 
@@ -55,14 +58,15 @@ namespace DC
         readonly Image[] _pips = new Image[3];
         readonly Image[] _layers = new Image[10];
         Image _cargoIcon, _cargoEdge, _rescueIcon, _clock, _dashFill, _dashIcon;
-        Text _coins, _hint, _egg, _dashN;
-        int _hp = -1, _max = -1, _coinShown = -1, _eggShown = -1, _dashShown = -1, _layerN = -1, _fuseShown = -1; string _hintShown; float _heartPop; int _heartPopI = -1;
+        Text _coins, _hint, _egg, _dashN, _floorT;
+        int _hp = -1, _max = -1, _coinShown = -1, _eggShown = -1, _dashShown = -1, _layerN = -1, _fuseShown = -1, _floorShown = -1; string _hintShown; float _heartPop; int _heartPopI = -1;
 
         // oferta, pausa, cena, resultado
         Action<bool> _offerGo;
         Text _offerBody, _pauseTitle, _pauseBody;
         Image _offerIcon;
         RectTransform _pauseMain, _pauseConfirm;
+        Button _pauseRoute;
         ContractResult _res;
         float _cutT, _cutItemK = 1f;
         Vector2 _cutLidAt;
@@ -71,8 +75,9 @@ namespace DC
         SpriteSheet _cutSheet;
         readonly Image[] _sparks = new Image[5];
         Text _cutText;
-        Text _resTitle, _resSub, _resNote, _resCode, _resShared;
-        readonly Text[] _resLabel = new Text[10], _resValue = new Text[10];
+        Text _resTitle, _resSub, _resNote, _resCode, _resShared, _resOfferText;
+        Button _resOffer;
+        readonly Text[] _resLabel = new Text[ResLinhas], _resValue = new Text[ResLinhas];
         readonly Image[] _resStar = new Image[3];
         readonly bool[] _starGot = new bool[3];
         static readonly float[] StarPitch = { 1f, 1.12f, 1.26f };
@@ -109,13 +114,20 @@ namespace DC
             _result = BuildResult();
             _guild = BuildGuild();
             _code = BuildCode();
+            BuildPaineis();   // mapa, eventos, temporada, marcos, roupas, sem fim, loja, modificadores (MetaTelas.cs)
             _offer = BuildOffer();
             _perk = BuildPerk();
             _pause = BuildPause();
             _settings = BuildSettings();
             _credits = BuildCredits();
+            // por cima de tudo: a loja falsa e o simulador de anuncio (implementacoes de teste de ILoja/IAnuncios; SDK real = raia propria)
+            _lojaTeste = new LojaTeste(this); _loja = _lojaTeste;
+            _adsTeste = new AnunciosTeste(this); _ads = _adsTeste;
             _screens = new[] { _top, _title, _menu, _board, _cut, _result };
-            _modals = new[] { _guild, _code, _offer, _perk, _pause, _settings, _credits };
+            var modals = new List<RectTransform> { _guild, _code, _offer, _perk, _pause, _settings, _credits, _semFim };
+            foreach (Painel p in _paineis) modals.Add(p.M);
+            _modals = modals.ToArray();
+            DevDesbloqueia();   // so -testsession -dev-desbloqueia (fotos)
             Fit();
             ShowTitle();
         }
@@ -148,11 +160,11 @@ namespace DC
         public void Relocalizar()
         {
             for (int i = 0; i < _locT.Count; i++) _locT[i].text = _locF[i]();
-            _hintShown = null; _eggShown = -1;
-            RefreshMenu(); RefreshBoard(); RefreshGuild(); RefreshSettings();
+            _hintShown = null; _eggShown = -1; _floorShown = -1;
+            RefreshMenu(); RefreshBoard(); RefreshGuild(); RefreshSettings(); RefreshPaineis();
             if (_perk.gameObject.activeSelf && S.Run != null && S.Run.PerkOffer != null) ShowPerk(S.Run.PerkOffer);
             if (_pause.gameObject.activeSelf && _pauseMain.gameObject.activeSelf) PauseText(false);
-            if (Current == Tela.Result) ShowResult();
+            if (Current == Tela.Result) PintaResultado();
         }
 
         // ------------------------------------------------------------------ telas
@@ -169,7 +181,7 @@ namespace DC
         public void ShowPlay()
         {
             Current = Tela.Play; Only(_top);
-            _hp = _max = _coinShown = _eggShown = _dashShown = _layerN = -1; _hintShown = null;
+            _hp = _max = _coinShown = _eggShown = _dashShown = _layerN = _floorShown = -1; _hintShown = null;
         }
 
         /// <summary>Pausa (botao, voltar, app em segundo plano). resumed = contrato reaberto do save.</summary>
@@ -187,12 +199,17 @@ namespace DC
             if (r == null) return;
             _pauseTitle.text = resumed ? Textos.Retomado : Textos.Pausado;
             _pauseBody.text = Textos.PausaLinha(Textos.Rotulo(r.Contract), Textos.Carga(r.Contract.Cargo), Textos.Tempo(r.Time));
+            if (r.SafeDoor >= 0 && r.SafeDoor < r.Doors.Count) _pauseBody.text += "\n" + Textos.RotaSegura(r.Doors[r.SafeDoor].Pos.X);
+            // rewarded: rota segura da sala (1x por contrato; so com 2+ portas e sem perk na mesa)
+            bool route = !_g.BotDrive && S.RewardOffer(Reward.SafeRoute);
+            _pauseRoute.gameObject.SetActive(route);
+            if (route) LogOferta(Reward.SafeRoute);
         }
 
         /// <summary>Fim do contrato: entregue = cena do cliente abrindo a caixa e depois o resultado; senao, o resultado direto.</summary>
         public void ShowEnd(ContractResult r)
         {
-            _res = r;
+            _res = r; _devOferta = false;
             if (r == null) { ShowBoard(); return; }
             if (!r.Delivered) { ShowResult(); return; }
             Current = Tela.Cutscene; Only(_cut);
@@ -235,10 +252,6 @@ namespace DC
         {
             Current = Tela.Result; Only(_result);
             ContractResult r = _res;
-            ContractDef c = r.Def;
-            _resTitle.text = Textos.Rotulo(c) + ": " + Textos.Titulo(r.Outcome);
-            _resTitle.color = r.Delivered ? Art.Good : Art.Bad;
-            _resSub.text = r.Delivered ? Textos.Reacao(r) : Textos.Motivo(r);
             // estrelas: cheia = ganhou, vazada = nao (forma + cor); o criterio fica escrito embaixo de cada uma
             _starGot[0] = r.StarDelivered; _starGot[1] = r.StarIntact; _starGot[2] = r.StarTime;
             for (int i = 0; i < 3; i++)
@@ -249,6 +262,19 @@ namespace DC
                 _resStarText[i].color = _starGot[i] ? Art.Tinta : Art.A(Art.Tinta, 0.55f);
             }
             _starT = 0f; _starNext = 0; _starSounds = 0;
+            PintaResultado();
+        }
+
+        /// <summary>Textos do resultado (titulo, pagamento, codigo, nota e a oferta de rewarded): de novo depois do bonus dobrado e na troca
+        /// de idioma, sem refazer as estrelas.</summary>
+        void PintaResultado()
+        {
+            ContractResult r = _res;
+            if (r == null) return;
+            ContractDef c = r.Def;
+            _resTitle.text = Textos.Rotulo(c) + ": " + Textos.Titulo(r.Outcome);
+            _resTitle.color = r.Delivered ? Art.Good : Art.Bad;
+            _resSub.text = r.Delivered ? Textos.Reacao(r) : Textos.Motivo(r);
             string[][] lines = Textos.Pagamento(r, c);
             for (int i = 0; i < _resLabel.Length; i++)
             {
@@ -259,7 +285,8 @@ namespace DC
                 bool strong = ReferenceEquals(lines[i][0], Textos.RotuloPagamento) || ReferenceEquals(lines[i][0], Textos.RotuloTotal);
                 _resLabel[i].fontStyle = _resValue[i].fontStyle = strong ? FontStyle.Bold : FontStyle.Normal;
             }
-            string code = !string.IsNullOrEmpty(r.ShareCode) ? r.ShareCode : c.ShareCode;
+            // sem fim: o codigo da semana fica na tela do desafio (o convite fala de estrelas e o codigo abriria um contrato comum)
+            string code = r.Kind == ContractKind.Endless ? null : !string.IsNullOrEmpty(r.ShareCode) ? r.ShareCode : c.ShareCode;
             _resShare.gameObject.SetActive(!string.IsNullOrEmpty(code));
             if (!string.IsNullOrEmpty(code)) _resCode.text = Textos.CodigoDoContrato(code);
             _resShared.text = "";
@@ -268,16 +295,21 @@ namespace DC
             _resGuild.gameObject.SetActive(guild);
             RectTransform cont = (RectTransform)_resContinue.transform;
             cont.anchorMin = new Vector2(guild ? 0.05f : 0.2f, 0.015f); cont.anchorMax = new Vector2(guild ? 0.6f : 0.8f, 0.105f);
+            OfertaResultado();   // rewarded: retomar a sala (falha) ou dobrar o bonus (entrega)
+            bool resume = _resOffer.gameObject.activeSelf && _resOfferT == Reward.Resume;
             bool pending = !r.Delivered && S.Pending != null && S.Pending.Contract == r.Contract;
-            _resNote.text = pending ? Textos.AvisoPendente : r.NewBest && r.Stars > 0 ? Textos.NovoRecorde : "";
-            _resNote.color = pending ? Art.Tinta : Art.Good;
+            bool rare = S.RareOpen && !S.RareAvailable && !S.SaveRefused;   // fim da sessao: "volte amanha para o contrato raro"
+            _resNote.text = resume ? Textos.ProtejaRetome : pending ? Textos.AvisoPendente : r.NewBest && r.Stars > 0 ? Textos.NovoRecorde : rare ? Textos.VolteAmanha : "";
+            _resNote.color = resume || pending ? Art.Tinta : r.NewBest && r.Stars > 0 ? Art.Good : Art.A(Art.Tinta, 0.75f);
         }
 
-        /// <summary>Antes de comecar: com carga pendente abre a oferta de resgate (go(true) = resgatar); sem, comeca direto (go(false)).</summary>
-        public void ShowOffer(Action<bool> go)
+        /// <summary>Antes de comecar: com carga pendente abre a oferta de resgate (go(true) = resgatar); sem, comeca direto (go(false)).
+        /// region &gt; 0 = regiao do contrato: o Core so leva o resgate num contrato da mesma regiao (a carga continua pendente), entao em
+        /// outra regiao nem pergunta.</summary>
+        public void ShowOffer(Action<bool> go, int region = 0)
         {
             LostCargo p = S.Pending;
-            if (p == null) { go(false); return; }
+            if (p == null || (region > 0 && p.Region != region)) { go(false); return; }
             _offerGo = go;
             int bonus = (int)Math.Round(p.Value * Balance.RescueBonus * S.CoinMul, MidpointRounding.AwayFromZero);
             _offerBody.text = Textos.Oferta(p, bonus);
@@ -289,7 +321,10 @@ namespace DC
         /// sai; no contrato sem nada aberto: o Game abre a pausa).</summary>
         public bool Back()
         {
+            if (_adsTeste.Voltar() || _lojaTeste.Voltar()) return true;   // anuncio e loja falsa ficam por cima de tudo
             if (Close(_credits) || Close(_settings) || Close(_code)) return true;
+            if (_pLoja.M.gameObject.activeSelf) { Fecha(_pLoja); return true; }
+            if (_pMods.M.gameObject.activeSelf) { _modsGo = null; Fecha(_pMods); return true; }
             if (_pause.gameObject.activeSelf)
             {
                 if (_pauseConfirm.gameObject.activeSelf) { _pauseConfirm.gameObject.SetActive(false); _pauseMain.gameObject.SetActive(true); PauseText(false); }
@@ -298,8 +333,9 @@ namespace DC
             }
             if (_perk.gameObject.activeSelf) return true;   // escolha obrigatoria: o voltar nao pula o perk
             if (Current == Tela.Cutscene) { ShowResult(); return true; }
-            if (Close(_guild) || Close(_offer)) return true;
-            if (Current == Tela.Result) { _g.ToBoard(); return true; }
+            if (Close(_guild) || Close(_offer) || Close(_semFim)) return true;
+            for (int i = _paineis.Count - 1; i >= 0; i--) if (_paineis[i].M.gameObject.activeSelf) { Fecha(_paineis[i]); return true; }
+            if (Current == Tela.Result) { Continuar(); return true; }
             if (Current == Tela.Board) { ShowMenu(); return true; }
             return false;
         }
@@ -319,6 +355,7 @@ namespace DC
         public void Refresh(float dt)
         {
             TimeInScreen += dt;
+            _adsTeste.Tick();   // contagem do simulador de anuncio (tempo real)
             _vigT = Mathf.Max(0f, _vigT - dt);
             _vignette.color = Art.A(Art.Bad, 0.25f * 2.5f * _vigT);   // vinheta de dano a 25% (ART_BIBLE §9)
             _fadeT = Mathf.Max(0f, _fadeT - dt);
@@ -421,8 +458,11 @@ namespace DC
             int charges = c.DashChargesMax > 1 ? c.DashCharges : -1;
             if (charges != _dashShown) { _dashShown = charges; _dashN.text = charges >= 0 ? Textos.Num(charges) : ""; }
 
-            // camadas: feitas = verde, atual = clara e maior, futuras = apagadas; a ultima e a bandeira da entrega
-            int n = Mathf.Min(r.LayerCount, _layers.Length);
+            // camadas: feitas = verde, atual = clara e maior, futuras = apagadas; a ultima e a bandeira da entrega. No sem fim: "piso N · recorde M"
+            bool endless = r.Contract.Kind == ContractKind.Endless;
+            if (_floorT.gameObject.activeSelf != endless) _floorT.gameObject.SetActive(endless);
+            if (endless && r.Layer != _floorShown) { _floorShown = r.Layer; _floorT.text = Textos.SemFimPiso(r.Layer + 1, Mathf.Max(S.EndlessBest, r.Layer)); }
+            int n = endless ? 0 : Mathf.Min(r.LayerCount, _layers.Length);
             if (n != _layerN) LayoutLayers(n);
             for (int i = 0; i < n; i++)
             {
@@ -432,7 +472,8 @@ namespace DC
                 if (l.transform.localScale.x != sc) l.transform.localScale = Vector3.one * sc;
             }
 
-            string h = r.Hint != Hint.None ? Textos.Dica(r.Hint) : Textos.Objetivo(r);
+            // dica do Core > rota segura revelada (rewarded) > objetivo da sala
+            string h = r.Hint != Hint.None ? Textos.Dica(r.Hint) : r.SafeDoor >= 0 && r.SafeDoor < r.Doors.Count ? Textos.RotaSegura(r.Doors[r.SafeDoor].Pos.X) : Textos.Objetivo(r);
             if (!ReferenceEquals(h, _hintShown)) { _hintShown = h; _hint.text = h; _hint.color = r.Hint != Hint.None ? Art.Ink : Art.A(Art.Ink, 0.6f); }
         }
 
@@ -556,6 +597,9 @@ namespace DC
             _dashN = Art.Outlined(Art.NewText(top, "DashCargas", 30, new Vector2(0.595f, 0.22f), new Vector2(0.64f, 0.38f)));
             _dashN.fontStyle = FontStyle.Bold;
             for (int i = 0; i < _layers.Length; i++) _layers[i] = Art.Img(top, "Camada", Art.Disc(), Art.Off, Vector2.zero, Vector2.zero);
+            _floorT = Shrink(Art.Outlined(Art.NewText(top, "Piso", 32, new Vector2(0.64f, 0.27f), new Vector2(0.99f, 0.54f), TextAnchor.MiddleLeft)), 18);
+            _floorT.fontStyle = FontStyle.Bold;
+            _floorT.gameObject.SetActive(false);
 
             // linha C: a dica (1 linha)
             _hint = Art.Outlined(Art.NewText(top, "Dica", 36, new Vector2(0.03f, 0.02f), new Vector2(0.97f, 0.26f)));
@@ -597,15 +641,18 @@ namespace DC
         RectTransform BuildPause()
         {
             RectTransform m = Modal("Pausa");
-            Image face = Card(m, "Cartao", new Vector2(0.06f, 0.22f), new Vector2(0.94f, 0.78f));
-            _pauseTitle = Art.NewText(face.transform, "Titulo", 54, new Vector2(0.05f, 0.86f), new Vector2(0.95f, 0.97f));
+            // cartao de ~1230 px de referencia: 4 botoes de ~0,14 (~172 px, acima de 48 dp)
+            Image face = Card(m, "Cartao", new Vector2(0.06f, 0.18f), new Vector2(0.94f, 0.82f));
+            _pauseTitle = Art.NewText(face.transform, "Titulo", 54, new Vector2(0.05f, 0.88f), new Vector2(0.95f, 0.98f));
             _pauseTitle.color = Art.Tinta; _pauseTitle.fontStyle = FontStyle.Bold;
-            _pauseBody = Art.NewText(face.transform, "Corpo", 30, new Vector2(0.06f, 0.69f), new Vector2(0.94f, 0.85f));
+            _pauseBody = Shrink(Art.NewText(face.transform, "Corpo", 30, new Vector2(0.06f, 0.73f), new Vector2(0.94f, 0.88f)), 18);
             _pauseBody.color = Art.Tinta;
             _pauseMain = Art.Node(face.transform, "Principal", Vector2.zero, Vector2.one);
-            Btn(_pauseMain, () => Textos.Continuar, 46, Art.Good, new Vector2(0.08f, 0.5f), new Vector2(0.92f, 0.67f), () => _pause.gameObject.SetActive(false));
-            Btn(_pauseMain, () => Textos.MenuConfig, 38, Art.PaperEdge, new Vector2(0.08f, 0.29f), new Vector2(0.92f, 0.46f), ShowSettings);
-            Btn(_pauseMain, () => Textos.Desistir, 34, Art.Bad, new Vector2(0.08f, 0.04f), new Vector2(0.92f, 0.21f), () =>
+            Btn(_pauseMain, () => Textos.Continuar, 46, Art.Good, new Vector2(0.08f, 0.56f), new Vector2(0.92f, 0.71f), () => _pause.gameObject.SetActive(false));
+            // rewarded: a porta mais segura desta sala (anuncio de teste)
+            _pauseRoute = Btn(_pauseMain, () => Textos.OfertaRota, 34, Art.Gold, new Vector2(0.08f, 0.39f), new Vector2(0.92f, 0.54f), PedeRota);
+            Btn(_pauseMain, () => Textos.MenuConfig, 38, Art.PaperEdge, new Vector2(0.08f, 0.215f), new Vector2(0.92f, 0.365f), ShowSettings);
+            Btn(_pauseMain, () => Textos.Desistir, 34, Art.Bad, new Vector2(0.08f, 0.04f), new Vector2(0.92f, 0.19f), () =>
             {
                 _pauseTitle.text = Textos.DesistirTitulo; _pauseBody.text = Textos.DesistirCorpo;
                 _pauseMain.gameObject.SetActive(false); _pauseConfirm.gameObject.SetActive(true);
@@ -680,26 +727,31 @@ namespace DC
                 _resStarText[i].fontStyle = FontStyle.Bold;
                 _resStarText[i].resizeTextForBestFit = true; _resStarText[i].resizeTextMinSize = 18; _resStarText[i].resizeTextMaxSize = 28;
             }
+            // pagamento: ate ResLinhas linhas de 0,0275 do cartao (~50 px de referencia) entre as estrelas e o codigo
             for (int i = 0; i < _resLabel.Length; i++)
             {
-                float y1 = 0.72f - i * 0.045f, y0 = y1 - 0.042f;
-                _resLabel[i] = Art.NewText(f, "Rotulo", 32, new Vector2(0.06f, y0), new Vector2(0.7f, y1), TextAnchor.MiddleLeft);
+                float y1 = 0.72f - i * 0.0275f, y0 = y1 - 0.026f;
+                _resLabel[i] = Shrink(Art.NewText(f, "Rotulo", 30, new Vector2(0.06f, y0), new Vector2(0.72f, y1), TextAnchor.MiddleLeft), 18);
                 _resLabel[i].color = Art.Tinta;
-                _resValue[i] = Art.NewText(f, "Valor", 34, new Vector2(0.7f, y0), new Vector2(0.94f, y1), TextAnchor.MiddleRight);
+                _resValue[i] = Art.NewText(f, "Valor", 32, new Vector2(0.72f, y0), new Vector2(0.94f, y1), TextAnchor.MiddleRight);
                 _resValue[i].color = Art.Tinta;
             }
             // codigo do contrato para compartilhar (some quando o contrato nao tem codigo)
-            _resShare = Art.Node(f, "Codigo", new Vector2(0.04f, 0.165f), new Vector2(0.96f, 0.265f));
+            _resShare = Art.Node(f, "Codigo", new Vector2(0.04f, 0.24f), new Vector2(0.96f, 0.33f));
             _resCode = Art.NewText(_resShare, "Texto", 40, new Vector2(0f, 0.3f), new Vector2(0.56f, 1f), TextAnchor.MiddleLeft);
             _resCode.color = Art.Tinta; _resCode.fontStyle = FontStyle.Bold;
             _resShared = Art.NewText(_resShare, "Copiado", 24, new Vector2(0f, 0f), new Vector2(0.56f, 0.3f), TextAnchor.MiddleLeft);
             _resShared.color = Art.Good; _resShared.fontStyle = FontStyle.Bold;
             Btn(_resShare, () => Textos.Compartilhar, 36, Art.Gold, new Vector2(0.58f, 0f), new Vector2(1f, 1f), Share);
-            _resNote = Art.NewText(f, "Nota", 30, new Vector2(0.06f, 0.115f), new Vector2(0.94f, 0.165f));
+            _resNote = Art.NewText(f, "Nota", 30, new Vector2(0.06f, 0.193f), new Vector2(0.94f, 0.238f));
             _resNote.color = Art.Tinta; _resNote.fontStyle = FontStyle.Bold;
-            _resNote.resizeTextForBestFit = true; _resNote.resizeTextMinSize = 20; _resNote.resizeTextMaxSize = 30;
-            _resContinue = Btn(f, () => Textos.Continuar, 46, Art.Good, new Vector2(0.2f, 0.015f), new Vector2(0.8f, 0.105f), () => _g.ToBoard());
-            _resGuild = Btn(f, () => Textos.MenuGuilda, 40, Art.Paper, new Vector2(0.63f, 0.015f), new Vector2(0.95f, 0.105f), () => ShowGuild(false));
+            _resNote.resizeTextForBestFit = true; _resNote.resizeTextMinSize = 18; _resNote.resizeTextMaxSize = 30;
+            // oferta de rewarded (retomar / dobrar o bonus): ~0,085 do cartao = ~153 px de referencia
+            _resOffer = Btn(f, () => Textos.OfertaRetomar, 36, Art.Gold, new Vector2(0.05f, 0.108f), new Vector2(0.95f, 0.19f), PedeOfertaResultado);
+            _resOfferText = _resOffer.GetComponentInChildren<Text>();
+            _resOffer.gameObject.SetActive(false);
+            _resContinue = Btn(f, () => Textos.Continuar, 46, Art.Good, new Vector2(0.2f, 0.015f), new Vector2(0.8f, 0.103f), Continuar);
+            _resGuild = Btn(f, () => Textos.MenuGuilda, 40, Art.Paper, new Vector2(0.63f, 0.015f), new Vector2(0.95f, 0.103f), () => ShowGuild(0));
             return m;
         }
 

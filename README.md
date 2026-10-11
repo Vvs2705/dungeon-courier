@@ -9,7 +9,7 @@
 **Como vai ser jogar:** "entregue e saia vivo"; o pagamento melhora a guilda e o equipamento.
 
 ## Situação
-**v1.0-beta (2026-10-10): versão completa para teste com jogadores reais, jogável no PC.** Região 1 "Porões da Guilda" com 24 contratos, 7 cargas, 7 inimigos (com o mini-chefe Capitão Ladrão e o chefe Ogro), 3 armas, 10 perks, salas secretas, estrelas, contrato do dia e por código, guilda 4×8, save v2, áudio, pt-BR/EN e diário local de teste (nada sai do aparelho sem o jogador exportar). Núcleo com 76 testes; o bot fecha a campanha. Arte dos Lotes 1–3 (Tripo → Blender → sprites). Sem anúncios nem compras.
+**1.1.0-beta (2026-10-11): as 4 regiões do GDD jogáveis no PC** (72 contratos, 20 inimigos, 8 chefes, 15 cargas, 25 perks, eventos, temporada, sem fim, 4 idiomas). Monetização só em modo de teste. O que falta para o GDD completo está em [`docs/CONTRATO_LANCAMENTO.md`](docs/CONTRATO_LANCAMENTO.md) e no CHANGELOG.
 
 - **Escopo da v1.0-beta:** [`docs/CONTRATO_V1.md`](docs/CONTRATO_V1.md) · **Balance medido pelo bot:** [`docs/BALANCE.md`](docs/BALANCE.md) · v0.1: [`docs/CONTRATO_V01.md`](docs/CONTRATO_V01.md)
 - **Teste com jogadores:** [`docs/TESTE_JOGADORES.md`](docs/TESTE_JOGADORES.md), [`docs/PERGUNTAS_PLAYTEST.md`](docs/PERGUNTAS_PLAYTEST.md); relatório dos diários: `python client/tools/diario_report.py <pasta>`

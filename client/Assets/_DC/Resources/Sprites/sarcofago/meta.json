@@ -1,0 +1,43 @@
+{
+ "size": 288,
+ "fps": 12.0,
+ "dirs": 4,
+ "rows": 3,
+ "dir_order": [
+  "S",
+  "W",
+  "N"
+ ],
+ "mirror": true,
+ "row0": "top",
+ "elev": 60.0,
+ "yaw": 0.0,
+ "ppu": 120.0,
+ "pivot_px": [
+  144.0,
+  123.3
+ ],
+ "pivot": [
+  0.5,
+  0.428
+ ],
+ "light": "flat",
+ "outline_px": 3,
+ "src_fps": 30,
+ "preset": "sarcofago",
+ "model_scale": 1.1726,
+ "hold": "",
+ "attach": [],
+ "align_arms": false,
+ "clips": [
+  {
+   "name": "Static",
+   "file": "Static.png",
+   "frames": 1,
+   "loop": false,
+   "fps": 30.0,
+   "duration_s": 0.033,
+   "src_frames": 0
+  }
+ ]
+}

@@ -6,6 +6,6 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\..\..\Assets\_DC\Scripts\Core\*.cs" />
+    <Compile Include="..\..\..\Assets\_DC\Scripts\Core\**\*.cs" />
   </ItemGroup>
 </Project>

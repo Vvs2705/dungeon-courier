@@ -13,7 +13,9 @@ estatico para props). O que o DC acrescenta (docs/RENDER_SPRITES.md):
   meta.json "stride_mps"  clipe em laco com deslocamento do quadril: velocidade natural (m/s) na escala do ator
   preset "clips"     por clipe: frames = quadros fixos (corrida sem subquadro); range = faixa do clipe de origem
                      (janela de laco do Breathing Idle, que inteiro tem 9,9 s); vai para o meta como "src_range"
-  --align-arms       rig em pose A (bruto, ogro): os ossos do braco partem do repouso em T do clipe
+  --align-arms       rig em pose A (bruto, ogro): os ossos do braco partem do repouso em T do clipe; sem a opcao, liga
+                     sozinho se o braco do rig estiver a mais de 15 graus do clipe (AVISO no log)
+  preset ground_cut  clipes cortados no chao (z = 0) no render: Emerge/Burrow da toupeira e da rainha
 Quadril: o deslocamento horizontal comeca na origem (1o quadro) e, em clipe em laco, a deriva linear sai (clipe com
 root motion vira "in place"; o pe nao patina se a View tocar no ritmo de stride_mps).
 
@@ -37,9 +39,10 @@ from mathutils import Euler, Matrix, Quaternion, Vector
 DIRS = {1: ["S"], 4: ["S", "W", "N", "E"], 8: ["S", "SW", "W", "NW", "N", "NE", "E", "SE"]}
 LIGHT = {"flat": ("FLAT", None), "matcap": ("MATCAP", "toon_light.exr"), "studio": ("STUDIO", "Default")}
 BONE_RE = re.compile(r'pose\.bones\["([^"]+)"\]')
-LOOP_RE = re.compile(r"idle|walk|run|lurk", re.I)  # ponytail: laco por nome; o Unity pode sobrescrever
+LOOP_RE = re.compile(r"idle|walk|run|lurk|look|sleep|stun|charge|perch|hold", re.I)  # ponytail: laco por nome; o Unity pode sobrescrever
 ARM_RE = re.compile(r"(Left|Right)(Shoulder|\w*Arm|Hand)")  # ombro, braco, antebraco, mao, dedos (Mixamo e placeholder COE)
 HAND_RE = re.compile(r"(Left|Right)Hand$")
+ALIGN_SEEN = set()  # clipes alinhados sozinhos (rig em pose A sem --align-arms); vai para o meta
 # FBX:osso:dx,dy,dz:rx,ry,rz:tamanho (o osso pode vir com prefixo "mixamorig:"; caminho do Windows tem "C:")
 ATTACH_RE = re.compile(r"^(.+?\.(?:fbx|glb|gltf)):(?:\w+:)?(\w+):([-\d.]+,[-\d.]+,[-\d.]+):([-\d.]+,[-\d.]+,[-\d.]+):([\d.]+)$", re.I)
 INK = (0x1B / 255.0, 0x17 / 255.0, 0x24 / 255.0)  # tinta do contorno, ART_BIBLE sec. 3
@@ -47,13 +50,16 @@ INK = (0x1B / 255.0, 0x17 / 255.0, 0x24 / 255.0)  # tinta do contorno, ART_BIBLE
 # Padroes genericos e tabela de atores do DC. Um argumento na linha vence o preset, que vence BASE.
 # ponytail: escala por ator numa tabela so; mudar aqui = re-render daquele ator, nada muda no Core
 BASE = dict(elev=60.0, dirs=4, fps=12.0, size=128, scale=0.0, yaw=0.0, light="flat", aa="8", max_frames=32,
-            height=0.0, width=0.0, mirror=False, outline=0, clips={}, align_arms=False)
+            height=0.0, width=0.0, mirror=False, outline=0, clips={}, align_arms=False, ground_cut=(), footprint=(),
+            tilt=0.0)
 DC = dict(scale=120.0, outline=3, max_frames=12)  # 120 px/m na textura; a View mostra ~112 px/m (9,6 m em 1080 px)
 # Por clipe (preset "clips"): frames = quadros fixos (vence fps e teto); range = (ini, fim) quadros do clipe de origem.
 # BREATH: janela de laco do Breathing Idle (Forge, 1-299 = 9,9 s; tocado inteiro em 12 quadros dava 1,2 fps). 199-289 =
 # 3,0 s com a menor costura entre as janelas de 2-3 s: 2,2 cm na mao direita (X Bot de 1,8 m; ~1,6 cm no courier)
 BREATH = dict(range=(199, 289))
-RUN8 = dict(frames=8)  # Sprint do ARKANA: ciclo de 16 quadros de 2 em 2, sem subquadro (6 quadros pulavam 2,67)
+EMERGE = dict(frames=6)  # sobe/mergulha em 0,3 s: 6 quadros de 1,5 em 1,5 (o padrao daria 4)
+RUN8 = dict(frames=8)
+SIX = dict(frames=6)  # clipes de 0,3 s com o ultimo quadro amostrado ja na pose final  # Sprint do ARKANA: ciclo de 16 quadros de 2 em 2, sem subquadro (6 quadros pulavam 2,67)
 PRESETS = {
     "courier": dict(DC, height=1.30, dirs=8, mirror=True, size=224,
                     clips={"Idle": BREATH, "CarryIdle": BREATH, "Run": RUN8, "CarryRun": RUN8, "Throw": dict(frames=10)}),
@@ -78,6 +84,50 @@ PRESETS = {
     "barril": dict(DC, height=0.55, dirs=1, size=96),
     "tocha": dict(DC, height=0.70, dirs=1, size=112),
     "pilar": dict(DC, width=1.20, dirs=1, size=288),  # 1,2 m de largura -> ~2,2 m de altura (proporcao do modelo)
+    # Lote 4 (regiao 2, 2026-10-11): pasta = nome do zip (RENDER_SPRITES.md tem a correspondencia com o CONTEUDO_REGIOES)
+    "goblin_mineiro": dict(DC, height=1.00, dirs=4, mirror=True, size=192, clips={"Idle": BREATH}),
+    # toupeira e rainha: Emerge/Burrow entram no chao; ground_cut corta a parte enterrada no render (a celula nao cresce)
+    "toupeira": dict(DC, height=0.90, dirs=4, mirror=True, size=192, clips=dict(Idle=BREATH, Emerge=EMERGE, Burrow=EMERGE),
+                     ground_cut=("Emerge", "Burrow")),
+    "rainha_toupeira": dict(DC, height=1.60, dirs=4, mirror=True, size=304, clips=dict(Idle=BREATH, Emerge=EMERGE, Burrow=EMERGE),
+                            ground_cut=("Emerge", "Burrow")),
+    "rainha_toupeira_fim": dict(DC, height=1.60, dirs=1, size=320),  # 12 x 320 = 3 840 px (384 passava de 4 096)
+    "golem": dict(DC, height=2.60, dirs=4, mirror=True, size=448, max_frames=9, clips={"Idle": BREATH}),
+    "golem_fim": dict(DC, height=2.60, dirs=1, size=576, max_frames=7),
+    "picareta": dict(DC, height=0.45, dirs=1, size=96),
+    "sapo": dict(DC, width=0.90, dirs=1, size=144),
+    "besouro": dict(DC, width=0.60, dirs=1, size=112),
+    "vagonete": dict(DC, width=1.20, dirs=1, size=208),
+    "coracao": dict(DC, height=0.45, dirs=1, size=96),
+    "cristal": dict(DC, width=0.50, dirs=1, size=96),
+    "gaiola": dict(DC, height=0.50, dirs=1, size=96),
+    "lanterna_mina": dict(DC, height=0.50, dirs=1, size=96),
+    "escora": dict(DC, width=1.20, dirs=1, size=176),
+    # Lote 5 (regiao 3, 2026-10-11): clava e cajado presos a RightHand pelo --attach na linha
+    "esqueleto": dict(DC, height=1.35, dirs=4, mirror=True, size=256, clips=dict(Idle=BREATH, Collapse=SIX, Rise=SIX)),
+    "mumia": dict(DC, height=1.50, dirs=4, mirror=True, size=224, clips=dict(Idle=BREATH, Hold=dict(frames=8))),
+    "gargula": dict(DC, height=1.40, dirs=4, mirror=True, size=256, clips=dict(Statue=dict(frames=1))),
+    "necromante": dict(DC, height=1.60, dirs=4, mirror=True, size=320),
+    "necromante_fim": dict(DC, height=1.60, dirs=1, size=320),
+    "clava": dict(DC, width=0.49, dirs=1, size=96),
+    "cajado": dict(DC, height=1.40, dirs=1, size=144),
+    "fantasma": dict(DC, height=0.90, dirs=1, size=128),
+    "aranha": dict(DC, width=0.80, dirs=1, size=128),
+    "aranha_empinada": dict(DC, width=0.80, dirs=1, size=144, tilt=35.0),
+    "viuva": dict(DC, width=2.00, dirs=1, size=320),
+    "viuva_empinada": dict(DC, width=2.00, dirs=1, size=352, tilt=30.0),
+    "lanterna": dict(DC, height=0.45, dirs=1, size=96),
+    "lanterna_apagada": dict(DC, height=0.45, dirs=1, size=96),  # o mesmo FBX com o basecolor da chama apagada
+    "espelho": dict(DC, height=0.50, dirs=1, size=96),
+    "balao": dict(DC, width=0.60, dirs=1, size=128),
+    "lapide": dict(DC, width=1.20, dirs=1, size=176),
+    "vela": dict(DC, height=0.70, dirs=1, size=112),
+    # sarcofago: planta 0,8 x 1,8 (o modelo e 1,4:1); 4 direcoes porque a sala R3-5 tem o obstaculo em pe e deitado
+    "sarcofago": dict(DC, footprint=(0.80, 1.80), dirs=4, mirror=True, size=288),
+    # icone da loja (loja_assets.py): 3/4 de frente (SW), camera mais baixa (35 graus), escala de icone; caixa a parte
+    "courier_icone": dict(DC, height=1.30, dirs=1, size=512, scale=320.0, elev=35.0, yaw=-45.0, outline=6,
+                          clips=dict(CarryIdle=dict(range=(199, 289), frames=1))),
+    "caixa_icone": dict(DC, width=0.50, dirs=1, size=256, scale=320.0, elev=35.0, yaw=-45.0, outline=6),
     "morcego": dict(DC, width=0.70, dirs=1, size=112),
     "filhote": dict(DC, height=0.50, dirs=1, size=96),
     "caixa": dict(DC, width=0.50, dirs=1, size=112),
@@ -96,7 +146,7 @@ def die(msg):
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("--model", required=True, help="FBX/GLB rigado (ou o FBX de um clipe do placeholder)")
+    p.add_argument("--model", required=True, help="FBX/GLB rigado (ou o FBX de um clipe do placeholder); .blend = o FBX ja importado e salvo")
     p.add_argument("--out", required=True)
     p.add_argument("--anims", help="pasta com 1 FBX por clipe (Mixamo Without Skin ou placeholder)")
     p.add_argument("--self", dest="self_", action="store_true", help="usar as actions ja no modelo")
@@ -134,6 +184,12 @@ def parse_args():
 
 
 def import_file(path):
+    if path.lower().endswith(".blend"):  # FBX do Tripo ja importado e salvo (2026-10-11): o import do FBX levava 10+ min
+        with bpy.data.libraries.load(path) as (src, dst):  # com o PC sem memoria e estourava o corte de 900 s
+            dst.objects = list(src.objects)
+        for o in dst.objects:
+            bpy.context.scene.collection.objects.link(o)
+        return list(dst.objects)
     before = set(bpy.data.objects)
     (bpy.ops.import_scene.gltf if path.lower().endswith((".glb", ".gltf")) else bpy.ops.import_scene.fbx)(filepath=path)
     return [o for o in bpy.data.objects if o not in before]
@@ -168,23 +224,46 @@ def bone_order(arm):
     return out
 
 
-def normalize(model, meshes, a):
-    """Escala uniforme (em volta da origem = pe) para --height (altura) ou --width (maior medida horizontal)."""
-    if not (a.height or a.width):
-        return 1.0
+def model_points(meshes):
     bpy.context.view_layer.update()
     dg = bpy.context.evaluated_depsgraph_get()
-    pts = [ev.matrix_world @ v.co for ev in (m.evaluated_get(dg) for m in meshes) for v in ev.data.vertices]
-    span = lambda axis: max(p[axis] for p in pts) - min(p[axis] for p in pts)
-    now = span(2) if a.height else max(span(0), span(1))
-    if now < 1e-6:
-        die("modelo sem medida para normalizar")
-    k = (a.height or a.width) / now
+    return [ev.matrix_world @ v.co for ev in (m.evaluated_get(dg) for m in meshes) for v in ev.data.vertices]
+
+
+def transform_roots(model, M):
     for o in model:
         if o.parent is None:
-            o.matrix_world = Matrix.Scale(k, 4) @ o.matrix_world
+            o.matrix_world = M @ o.matrix_world
     bpy.context.view_layer.update()
-    print("ESCALA x%.4f (%s %.3f m -> %.3f m)" % (k, "altura" if a.height else "largura", now, a.height or a.width))
+
+
+def normalize(model, meshes, a):
+    """Escala uniforme (em volta da origem = pe) para --height (altura) ou --width (maior medida horizontal).
+    Preset footprint=(largura, comprimento): escala NAO uniforme da planta (o comprimento vai para o eixo Y, a altura
+    acompanha a largura), para o prop vestir um obstaculo de medida dada (sarcofago 0,8 x 1,8 com o modelo 1,4:1).
+    Preset tilt=graus: depois da escala, gira a frente (-Y) para cima e apoia o mais baixo no chao (aranha empinada)."""
+    if not (a.height or a.width or a.footprint):
+        return 1.0
+    pts = model_points(meshes)
+    span = lambda axis: max(p[axis] for p in pts) - min(p[axis] for p in pts)
+    if a.footprint:
+        w, l = a.footprint
+        ex, ey = span(0), span(1)
+        turn = Matrix.Rotation(math.pi / 2, 4, "Z") if ex > ey else Matrix()
+        k = w / min(ex, ey)
+        transform_roots(model, Matrix.Diagonal((k, l / max(ex, ey), k, 1.0)) @ turn)
+        print("PLANTA %.3f x %.3f m -> %.2f x %.2f m (comprimento em Y; altura x%.4f)" % (min(ex, ey), max(ex, ey), w, l, k))
+    else:
+        now = span(2) if a.height else max(span(0), span(1))
+        if now < 1e-6:
+            die("modelo sem medida para normalizar")
+        k = (a.height or a.width) / now
+        transform_roots(model, Matrix.Scale(k, 4))
+        print("ESCALA x%.4f (%s %.3f m -> %.3f m)" % (k, "altura" if a.height else "largura", now, a.height or a.width))
+    if a.tilt:
+        transform_roots(model, Matrix.Rotation(math.radians(-a.tilt), 4, "X"))
+        transform_roots(model, Matrix.Translation((0, 0, -min(p.z for p in model_points(meshes)))))
+        print("EMPINA %.0f graus (frente para cima, apoiado no chao)" % a.tilt)
     return k
 
 
@@ -261,13 +340,22 @@ def retarget(src, tgt, name, hold=None, rng=None, align_arms=False):
     # Rig em pose A (Tripo a partir de imagem em A): o delta sobre o repouso levaria o braco do A tanto quanto leva o do
     # T, e o braco entraria no corpo (~50 graus no bruto). Com align_arms, cada osso do braco primeiro gira do repouso
     # do alvo para a direcao do repouso do clipe (arco minimo) e so entao recebe o delta: a direcao do braco = a do clipe.
-    align = {}
-    if align_arms:
-        for n in bone_order(tgt):
-            if n in sb and ARM_RE.search(n):
-                ut = ((tgt.matrix_world @ tb[n].tail_local) - (tgt.matrix_world @ tb[n].head_local)).normalized()
-                us = ((src.matrix_world @ sb[n].tail_local) - (src.matrix_world @ sb[n].head_local)).normalized()
-                align[n] = ut.rotation_difference(us)
+    # Sem a opcao, alinha sozinho se o braco do rig estiver a mais de 15 graus do repouso do clipe (rig novo em pose A:
+    # no Lote 4 a inspecao a parte custava uma importacao a mais por rig com o PC sem memoria).
+    align, worst = {}, 0.0
+    for n in bone_order(tgt):
+        if n in sb and ARM_RE.search(n):
+            ut = ((tgt.matrix_world @ tb[n].tail_local) - (tgt.matrix_world @ tb[n].head_local)).normalized()
+            us = ((src.matrix_world @ sb[n].tail_local) - (src.matrix_world @ sb[n].head_local)).normalized()
+            align[n] = ut.rotation_difference(us)
+            if re.search(r"(Arm|ForeArm)$", n):
+                worst = max(worst, math.degrees(ut.angle(us)))
+    if not align_arms and worst > 15.0:
+        if not ALIGN_SEEN:
+            print("AVISO rig em pose A: braco a %.0f graus do repouso do clipe; alinhando os bracos (--align-arms)" % worst)
+        ALIGN_SEEN.add(name)
+    elif not align_arms:
+        align = {}
     order = bone_order(tgt)
     found = [n for n in order if n in sb]
     if len(found) < len(order) // 2:
@@ -355,13 +443,13 @@ def eval_meshes(meshes, fr):
     return [ob.evaluated_get(dg) for ob in meshes]
 
 
-def bounds(arm, meshes, clips, e, thetas):
+def bounds(arm, meshes, clips, e, thetas, cut=()):
     """Meia largura maxima e extremos verticais na tela, pelos vertices reais, so nas direcoes renderizadas (`thetas`;
     o espelho tem a mesma medida). Ate 2026-10-10 usava o raio horizontal (vale para qualquer giro) e superestimava
     o ator que cai deitado: o ogro_fim (Dying para tras) dava 8,2 m e o pivo ia para o meio da celula, cortando o corpo."""
     import numpy as np
     half, vmin, vmax = 0.0, 0.0, 0.0
-    for _, act, frames in clips:
+    for name, act, frames in clips:
         set_action(arm, act)
         for fr in frames:
             for ev in eval_meshes(meshes, fr):
@@ -370,6 +458,10 @@ def bounds(arm, meshes, clips, e, thetas):
                 ev.data.vertices.foreach_get("co", co)
                 M = np.array(ev.matrix_world)
                 p = co.reshape(n, 3) @ M[:3, :3].T + M[:3, 3]
+                if name in cut:  # a parte enterrada nao entra na folha (place corta no chao)
+                    p = p[p[:, 2] >= 0.0]
+                    if not len(p):
+                        continue
                 for th in thetas:  # giro em Z como em place(); tela: x = right, y = up = (0, sen e, cos e)
                     x = p[:, 0] * math.cos(th) - p[:, 1] * math.sin(th)
                     v = (p[:, 0] * math.sin(th) + p[:, 1] * math.cos(th)) * math.sin(e) + p[:, 2] * math.cos(e)
@@ -377,10 +469,21 @@ def bounds(arm, meshes, clips, e, thetas):
     return half, vmin, vmax
 
 
-def place(meshes, fr, theta, shift, keep):
+def place(meshes, fr, theta, shift, keep, cut=False):
     for ev in eval_meshes(meshes, fr):
-        cp = bpy.data.objects.new("cell", bpy.data.meshes.new_from_object(ev))
-        cp.matrix_world = Matrix.Translation(shift) @ Matrix.Rotation(theta, 4, "Z") @ ev.matrix_world
+        me, M = bpy.data.meshes.new_from_object(ev), ev.matrix_world
+        if cut:  # clipe que entra e sai do chao (Emerge/Burrow): o chao corta a malha e a parte enterrada some do sprite
+            import bmesh
+            me.transform(M)
+            M = Matrix()
+            bm = bmesh.new()
+            bm.from_mesh(me)
+            bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], plane_co=(0, 0, 0), plane_no=(0, 0, 1),
+                                   clear_inner=True)
+            bm.to_mesh(me)
+            bm.free()
+        cp = bpy.data.objects.new("cell", me)
+        cp.matrix_world = Matrix.Translation(shift) @ Matrix.Rotation(theta, 4, "Z") @ M
         bpy.context.scene.collection.objects.link(cp)
         keep.append(cp)
 
@@ -435,6 +538,9 @@ def render(cols, rows, cell, size, path, keep, outline):
 
 
 def main():
+    sys.stdout.reconfigure(line_buffering=True)  # o log fica legivel mesmo se o .ps1 cortar no timeout
+    t_ini = time.time()
+    etapa = lambda s: print("ETAPA %-8s %5.0f s" % (s, time.time() - t_ini))  # onde vai o tempo (PC sem memoria)
     a = parse_args()
     out = os.path.abspath(a.out)
     os.makedirs(out, exist_ok=True)
@@ -448,6 +554,7 @@ def main():
     if len(arms) > 1 or not meshes:
         die("modelo precisa de malha(s) e no maximo 1 armature; achei %d armature(s) e %d malha(s)" % (len(arms), len(meshes)))
     arm = arms[0] if arms else None
+    etapa("modelo")
     k_model = normalize(model, meshes, a)
     for spec in a.attach:  # depois de normalizar: o prop tem tamanho proprio e nao entra na altura do ator
         objs, extra = attach(spec, arm)
@@ -456,6 +563,7 @@ def main():
     hold =hold_pose(os.path.abspath(a.hold), a.hold_frame) if (a.hold and arm and not a.self_) else None
     # sem armature = prop estatico: 1 quadro "Static", mesma camera e escala dos personagens
     clips = [(n, act, sample_frames(act, a, n)) for n, act in load_clips(a, arm, hold)] if arm else [("Static", None, [0.0])]
+    etapa("clipes")
     rows = DIRS[a.dirs][: a.dirs // 2 + 1] if (a.mirror and a.dirs > 1) else DIRS[a.dirs]
     hands = [b for b in arm.pose.bones if HAND_RE.search(b.name)] if arm else []
     root = arm.pose.bones[bone_order(arm)[0]] if arm else None
@@ -464,7 +572,9 @@ def main():
 
     e = math.radians(a.elev)
     fwd, up, right = Vector((0, math.cos(e), -math.sin(e))), Vector((0, math.sin(e), math.cos(e))), Vector((1, 0, 0))
-    half, vmin, vmax = bounds(arm, meshes, clips, e, [math.radians(a.yaw - d * 360.0 / a.dirs) for d in range(len(rows))])
+    half, vmin, vmax = bounds(arm, meshes, clips, e, [math.radians(a.yaw - d * 360.0 / a.dirs) for d in range(len(rows))],
+                              a.ground_cut)
+    etapa("limites")
     extent = max(2 * half, vmax - vmin) * 1.1
     ppu = a.scale or a.size / extent
     cell = a.size / ppu  # metros por celula
@@ -493,7 +603,7 @@ def main():
             "row0": "top", "elev": a.elev, "yaw": a.yaw, "ppu": round(ppu, 2), "pivot_px": [a.size / 2.0, round(pivot_y, 1)],
             "pivot": [0.5, round(pivot_y / a.size, 4)], "light": a.light, "outline_px": a.outline, "src_fps": a.src_fps,
             "preset": a.preset or "", "model_scale": round(k_model, 4), "hold": os.path.basename(a.hold) if hold else "",
-            "attach": [os.path.basename(s) for s in a.attach], "align_arms": bool(a.align_arms), "clips": []}  # listas planas: JsonUtility nao le lista de listas
+            "attach": [os.path.basename(s) for s in a.attach], "align_arms": bool(a.align_arms or ALIGN_SEEN), "clips": []}  # listas planas: JsonUtility nao le lista de listas
     keep = []
     for name, act, frames in clips:
         t0 = time.time()
@@ -503,7 +613,7 @@ def main():
             theta = math.radians(a.yaw - d * 360.0 / a.dirs)
             for i, fr in enumerate(frames):
                 shift = right * ((i + 0.5 - len(frames) / 2.0) * cell) + up * ((len(rows) / 2.0 - d - 0.5) * cell - vc)
-                place(meshes, fr, theta, shift, keep)
+                place(meshes, fr, theta, shift, keep, name in a.ground_cut)
                 if hands:
                     anchors += hand_anchor(arm, hands, root, theta, ppu, a.size, pivot_y, right, up)
         render(len(frames), len(rows), cell, a.size, os.path.join(out, name + ".png"), keep, a.outline)
@@ -514,6 +624,8 @@ def main():
                 "fps": round(len(frames) / dur, 3), "duration_s": round(dur, 3), "src_frames": int(round(span))}
         if act and act.get("src_range"):
             clip["src_range"] = [int(x) for x in act["src_range"]]  # rastreio: faixa do clipe de origem
+        if name in a.ground_cut:
+            clip["ground_cut"] = True  # a parte abaixo do chao ja foi cortada no render (a View nao precisa recortar)
         if hands:
             clip["hands"] = anchors  # (row * frames + frame) * 3 -> x, y, frente
         stride = act.get("stride_mps", 0.0) if act else 0.0
@@ -524,7 +636,8 @@ def main():
             name, len(frames), len(rows), len(frames) * a.size, len(rows) * a.size, loop, stride, time.time() - t0))
     for j, (name, act, frames) in enumerate(clips):  # contact.png: 1o frame de cada clipe, direcao S
         set_action(arm, act)
-        place(meshes, frames[0], math.radians(a.yaw), right * ((j + 0.5 - len(clips) / 2.0) * cell) - up * vc, keep)
+        place(meshes, frames[0], math.radians(a.yaw), right * ((j + 0.5 - len(clips) / 2.0) * cell) - up * vc, keep,
+              name in a.ground_cut)
     render(len(clips), 1, cell, a.size, contact, keep, a.outline)
     with open(os.path.join(out, "meta.json"), "w") as f:
         json.dump(meta, f, indent=1)

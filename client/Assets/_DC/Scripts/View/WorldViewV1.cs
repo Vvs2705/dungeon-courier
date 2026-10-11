@@ -34,9 +34,6 @@ namespace DC
             CakeHeart = Art.Hex(0xE8577A), Flame = Art.Hex(0xFFB347), TorchLight = Art.Hex(0xFFB45A), Boom = Art.Hex(0xFF8A2B), FlashC = Art.Hex(0xFFF2C0),
             Smoke = Art.Hex(0x3A3F55), BombC = Art.Hex(0x2A2D3A);
         static readonly Color SlowTint = new Color(1f, 0.72f, 0.88f);
-        // textura tingida para a paleta (ART_BIBLE §3): media do piso (64,76,81) -> ~#3A3F51 (matiz do #3E4458, um pouco mais escuro);
-        // parede (55,68,74) -> ~#353A4A, abaixo do piso para separar os planos. Multiplicar nao clareia: por isso o tampo segue procedural
-        static readonly Color FloorTint = new Color(0.90f, 0.83f, 1f), WallTint = new Color(0.97f, 0.85f, 1f);
 
         // clipes das folhas do Lote 3 (nomes ainda nao fixados pela raia G): o 1o que existir; nenhum = o Pick de sempre
         static readonly string[] ArcherShoot = { "Shoot", "Aim", "Draw", "Attack" }, CaptainHit = { "Attack", "Slash", "Punch", "Bash", "Smash" },
@@ -47,12 +44,11 @@ namespace DC
         sealed class ShotV { public Transform Root, Air; public SpriteRenderer Shadow, Trail, Halo, Core, Icon, Spark, Goal, GoalFill; }
         sealed class ArrowV { public Transform Root, Air; public SpriteRenderer Shadow; }
         sealed class PuddleV { public Transform Root; public SpriteRenderer Fill, Rim, Clock; }
-        sealed class TorchV { public SpriteRenderer Halo, Pool; public Transform Flame; public float Seed; }
+        sealed class TorchV { public SpriteRenderer Halo, Pool; public Transform Flame; public float Seed; public Color C; }
         /// <summary>Back = borda de tras (y da sala); Reach = ate onde (y da sala) o pilar em pe cobre quem esta atras dele.</summary>
-        sealed class PillarV { public SpriteRenderer R; public float X, HalfW, Back, Reach; }
+        /// <summary>A = alfa (esmaece com o courier/carga atras); Base/MoreBase = cores sem escuro (Dim, WorldViewRegioes).</summary>
+        sealed class PillarV { public SpriteRenderer R; public SpriteRenderer[] More; public Color Base = Color.white; public Color[] MoreBase; public float X, HalfW, Back, Reach, A = 1f; }
 
-        static Sprite _floorTex, _wallTex;
-        static bool _texLoaded;
 
         readonly HashSet<int> _seen = new HashSet<int>();
         readonly List<ShotV> _shotV = new List<ShotV>();
@@ -69,9 +65,8 @@ namespace DC
         float _bossX0, _bossW, _bossY, _bossGhostF, _dripT, _dustT, _sparkT;
         bool _padWas;
 
-        static string T(string pt, string en) => Textos.En ? en : pt;
         /// <summary>Cor do papel no mundo: Lote 3 pelo ASSETS §8 (arqueiro ciano-petroleo, limo rosa-chiclete); o resto pelo Art.Role.</summary>
-        static Color Papel(EnemyType t) => t == EnemyType.Archer ? ArcherTeal : t == EnemyType.Slime ? SlimePink : Art.Role(t);
+        static Color Papel(EnemyType t) => t >= EnemyType.GoblinMiner ? PapelRegiao(t) : t == EnemyType.Archer ? ArcherTeal : t == EnemyType.Slime ? SlimePink : Art.Role(t);
         /// <summary>1o clipe da lista que a folha tem, ou -1 (sem alocar: foreach em array).</summary>
         static int First(SpriteSheet s, string[] names) { foreach (string n in names) { int k = s.Clip(n); if (k >= 0) return k; } return -1; }
         /// <summary>Angulo de tela (graus, desenho apontando para +Y) da direcao d da Sim: o y encolhe pela projecao.</summary>
@@ -174,8 +169,7 @@ namespace DC
             v.Blast.enabled = v.BlastFill.enabled = v.Spark.enabled = lit;
             if (!lit)
             {
-                if (v.Num != null && v.Num.enabled) v.Num.enabled = false;
-                v.NumShown = -1;
+                if (g.Type != CargoType.Balloon && v.Num != null && v.Num.enabled) { v.Num.enabled = false; v.NumShown = -1; }   // o balao conta no DrawCargoRegiao
                 return;
             }
             float k = Mathf.Clamp01(f / Balance.BarrelFuse);
@@ -236,6 +230,7 @@ namespace DC
             Line(v.AimLine, dir, r0, full, 0.06f, ang);
             Line(v.AimFill, dir, r0, full * Mathf.Max(0.05f, e.TeleProgress), 0.26f, ang);
             v.AimLine.color = e.Tele < 0.1f ? Color.white : Art.A(Art.Tele, 0.9f);
+            v.AimFill.color = Art.A(Art.Tele, 0.25f);   // as regioes 2-4 reusam a linha em lilas (lingua, fio)
         }
 
         static void Line(SpriteRenderer r, Vector2 dir, float from, float len, float w, float ang)
@@ -417,15 +412,6 @@ namespace DC
 
         // ------------------------------------------------------------------ sala: textura, parede de fundo, tochas, pilares, segredo, chefe
 
-        static void LoadTextures()
-        {
-            if (_texLoaded) return;
-            _texLoaded = true;
-            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null) return;   // -nographics: procedural
-            _floorTex = Tiling("Textures/piso", FloorMetres);
-            _wallTex = Tiling("Textures/parede", WallMetres);
-        }
-
         /// <summary>Sprite inteiro da textura de Resources para SpriteRenderer Tiled (FullRect), `metres` m por repeticao. ponytail: o
         /// import e o padrao do projeto 3D (Default, Repeat, com mipmap); sem a textura, null e o procedural de sempre.</summary>
         static Sprite Tiling(string path, float metres)
@@ -441,21 +427,22 @@ namespace DC
         void BuildBackWall(Transform up)
         {
             float W = Balance.RoomW, y0 = Tilt * Balance.RoomH, h = BackWallH, w = W + 2f * WallT;
-            bool tex = _wallTex != null;
+            Sprite ws = ParedeDe(_tema, out Color wt);   // textura da regiao (ou a da regiao 1 tingida), ou a face lisa
+            bool tex = ws != null;
             // abaixo das paredes laterais (OWall): elas cobrem os cantos de baixo da parede de fundo
-            SpriteRenderer wall = Art.NewSprite(up, "ParedeFundo", tex ? _wallTex : Art.Square(), tex ? WallTint : Art.Wall, OWall - 1, new Vector2(W / 2f, y0 + h / 2f), tex ? Vector2.one : new Vector2(w, h));
+            SpriteRenderer wall = Art.NewSprite(up, "ParedeFundo", tex ? ws : Art.Square(), tex ? wt : _tema.Wall, OWall - 1, new Vector2(W / 2f, y0 + h / 2f), tex ? Vector2.one : new Vector2(w, h));
             if (tex) { wall.drawMode = SpriteDrawMode.Tiled; wall.size = new Vector2(w, h); }
-            Rect(up, "TampoFundo", W / 2f, y0 + h - 0.05f, w, 0.1f, Art.WallTop, OWall + 1);
+            Rect(up, "TampoFundo", W / 2f, y0 + h - 0.05f, w, 0.1f, _tema.WallTop, OWall + 1);
             Rect(up, "SombraFundo", W / 2f, y0 + 0.08f, W, 0.16f, Art.A(Art.Dark, 0.3f), OWall + 1);
         }
 
-        /// <summary>Bloco quadrado de 1-1,2 m com a folha `pilar`: o pilar em pe (escala lado / 1,2 m), ordenado pelo pe como os atores.</summary>
+        /// <summary>Obstaculo com prop em pe da regiao (PropDe: pilar e escora nos quadrados de 1-1,2 m, lapide 1,2 x 0,6, sarcofago 0,8 x 1,8,
+        /// bigorna 1,2 x 0,8), escala pela medida de projeto do prop, ordenado pelo pe como os atores. Sem folha: a lapide procedural na
+        /// cripta; o resto fica bloco.</summary>
         bool BuildPillar(Transform r, Core.Rect o)
         {
-            SpriteSheet s = SpriteSheet.Get("pilar");
-            float side = 2f * o.H.X;
-            if (s == null || Mathf.Abs(o.H.X - o.H.Y) > 0.01f || side < 0.95f || side > 1.25f) return false;
-            float k = side / PilarW;
+            SpriteSheet s = PropDe(o, out float k);
+            if (s == null) return LapideProcedural(r, o);
             Transform pu = Upright(r, "Pilar", new Vector2(o.C.X, o.C.Y), out SortingGroup _);
             _pillars.Add(new PillarV
             {
@@ -476,7 +463,7 @@ namespace DC
         {
             BuildTorches(run, r, up);
             if (run.Secret != null) BuildSecret(r, run.Secret);
-            if (run.Room.Boss || run.Room.Mini) BuildBossBar(up, run.Room);
+            if (BossDe(run.Room) is EnemyType bt) BuildBossBar(up, bt);
         }
 
         /// <summary>Ate 4 tochas na parede de fundo, longe dos arcos (1,45 m) e entre si (1,8 m); na sala do chefe, so a direita (a barra
@@ -484,7 +471,8 @@ namespace DC
         /// §3: #FFB45A a 18-25%) tremulando no DrawRoomV1, abaixo dos atores.</summary>
         void BuildTorches(Run run, Transform r, Transform up)
         {
-            SpriteSheet s = SpriteSheet.Get("tocha");
+            SpriteSheet s = SpriteSheet.Get(_tema.Decor);   // tocha, lanterna_mina, vela, braseiro (pela regiao)
+            Color light = _tema.Light;
             bool arch = _sArco != null, boss = run.Room.Boss || run.Room.Mini;
             float clear = arch ? 1.45f : 1.0f, y0 = Tilt * Balance.RoomH + (arch ? 0.55f : 0.05f);
             int n = 0;
@@ -497,7 +485,7 @@ namespace DC
                 for (int k = 0; k < n; k++) if (Mathf.Abs(_torchX[k] - x) < 1.8f) ok = false;
                 if (!ok) continue;
                 _torchX[n++] = x;
-                var t = new TorchV { Seed = n * 3.7f };
+                var t = new TorchV { Seed = n * 3.7f, C = light };
                 float fy;   // chama (m de tela)
                 if (s != null)
                 {
@@ -513,8 +501,8 @@ namespace DC
                     Art.NewSprite(f.transform, "Miolo", Art.Triangle(), Art.Cream, OWall + 5, new Vector2(0f, -0.15f), new Vector2(0.5f, 0.55f));
                     t.Flame = f.transform;
                 }
-                t.Halo = Art.NewSprite(up, "Brilho", Art.Glow(), Art.A(TorchLight, 0.35f), OWall + 2, new Vector2(x, fy), Vector2.one * 1.3f);
-                t.Pool = Art.NewSprite(r, "PocaDeLuz", Art.Glow(), Art.A(TorchLight, 0.16f), OMark, new Vector2(x, Balance.RoomH - 0.9f), new Vector2(3.4f, 2.6f));
+                t.Halo = Art.NewSprite(up, "Brilho", Art.Glow(), Art.A(light, 0.35f), OWall + 2, new Vector2(x, fy), Vector2.one * 1.3f);
+                t.Pool = Art.NewSprite(r, "PocaDeLuz", Art.Glow(), Art.A(light, 0.16f), OMark, new Vector2(x, Balance.RoomH - 0.9f), new Vector2(3.4f, 2.6f));
                 _torches.Add(t);
             }
         }
@@ -534,9 +522,9 @@ namespace DC
                 Art.NewSprite(r, "Entulho", Art.Disc(), i % 2 == 0 ? Art.Block : Art.BlockTop, OShadow, new Vector2(inner + side * (0.18f + 0.13f * i), y - 0.55f + 0.37f * i), Vector2.one * (0.12f + 0.03f * (i % 3)));
         }
 
-        /// <summary>Barra de vida do chefe (Ogro no B1, Capitao no M1) no topo, a esquerda do arco (a porta unica fica no centro): nome,
-        /// chifres dourados, vida em vermelho e o rastro claro do dano.</summary>
-        void BuildBossBar(Transform up, RoomDef room)
+        /// <summary>Barra de vida do chefe (Ogro, Capitao e os 6 das regioes 2-4) no topo, a esquerda do arco (a porta unica fica no centro):
+        /// nome, chifres dourados, vida em vermelho, o rastro claro do dano e as marcas das fases (BossTicks).</summary>
+        void BuildBossBar(Transform up, EnemyType boss)
         {
             const float x0 = 0.5f, x1 = 3.15f;
             float y = _plateS, cx = (x0 + x1) / 2f, w = x1 - x0;
@@ -547,7 +535,8 @@ namespace DC
             _bossParts.Add(_bossFill = Rect(up, "ChefeVida", cx, y, w, BossH, Art.Bad, OPlate + 3));
             _bossParts.Add(Art.NewSprite(up, "ChefeIcone", Art.Horns(), Art.Gold, OPlate + 4, new Vector2(x0 - 0.28f, y), Vector2.one * 0.46f));
             _bossName = NewLabel(30);
-            _bossName.text = room.Boss ? T("Ogro", "Ogre") : T("Capitão Ladrão", "Thief Captain");
+            _bossName.text = Textos.Inimigo(boss);
+            BossTicks(up, boss, x0, w, y);
             _bossName.enabled = true;
             _roomLabels.Add(_bossName); _roomLabelPos.Add(up.TransformPoint(new Vector3(cx, y, 0f)));
         }
@@ -578,8 +567,8 @@ namespace DC
             foreach (TorchV t in _torches)
             {
                 float n = Mathf.PerlinNoise(_time * 3.3f, t.Seed);
-                t.Halo.color = Art.A(TorchLight, 0.26f + 0.16f * n);
-                t.Pool.color = Art.A(TorchLight, 0.12f + 0.08f * n);
+                t.Halo.color = Art.A(t.C, 0.26f + 0.16f * n);
+                t.Pool.color = Art.A(t.C, 0.12f + 0.08f * n);
                 if (t.Flame != null) t.Flame.localScale = new Vector3(0.22f * (0.92f + 0.12f * n), 0.34f * (0.85f + 0.3f * n), 1f);
             }
             if (_secretCracks != null && run.Secret != null)
@@ -594,7 +583,7 @@ namespace DC
             {
                 bool behind = Behind(p, run.Courier.Pos);
                 foreach (Cargo g in run.Cargos) if (g.State == CargoState.Ground && Behind(p, g.Pos)) behind = true;
-                p.R.color = Art.A(Color.white, Mathf.MoveTowards(p.R.color.a, behind ? 0.45f : 1f, dt * 4f));
+                p.A = Mathf.MoveTowards(p.A, behind ? 0.45f : 1f, dt * 4f);   // a cor sai no Dim (DrawRegiao), com o escuro
             }
             DrawBoss(run, dt);
         }
@@ -689,7 +678,7 @@ namespace DC
                         Puff(Art.Square(), at + new Vector2(Random.Range(-0.8f, 0.8f), -0.2f), new Vector2(Random.Range(-2.5f, 2.5f), Random.Range(1.5f, 4.5f)),
                              Random.value < 0.5f ? Art.Block : Art.WallTop, Random.Range(0.12f, 0.22f), 0.06f, 0.7f);
                     Burst(at, Art.A(Art.Dim, 0.8f), 10, 2.5f, 0.3f, 0.6f);
-                    Float(at + new Vector2(0f, 1.2f), T("passagem secreta!", "secret passage!"), Art.Gold, 52);
+                    Float(at + new Vector2(0f, 1.2f), Textos.PassagemSecreta, Art.Gold, 52);
                     Shake(0.15f, 0.3f);
                     break;
                 }
@@ -701,7 +690,7 @@ namespace DC
                         Burst(at, Art.CargoColor(CargoType.Message), 8, 2.5f, 0.12f, 0.45f);
                         Puff(Art.Key(), at, new Vector2(0f, 1.4f), Art.Gold, 0.45f, 0.5f, 0.8f);
                     }
-                    Float(V(run.Courier.Pos), T("a mensagem abre a porta!", "the message opens the door!"), Art.CargoColor(CargoType.Message), 40);
+                    Float(V(run.Courier.Pos), Textos.MensagemAbre, Art.CargoColor(CargoType.Message), 40);
                     break;
                 case Ev.Stun: Burst(p + new Vector2(0f, 0.6f / Tilt), Art.Gold, 5, 2f, 0.08f, 0.3f); break;
                 case Ev.CaptainCall:
@@ -713,7 +702,7 @@ namespace DC
                     break;
                 case Ev.RoomEvent:
                     if (e.B <= 0) break;
-                    Float(new Vector2(Balance.RoomW / 2f, Balance.RoomH - 2.5f), T("reforço!", "reinforcements!"), Art.Bad, 60);
+                    Float(new Vector2(Balance.RoomW / 2f, Balance.RoomH - 2.5f), Textos.Reforco, Art.Bad, 60);
                     Puff(Art.Glow(), new Vector2(Balance.RoomW / 2f, Balance.RoomH - 0.5f), Vector2.zero, Art.A(Art.Bad, 0.45f), 9f, 11f, 0.5f, OMark);
                     Shake(0.1f, 0.25f);
                     break;
@@ -735,7 +724,7 @@ namespace DC
                 case Ev.ContractEnd:
                     if (e.B == (int)Outcome.TimeUp)
                     {
-                        Float(V(run.Courier.Pos), T("tempo esgotado!", "time's up!"), Art.Bad, 56);
+                        Float(V(run.Courier.Pos), Textos.TempoEsgotado, Art.Bad, 56);
                         Burst(V(run.Courier.Pos), Art.CargoColor(CargoType.Message), 12, 3f, 0.12f, 0.6f);
                     }
                     break;
@@ -756,7 +745,7 @@ namespace DC
             for (int i = 0, n = barrel ? 10 : 5; i < n; i++)
                 Puff(Art.Disc(), at + Random.insideUnitCircle * (0.4f * radius), Random.insideUnitCircle * 1.5f + new Vector2(0f, 0.8f), Art.A(Smoke, 0.85f), 0.25f, 0.65f, Random.Range(0.6f, 1f));
             Shake(barrel ? 0.35f : 0.16f, barrel ? 0.4f : 0.22f);
-            if (barrel) Float(at, T("BUM!", "BOOM!"), Boom, 64);
+            if (barrel) Float(at, Textos.Bum, Boom, 64);
         }
 
         void HideLabelsV1()

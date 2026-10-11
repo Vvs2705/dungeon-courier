@@ -227,6 +227,12 @@ Pasta: `client/Assets/_DC/Resources/Sprites/<pasta>/`, com `<Clipe>.png` + `meta
 | `bolo`, `mensagem`, `caixa_pesada`, `barril` | #25–#28 | 1 | 112 / 96 / 128 / 96 | largura 0,60 / 0,45 / 0,70 m (= `CargoSize` da View) / altura 0,55 m | Static |
 | `bau`, `bau_aberto`, `arco` | #7, #8, #9 | 1 | 160 / 160 / 448 | largura 0,80 / 0,80 / 2,20 m | Static |
 | `tocha`, `pilar` | #29, #30 | 1 | 112 / 288 | altura 0,70 m / largura 1,20 m (`PilarW`; ~2,2 m de altura) | Static |
+| `goblin_mineiro` (= `mineiro` do `CONTEUDO_REGIOES` §12.1) | Lote 4 + `arte/mixamo/goblin_mineiro/` + picareta (`--attach`) | 3 | 192 | 1,00 m | Idle, Walk (recua), **Run** (persegue), Throw, Sleep, Wake, Hit |
+| `toupeira` | Lote 4 + `arte/mixamo/toupeira/` | 3 | 192 | 0,90 m | Idle, Look, Emerge, Burrow, Hit |
+| `rainha_toupeira` / `rainha_toupeira_fim` (= `rainha` / `rainha_fim`) | Lote 4 + `arte/mixamo/rainha_toupeira/` e `_fim/` | 3 / 1 | 304 / 320 | 1,60 m | Idle, Emerge, Burrow, Swipe, Call, Hit / Dying |
+| `golem` / `golem_fim` | Lote 4 + `arte/mixamo/golem/` e `golem_fim/` | 3 / 1 | 448 × 9 quadros / 576 × 7 | 2,60 m | Idle, Walk, Slam, Charge, Stun / Dying |
+| `picareta`, `coracao`, `gaiola`, `lanterna_mina` | Lote 4 | 1 | 96 | altura 0,45 / 0,45 / 0,50 / 0,50 m | Static |
+| `sapo`, `besouro`, `vagonete`, `cristal`, `escora` | Lote 4 | 1 | 144 / 112 / 208 / 96 / 176 | largura 0,90 / 0,60 / 1,20 / 0,50 / 1,20 m | Static |
 
 **Medidas nas folhas** (`client/Builds/sprites_contact/<ator>_folhas.png`), quadros contados a partir de 0. Re-medidas em 2026-10-10 (raia G) com os clipes novos. O quadro de impacto do Blender foi posto de propósito em `round(ImpactFrac × quadros)` da View (`WorldView.cs`), então a View não precisa mudar:
 
@@ -238,12 +244,19 @@ Pasta: `client/Assets/_DC/Resources/Sprites/<pasta>/`, com `<Clipe>.png` + `meta
 | ogro/Slam (9) | **5** (= round(0,6 × 9)): dois punhos no chão, agachado. 0–4: braços sobem pela frente até o alto (telegraph 1 s); 5–8: afunda e levanta | — |
 | arqueiro/Shoot (12) | **8** = soltura (= round(0,7 × 12)): a mão da corda escapa para trás. 0–7: ergue o arco, puxa até a bochecha e mira (telegraph 0,8 s); 8–11: acompanha e baixa | — |
 | capitao/Punch (12) | **6** (= 0,5 × 12): braço direito esticado à frente. 0–5: arma o punho no ombro (telegraph 0,5 s) | — |
+| goblin_mineiro/Throw (12) | **7** = soltura (= round(0,6 × 12)): a picareta sai à frente. 0–6: antecipação e picareta no alto atrás da cabeça (telegraph 0,9 s); 7–11: acompanha e volta | — |
+| rainha_toupeira/Swipe (12) | **6** (= 0,5 × 12): patada cruzando o corpo com passo. 0–5: garra direita no alto e tronco torcido (telegraph 0,6 s) | — |
+| golem/Slam (9) | **5** (= round(0,6 × 9)), o mesmo Slam do ogro: dois punhos no chão. 0–4: braços sobem pela frente até o alto (telegraph 1,1 s) | — |
+| toupeira e rainha_toupeira/Emerge e Burrow (6 quadros, 0,3 s) | — (a parte enterrada já sai cortada no chão: `ground_cut`) | — |
 | courier/CarryRun e Run (Sprint do ARKANA, **8 quadros**, ciclo 0,53 s) | — | **3,56**, no `meta.json` como `stride_mps`. Na Sim: 4,2 → **1,18×**; 4,83 (+15%) → **1,36×** |
 | ladrao/Run e CarryRun (Running do ARKANA, 10 quadros, ciclo 0,80 s) | — | **1,02**. Na Sim: 2,0 → **1,96×**; fuga 1,6 → **1,57×** |
 | capitao/Run e CarryRun (Running do ARKANA, 10 quadros, 0,80 s) | — | **1,64**. Na Sim: 2,6 → **1,58×** |
 | bruto/Walk (Walking Forward do ARKANA, 12 quadros, 1,37 s) | — | **0,93**. Na Sim: 1,6 → **1,72×** |
 | ogro/Walk (o mesmo, 9 quadros) | — | **1,40**. Na Sim: 1,2 → **0,86×** |
 | arqueiro/Walk (Walking Backwards do ARKANA, 12 quadros, 1,30 s) | — | **0,59** (para trás). Na Sim: 1,4 → 2,38×, acima do teto de 2,3× da View: o pé patina ~3% |
+| goblin_mineiro/Run (Running Forward do ARKANA, 10 quadros, 0,80 s; persegue) | — | **1,10**. Na Sim: 1,4 → **1,27×** |
+| goblin_mineiro/Walk (Running Backwards do ARKANA, 9 quadros, 0,77 s; recua) | — | **0,86** (para trás). Na Sim: 1,4 → **1,63×**. O Walking Backwards pedido no §12.1 dava 0,36 m/s → 3,9×, acima do teto |
+| golem/Walk (Walking Forward do ARKANA, 9 quadros, 1,37 s) | — | **1,33**. Na Sim: 1,0 → **0,75×** (o §12.1 previa ~0,6×). O Charge (laço de 2 passos em 0,67 s, sem `stride_mps`) fica para a View tocar no ritmo da investida de 7 m/s |
 
 **Idle:** courier (Idle, CarryIdle), cliente, bruto, ogro, arqueiro e capitão usam a janela 199–289 do Breathing Idle: laço de **3,0 s** (antes 9,9 s a 1,2 fps), 12 quadros a 4 fps (ogro: 9 a 3 fps). A costura do laço é de ~1 px na tela.
 
@@ -277,7 +290,19 @@ Lote 3:
 | `capitao` (3 × 192) | Call 12, CarryRun 10, Grab 6, Idle 12, Punch 12, Run 10 | Run/CarryRun = reuso ARKANA (Running) + `Hold`; Idle = reuso Forge (janela 199–289); Grab, Call e Punch = Blender | 2 304 px | ~3,0 MB |
 | `limo`, `bolo`, `mensagem`, `caixa_pesada`, `barril`, `tocha`, `pilar` | Static 1 | Tripo | 288 px | ~0,1 MB |
 
-**Totais:** Lote 1 ~11,9 MB, Lote 2 ~16,1 MB, Lote 3 ~5,9 MB → **~33,9 MB** em ASTC. PNG em disco: 27,3 MB.
+Lote 4 (2026-10-11):
+
+| Conjunto | Clipes (quadros) | Fonte | Folha mais larga | Memória ASTC |
+|---|---|---|---|---|
+| `goblin_mineiro` (3 × 192) | Hit 6, Idle 12, Run 10, Sleep 12, Throw 12, Wake 5, Walk 9 | Idle (janela 199–289), Run = reuso ARKANA (Running Forward), **Walk = reuso ARKANA (Running Backwards)**; Throw, Sleep, Wake e Hit = Blender; picareta do Tripo na `RightHand` (`--attach`) | 2 304 px | ~3,2 MB |
+| `toupeira` (3 × 192) | Burrow 6, Emerge 6, Hit 6, Idle 12, Look 12 | Idle (janela 199–289), Look = reuso Forge (Looking Around); Emerge, Burrow e Hit = Blender; rig em pose A (alinhado sozinho) | 2 304 px | ~2,1 MB |
+| `rainha_toupeira` (3 × 304) | Burrow 6, Call 12, Emerge 6, Hit 6, Idle 12, Swipe 12 | Idle (janela 199–289); Emerge, Burrow, Swipe e Hit = Blender; Call = Roar do ogro (Blender); rig em pose A | 3 648 px | ~6,6 MB |
+| `rainha_toupeira_fim` (1 × 320) | Dying 12 | Dying = reuso ARKANA (Standing React Death Backward) | 3 840 px | ~0,5 MB |
+| `golem` (3 × 448) | Charge 8, Idle 9, Slam 9, Stun 9, Walk 9 | Walk = reuso ARKANA (Walking Forward); Idle (janela 199–289); Slam = o do ogro; Charge e Stun = Blender; rig em pose A | 4 032 px | ~11,8 MB |
+| `golem_fim` (1 × 576) | Dying 7 | Dying = Blender (`Collapse`: desmorona de bruços) | 4 032 px | ~1,0 MB |
+| `picareta`, `sapo`, `besouro`, `vagonete`, `coracao`, `cristal`, `gaiola`, `lanterna_mina`, `escora` | Static 1 | Tripo | 208 px | ~0,1 MB |
+
+**Totais:** Lote 1 ~11,9 MB, Lote 2 ~16,1 MB, Lote 3 ~5,9 MB → **~33,9 MB** em ASTC. PNG em disco: 27,3 MB. Lote 4: **~25,4 MB** (o golem sozinho ~11,8 MB; só no B2).
 - O Lote 1 subiu de ~11,3 para ~11,9 MB: a corrida passou a ter 8 quadros e o Throw 10.
 - O ogro sozinho tem ~9,6 MB e só aparece no B1.
 - Se faltar memória, o primeiro corte é `clips` no preset do ogro (Idle e Walk com 6 quadros, por exemplo), sem mexer no golpe.
@@ -318,3 +343,98 @@ Aval: mensagem do Vinicius em 2026-10-10 ("sem pausas, sem solicitações ... qu
 | — | texturas `piso`, `parede` | imagem grátis (gerador do Tripo) | seamless tileable stylized dungeon floor slabs / brick wall, top-down, grey-blue, hand-painted, flat light | 0 |
 
 > **Lote 3: 2 × 65 + 8 × 45 = 490 créditos** (teto 550).
+
+## 9. Lote 4 da v1.0 (2026-10-10) — região 2 "Minas Alagadas" (CONTRATO_LANCAMENTO §4 e §8)
+
+Aval: mensagem do Vinicius em 2026-10-10 ("sem pausas, sem solicitações ... seja na arte") e o pedido do jogo completo pelo GDD. Teto do lote: **750 créditos**. Cores de papel (ART_BIBLE §3, cores livres no elenco): goblin mineiro = **amarelo-capacete**; toupeira = **marrom**; Rainha Toupeira = **ameixa** com manto roxo e coroa dourada; golem = **pedra + âmbar**; sapo = **oliva**; besouro = **preto + laranja**. Itens separados do corpo (regra do Vinicius): a picareta do goblin mineiro sai como prop e é presa à mão no Blender.
+
+**Texto exato enviado ao gerador** (Nano Banana 2, 1:1, 4 imagens, grátis): os trechos abaixo foram unidos por ", ", nesta ordem.
+- Personagem: assunto + `[S]` + `[T]` + `[I]` (sufixos do §0, sem mudança).
+- Prop: assunto + "only one object in the image" + `[P]` + `[IP]`.
+- Modelo: HD H3.1 - Máx. qualidade, Ultra, 2K, PBR, remover iluminação, triângulos, 8 000 polígonos, 8K off, Gerar em Partes off, Privado ("Gerar 45" conferido em cada peça). Multi-View não usado ("Gerar multivisões" tem custo próprio).
+
+| # | Asset | Tipo | Assunto do prompt (texto exato, antes dos sufixos) | Imagem | Cr |
+|---|---|---|---|---|---|
+| 31 | `goblin_mineiro` | personagem rigado | small goblin miner, green skin, dented yellow miner helmet with a little lamp, brown work overalls, rolled sleeves, big ears, empty hands, no tool | #2 | 65 |
+| 32 | `picareta` | prop (item da mão do goblin mineiro) | one single miner pickaxe with a wooden handle and a dented iron head, single object | #1 | 45 |
+| 33 | `toupeira` | personagem rigado | chubby humanoid mole creature standing on two legs, dark brown velvety fur, pink nose, tiny eyes with round goggles on the forehead, big digging claws, empty hands | #2 | 65 |
+| 34 | `rainha_toupeira` | personagem rigado (mini-chefe) | large humanoid mole queen, dark plum fur, small golden crown, royal purple mantle with dirt stains, huge digging claws, empty hands | #4 | 65 |
+| 35 | `golem` | personagem rigado (chefe, ~2,8 m no jogo) | hulking stone golem, chunky mossy grey-brown rock body, glowing amber crystal core in the chest, small head, huge rock fists, empty hands | #2 (a única em pose T) | 65 |
+| 36 | `sapo` | prop (animado por código) | fat swamp toad monster, muddy olive-green warty skin, wide mouth, big yellow eyes, sitting pose | #2 | 45 |
+| 37 | `besouro` | prop (animado por código) | round bomb beetle, glossy black shell with an orange glowing fuse-like horn, six short legs | #4 | 45 |
+| 38 | `vagonete` | prop (perigo móvel nos trilhos) | wooden mine cart with iron wheels and rim, rusty, empty, side view readable | #4 | 45 |
+| 39 | `coracao` | prop (carga) | arcane heart cargo, a glowing magenta crystal heart floating inside a small brass cage with a carry handle | #3 | 45 |
+| 40 | `cristal` | prop (carga) | ice crystal cargo, a big clear-blue ice crystal cluster on a small wooden pallet with rope handles | #4 | 45 |
+| 41 | `gaiola` | prop (carga) | birdcage cargo with a small fluffy baby griffin inside (eagle head, lion body), brass cage with a top ring handle | #1 | 45 |
+| 42 | `lanterna_mina` | prop (decoração) | hanging mine lantern on a short wooden post, warm yellow glass, iron frame | #2 | 45 |
+| 43 | `escora` | prop (decoração) | mine support frame, two thick wooden posts and a crossbeam with iron brackets | #1 | 45 |
+| — | texturas `piso_mina`, `parede_mina` | imagem grátis (gerador do Tripo) | texto exato em `PROVENIENCIA.md` §4 (wet mine floor, brown dirt + flat stones + teal puddles / mine wall, brown rock + horizontal wooden planks) | #2 / #3 | 0 |
+
+Na picareta, o assunto já trazia "single object" antes do "only one object in the image". O trilho do CONTRATO §8 ficou de fora: é procedural, como os obstáculos.
+
+> **Lote 4: 4 × 65 + 9 × 45 = 665 créditos** (teto 750). Saldo 19 435 → 18 770 (`PROVENIENCIA.md` §1). Sem refação e sem duplicata.
+
+## 10. Lote 5 da v1.0 (2026-10-11) — região 3 "Cripta Assombrada" (`CONTEUDO_REGIOES.md` §12.2)
+
+Aval: a mesma autonomia do Vinicius de 2026-10-10 ("sem pausas, sem solicitações ... seja na arte") e o pedido do jogo completo pelo GDD; teto do lote **850 créditos**, repassado pelo coordenador. Cores de papel (`CONTEUDO_REGIOES.md` §12): **verde `#7CFF9E`** = morto-vivo (olhos e runas do esqueleto, da múmia e do necromante); **lilás** = mexe na carga (brilho do fantasma, ampulheta da viúva); gárgula em pedra verde-acinzentada com olhos vermelhos. Itens separados do corpo (regra do Vinicius): a clava do esqueleto e o cajado do necromante saem como props e são presos à `RightHand` no Blender. As asas da gárgula são corpo.
+
+**Texto exato enviado ao gerador** (Nano Banana 2, 1:1, 4 imagens, grátis): os trechos abaixo foram unidos por ", ", nesta ordem, igual à §9.
+- Personagem: assunto + `[S]` + `[T]` + `[I]`.
+- Prop: assunto + "only one object in the image" + `[P]` + `[IP]`.
+- Modelo: HD H3.1 - Máx. qualidade, Ultra, 2K, PBR, remover iluminação, triângulos, 8 000 polígonos, 8K off, Gerar em Partes off, Privado ("Gerar 45" conferido em cada peça). Sem Multi-View.
+
+| # | Asset | Tipo | Assunto do prompt (texto exato, antes dos sufixos) | Imagem | Cr |
+|---|---|---|---|---|---|
+| 44 | `esqueleto` | personagem rigado | undead skeleton warrior, bone-white bones, dented dark iron helmet, tattered dark green rags, glowing green eye sockets, empty hands, no weapon, no shield | #1 | 65 |
+| 45 | `clava` | prop (item da mão direita do esqueleto) | one single crude bone club wrapped with rope, single object | #2 | 45 |
+| 46 | `mumia` | personagem rigado | shambling mummy wrapped in dirty beige bandages, loose bandage strips, glowing green eyes through the wraps, hunched, empty hands | #2 | 65 |
+| 47 | `gargula` | personagem rigado (asas = corpo) | stone gargoyle demon, grey-green weathered stone skin with cracks, folded bat wings on the back, small horns, claws, glowing red eyes, empty hands | #3 | 65 |
+| 48 | `necromante` | personagem rigado (chefe) | gaunt necromancer, black hooded robe ending above the knees over dark trousers, sickly green glowing trims and runes, bony pale hands, skull belt buckle, glowing green eyes under the hood, empty hands, no staff | #3 | 65 |
+| 49 | `cajado` | prop (item da mão direita do necromante) | one single necromancer staff, twisted black wood topped with a horned skull and a glowing green gem, single object | #4 | 45 |
+| 50 | `fantasma` | prop (animado por código) | cute spooky ghost, floating white-cyan sheet body with a wavy tail, no legs, big dark eye holes, small grin, faint lilac glow | #2 | 45 |
+| 51 | `aranha` | prop (animado por código) | big cartoon dungeon spider, round dark violet-black body, eight thick hairy legs, many shiny eyes | #1 | 45 |
+| 52 | `viuva` | prop (mini-chefe, animado por código) | giant widow spider queen, glossy black body with a glowing lilac hourglass mark, long thin legs, crown-like spikes on the head, many red eyes | #3 | 45 |
+| 53 | `lanterna` | prop (carga) | old brass hand lantern with a glass globe and a warm flame, carrying ring on top | #1 | 45 |
+| 54 | `espelho` | prop (carga) | enchanted hand mirror, oval silver mirror in an ornate gold frame with small cyan gems, sturdy handle, glowing surface | #1 | 45 |
+| 55 | `balao` | prop (carga) | big round gas balloon with sunny yellow and cream stripes, small wicker basket tied with ropes | #2 | 45 |
+| 56 | `lapide` | prop (decoração) | cracked rounded stone tombstone with a carved skull and moss | #3 | 45 |
+| 57 | `vela` | prop (decoração) | cluster of melted candles on an iron candelabra, small flames | #2 | 45 |
+| 58 | `sarcofago` | prop (decoração) | stone sarcophagus with a carved mummy face lid, cracks | #2 | 45 |
+| — | texturas `piso_cripta`, `parede_cripta` | imagem grátis (gerador do Tripo) | texto exato em `PROVENIENCIA.md` §4 (lajes azul-cinza frias, valor médio legível / tijolo azul-cinza com nichos em arco) | #3 / #3 | 0 |
+
+Na clava e no cajado, o assunto já trazia "one single ... single object" antes do "only one object in the image". Teia, véu do escuro, runa, raio, fio, casulo, bancos e estantes ficam procedurais (0 crédito).
+
+> **Lote 5: 4 × 65 + 11 × 45 = 755 créditos** (teto 850). Saldo 18 770 → 18 015 (`PROVENIENCIA.md` §1). Sem refação e sem duplicata.
+
+## 11. Lote 6 da v1.0 (2026-10-11) — região 4 "Forja do Dragão" (`CONTEUDO_REGIOES.md` §12.3)
+
+Aval: a mesma autonomia do Vinicius de 2026-10-10 ("sem pausas, sem solicitações ... seja na arte") e o pedido do jogo completo pelo GDD; teto do lote **900 créditos**, repassado pelo coordenador (margem para o dragão). Cores (`CONTEUDO_REGIOES.md` §12): **laranja-fogo** = queima (frasco, salamandra, magma, braseiro, respiro); **lilás** = mexe na carga (olhos do diabrete); kobolds em **verde-azulado** com barriga laranja. Itens separados do corpo (regra do Vinicius): o frasco do kobold e o chicote do capataz saem como props e são presos à `RightHand` no Blender. Magma e brasa usam o mesmo modelo (2º render em escala, 0 crédito).
+
+**Texto exato enviado ao gerador** (Nano Banana 2, 1:1, 4 imagens, grátis): os trechos abaixo foram unidos por ", ", nesta ordem, igual às §9–§10.
+- Personagem: assunto + `[S]` + `[T]` + `[I]`.
+- Prop (e o dragão): assunto + "only one object in the image" + `[P]` + `[IP]`.
+- Modelo: HD H3.1 - Máx. qualidade, Ultra, 2K, PBR, remover iluminação, triângulos, 8 000 polígonos, 8K off, Gerar em Partes off, Privado ("Gerar 45" conferido em cada peça). Sem Multi-View.
+
+| # | Asset | Tipo | Assunto do prompt (texto exato, antes dos sufixos) | Imagem | Cr |
+|---|---|---|---|---|---|
+| 59 | `diabrete` | personagem rigado | small mischievous imp, charcoal-red skin, tiny horns, bat ears, long thin tail, big toothy grin, lilac glowing eyes, leather loincloth, empty hands | #3 | 65 |
+| 60 | `kobold` | personagem rigado | small kobold lizard creature, teal-green scales, orange belly, short snout, small horns, leather apron with flask holders, goggles on the forehead, empty hands, no flask | #2 | 65 |
+| 61 | `frasco` | prop (item da mão direita do kobold; projétil) | one single round glass flask with bubbling orange liquid and a cork with a burning rag, single object | #1 | 45 |
+| 62 | `magma` / `brasa` | personagem rigado | magma elemental, body of black cooled basalt chunks with glowing orange lava cracks between them, huge rocky fists, small head with fiery eyes | #3 | 65 |
+| 63 | `capataz` | personagem rigado (mini-chefe) | kobold foreman, bigger and bulkier kobold, teal scales with scars, thick leather apron and shoulder pad, brass goggles, hard hat with a horn, empty hands, no whip | #3 | 65 |
+| 64 | `chicote` | prop (item da mão direita do capataz) | one single long braided leather whip coiled, iron handle, single object | #1 | 45 |
+| 65 | `salamandra` | prop (animado por código) | fire salamander, sleek charcoal-black body with bright orange ember stripes, glowing yellow eyes, flat head, long tail, four short legs, walking pose | #3 | 45 |
+| 66 | `dragao` | modelo + **Auto Rig "Outro" (criatura)** (chefe final) | ancient dragon, dark emerald scales, bronze horns and belly plates, glowing fiery throat, folded large wings, long tail, four legs, crouching, chunky stylized proportions | #4 | 45 + 20 |
+| 67 | `planta` | prop (carga) | carnivorous plant in a clay pot with handles, big green venus-flytrap head with pink inside and sharp teeth, leafy vines | #1 | 45 |
+| 68 | `mapa` | prop (carga) | rolled old treasure map tied with a red cord, partly unrolled showing a dotted path and an X, parchment | #2 | 45 |
+| 69 | `bigorna` | prop (decoração) | heavy blacksmith anvil on a wooden stump | #1 | 45 |
+| 70 | `braseiro` | prop (decoração) | iron brazier bowl on three legs filled with glowing coals | #4 | 45 |
+| 71 | `corrente` | prop (decoração) | heavy iron chain hanging down with a big hook at the end | #3 | 45 (export pendente: geração travada em 99% no servidor) |
+| 72 | `respiro` | prop (terreno) | round iron floor grate over a glowing fire vent, soot around | #2 | 45 |
+| — | texturas `piso_forja`, `parede_forja` | imagem grátis (gerador do Tripo) | texto exato em `PROVENIENCIA.md` §4 (basalto escuro com fuligem e fissuras finas de lava / tijolo escuro com placas de ferro rebitadas e rejunte laranja) | #2 / #4 | 0 |
+
+No frasco e no chicote, o assunto já trazia "one single ... single object" antes do "only one object in the image". O ovo de salamandra é o `ovo` do Lote 2 com troca de material; lava, fogo no chão e fumaça ficam procedurais (0 crédito).
+
+**Dragão:** o Tripo oferece Auto Rig do tipo "Outro" (ícone de quadrúpede) além do humanoide. Gastei os 20 porque o esqueleto saiu útil: 43 ossos genéricos (`bone_0`…`bone_42`) cobrindo coluna, cauda, pescoço e cabeça, as 4 pernas e as 2 asas. Exportado em FBX com predefinição Blender 2K, com esqueleto. Não há predefinição Mixamo para esse tipo; a raia G renomeia os ossos e completa a mandíbula no Blender. O plano B de 4 poses à parte (+180) não foi usado.
+
+> **Lote 6: 4 × 65 + 10 × 45 + 20 (rig de criatura do dragão) = 730 créditos** (teto 900; previsto 710). Saldo 18 015 → 17 285 (`PROVENIENCIA.md` §1). Sem refação e sem duplicata; a corrente está paga e com o export pendente.

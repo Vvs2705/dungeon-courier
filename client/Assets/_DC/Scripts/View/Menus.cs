@@ -5,46 +5,57 @@ using UnityEngine.UI;
 namespace DC
 {
     /// <summary>
-    /// Telas fora do contrato (parte do Hud, CONTRATO_V1 §11): titulo (nome desenhado com tipografia, sem imagem), menu, quadro de
-    /// contratos (estrelas, cadeado, contrato do dia em destaque, botao de codigo), entrada de codigo (teclado do aparelho), guilda com
-    /// abas Melhorias/Armas, escolha de perk (1 de 3, cartoes grandes), configuracoes (Som, Musica, Vibracao, Idioma, Exportar diario,
-    /// versao) e creditos. Nada aqui roda por quadro, exceto o piscar do titulo e o pulso da guilda (sem alocar).
-    /// Dev: -tela titulo|menu|quadro|codigo|guilda|armas|config|creditos abre a tela direto (fotos 540x960 sem clicar).
+    /// Telas fora do contrato (parte do Hud, CONTRATO_V1 §11 + CONTRATO_LANCAMENTO §6-§7): titulo (nome desenhado com tipografia, sem
+    /// imagem), menu (bau do dia, Jogar e a grade Guilda/Loja, Temporada/Marcos, Roupas/Configuracoes, Creditos), quadro de contratos (regiao
+    /// escolhida no mapa, contrato do dia e contrato raro com TROCAR, Eventos, Sem fim, Codigo, lista da campanha da regiao com estrelas,
+    /// cadeado e selo de maestria), entrada de codigo (teclado do aparelho), guilda com abas Melhorias/Armas/Equipamento, escolha de perk (1
+    /// de 3, cartoes grandes), configuracoes (Som, Musica, Vibracao, Idioma, Exportar diario, versao) e creditos. Nada aqui roda por quadro,
+    /// exceto o piscar do titulo e o pulso da guilda/loja (sem alocar).
+    /// Dev (fotos 540x960 sem clicar): -tela titulo|menu|quadro|codigo|guilda|armas|config|creditos|perk e, do lancamento, mapa|raro|
+    /// modificadores|eventos|temporada|equipamento|marcos|maestria|semfim|roupas|loja|compra|anuncio|intersticial|oferta|bonus|bau.
     /// </summary>
     public sealed partial class Hud
     {
         const float RowH = 176f, RowGap = 12f;   // linha do quadro em px de referencia (>= 144 = 48 dp)
 
         // titulo e menu
-        Text _tapText, _menuCoins, _menuStars, _menuNotice, _menuGuildNote;
-        Button _menuGuild;
+        Text _tapText, _menuCoins, _menuStars, _menuNotice;
+        Button _menuGuild, _menuLoja;
         Image _menuGuildLock;
+        Especial _bau;
 
         // quadro
-        sealed class Row { public Button B; public CanvasGroup G; public Image Badge, Lock; public Text BadgeText; public readonly Image[] Stars = new Image[3]; }
+        sealed class Row { public Button B; public CanvasGroup G; public Image Badge, Lock, Seal; public Text BadgeText, SealText; public readonly Image[] Stars = new Image[3]; }
+        /// <summary>Cartao destacado do quadro/menu (contrato do dia, contrato raro, bau do dia): faixa, carga/icone, linha, selo de estado.</summary>
+        sealed class Especial { public Button B; public CanvasGroup G; public Image Icon, Edge, Badge, Lock, Check; public Text Title, Line, BadgeT; }
+        /// <summary>Botao TROCAR (reroll 1x por dia) com o preco em moedas.</summary>
+        sealed class Troca { public Button B; public Text Cost; public Image Coin; }
         Row[] _rows;
-        Text _boardCoins, _boardStars, _notice;
+        Text _boardCoins, _boardStars, _notice, _regionT;
         ScrollRect _scroll;
         RectTransform _scrollContent;
-        Button _dayBtn, _codeBtn;
-        CanvasGroup _dayG;
-        Image _dayIcon, _dayEdge, _dayBadge, _dayLock, _codeLock;
-        Text _dayLine, _dayBadgeText;
+        Button _codeBtn, _evBtn, _sfBtn;
+        Image _codeLock, _evLock, _sfBtnLock;
+        Especial _dia, _raro;
+        Troca _diaTroca, _raroTroca;
+        /// <summary>Regiao mostrada no quadro (0 = a do proximo contrato da campanha); o mapa troca.</summary>
+        int _boardRegion;
 
         // codigo
         InputField _codeField;
         Text _codeError;
 
-        // guilda
+        // guilda (aba 0 melhorias, 1 armas, 2 equipamento lateral)
         sealed class UpRow { public Text Level, Cost; public Image[] Dots; public Button Buy; public Text BuyText; public Image CostCoin; }
         sealed class WRow { public CanvasGroup G; public Image Lock, Check, UpCoin; public Image[] Dots; public Text Level, Need, Cost, EquipText, UpText; public Button Equip, Up; }
         UpRow[] _ups;
         WRow[] _weps;
+        WRow[] _gears;
         Text _guildCoins, _guildStars;
-        RectTransform _guildUps, _guildWeps;
-        Button _tabUps, _tabWeps;
-        Image _tabUpsLine, _tabWepsLine;
-        bool _guildWeapons;
+        RectTransform _guildUps, _guildWeps, _guildGear;
+        Button _tabUps, _tabWeps, _tabGear;
+        Image _tabUpsLine, _tabWepsLine, _tabGearLine;
+        int _guildTab;
 
         // perk
         readonly Image[] _perkIcon = new Image[3];
@@ -54,12 +65,17 @@ namespace DC
         // configuracoes
         Text _volSomT, _volMusT, _exportStatus, _versionT;
         readonly Image[] _barSom = new Image[Ajustes.VolMax], _barMus = new Image[Ajustes.VolMax];
-        Button _vibraBtn, _ptBtn, _enBtn;
-        Image _ptCheck, _enCheck;
+        Button _vibraBtn;
+        readonly Button[] _langBtn = new Button[4];   // ordem de Textos.Lingua: Português, English / Español, Bahasa Indonesia
+        readonly Image[] _langCheck = new Image[4];
 
         // ------------------------------------------------------------------ mostrar
 
-        public void ShowMenu() { Current = Tela.Menu; Only(_menu); _g.SeeDate(); RefreshMenu(); Audio.Music("menu"); }
+        public void ShowMenu()
+        {
+            Current = Tela.Menu; Only(_menu); _g.SeeDate(); RefreshMenu(); Audio.Music("menu");
+            if (_bau.B.gameObject.activeInHierarchy && S.RewardOffer(Reward.DailyChest)) LogOferta(Reward.DailyChest);
+        }
 
         public void ShowBoard()
         {
@@ -67,15 +83,29 @@ namespace DC
             Audio.Music("menu");
             _g.SeeDate();
             RefreshBoard();
-            // rola a lista ate o proximo contrato da campanha (a 1/3 do topo)
+            RolaQuadro();
+        }
+
+        /// <summary>Rola a lista da regiao do quadro ate o proximo contrato da campanha (a 1/3 do topo).</summary>
+        void RolaQuadro()
+        {
             Canvas.ForceUpdateCanvases();
             float view = _scroll.viewport.rect.height, step = RowH + RowGap;
-            int next = Mathf.Clamp(S.Reputation, 0, _rows.Length - 1);
+            int reg = BoardRegion(), next = 0;
+            for (int i = 0; i < _rows.Length && i < S.Reputation; i++) if (Sim.Contracts[i].Region == reg) next++;
             _scrollContent.anchoredPosition = new Vector2(0f, Mathf.Clamp(next * step - view * 0.35f, 0f, Mathf.Max(0f, _scrollContent.sizeDelta.y - view)));
             _scroll.velocity = Vector2.zero;
         }
 
-        void ShowGuild(bool weapons) { _guildWeapons = weapons; RefreshGuild(); _guild.gameObject.SetActive(true); }
+        /// <summary>Regiao do quadro: a escolhida no mapa (se aberta) ou a do proximo contrato da campanha (se aberta) ou a 1.</summary>
+        int BoardRegion()
+        {
+            if (_boardRegion > 0 && S.RegionOpen(_boardRegion)) return _boardRegion;
+            int r = Sim.Contracts.Length > 0 ? Sim.Contracts[Mathf.Clamp(S.Reputation, 0, Sim.Contracts.Length - 1)].Region : 1;
+            return S.RegionOpen(r) ? r : 1;
+        }
+
+        void ShowGuild(int tab) { _guildTab = tab; RefreshGuild(); _guild.gameObject.SetActive(true); }
 
         void ShowCode()
         {
@@ -108,37 +138,78 @@ namespace DC
             }
         }
 
-        /// <summary>Moedas, estrelas e travas mudaram (compra, equipar, fim de contrato): redesenha menu, quadro e guilda.</summary>
-        public void RefreshMeta() { RefreshMenu(); RefreshBoard(); RefreshGuild(); }
+        /// <summary>Moedas, estrelas e travas mudaram (compra, equipar, fim de contrato, resgate de meta): redesenha menu, quadro, guilda e
+        /// os paineis de meta abertos.</summary>
+        public void RefreshMeta() { RefreshMenu(); RefreshBoard(); RefreshGuild(); RefreshPaineis(); }
 
-        /// <summary>-tela X (dev): abre a tela para a foto.</summary>
+        /// <summary>-tela X (dev): abre a tela para a foto. As de meta pedem o -dev-desbloqueia para mostrar tudo aberto.</summary>
         public void Dev(string tela)
         {
+            int next = Mathf.Clamp(S.Reputation, 0, Sim.Contracts.Length - 1);
             switch (tela)
             {
                 case "titulo": ShowTitle(); break;
-                case "menu": ShowMenu(); break;
-                case "quadro": ShowBoard(); break;
+                case "menu": case "bau": ShowMenu(); break;
+                case "quadro": case "raro": ShowBoard(); break;
                 case "codigo": ShowBoard(); ShowCode(); break;
-                case "guilda": ShowMenu(); ShowGuild(false); break;
-                case "armas": ShowMenu(); ShowGuild(true); break;
+                case "guilda": ShowMenu(); ShowGuild(0); break;
+                case "armas": ShowMenu(); ShowGuild(1); break;
+                case "equipamento": ShowMenu(); ShowGuild(2); break;
                 case "config": ShowMenu(); ShowSettings(); break;
                 case "creditos": ShowMenu(); ShowCredits(); break;
                 case "perk": ShowPerk(new[] { Perk.DoubleDash, Perk.Magnet, Perk.IronBoot }); break;   // o -bot escolhe sozinho: foto so por aqui
+                // lancamento
+                case "mapa": ShowBoard(); Abre(_pMapa); break;
+                case "modificadores": ShowBoard(); ShowMods(Sim.Contracts[next].Code, m => _g.Play(next, m)); break;
+                case "eventos": ShowBoard(); ShowEventos(); break;
+                case "semfim": ShowBoard(); ShowSemFim(); break;
+                case "temporada": ShowMenu(); Abre(_pTemporada); break;
+                case "marcos": ShowMenu(); _pMarcos.Tab = 0; Abre(_pMarcos); break;
+                case "maestria": ShowMenu(); _pMarcos.Tab = 1; Abre(_pMarcos); break;
+                case "roupas": ShowMenu(); Abre(_pRoupas); break;
+                case "loja": ShowMenu(); ShowLoja(); break;
+                case "compra": ShowMenu(); ShowLoja(); Compra(Product.StarterPack); break;
+                case "anuncio": ShowMenu(); _ads.Recompensado(Textos.PremioBau(Sim.DailyChestCoins(_g.Hoje), S.DailyChestBlueprint(_g.Hoje)), _ => { }); break;
+                case "intersticial": ShowMenu(); _ads.Intersticial(() => { }); break;
+                case "oferta": DevResultado(false); break;
+                case "bonus": DevResultado(true); break;
             }
+        }
+
+        /// <summary>-tela oferta|bonus: resultado de exemplo (falha na 2a sala / entrega com bonus) com a oferta de rewarded forcada, so para a
+        /// foto (o Core so oferece de verdade depois de um contrato jogado).</summary>
+        void DevResultado(bool entregue)
+        {
+            ContractDef c = Sim.Contracts[Mathf.Clamp(S.Reputation, 0, Sim.Contracts.Length - 1)];
+            var r = new ContractResult
+            {
+                Def = c, Contract = c.Index, Kind = c.Kind, Time = 74.3f, ChestCoins = 18, RunId = 1, Base = c.Pay, CargoMul = 1f, IntegrityMul = 1.2f, BagMul = 1f,
+                Outcome = entregue ? Outcome.Delivered : Outcome.Died, DeathRoom = c.Layers.Length > 1 ? c.Layers[1][0] : -1,
+                StarDelivered = entregue, Stars = entregue ? 1 : 0,
+            };
+            if (entregue) { r.Payment = (int)(c.Pay * 1.2f); r.Bonus = r.Payment - c.Pay; }
+            r.Total = r.Payment + r.ChestCoins;
+            _devOferta = true; _res = r;
+            ShowResult();
         }
 
         // ------------------------------------------------------------------ atualizar
 
         void TickTitle() => _tapText.color = Art.A(Art.Ink, 0.55f + 0.45f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 2.5f)));
 
+        /// <summary>Pulso do menu: GUILDA quando algo cabe no bolso (melhoria, arma, equipamento); LOJA com o Pacote inicial recem-oferecido
+        /// (ate a loja ser aberta na sessao).</summary>
         void PulseGuild()
         {
+            float pulse = 1f + 0.04f * Mathf.Sin(Time.unscaledTime * 6f);
+            bool shop = S.StarterOffered && !_lojaVista && !S.SaveRefused;
+            _menuLoja.transform.localScale = Vector3.one * (shop ? pulse : 1f);
             if (!_menuGuild.interactable) return;
             bool any = false;
             for (int u = 0; u < Balance.UpgradeLines && !any; u++) any = S.CanBuy((Upgrade)u);
             for (int w = 0; w < WeaponDef.All.Length && !any; w++) any = S.CanUpgradeWeapon((Weapon)w);
-            _menuGuild.transform.localScale = Vector3.one * (any ? 1f + 0.04f * Mathf.Sin(Time.unscaledTime * 6f) : 1f);
+            for (int g = 1; g < GearDef.All.Length && !any; g++) any = S.CanUpgradeGear((Gear)g);
+            _menuGuild.transform.localScale = Vector3.one * (any ? pulse : 1f);
         }
 
         void RefreshMenu()
@@ -149,10 +220,18 @@ namespace DC
             bool open = S.GuildOpen && !S.SaveRefused;
             _menuGuild.interactable = open;
             _menuGuildLock.enabled = !open;
-            _menuGuildNote.gameObject.SetActive(!open && !S.SaveRefused);
             if (!open) _menuGuild.transform.localScale = Vector3.one;
-            _menuNotice.text = S.SaveRefused ? Textos.SaveRecusado : S.Pending != null ? Textos.Pendente(S.Pending) : "";
-            _menuNotice.color = S.SaveRefused ? Art.Bad : Art.Cargo;
+            _menuNotice.text = S.SaveRefused ? Textos.SaveRecusado : S.Pending != null ? Textos.Pendente(S.Pending) : !open ? Textos.GuildaFechada : "";
+            _menuNotice.color = S.SaveRefused ? Art.Bad : S.Pending != null ? Art.Cargo : Art.Dim;
+            // bau do dia (rewarded): o conteudo aparece ANTES de assistir; some sem anuncio com recompensa (remote config) ou save recusado
+            bool chest = S.Config.RewardedOn && !S.SaveRefused && S.LastDateSeen != 0;
+            _bau.G.gameObject.SetActive(chest);
+            if (!chest) return;
+            bool avail = S.RewardOffer(Reward.DailyChest);
+            int d = S.LastDateSeen;
+            _bau.Title.text = Textos.BauDia;
+            _bau.Line.text = avail ? Textos.PremioBau(Sim.DailyChestCoins(d), S.DailyChestBlueprint(d)) : Textos.BauVolte;
+            PintaEspecial(_bau, avail, true, avail ? Textos.VerAnuncio : Textos.Aberto, !avail);
         }
 
         public void RefreshBoard()
@@ -163,9 +242,16 @@ namespace DC
             if (S.SaveRefused) { _notice.text = Textos.SaveRecusado; _notice.color = Art.Bad; }
             else if (S.Pending != null) { _notice.text = Textos.Pendente(S.Pending); _notice.color = Art.Cargo; }
             else _notice.text = "";
+            int reg = BoardRegion(), shown = 0;
+            _regionT.text = Textos.NomeRegiao(reg);
             for (int i = 0; i < _rows.Length; i++)
             {
                 Row row = _rows[i];
+                var holder = (RectTransform)row.G.transform;
+                bool here = Sim.Contracts[i].Region == reg;
+                holder.gameObject.SetActive(here);
+                if (!here) continue;
+                holder.anchoredPosition = new Vector2(0f, -shown++ * (RowH + RowGap));
                 bool open = S.Unlocked(i) && !S.SaveRefused;
                 row.B.interactable = open;
                 row.G.alpha = open ? 1f : 0.55f;
@@ -180,31 +266,88 @@ namespace DC
                     row.Stars[k].sprite = k < st ? Art.Star() : Art.StarHollow();
                     row.Stars[k].color = k < st ? Art.Gold : Art.A(Art.Tinta, 0.4f);
                 }
+                int lv = S.MasteryLevel(Sim.Contracts[i].Cargo);   // selo de maestria da carga (cosmetico, CONTRATO_LANCAMENTO §6.7)
+                row.Seal.gameObject.SetActive(lv > 0);
+                if (lv > 0) row.SealText.text = Textos.Num(lv);
             }
-            RefreshDaily();
+            _scrollContent.sizeDelta = new Vector2(0f, shown * (RowH + RowGap));
+            RefreshEspeciais();
             bool code = S.CodeOpen && !S.SaveRefused;
             _codeBtn.interactable = code;
             _codeLock.enabled = !code;
+            bool ev = S.EventsOpen && !S.SaveRefused;
+            _evLock.enabled = !ev;
+            ((Image)_evBtn.targetGraphic).color = ev ? Art.Paper : Art.PaperEdge;
+            bool sf = S.EndlessOpen && !S.SaveRefused;
+            _sfBtnLock.enabled = !sf;
+            ((Image)_sfBtn.targetGraphic).color = sf ? Art.Paper : Art.PaperEdge;
         }
 
-        void RefreshDaily()
+        /// <summary>Cartoes do contrato do dia (DailyFor: regiao sorteada entre as abertas, com o modificador do dia) e do contrato raro, com
+        /// o TROCAR de cada um (1x por dia, preco visivel).</summary>
+        void RefreshEspeciais()
         {
             int hoje = _g.Hoje;
             bool open = S.DailyOpen && !S.SaveRefused, avail = open && S.DailyAvailable(hoje);
-            ContractDef d = open ? Sim.DailyContract(hoje) : null;
-            _dayBtn.interactable = avail;
-            _dayG.alpha = open ? 1f : 0.55f;
-            _dayIcon.enabled = _dayEdge.enabled = d != null;
-            if (d != null)
+            ContractDef d = open ? S.DailyFor(hoje) : null;
+            bool regions = S.OpenRegions().Length > 1;
+            _dia.Title.text = d != null && regions ? Textos.ComRegiao(Textos.Dia, d.Region) : Textos.Dia;
+            Carga(_dia, d);
+            string mod = null; int pct = 0;
+            if (d != null && S.ModifiersOpen)
             {
-                _dayIcon.sprite = _dayEdge.sprite = Art.CargoSprite(d.Cargo);
-                _dayIcon.color = Art.CargoColor(d.Cargo);
+                Modifier m = Sim.DailyModifier(hoje);
+                mod = Textos.ModNome(m); pct = ModifierDef.PayOf(m);
             }
-            _dayLine.text = !open ? Textos.DiaFechado : !avail ? Textos.DiaFeito : Textos.DiaLinha(Textos.Carga(d.Cargo), Balance.DailyBonus);
-            _dayLock.enabled = !open;
-            _dayBadgeText.enabled = open;
-            _dayBadgeText.text = avail ? Textos.Jogar : Textos.Feito;
-            _dayBadge.color = !open ? Art.Off : avail ? Art.Good : Art.Gold;
+            _dia.Line.text = !open ? Textos.DiaFechado : !avail ? Textos.DiaFeito : d == null ? Textos.EmBreve
+                : mod != null ? Textos.DiaLinhaMod(Textos.Carga(d.Cargo), mod, pct, Balance.DailyBonus) : Textos.DiaLinha(Textos.Carga(d.Cargo), Balance.DailyBonus);
+            PintaEspecial(_dia, avail && d != null, open, avail ? Textos.Jogar : Textos.Feito, !avail && open);
+            PintaTroca(_diaTroca, false, avail);
+
+            bool rOpen = S.RareOpen && !S.SaveRefused, rAvail = rOpen && S.RareAvailable;
+            ContractDef r = rAvail ? S.RareContract : null;
+            _raro.Title.text = r != null && regions ? Textos.ComRegiao(Textos.Raro, r.Region) : Textos.Raro;
+            Carga(_raro, r);
+            _raro.Line.text = !rOpen ? Textos.DiaFechado : r != null ? Textos.Carga(r.Cargo) + " · " + Textos.Verbo(r)
+                : S.RareDone ? Textos.RaroFeito(S.Config.RareHours) : Textos.RaroEspera(S.Config.RareHours);
+            PintaEspecial(_raro, r != null, rOpen, r != null ? Textos.Jogar : S.RareDone ? Textos.Feito : "", S.RareDone && r == null);
+            PintaTroca(_raroTroca, true, r != null);
+        }
+
+        static void Carga(Especial e, ContractDef c)
+        {
+            e.Icon.enabled = e.Edge.enabled = c != null;
+            if (c == null) return;
+            e.Icon.sprite = e.Edge.sprite = Art.CargoSprite(c.Cargo);
+            e.Icon.color = Art.CargoColor(c.Cargo);
+        }
+
+        /// <summary>Estado do cartao: jogavel (verde), feito (dourado + visto), fechado (cadeado, apagado) ou so aviso.</summary>
+        static void PintaEspecial(Especial e, bool play, bool open, string badge, bool done)
+        {
+            e.B.interactable = play;
+            e.G.alpha = open ? 1f : 0.55f;
+            e.Lock.enabled = !open;
+            e.Check.enabled = open && done;
+            e.BadgeT.enabled = open && !string.IsNullOrEmpty(badge);
+            e.BadgeT.text = badge ?? "";
+            e.BadgeT.rectTransform.anchorMin = new Vector2(done ? 0.3f : 0f, 0f);
+            e.Badge.color = !open ? Art.Off : play ? Art.Good : done ? Art.Gold : Art.PaperEdge;
+        }
+
+        void PintaTroca(Troca t, bool rare, bool show)
+        {
+            t.B.gameObject.SetActive(show);
+            if (!show) return;
+            bool can = S.CanReroll(rare);
+            t.B.interactable = can;
+            t.Cost.text = Textos.Num(S.RerollCost);
+            ((Image)t.B.targetGraphic).color = can ? Art.Paper : Art.Off;
+        }
+
+        void Reroll(bool rare)
+        {
+            if (S.Reroll(rare)) _g.AfterMeta();   // reroll, currency_sink; o cartao mostra o contrato novo
         }
 
         void RefreshGuild()
@@ -212,10 +355,39 @@ namespace DC
             if (_ups == null) return;
             _guildCoins.text = Textos.Num(S.Coins);
             _guildStars.text = Textos.Num(S.Stars);
-            _guildUps.gameObject.SetActive(!_guildWeapons);
-            _guildWeps.gameObject.SetActive(_guildWeapons);
-            Tab(_tabUps, _tabUpsLine, !_guildWeapons);
-            Tab(_tabWeps, _tabWepsLine, _guildWeapons);
+            _guildUps.gameObject.SetActive(_guildTab == 0);
+            _guildWeps.gameObject.SetActive(_guildTab == 1);
+            _guildGear.gameObject.SetActive(_guildTab == 2);
+            Tab(_tabUps, _tabUpsLine, _guildTab == 0);
+            Tab(_tabWeps, _tabWepsLine, _guildTab == 1);
+            Tab(_tabGear, _tabGearLine, _guildTab == 2);
+            for (int i = 0; i < _gears.Length; i++)
+            {
+                WRow row = _gears[i];
+                var g = (Gear)(i + 1);
+                bool un = S.GearUnlocked(g), eq = S.GearEquipped == g;
+                int bp = S.Blueprints(g), lv = S.GearLevel(g), cost = S.GearCost(g);
+                row.G.alpha = un ? 1f : 0.6f;
+                row.Lock.enabled = !un;
+                // travado: os 3 projetos (cheio = achado); destravado: os 5 niveis
+                for (int k = 0; k < row.Dots.Length; k++)
+                {
+                    row.Dots[k].enabled = un || k < Balance.GearBlueprints;
+                    row.Dots[k].color = k < (un ? lv : bp) ? Art.Courier : Art.A(Art.Tinta, 0.25f);
+                }
+                row.Level.text = un ? Textos.ArmaNivel(lv, Balance.GearMaxLevel) : Textos.Projetos(bp, Balance.GearBlueprints);
+                row.Equip.interactable = un && !S.InContract;   // tocar no equipado tira (espaco vazio)
+                row.EquipText.text = eq ? Textos.Equipado : Textos.Equipar;
+                row.Check.enabled = eq;
+                ((Image)row.Equip.targetGraphic).color = eq ? Art.Gold : un ? Art.Good : Art.Off;
+                bool can = S.CanUpgradeGear(g);
+                row.Up.gameObject.SetActive(un);
+                row.Up.interactable = can;
+                row.UpText.text = cost < 0 ? Textos.Maximo : Textos.Melhorar;
+                row.Cost.text = cost < 0 ? "" : Textos.Num(cost);
+                row.UpCoin.enabled = cost >= 0;
+                ((Image)row.Up.targetGraphic).color = can ? Art.Good : Art.Off;
+            }
             for (int u = 0; u < _ups.Length; u++)
             {
                 UpRow row = _ups[u];
@@ -278,10 +450,12 @@ namespace DC
             }
             _vibraBtn.interactable = Ajustes.TemVibra;
             _vibraBtn.GetComponentInChildren<Text>().text = Ajustes.TemVibra ? Textos.Vibra(Ajustes.Vibra) : Textos.VibraSoCelular;
-            bool en = Ajustes.Ingles;
-            _ptCheck.enabled = !en; _enCheck.enabled = en;
-            ((Image)_ptBtn.targetGraphic).color = en ? Art.PaperEdge : Art.Good;
-            ((Image)_enBtn.targetGraphic).color = en ? Art.Good : Art.PaperEdge;
+            for (int i = 0; i < _langBtn.Length; i++)
+            {
+                bool on = (int)Ajustes.Idioma == i;
+                _langCheck[i].enabled = on;
+                ((Image)_langBtn[i].targetGraphic).color = on ? Art.Good : Art.PaperEdge;
+            }
             _versionT.text = Textos.Versao(_g.Version) + "  ·  " + Textos.IdAnonimo(_g.InstallShort);
         }
 
@@ -292,7 +466,8 @@ namespace DC
             string c = ContractCode.Normalize(_codeField.text ?? "");
             if (!ContractCode.IsValid(c) || Sim.CodeContract(c) == null) { _codeError.text = Textos.CodigoInvalido; return; }
             _code.gameObject.SetActive(false);
-            _g.PlayCode(c);
+            if (S.ModifiersOpen && !S.SaveRefused) ShowMods(c, m => _g.PlayCode(c, m));
+            else _g.PlayCode(c);
         }
 
         void Vol(bool music, int d)
@@ -406,18 +581,25 @@ namespace DC
         {
             RectTransform m = Art.Node(_safe, "Menu", Vector2.zero, Vector2.one);
             Image bg = m.gameObject.AddComponent<Image>(); bg.color = Art.Bg;
-            Logo(m, 0.81f, 0.975f, 120);
-            _menuCoins = Pill(m, Art.CoinShape(), Art.Coin, new Vector2(0.06f, 0.725f), new Vector2(0.47f, 0.79f));
-            _menuStars = Pill(m, Art.Star(), Art.Gold, new Vector2(0.53f, 0.725f), new Vector2(0.94f, 0.79f));
-            _menuNotice = Shrink(Art.NewText(m, "Aviso", 28, new Vector2(0.05f, 0.655f), new Vector2(0.95f, 0.718f)), 20);
+            Logo(m, 0.835f, 0.985f, 110);
+            _menuCoins = Pill(m, Art.CoinShape(), Art.Coin, new Vector2(0.06f, 0.765f), new Vector2(0.47f, 0.825f));
+            _menuStars = Pill(m, Art.Star(), Art.Gold, new Vector2(0.53f, 0.765f), new Vector2(0.94f, 0.825f));
+            _menuNotice = Shrink(Art.NewText(m, "Aviso", 28, new Vector2(0.05f, 0.712f), new Vector2(0.95f, 0.76f)), 18);
             _menuNotice.fontStyle = FontStyle.Bold;
-            Btn(m, () => Textos.MenuJogar, 64, Art.Good, new Vector2(0.1f, 0.525f), new Vector2(0.9f, 0.645f), ShowBoard, "confirmar");
-            _menuGuild = Btn(m, () => Textos.MenuGuilda, 52, Art.Paper, new Vector2(0.1f, 0.405f), new Vector2(0.9f, 0.51f), () => ShowGuild(false));
-            _menuGuildLock = Art.Img(_menuGuild.transform, "Cadeado", Art.Lock(), Art.Tinta, new Vector2(0.05f, 0.2f), new Vector2(0.14f, 0.8f));
-            _menuGuildNote = Loc(Art.NewText(m, "GuildaNota", 28, new Vector2(0.05f, 0.362f), new Vector2(0.95f, 0.402f)), () => Textos.GuildaFechada);
-            _menuGuildNote.color = Art.Dim;
-            Btn(m, () => Textos.MenuConfig, 46, Art.PaperEdge, new Vector2(0.1f, 0.245f), new Vector2(0.9f, 0.35f), ShowSettings);
-            Btn(m, () => Textos.MenuCreditos, 46, Art.PaperEdge, new Vector2(0.1f, 0.125f), new Vector2(0.9f, 0.23f), ShowCredits);
+            // bau do dia (rewarded): conteudo escrito antes de assistir
+            _bau = NovoEspecial(m, new Vector2(0.06f, 0.6f), new Vector2(0.94f, 0.705f), Art.Chest, PedeBau);
+            _bau.Icon.sprite = _bau.Edge.sprite = Art.ChestShape();
+            _bau.Icon.color = Art.Chest; _bau.Edge.color = Art.Coin;   // limao e so da carga (ART_BIBLE §3)
+            Btn(m, () => Textos.MenuJogar, 64, Art.Good, new Vector2(0.1f, 0.475f), new Vector2(0.9f, 0.59f), ShowBoard, "confirmar");
+            // grade 2 x 4 (cada botao ~163 px de referencia = 48 dp)
+            _menuGuild = Btn(m, () => Textos.MenuGuilda, 44, Art.Paper, new Vector2(0.06f, 0.375f), new Vector2(0.49f, 0.46f), () => ShowGuild(0));
+            _menuGuildLock = Art.Img(_menuGuild.transform, "Cadeado", Art.Lock(), Art.Tinta, new Vector2(0.04f, 0.2f), new Vector2(0.18f, 0.8f));
+            _menuLoja = Btn(m, () => Textos.LojaBotao, 44, Art.Gold, new Vector2(0.51f, 0.375f), new Vector2(0.94f, 0.46f), ShowLoja);
+            Btn(m, () => Textos.TemporadaBotao, 40, Art.Paper, new Vector2(0.06f, 0.28f), new Vector2(0.49f, 0.365f), () => Abre(_pTemporada));
+            Btn(m, () => Textos.MarcosBotao, 40, Art.Paper, new Vector2(0.51f, 0.28f), new Vector2(0.94f, 0.365f), () => Abre(_pMarcos));
+            Btn(m, () => Textos.RoupasBotao, 40, Art.PaperEdge, new Vector2(0.06f, 0.185f), new Vector2(0.49f, 0.27f), () => Abre(_pRoupas));
+            Btn(m, () => Textos.MenuConfig, 40, Art.PaperEdge, new Vector2(0.51f, 0.185f), new Vector2(0.94f, 0.27f), ShowSettings);
+            Btn(m, () => Textos.MenuCreditos, 40, Art.PaperEdge, new Vector2(0.25f, 0.09f), new Vector2(0.75f, 0.175f), ShowCredits);
             Text ver = Loc(Art.NewText(m, "Versao", 28, new Vector2(0.05f, 0.012f), new Vector2(0.95f, 0.05f)), () => Textos.Versao(_g.Version));
             ver.color = Art.Dim;
             return m;
@@ -440,23 +622,35 @@ namespace DC
         {
             RectTransform b = Art.Node(_safe, "Quadro", Vector2.zero, Vector2.one);
             Image bg = b.gameObject.AddComponent<Image>(); bg.color = Art.Bg;
-            Btn(b, () => Textos.Voltar, 40, Art.PaperEdge, new Vector2(0.02f, 0.918f), new Vector2(0.27f, 0.996f), ShowMenu);
-            Text title = Loc(Art.Outlined(Art.NewText(b, "Titulo", 50, new Vector2(0.28f, 0.918f), new Vector2(0.72f, 0.996f))), () => Textos.Regiao);
-            title.fontStyle = FontStyle.Bold; Shrink(title, 30);
-            Art.Img(b, "Moeda", Art.CoinShape(), Art.Coin, new Vector2(0.735f, 0.935f), new Vector2(0.795f, 0.98f));
-            _boardCoins = Art.Outlined(Art.NewText(b, "Moedas", 46, new Vector2(0.8f, 0.918f), new Vector2(0.99f, 0.996f), TextAnchor.MiddleLeft));
+            Btn(b, () => Textos.Voltar, 40, Art.PaperEdge, new Vector2(0.02f, 0.92f), new Vector2(0.25f, 0.996f), ShowMenu);
+            // titulo = regiao do quadro; tocar abre o mapa das regioes (bandeira = mapa)
+            Button region = Art.NewButton(b, "", 40, Art.Paper, new Vector2(0.265f, 0.92f), new Vector2(0.73f, 0.996f), () => Abre(_pMapa));
+            Art.Img(region.transform, "Mapa", Art.Flag(), Art.Tinta, new Vector2(0.03f, 0.2f), new Vector2(0.16f, 0.8f));
+            _regionT = region.GetComponentInChildren<Text>();
+            _regionT.rectTransform.anchorMin = new Vector2(0.16f, 0f);
+            Art.Img(b, "Moeda", Art.CoinShape(), Art.Coin, new Vector2(0.745f, 0.937f), new Vector2(0.795f, 0.98f));
+            _boardCoins = Art.Outlined(Art.NewText(b, "Moedas", 46, new Vector2(0.8f, 0.92f), new Vector2(0.99f, 0.996f), TextAnchor.MiddleLeft));
             _boardCoins.fontStyle = FontStyle.Bold;
-            Art.Img(b, "Estrela", Art.Star(), Art.Gold, new Vector2(0.03f, 0.872f), new Vector2(0.085f, 0.908f));
-            _boardStars = Art.Outlined(Art.NewText(b, "Estrelas", 40, new Vector2(0.09f, 0.864f), new Vector2(0.36f, 0.914f), TextAnchor.MiddleLeft));
+            Art.Img(b, "Estrela", Art.Star(), Art.Gold, new Vector2(0.03f, 0.881f), new Vector2(0.085f, 0.914f));
+            _boardStars = Art.Outlined(Art.NewText(b, "Estrelas", 40, new Vector2(0.09f, 0.876f), new Vector2(0.36f, 0.918f), TextAnchor.MiddleLeft));
             _boardStars.fontStyle = FontStyle.Bold;
-            _notice = Shrink(Art.NewText(b, "Aviso", 26, new Vector2(0.37f, 0.862f), new Vector2(0.98f, 0.916f)), 18);
+            _notice = Shrink(Art.NewText(b, "Aviso", 26, new Vector2(0.37f, 0.874f), new Vector2(0.98f, 0.92f)), 16);
             _notice.fontStyle = FontStyle.Bold;
-            BuildDaily(b, new Vector2(0.02f, 0.745f), new Vector2(0.66f, 0.855f));
-            _codeBtn = Btn(b, () => Textos.DigitarCodigo, 38, Art.Paper, new Vector2(0.68f, 0.745f), new Vector2(0.98f, 0.855f), ShowCode);
+            // contrato do dia e contrato raro (cada um com TROCAR: 1x por dia, preco crescente)
+            _dia = NovoEspecial(b, new Vector2(0.02f, 0.777f), new Vector2(0.76f, 0.871f), Art.Gold, () => _g.PlayDaily());
+            _diaTroca = NovaTroca(b, new Vector2(0.775f, 0.777f), new Vector2(0.98f, 0.871f), false);
+            _raro = NovoEspecial(b, new Vector2(0.02f, 0.677f), new Vector2(0.76f, 0.771f), Art.Coin, () => _g.PlayRare());
+            _raroTroca = NovaTroca(b, new Vector2(0.775f, 0.677f), new Vector2(0.98f, 0.771f), true);
+            // eventos | sem fim | codigo (~146 px de referencia de altura)
+            _evBtn = Btn(b, () => Textos.Eventos, 36, Art.Paper, new Vector2(0.02f, 0.596f), new Vector2(0.33f, 0.672f), ShowEventos);
+            _evLock = Art.Img(_evBtn.transform, "Cadeado", Art.Lock(), Art.Tinta, new Vector2(0.78f, 0.6f), new Vector2(0.96f, 0.95f));
+            _sfBtn = Btn(b, () => Textos.SemFimBotao, 36, Art.Paper, new Vector2(0.345f, 0.596f), new Vector2(0.655f, 0.672f), ShowSemFim);
+            _sfBtnLock = Art.Img(_sfBtn.transform, "Cadeado", Art.Lock(), Art.Tinta, new Vector2(0.78f, 0.6f), new Vector2(0.96f, 0.95f));
+            _codeBtn = Btn(b, () => Textos.DigitarCodigo, 32, Art.Paper, new Vector2(0.67f, 0.596f), new Vector2(0.98f, 0.672f), ShowCode);
             _codeLock = Art.Img(_codeBtn.transform, "Cadeado", Art.Lock(), Art.Tinta, new Vector2(0.78f, 0.6f), new Vector2(0.96f, 0.95f));
 
-            // lista rolavel dos contratos da campanha
-            RectTransform view = Art.Node(b, "Lista", new Vector2(0.02f, 0.008f), new Vector2(0.98f, 0.735f));
+            // lista rolavel dos contratos da campanha (so os da regiao do quadro: RefreshBoard posiciona)
+            RectTransform view = Art.Node(b, "Lista", new Vector2(0.02f, 0.008f), new Vector2(0.98f, 0.588f));
             view.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0f);   // pega o arrasto entre os cartoes
             view.gameObject.AddComponent<RectMask2D>();
             _scrollContent = Art.Node(view, "Conteudo", new Vector2(0f, 1f), new Vector2(1f, 1f));
@@ -487,7 +681,7 @@ namespace DC
             row.B = face.gameObject.AddComponent<Button>();
             row.B.targetGraphic = face;
             int k = i;
-            row.B.onClick.AddListener(() => { Audio.Play("confirmar"); _g.Play(k); });
+            row.B.onClick.AddListener(() => { Audio.Play("confirmar"); Escolhe(k); });
             Transform f = face.transform;
             Text code = Shrink(Ink(f, "Codigo", 44, new Vector2(0.01f, 0f), new Vector2(0.115f, 1f), TextAnchor.MiddleCenter, true), 26);
             code.text = c.Code;
@@ -497,6 +691,10 @@ namespace DC
                 Art.Img(f, "Chefe", Art.Horns(), boss ? Art.Gold : Art.Role(EnemyType.Captain), new Vector2(0.02f, 0.68f), new Vector2(0.105f, 0.98f));
             Art.Img(f, "CargaContorno", Art.CargoSprite(c.Cargo), Art.Cargo, new Vector2(0.12f, 0.12f), new Vector2(0.22f, 0.88f));
             Art.Img(f, "Carga", Art.CargoSprite(c.Cargo), Art.CargoColor(c.Cargo), new Vector2(0.13f, 0.2f), new Vector2(0.21f, 0.8f));
+            // selo de maestria da carga (nivel 1-5; some no 0)
+            row.Seal = Art.Img(f, "Maestria", Art.Disc(), Art.Gold, new Vector2(0.185f, 0.6f), new Vector2(0.235f, 0.97f));
+            row.SealText = Ink(row.Seal.transform, "Nivel", 24, Vector2.zero, Vector2.one, TextAnchor.MiddleCenter, true);
+            row.Seal.gameObject.SetActive(false);
             Shrink(Loc(Ink(f, "Linha1", 34, new Vector2(0.235f, 0.5f), new Vector2(0.66f, 0.96f), TextAnchor.MiddleLeft, true),
                 () => Textos.Carga(c.Cargo) + " · " + Textos.Salas(c)), 20);
             Text l2 = Shrink(Loc(Ink(f, "Linha2", 30, new Vector2(0.235f, 0.04f), new Vector2(0.66f, 0.5f), TextAnchor.MiddleLeft), () => Textos.Verbo(c)), 18);
@@ -513,26 +711,40 @@ namespace DC
             return row;
         }
 
-        /// <summary>Cartao do contrato do dia: faixa e estrela douradas (destaque), carga do dia, recompensa extra e estado.</summary>
-        void BuildDaily(Transform parent, Vector2 min, Vector2 max)
+        /// <summary>Cartao destacado (contrato do dia, contrato raro, bau do dia): faixa e estrela na cor do destaque, carga/icone, titulo,
+        /// linha e selo de estado (cadeado = fechado, visto = feito). Os textos sao escritos no refresh.</summary>
+        Especial NovoEspecial(Transform parent, Vector2 min, Vector2 max, Color band, System.Action click)
         {
-            Image face = Card(parent, "ContratoDoDia", min, max);
-            _dayG = face.transform.parent.parent.gameObject.AddComponent<CanvasGroup>();
-            _dayBtn = face.gameObject.AddComponent<Button>();
-            _dayBtn.targetGraphic = face;
-            _dayBtn.onClick.AddListener(() => { Audio.Play("confirmar"); _g.PlayDaily(); });
+            Image face = Card(parent, "Especial", min, max);
+            var e = new Especial { G = face.transform.parent.parent.gameObject.AddComponent<CanvasGroup>() };
+            e.B = face.gameObject.AddComponent<Button>();
+            e.B.targetGraphic = face;
+            e.B.onClick.AddListener(() => { Audio.Play("confirmar"); click(); });
             Transform f = face.transform;
-            Image band = Art.Img(f, "Destaque", Art.Square(), Art.Gold, new Vector2(0f, 0f), new Vector2(0.03f, 1f));
-            band.preserveAspect = false;
-            Art.Img(f, "Estrela", Art.Star(), Art.Gold, new Vector2(0.045f, 0.56f), new Vector2(0.14f, 0.95f));
-            Shrink(Loc(Ink(f, "Titulo", 36, new Vector2(0.15f, 0.55f), new Vector2(0.74f, 0.97f), TextAnchor.MiddleLeft, true), () => Textos.Dia), 22);
-            _dayEdge = Art.Img(f, "CargaContorno", Art.Rounded(), Art.Cargo, new Vector2(0.045f, 0.06f), new Vector2(0.14f, 0.52f));
-            _dayIcon = Art.Img(f, "Carga", Art.Rounded(), Color.white, new Vector2(0.058f, 0.12f), new Vector2(0.127f, 0.46f));
-            _dayLine = Shrink(Ink(f, "Linha", 28, new Vector2(0.15f, 0.04f), new Vector2(0.75f, 0.54f), TextAnchor.MiddleLeft), 18);
-            _dayBadge = Art.Panel(f, "Selo", Art.Good, new Vector2(0.76f, 0.2f), new Vector2(0.98f, 0.8f));
-            _dayBadge.raycastTarget = false;
-            _dayBadgeText = Shrink(Ink(_dayBadge.transform, "Rotulo", 28, Vector2.zero, Vector2.one, TextAnchor.MiddleCenter, true), 14);
-            _dayLock = Art.Img(_dayBadge.transform, "Cadeado", Art.Lock(), Art.Ink, new Vector2(0.25f, 0.12f), new Vector2(0.75f, 0.88f));
+            Image stripe = Art.Img(f, "Destaque", Art.Square(), band, new Vector2(0f, 0f), new Vector2(0.03f, 1f));
+            stripe.preserveAspect = false;
+            Art.Img(f, "Estrela", Art.Star(), band, new Vector2(0.045f, 0.56f), new Vector2(0.14f, 0.95f));
+            e.Title = Shrink(Ink(f, "Titulo", 34, new Vector2(0.15f, 0.55f), new Vector2(0.75f, 0.97f), TextAnchor.MiddleLeft, true), 18);
+            e.Edge = Art.Img(f, "CargaContorno", Art.Rounded(), Art.Cargo, new Vector2(0.045f, 0.06f), new Vector2(0.14f, 0.52f));
+            e.Icon = Art.Img(f, "Carga", Art.Rounded(), Color.white, new Vector2(0.058f, 0.12f), new Vector2(0.127f, 0.46f));
+            e.Line = Shrink(Ink(f, "Linha", 28, new Vector2(0.15f, 0.04f), new Vector2(0.75f, 0.55f), TextAnchor.MiddleLeft), 16);
+            e.Badge = Art.Panel(f, "Selo", Art.Good, new Vector2(0.76f, 0.2f), new Vector2(0.98f, 0.8f));
+            e.Badge.raycastTarget = false;
+            e.BadgeT = Shrink(Ink(e.Badge.transform, "Rotulo", 28, Vector2.zero, Vector2.one, TextAnchor.MiddleCenter, true), 13);
+            e.Lock = Art.Img(e.Badge.transform, "Cadeado", Art.Lock(), Art.Ink, new Vector2(0.25f, 0.12f), new Vector2(0.75f, 0.88f));
+            e.Check = Art.Img(e.Badge.transform, "Visto", Art.Check(), Art.Tinta, new Vector2(0.04f, 0.2f), new Vector2(0.3f, 0.8f));
+            return e;
+        }
+
+        /// <summary>TROCAR em cima, moeda + preco embaixo.</summary>
+        Troca NovaTroca(Transform parent, Vector2 min, Vector2 max, bool rare)
+        {
+            Button b = Btn(parent, () => Textos.Trocar, 30, Art.Paper, min, max, () => Reroll(rare));
+            b.GetComponentInChildren<Text>().rectTransform.anchorMin = new Vector2(0f, 0.5f);
+            var t = new Troca { B = b };
+            t.Coin = Art.Img(b.transform, "Moeda", Art.CoinShape(), Art.Coin, new Vector2(0.1f, 0.12f), new Vector2(0.36f, 0.48f));
+            t.Cost = Ink(b.transform, "Preco", 30, new Vector2(0.38f, 0.04f), new Vector2(0.97f, 0.52f), TextAnchor.MiddleLeft, true);
+            return t;
         }
 
         // ------------------------------------------------------------------ construcao: codigo
@@ -582,10 +794,12 @@ namespace DC
             _guildCoins = Ink(f, "Moedas", 42, new Vector2(0.27f, 0.865f), new Vector2(0.48f, 0.923f), TextAnchor.MiddleLeft, true);
             Art.Img(f, "Estrela", Art.Star(), Art.Gold, new Vector2(0.54f, 0.873f), new Vector2(0.6f, 0.915f));
             _guildStars = Ink(f, "Estrelas", 42, new Vector2(0.61f, 0.865f), new Vector2(0.85f, 0.923f), TextAnchor.MiddleLeft, true);
-            _tabUps = Btn(f, () => Textos.AbaMelhorias, 38, Art.PaperEdge, new Vector2(0.04f, 0.77f), new Vector2(0.49f, 0.855f), () => { _guildWeapons = false; RefreshGuild(); });
-            _tabWeps = Btn(f, () => Textos.AbaArmas, 38, Art.PaperEdge, new Vector2(0.51f, 0.77f), new Vector2(0.96f, 0.855f), () => { _guildWeapons = true; RefreshGuild(); });
+            _tabUps = Btn(f, () => Textos.AbaMelhorias, 36, Art.PaperEdge, new Vector2(0.03f, 0.77f), new Vector2(0.33f, 0.855f), () => { _guildTab = 0; RefreshGuild(); });
+            _tabWeps = Btn(f, () => Textos.AbaArmas, 36, Art.PaperEdge, new Vector2(0.35f, 0.77f), new Vector2(0.65f, 0.855f), () => { _guildTab = 1; RefreshGuild(); });
+            _tabGear = Btn(f, () => Textos.AbaEquip, 36, Art.PaperEdge, new Vector2(0.67f, 0.77f), new Vector2(0.97f, 0.855f), () => { _guildTab = 2; RefreshGuild(); });
             _tabUpsLine = Underline(_tabUps.transform);
             _tabWepsLine = Underline(_tabWeps.transform);
+            _tabGearLine = Underline(_tabGear.transform);
 
             _guildUps = Art.Node(f, "Melhorias", new Vector2(0.03f, 0.115f), new Vector2(0.97f, 0.755f));
             _ups = new UpRow[Balance.UpgradeLines];
@@ -593,6 +807,9 @@ namespace DC
             _guildWeps = Art.Node(f, "Armas", new Vector2(0.03f, 0.115f), new Vector2(0.97f, 0.755f));
             _weps = new WRow[WeaponDef.All.Length];
             for (int w = 0; w < _weps.Length; w++) _weps[w] = BuildWeaponRow(_guildWeps, w, _weps.Length);
+            _guildGear = Art.Node(f, "Equipamento", new Vector2(0.03f, 0.115f), new Vector2(0.97f, 0.755f));
+            _gears = new WRow[GearDef.All.Length - 1];
+            for (int i = 0; i < _gears.Length; i++) _gears[i] = BuildGearRow(_guildGear, i, _gears.Length);
 
             Btn(f, () => Textos.Voltar, 40, Art.PaperEdge, new Vector2(0.25f, 0.015f), new Vector2(0.75f, 0.1f), () => _guild.gameObject.SetActive(false));
             return m;
@@ -658,6 +875,47 @@ namespace DC
             return row;
         }
 
+        /// <summary>Linha do equipamento lateral (4 linhas de ~289 px): icone, nome, efeito, projetos 0/3 ou niveis 1-5, e EQUIPAR | MELHORAR
+        /// lado a lado (cada um ~188 x 220 px de referencia, acima de 48 dp). Tocar no equipado tira (espaco vazio).</summary>
+        WRow BuildGearRow(Transform parent, int i, int count)
+        {
+            var g = (Gear)(i + 1);
+            float h = 1f / count, y1 = 1f - i * h, y0 = y1 - h + 0.012f;
+            RectTransform r = Art.Node(parent, "Equipamento", new Vector2(0f, y0), new Vector2(1f, y1));
+            Image sep = Art.Panel(r, "Fundo", Art.A(Art.PaperEdge, 0.35f), Vector2.zero, Vector2.one); sep.raycastTarget = false;
+            var row = new WRow { G = r.gameObject.AddComponent<CanvasGroup>(), Dots = new Image[Balance.GearMaxLevel] };
+            Image disc = Art.Img(r, "Fundo", Art.Disc(), Art.Tinta, new Vector2(0.015f, 0.27f), new Vector2(0.155f, 0.73f));
+            Art.Img(disc.transform, "Icone", GearIcon(g, out Color c), c, new Vector2(0.15f, 0.15f), new Vector2(0.85f, 0.85f));
+            row.Lock = Art.Img(r, "Cadeado", Art.Lock(), Art.Tinta, new Vector2(0.1f, 0.15f), new Vector2(0.17f, 0.42f));
+            Shrink(Loc(Ink(r, "Nome", 36, new Vector2(0.17f, 0.69f), new Vector2(0.59f, 0.97f), TextAnchor.MiddleLeft, true), () => Textos.GearNome(g)), 20);
+            Text eff = Shrink(Loc(Ink(r, "Efeito", 24, new Vector2(0.17f, 0.32f), new Vector2(0.59f, 0.69f), TextAnchor.MiddleLeft), () => Textos.GearEfeito(g)), 14);
+            eff.color = Art.A(Art.Tinta, 0.8f);
+            for (int k = 0; k < row.Dots.Length; k++)
+                row.Dots[k] = Art.Img(r, "Ponto", Art.Disc(), Art.Off, new Vector2(0.17f + k * 0.042f, 0.06f), new Vector2(0.204f + k * 0.042f, 0.27f));
+            row.Level = Shrink(Ink(r, "NivelTexto", 24, new Vector2(0.385f, 0.04f), new Vector2(0.59f, 0.3f), TextAnchor.MiddleLeft), 13);
+            row.Level.color = Art.A(Art.Tinta, 0.75f);
+            row.Equip = Art.NewButton(r, "", 28, Art.Good, new Vector2(0.6f, 0.1f), new Vector2(0.785f, 0.9f), () => EquipGear(g), "confirmar");
+            row.EquipText = row.Equip.GetComponentInChildren<Text>();
+            row.EquipText.rectTransform.anchorMax = new Vector2(1f, 0.5f);
+            row.Check = Art.Img(row.Equip.transform, "Visto", Art.Check(), Art.Tinta, new Vector2(0.25f, 0.52f), new Vector2(0.75f, 0.92f));
+            row.Up = Art.NewButton(r, "", 28, Art.Good, new Vector2(0.8f, 0.1f), new Vector2(0.99f, 0.9f), () => UpGear(g), "confirmar");
+            row.UpText = row.Up.GetComponentInChildren<Text>();
+            row.UpText.rectTransform.anchorMin = new Vector2(0f, 0.5f);
+            row.UpCoin = Art.Img(row.Up.transform, "Moeda", Art.CoinShape(), Art.Coin, new Vector2(0.06f, 0.12f), new Vector2(0.34f, 0.46f));
+            row.Cost = Ink(row.Up.transform, "Custo", 28, new Vector2(0.36f, 0.04f), new Vector2(0.98f, 0.5f), TextAnchor.MiddleLeft, true);
+            return row;
+        }
+
+        void EquipGear(Gear g)
+        {
+            if (S.EquipGear(S.GearEquipped == g ? Gear.None : g)) _g.AfterMeta();
+        }
+
+        void UpGear(Gear g)
+        {
+            if (S.UpgradeGear(g)) _g.AfterMeta();   // gear_upgrade, currency_sink; som "compra"
+        }
+
         // ------------------------------------------------------------------ construcao: perk
 
         RectTransform BuildPerk()
@@ -692,21 +950,27 @@ namespace DC
             Image face = Card(m, "Cartao", new Vector2(0.03f, 0.03f), new Vector2(0.97f, 0.97f));
             Transform f = face.transform;
             Loc(Ink(f, "Titulo", 56, new Vector2(0.05f, 0.925f), new Vector2(0.95f, 0.99f), TextAnchor.MiddleCenter, true), () => Textos.Config);
-            _volSomT = VolRow(f, false, 0.82f, 0.91f, _barSom);
-            _volMusT = VolRow(f, true, 0.715f, 0.805f, _barMus);
-            _vibraBtn = Art.NewButton(f, "", 40, Art.PaperEdge, new Vector2(0.04f, 0.61f), new Vector2(0.96f, 0.7f), ToggleVibra);
-            Loc(Ink(f, "Idioma", 34, new Vector2(0.05f, 0.555f), new Vector2(0.95f, 0.6f), TextAnchor.MiddleLeft, true), () => Textos.Idioma);
-            _ptBtn = Art.NewButton(f, Textos.Portugues, 40, Art.PaperEdge, new Vector2(0.04f, 0.46f), new Vector2(0.49f, 0.55f), () => _g.SetIdioma(false));
-            _enBtn = Art.NewButton(f, Textos.English, 40, Art.PaperEdge, new Vector2(0.51f, 0.46f), new Vector2(0.96f, 0.55f), () => _g.SetIdioma(true));
-            _ptCheck = Art.Img(_ptBtn.transform, "Visto", Art.Check(), Art.Tinta, new Vector2(0.04f, 0.22f), new Vector2(0.18f, 0.78f));
-            _enCheck = Art.Img(_enBtn.transform, "Visto", Art.Check(), Art.Tinta, new Vector2(0.04f, 0.22f), new Vector2(0.18f, 0.78f));
-            Btn(f, () => Textos.ExportarDiario, 42, Art.Gold, new Vector2(0.04f, 0.355f), new Vector2(0.96f, 0.445f), Export);
-            Text help = Shrink(Loc(Ink(f, "Ajuda", 26, new Vector2(0.05f, 0.29f), new Vector2(0.95f, 0.35f)), () => Textos.ExportarAjuda), 18);
+            _volSomT = VolRow(f, false, 0.828f, 0.918f, _barSom);
+            _volMusT = VolRow(f, true, 0.73f, 0.82f, _barMus);
+            _vibraBtn = Art.NewButton(f, "", 40, Art.PaperEdge, new Vector2(0.04f, 0.632f), new Vector2(0.96f, 0.722f), ToggleVibra);
+            Loc(Ink(f, "Idioma", 34, new Vector2(0.05f, 0.59f), new Vector2(0.95f, 0.628f), TextAnchor.MiddleLeft, true), () => Textos.Idioma);
+            // 4 idiomas em grade 2x2, cada um no proprio idioma; linhas de 0,082 do cartao = ~147 px de referencia (alvo de 48 dp)
+            for (int i = 0; i < _langBtn.Length; i++)
+            {
+                Textos.Lingua l = (Textos.Lingua)i;
+                float x0 = i % 2 == 0 ? 0.04f : 0.51f, y1 = i < 2 ? 0.585f : 0.495f;
+                _langBtn[i] = Art.NewButton(f, Textos.Nomes[i], 40, Art.PaperEdge, new Vector2(x0, y1 - 0.082f), new Vector2(x0 + 0.45f, y1), () => _g.SetIdioma(l));
+                RectTransform label = _langBtn[i].GetComponentInChildren<Text>().rectTransform;
+                label.anchorMin = new Vector2(0.18f, 0f); label.anchorMax = new Vector2(0.97f, 1f);   // o visto fica a esquerda, fora do texto
+                _langCheck[i] = Art.Img(_langBtn[i].transform, "Visto", Art.Check(), Art.Tinta, new Vector2(0.03f, 0.22f), new Vector2(0.17f, 0.78f));
+            }
+            Btn(f, () => Textos.ExportarDiario, 42, Art.Gold, new Vector2(0.04f, 0.323f), new Vector2(0.96f, 0.405f), Export);
+            Text help = Shrink(Loc(Ink(f, "Ajuda", 26, new Vector2(0.05f, 0.27f), new Vector2(0.95f, 0.32f)), () => Textos.ExportarAjuda), 18);
             help.color = Art.A(Art.Tinta, 0.82f);
-            _exportStatus = Shrink(Ink(f, "Status", 28, new Vector2(0.05f, 0.25f), new Vector2(0.95f, 0.29f), TextAnchor.MiddleCenter, true), 18);
-            Text priv = Shrink(Loc(Ink(f, "Privacidade", 26, new Vector2(0.05f, 0.15f), new Vector2(0.95f, 0.245f)), () => Textos.Privacidade), 18);
+            _exportStatus = Shrink(Ink(f, "Status", 28, new Vector2(0.05f, 0.237f), new Vector2(0.95f, 0.27f), TextAnchor.MiddleCenter, true), 18);
+            Text priv = Shrink(Loc(Ink(f, "Privacidade", 26, new Vector2(0.05f, 0.152f), new Vector2(0.95f, 0.236f)), () => Textos.Privacidade), 18);
             priv.color = Art.A(Art.Tinta, 0.82f);
-            _versionT = Shrink(Ink(f, "Versao", 26, new Vector2(0.05f, 0.105f), new Vector2(0.95f, 0.15f)), 16);
+            _versionT = Shrink(Ink(f, "Versao", 26, new Vector2(0.05f, 0.106f), new Vector2(0.95f, 0.15f)), 16);
             _versionT.color = Art.A(Art.Tinta, 0.75f);
             Btn(f, () => Textos.Voltar, 42, Art.PaperEdge, new Vector2(0.25f, 0.015f), new Vector2(0.75f, 0.1f), () => _settings.gameObject.SetActive(false));
             return m;

@@ -10,7 +10,7 @@ namespace DC.Core
     /// outro o bot so segue o caminho. Joga o verbo de cada carga (o que um jogador que leu a carga faria): reliquia sem dash e pousando
     /// para abater quem encosta; bolo sem dash; barril pousado no maximo ~1,6 s; mensagem sem lutar nem bau; porta escolhida pelo icone de risco
     /// da carga. ponytail: heuristica de regras, nao busca; serve para medir, nao para jogar bem.</summary>
-    public sealed class Bot
+    public sealed partial class Bot   // partial: logica do bot por regiao em Bot.RegiaoN.cs (raias de regiao)
     {
         public readonly float Aggression, Reaction, Greed;
         readonly Rng rng;
@@ -37,18 +37,22 @@ namespace DC.Core
             bool dash = false;
             if (--wait <= 0)
             {
-                dash = Plan(r);
-                wait = Math.Max(1, (int)Math.Round((Reaction + rng.Range(-0.08f, 0.08f)) / Balance.Step));
+                dash = Plan(r); AfterR2(r, ref dash);
+                wait =Math.Max(1, (int)Math.Round((Reaction + rng.Range(-0.08f, 0.08f)) / Balance.Step));
             }
             // ao entrar, o Core so conta o pouso depois do 1o movimento (FTUE): quem quer parar ja na entrada da um passo curto antes
             V2 move = stop ? (r.AwaitingMove ? V2.Up * 0.3f : V2.Zero) : r.PathDir(r.Courier.Pos, goal);
             if (dash) move = (goal - r.Courier.Pos).Norm;
+            else SteerR4(r, ref move);   // regiao 4: contorna fogo no chao, respiro prestes a soltar fogo e aviso no chao
             sim.Tick(Balance.Step, move, dash);
         }
 
         // ------------------------------------------------------------------ perk, porta, arma
 
-        static readonly Perk[] PerkRank = { Perk.ExtraHeart, Perk.QuickHand, Perk.Padded, Perk.DoubleDash, Perk.IronBoot, Perk.LightStep, Perk.QuickPlant, Perk.Lookout, Perk.ChestLuck, Perk.Magnet };
+        static readonly Perk[] PerkRank = { Perk.ExtraHeart, Perk.QuickHand, Perk.Padded, Perk.DoubleDash, Perk.IronBoot, Perk.LightStep, Perk.QuickPlant, Perk.Lookout, Perk.ChestLuck, Perk.Magnet,
+                                            // lancamento (so saem da regiao 2 em diante): depois dos da v1, para a regiao 1 nao mudar
+                                            Perk.SecondWind, Perk.ThickSkin, Perk.CargoShield, Perk.Counter, Perk.Whistle, Perk.FirmGrip, Perk.Spring, Perk.SureFoot,
+                                            Perk.Runner, Perk.Insulated, Perk.FirstAid, Perk.Hunter, Perk.CatEyes, Perk.Scout, Perk.ChestSense };
 
         /// <summary>Indice (0..2) da perk preferida: a da carga primeiro (acolchoada para reliquia/bolo/ovo; passo leve para pesada/mensagem).</summary>
         public static int ChoosePerk(Run r)
@@ -79,6 +83,7 @@ namespace DC.Core
                 case CargoType.Egg: c = (smash ? 0.9f : 0f) + (archer ? 0.6f : 0f); break;
                 case CargoType.Barrel: c = (thief ? 1.0f : 0f) + (smash ? 0.4f : 0f); break;
                 case CargoType.Heavy: c = thief ? 0.6f : 0f; break;
+                case CargoType.TreasureMap: c = thief ? 1.2f : 0f; break;   // regiao 4: ladroes preferem o mapa
             }
             return c;
         }
@@ -118,7 +123,15 @@ namespace DC.Core
                 float s = -d.Threat * (1.2f - Aggression) + (d.ChestCoins > 0 && !msg ? Greed * 1.5f : 0f) - (r.Hatched ? 0f : RiskCost(t, d.Risk, d.Threat)) + rng.Range(0f, 1.2f);
                 if (s > best) { best = s; door = d.Index; }
             }
+            OnRoomR4(r);
         }
+
+        // ganchos das regioes (Bot.RegiaoN.cs); sem implementacao custam zero. PlanRn: act -1 = nao decidiu, 0 = plano feito, 1 = dash.
+        partial void OnRoomR4(Run r);
+        partial void PlanR4(Run r, ref int act);
+        partial void SteerR4(Run r, ref V2 move);   // a cada passo: desvia o movimento de perigos visiveis (Bot.Regiao4.cs)
+        partial void PlanR2(Run r, ref int act); partial void AfterR2(Run r, ref bool dash);   // AfterRn: ajusta o plano geral (Bot.Regiao2.cs)
+        partial void PlanR3(Run r, ref int act);
 
         // ------------------------------------------------------------------ plano
 
@@ -127,7 +140,7 @@ namespace DC.Core
             Enemy best = null; float bd = float.MaxValue;
             foreach (Enemy e in r.Enemies)
             {
-                if (!e.Alive || (thievesOnly && e.Type != EnemyType.Thief && e.Type != EnemyType.Captain)) continue;
+                if (!e.Alive || e.Def.Hazard || r.Underground(e) || r.Untouchable(e) || (thievesOnly && e.Type != EnemyType.Thief && e.Type != EnemyType.Captain)) continue;   // vagonete e toupeira por baixo nao sao alvo
                 float d = V2.Dist(e.Pos, p);
                 if (d < bd) { bd = d; best = e; }
             }
@@ -158,6 +171,9 @@ namespace DC.Core
         {
             Courier c = r.Courier;
             if (c.State == CourierState.Dashing) return false;
+            int r4 = -1; PlanR4(r, ref r4); if (r4 >= 0) return r4 == 1;   // regiao 4 (Bot.Regiao4.cs): avisos no chao, respiros, fogo, lava, planta, mapa
+            int r2 = -1; PlanR2(r, ref r2); if (r2 >= 0) return r2 == 1;   // regiao 2 (Bot.Regiao2.cs): avisos no chao, trilhos, Rainha, gaiola, gelo
+            int r3 = -1; PlanR3(r, ref r3); if (r3 >= 0) return r3 == 1;   // regiao 3 (Bot.Regiao3.cs): avisos no chao, escuro, lanterna, espelho, balao, ossos, mumia
             Enemy near = Nearest(r, c.Pos);
             float nearD = near != null ? V2.Dist(near.Pos, c.Pos) : float.MaxValue;
             // alvo atras de pilar (bumerangue): parado nao adianta; andar ate ter linha
@@ -178,7 +194,7 @@ namespace DC.Core
             // 1) golpe telegrafado que pega o courier: sair (dash se esta em cima da hora)
             foreach (Enemy e in r.Enemies)
             {
-                if (!e.Alive || e.State != EnemyState.Telegraph || e.Type == EnemyType.Archer || V2.Dist(e.Pos, c.Pos) - Balance.CourierR > e.Def.Reach + 0.4f) continue;
+                if (!e.Alive || e.State != EnemyState.Telegraph || e.Type == EnemyType.Archer || e.Def.Region == 2 || MarkedR4(e) || V2.Dist(e.Pos, c.Pos) - Balance.CourierR > e.Def.Reach + 0.4f) continue;   // regiao 2: avisos no chao no PlanR2; regiao 4: no PlanR4
                 Go(Escape(r, c.Pos, e.Pos));
                 return e.Tele < 0.3f && c.DashReady && !HoldsFragile(r) && !r.Holds(CargoType.Cake);   // o dash larga a reliquia (racha) e o bolo nao deixa: so anda
             }
@@ -365,14 +381,15 @@ namespace DC.Core
 
         /// <summary>Tabela realista: `campaigns` campanhas do bot (sementes 5000..), e cada contrato medido `seeds` vezes a partir do save
         /// de cada campanha antes da 1a tentativa dele (guilda e armas que o bot tinha ao chegar la).</summary>
-        public static Stats[] MeasureCampaignTable(int campaigns, int seeds)
+        public static Stats[] MeasureCampaignTable(int campaigns, int seeds, int region = 1)
         {
-            var t = new Stats[Sim.Contracts.Length];
-            for (int c = 0; c < t.Length; c++) t[c] = new Stats { Contract = c };
+            RegionDef reg = RegionDef.Of(region);
+            var t = new Stats[reg.Contracts.Length];   // t[k] = contrato reg.First + k (na regiao 1, o indice e o proprio contrato)
+            for (int c = 0; c < t.Length; c++) t[c] = new Stats { Contract = reg.First + c };
             for (int k = 0; k < campaigns; k++)
             {
-                Campaign cp = PlayCampaign(5000 + k);
-                for (int c = 0; c < t.Length; c++) if (cp.Before[c] != null) MeasureFrom(cp.Before[c], c, seeds, 1000 + 100 * k, 0.5f, t[c]);
+                Campaign cp = PlayCampaign(5000 + k, region: region);
+                for (int c = 0; c < t.Length; c++) if (cp.Before[reg.First + c] != null) MeasureFrom(cp.Before[reg.First + c], reg.First + c, seeds, 1000 + 100 * k, 0.5f, t[c]);
             }
             return t;
         }
@@ -452,10 +469,10 @@ namespace DC.Core
 
         public static Route MeasureRoute(int seeds, int baseSeed = 3000)
         {
-            int n = CargoDef.All.Length;
+            int n = RegionDef.Of(1).CargoCount;   // H2 e da regiao 1: as 7 cargas dela nos 24 contratos dela
             var counts = new Dictionary<string, int[,]>();
             var thief = new int[n]; var thiefForks = new int[n];
-            foreach (ContractDef def0 in Sim.Contracts)
+            foreach (ContractDef def0 in Regiao1.Contracts)
                 for (int t = 0; t < n; t++)
                 {
                     var def = new ContractDef("H2", (CargoType)t, def0.Pay, (CargoType)t == CargoType.Egg ? 999f : 0f, def0.Note, Trim(def0.Layers))
@@ -537,22 +554,28 @@ namespace DC.Core
             public readonly float[] ClockAt = new float[Sim.Contracts.Length];
         }
 
-        /// <summary>Campanha do zero: joga o proximo contrato bloqueado (aceitando o resgate quando ha pendente), refaz o que falha, troca a
-        /// arma pela carga e compra o mais barato que couber (guilda ou nivel de arma destravada) antes de cada contrato.</summary>
-        public static Campaign PlayCampaign(int seed, float aggression = 0.5f, float reaction = 0.25f, int maxAttempts = 150)
+        /// <summary>Campanha do zero (ou do save `from`, ex.: o estado estimado do fim da regiao anterior): joga o proximo contrato bloqueado
+        /// (aceitando o resgate quando ha pendente), refaz o que falha, troca a arma pela carga e compra o mais barato que couber (guilda, nivel
+        /// de arma ou de equipamento destravado; equipa o 1o destravado) antes de cada contrato.</summary>
+        public static Campaign PlayCampaign(int seed, float aggression = 0.5f, float reaction = 0.25f, int maxAttempts = 150, int region = 1, string from = null)
         {
-            var sim = new Sim(seed); var bot = new Bot(seed * 13 + 5, aggression, reaction); var cp = new Campaign();
-            while (sim.Reputation < Sim.Contracts.Length && cp.Attempts < maxAttempts)
+            var sim = from == null ? new Sim(seed) : Sim.Load(from); var bot = new Bot(seed * 13 + 5, aggression, reaction); var cp = new Campaign();
+            sim.Seed = seed;
+            RegionDef reg = RegionDef.Of(region);
+            int end = reg.First + reg.Contracts.Length;   // joga ate o fim da regiao `region` (padrao: a regiao 1, os 24 da v1)
+            while (sim.Reputation < end && cp.Attempts < maxAttempts)
             {
                 while (true)
                 {
                     int pick = -1, cost = int.MaxValue;
                     for (int u = 0; u < Balance.UpgradeLines; u++) { int k = sim.UpgradeCost((Upgrade)u); if (sim.CanBuy((Upgrade)u) && k < cost) { cost = k; pick = u; } }
                     for (int w = 0; w < WeaponDef.All.Length; w++) { int k = sim.WeaponCost((Weapon)w); if (sim.CanUpgradeWeapon((Weapon)w) && k < cost) { cost = k; pick = 10 + w; } }
+                    for (int g = 1; g < GearDef.All.Length; g++) { int k = sim.GearCost((Gear)g); if (sim.CanUpgradeGear((Gear)g) && k < cost) { cost = k; pick = 20 + g; } }
                     if (pick < 0) break;
                     cp.Spent += cost;
-                    if (pick >= 10) sim.UpgradeWeapon((Weapon)(pick - 10)); else sim.Buy((Upgrade)pick);
+                    if (pick >= 20) sim.UpgradeGear((Gear)(pick - 20)); else if (pick >= 10) sim.UpgradeWeapon((Weapon)(pick - 10)); else sim.Buy((Upgrade)pick);
                 }
+                for (int g = 1; g < GearDef.All.Length && sim.GearEquipped == Gear.None; g++) if (sim.GearUnlocked((Gear)g)) sim.EquipGear((Gear)g);   // regiao 1: nenhum destravado
                 int c = sim.Reputation;
                 sim.Equip(WeaponFor(sim, Sim.Contracts[c]));
                 if (cp.Before[c] == null) cp.Before[c] = sim.Save();
@@ -570,7 +593,7 @@ namespace DC.Core
                     for (int w = 1; w < WeaponDef.All.Length; w++) if (cp.UnlockAt[w] < 0 && sim.WeaponUnlocked((Weapon)w)) cp.UnlockAt[w] = c;
                 }
             }
-            cp.Finished = sim.Reputation >= Sim.Contracts.Length;
+            cp.Finished = sim.Reputation >= end;
             cp.Coins = sim.Coins; cp.Stars = sim.Stars;
             Array.Copy(sim.Levels, cp.Levels, cp.Levels.Length);
             for (int w = 0; w < WeaponDef.All.Length; w++) cp.WeaponLevels[w] = sim.WeaponLevel((Weapon)w);

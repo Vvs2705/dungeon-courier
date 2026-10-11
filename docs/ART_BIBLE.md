@@ -300,8 +300,8 @@ A coluna "na tela" é estimativa por geometria: 0,5·altura + 0,87·profundidade
 | Arma segurada na mão no T-pose | Arma nas costas ou na cintura, escudo preso no antebraço, punhos e manoplas |
 | Saia, túnica ou capa longa | Roupa justa nas pernas, capa curta e rígida |
 | Carga modelada no corpo do courier | Carga sempre como sprite separado: rachadura, troca e roubo sem re-render |
-| Escuridão "de clima" | Cor fria com luz quente pontual; a área de jogo nunca perde valor |
-| Cor de papel no cenário (roxo, limão, vermelho do guarda, azul do courier) | Cenário só em azul-violeta-cinza e âmbar |
+| Escuridão "de clima" | Cor fria com luz quente pontual; a área de jogo nunca perde valor. **Exceção (2026-10-11): o escuro da região 3 (Cripta) e dos eventos Midnight/Neblina é regra de jogo, não clima**: fora da luz o chão cai a ~30% do valor (véu `#0B0D16` a 70%, nunca preto), inimigo aparece como olhos e sombra, e **telegraph no chão e projéteis ficam sempre visíveis** (`CONTEUDO_REGIOES.md` §2) |
+| Cor de papel no cenário (roxo, limão, vermelho do guarda, azul do courier) | Cenário só em azul-violeta-cinza e âmbar **na região 1**; as regiões 2–4 têm paleta de cenário própria (minas: terra e madeira; cripta: lajes frias e âmbar; forja: pedra escura e laranja de lava), definida em `CONTEUDO_REGIOES.md`, **sempre sem cor de papel** |
 | Corrigir escala no Unity | `--height` no Blender (preset) |
 | Texto em textura | Texto só na HUD |
 | IP alheio (uniforme ou logo de transportadora real, Hermes/Mercúrio alado, criatura de franquia) | Selo próprio da guilda: envelope lacrado cruzado por uma chave |

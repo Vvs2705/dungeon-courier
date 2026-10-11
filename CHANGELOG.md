@@ -3,6 +3,14 @@
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões em [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
+- Falta para o GDD completo (`docs/CONTRATO_LANCAMENTO.md`): sprites da múmia, gárgula, necromante e de toda a região 4 (com o dragão armado no Blender), peça `corrente` travada no Tripo, roupas do courier renderizadas, SDKs reais de anúncio e compra (dependem das contas do Vinicius), gravação dos criativos e fotos da loja, balance da economia (sobra de moedas) e da duração.
+
+## [1.1.0-beta] - 2026-10-11
+### Adicionado
+- **4 regiões e 72 contratos:** Minas Alagadas, Cripta Assombrada e Forja do Dragão no núcleo, com salas, terreno (água, trilhos, escuro com luz, teias, lava, respiros, fogo), 14 inimigos novos, 6 chefes (Rainha Toupeira, Golem, Viúva Aranha, Necromante, Capataz Kobold, Dragão Ancião), 8 cargas novas e o bot jogando cada região (148 testes).
+- **Sistemas de longo prazo:** eventos semanais, modificadores, temporada, contrato raro, rerolls, equipamento lateral com projetos, maestria e marcos, desafio sem fim, 25 perks, save v3.
+- **Telas:** mapa de regiões, eventos, temporada, modificadores, equipamento, maestria, sem fim, roupas, loja e anúncios **de teste** (sem SDK real).
+- **4 idiomas** (pt-BR, EN, ES, ID), áudio das regiões e dos chefes, sprites da região 2 e parte da 3, página da loja e roteiros dos criativos.
 
 ## [1.0.0-beta] - 2026-10-10
 ### Adicionado
@@ -19,5 +27,6 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões e
 - `Setup.BuildAndroidDev` apaga os APKs anteriores antes de gerar (fica só o atual).
 - Repositório criado (2026-10-09) com o GDD revisado (comparativo de mercado no topo), `docs/COMPETITIVO.md` e a estrutura de pastas do projeto Unity.
 
-[Unreleased]: https://github.com/Vvs2705/dungeon-courier/compare/v1.0.0-beta...HEAD
+[Unreleased]: https://github.com/Vvs2705/dungeon-courier/compare/v1.1.0-beta...HEAD
+[1.1.0-beta]: https://github.com/Vvs2705/dungeon-courier/compare/v1.0.0-beta...v1.1.0-beta
 [1.0.0-beta]: https://github.com/Vvs2705/dungeon-courier/releases/tag/v1.0.0-beta

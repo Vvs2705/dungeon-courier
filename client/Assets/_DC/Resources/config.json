@@ -1,0 +1,13 @@
+{
+  "interstitial_on": true,
+  "rewarded_on": true,
+  "events_on": true,
+  "ad_free_contracts": 3,
+  "ad_every_contracts": 3,
+  "ad_every_seconds": 240,
+  "rare_hours": 8,
+  "reroll_base": 60,
+  "reroll_step": 60,
+  "starter_after": 3,
+  "config_url": ""
+}
