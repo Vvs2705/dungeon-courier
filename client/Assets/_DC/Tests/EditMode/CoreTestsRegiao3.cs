@@ -96,10 +96,13 @@ namespace DC.Tests
                     var bot = new Bot(77 + s);
                     if (sim.StartContract(c, false) == null) { causes["nao comecou"] = 1; continue; }
                     var prev = new List<SimEvent>();
-                    int guard = 0;
+                    int guard = 0; var trail = new List<string>();
                     while (sim.InContract && ++guard < 20000)
                     {
                         Run r = sim.Run; CourierState st = r.Courier.State; string room = r.Room.Code; CargoState cs = r.Main.State;
+                        { Enemy gh = null; float gd = 99f; foreach (Enemy en in r.Enemies) if (en.Alive && en.Type == EnemyType.Ghost && V2.Dist(en.Pos, r.Courier.Pos) < gd) { gd = V2.Dist(en.Pos, r.Courier.Pos); gh = en; }
+                          trail.Add(string.Format(CultureInfo.InvariantCulture, "t={0:0.00} {1} cs={2} st={3} idle={4:0.00} pos={5} ghost={6:0.0}/{7}/cd{8:0.0}", r.Time, room, cs, st, r.Courier.IdleT, r.Courier.Pos, gd, gh != null ? gh.State.ToString() : "-", gh != null ? gh.Cd : 0f));
+                          if (trail.Count > 12) trail.RemoveAt(0); }
                         bot.Act(sim);
                         foreach (SimEvent e in sim.Events)
                         {
@@ -110,6 +113,7 @@ namespace DC.Tests
                                 Enemy near = null; float nd = 99f; foreach (Enemy en in r.Enemies) if (en.Alive && V2.Dist(en.Pos, r.Courier.Pos) < nd) { nd = V2.Dist(en.Pos, r.Courier.Pos); near = en; }
                                 string key = Sim.Contracts[c].Code + " " + room + " " + why + " cs=" + cs + " st=" + st + (r.Webbed > 0 ? " PRESO" : "") + (r.GrabbedBy != null ? " AGARRADO" : "") + " perto=" + (near != null ? near.Type + "/" + near.State : "-");
                                 causes[key] = (causes.TryGetValue(key, out int n) ? n : 0) + 1;
+                                if (why == "golpe no courier" && room == "R3-4" && cs == CargoState.Held && causes[key] <= 3) TestContext.WriteLine("TRILHA " + string.Join(" | ", trail));
                             }
                         }
                     }

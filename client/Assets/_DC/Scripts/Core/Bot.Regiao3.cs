@@ -101,8 +101,10 @@ namespace DC.Core
                     if (bd < float.MaxValue) { Go(best); act = 0; return; }
                 }
             if (bored) return;
-            // e2) reliquia nas maos e fantasma chegando (atravessa parede; o toque racha): pousar e abater na luz
-            if (r.Holds(CargoType.Relic))
+            // e2) reliquia e fantasma chegando (atravessa parede; o toque racha): com ela nas maos, pousar; pousada ao lado, ficar (andar ate o
+            //     fantasma dentro da parede, que o bumerangue nao alcanca, pega a reliquia de volta e o toque racha); se ele possuir, (a2) pega de volta
+            Cargo m = r.Main;
+            if (m.Type == CargoType.Relic && (m.State == CargoState.Held || (m.State == CargoState.Ground && V2.Dist(m.Pos, c.Pos) <= r.Sim.PickupRange)))
                 foreach (Enemy e in r.Enemies)
                     if (e.Alive && e.Type == EnemyType.Ghost && e.Carry == null && V2.Dist(e.Pos, c.Pos) <= 3.2f) { stop = true; act = 0; return; }
             // f) pilha de ossos longe da carga: levar a carga ate ela (a 3 m o esqueleto nao volta)

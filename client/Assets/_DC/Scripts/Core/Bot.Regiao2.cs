@@ -8,6 +8,7 @@ namespace DC.Core
     /// gaiola com o dash quando nao ha ladrao; pousa o coracao como isca com 3+ perseguidores. Medicao em docs/BALANCE_REGIAO2.md.</summary>
     public sealed partial class Bot
     {
+        int iceRoom = -1; bool refreeze;
         /// <summary>Antes do plano geral: perigos da regiao 2 e as salas/cargas com regra propria. act: -1 = segue o plano geral, 0 = plano feito,
         /// 1 = dash.</summary>
         partial void PlanR2(Run r, ref int act)
@@ -69,18 +70,24 @@ namespace DC.Core
                 foreach (Enemy e in r.Enemies) if (e.Alive && !e.Def.Hazard && !e.Def.Locks && V2.Dist(e.Pos, c.Pos) <= Balance.CageRadius) matters = true;
                 if (matters) { act = 1; return; }
             }
-            // 5) cristal: recongelar na agua quando a sala tem agua perto e ninguem encosta
+            // 5) cristal: abaixo de 85% vai recongelar na poca (ate 97%) quando a sala tem agua perto e ninguem encosta
             Cargo ice = r.Main.Type == CargoType.IceCrystal ? r.Main : null;
-            if (ice != null && ice.State != CargoState.Gone && !bored && r.Room.Water.Length > 0 && (Nearest(r, c.Pos) == null || V2.Dist(Nearest(r, c.Pos).Pos, c.Pos) > 3f))
+            int key = r.Layer * 64 + r.Room.Id;
+            if (key != iceRoom) { iceRoom = key; refreeze = false; }
+            Enemy close = Nearest(r, c.Pos);
+            if (ice == null || ice.State == CargoState.Gone || bored || r.Room.Water.Length == 0 || (close != null && V2.Dist(close.Pos, c.Pos) <= 3f)) refreeze = false;
+            else
             {
                 float v = r.IceOf(ice);
                 V2 pool = NearestWater(r, c.Pos);
-                if (ice.State == CargoState.Held && v < 85f && V2.Dist(c.Pos, pool) <= 6f)
+                if (v < 85f && V2.Dist(c.Pos, pool) <= 6f) refreeze = true;
+                if (v >= 97f) refreeze = false;
+                if (refreeze)
                 {
-                    if (V2.Dist(c.Pos, pool) <= 0.45f) stop = true; else Go(pool);
+                    if (ice.State == CargoState.Ground) { if (r.InWater(ice.Pos) && V2.Dist(c.Pos, ice.Pos) <= r.Sim.PickupRange) stop = true; else Go(ice.Pos); }
+                    else if (V2.Dist(c.Pos, pool) <= 0.45f) stop = true; else Go(pool);
                     act = 0; return;
                 }
-                if (ice.State == CargoState.Ground && r.InWater(ice.Pos) && v < 97f && V2.Dist(c.Pos, ice.Pos) <= r.Sim.PickupRange) { stop = true; act = 0; return; }
             }
         }
 
@@ -99,9 +106,11 @@ namespace DC.Core
                 bool mole = false;
                 foreach (Enemy e in r.Enemies) if (e.Alive && e.Type == EnemyType.Mole) mole = true;
                 if ((mole || r.Holds(CargoType.IceCrystal)) && r.Room.Water.Length > 0 && !r.InWater(c.Pos) && !bored)
-                {
+                {   // pousar na agua so para lutar de longe: perseguido de perto ou no bau, pousa ali mesmo
+                    Enemy n = Nearest(r, c.Pos);
+                    bool close = n != null && V2.Dist(n.Pos, c.Pos) < 2.5f, chest = wantChest && r.Chest != null && !r.Chest.Opened && V2.Dist(c.Pos, r.Chest.Pos) <= 2f;
                     V2 pool = NearestWater(r, c.Pos);
-                    if (V2.Dist(c.Pos, pool) <= 4f) { Go(pool); return; }
+                    if (!close && !chest && V2.Dist(c.Pos, pool) <= 4f) { Go(pool); return; }
                 }
             }
             if (!stop && !bored)
