@@ -318,3 +318,33 @@ Aval: mensagem do Vinicius em 2026-10-10 ("sem pausas, sem solicitações ... qu
 | — | texturas `piso`, `parede` | imagem grátis (gerador do Tripo) | seamless tileable stylized dungeon floor slabs / brick wall, top-down, grey-blue, hand-painted, flat light | 0 |
 
 > **Lote 3: 2 × 65 + 8 × 45 = 490 créditos** (teto 550).
+
+## 9. Lote 4 da v1.0 (2026-10-10) — região 2 "Minas Alagadas" (CONTRATO_LANCAMENTO §4 e §8)
+
+Aval: mensagem do Vinicius em 2026-10-10 ("sem pausas, sem solicitações ... seja na arte") e o pedido do jogo completo pelo GDD. Teto do lote: **750 créditos**. Cores de papel (ART_BIBLE §3, cores livres no elenco): goblin mineiro = **amarelo-capacete**; toupeira = **marrom**; Rainha Toupeira = **ameixa** com manto roxo e coroa dourada; golem = **pedra + âmbar**; sapo = **oliva**; besouro = **preto + laranja**. Itens separados do corpo (regra do Vinicius): a picareta do goblin mineiro sai como prop e é presa à mão no Blender.
+
+**Texto exato enviado ao gerador** (Nano Banana 2, 1:1, 4 imagens, grátis): os trechos abaixo foram unidos por ", ", nesta ordem.
+- Personagem: assunto + `[S]` + `[T]` + `[I]` (sufixos do §0, sem mudança).
+- Prop: assunto + "only one object in the image" + `[P]` + `[IP]`.
+- Modelo: HD H3.1 - Máx. qualidade, Ultra, 2K, PBR, remover iluminação, triângulos, 8 000 polígonos, 8K off, Gerar em Partes off, Privado ("Gerar 45" conferido em cada peça). Multi-View não usado ("Gerar multivisões" tem custo próprio).
+
+| # | Asset | Tipo | Assunto do prompt (texto exato, antes dos sufixos) | Imagem | Cr |
+|---|---|---|---|---|---|
+| 31 | `goblin_mineiro` | personagem rigado | small goblin miner, green skin, dented yellow miner helmet with a little lamp, brown work overalls, rolled sleeves, big ears, empty hands, no tool | #2 | 65 |
+| 32 | `picareta` | prop (item da mão do goblin mineiro) | one single miner pickaxe with a wooden handle and a dented iron head, single object | #1 | 45 |
+| 33 | `toupeira` | personagem rigado | chubby humanoid mole creature standing on two legs, dark brown velvety fur, pink nose, tiny eyes with round goggles on the forehead, big digging claws, empty hands | #2 | 65 |
+| 34 | `rainha_toupeira` | personagem rigado (mini-chefe) | large humanoid mole queen, dark plum fur, small golden crown, royal purple mantle with dirt stains, huge digging claws, empty hands | #4 | 65 |
+| 35 | `golem` | personagem rigado (chefe, ~2,8 m no jogo) | hulking stone golem, chunky mossy grey-brown rock body, glowing amber crystal core in the chest, small head, huge rock fists, empty hands | #2 (a única em pose T) | 65 |
+| 36 | `sapo` | prop (animado por código) | fat swamp toad monster, muddy olive-green warty skin, wide mouth, big yellow eyes, sitting pose | #2 | 45 |
+| 37 | `besouro` | prop (animado por código) | round bomb beetle, glossy black shell with an orange glowing fuse-like horn, six short legs | #4 | 45 |
+| 38 | `vagonete` | prop (perigo móvel nos trilhos) | wooden mine cart with iron wheels and rim, rusty, empty, side view readable | #4 | 45 |
+| 39 | `coracao` | prop (carga) | arcane heart cargo, a glowing magenta crystal heart floating inside a small brass cage with a carry handle | #3 | 45 |
+| 40 | `cristal` | prop (carga) | ice crystal cargo, a big clear-blue ice crystal cluster on a small wooden pallet with rope handles | #4 | 45 |
+| 41 | `gaiola` | prop (carga) | birdcage cargo with a small fluffy baby griffin inside (eagle head, lion body), brass cage with a top ring handle | #1 | 45 |
+| 42 | `lanterna_mina` | prop (decoração) | hanging mine lantern on a short wooden post, warm yellow glass, iron frame | #2 | 45 |
+| 43 | `escora` | prop (decoração) | mine support frame, two thick wooden posts and a crossbeam with iron brackets | #1 | 45 |
+| — | texturas `piso_mina`, `parede_mina` | imagem grátis (gerador do Tripo) | texto exato em `PROVENIENCIA.md` §4 (wet mine floor, brown dirt + flat stones + teal puddles / mine wall, brown rock + horizontal wooden planks) | #2 / #3 | 0 |
+
+Na picareta, o assunto já trazia "single object" antes do "only one object in the image". O trilho do CONTRATO §8 ficou de fora: é procedural, como os obstáculos.
+
+> **Lote 4: 4 × 65 + 9 × 45 = 665 créditos** (teto 750). Saldo 19 435 → 18 770 (`PROVENIENCIA.md` §1). Sem refação e sem duplicata.
