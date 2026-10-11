@@ -12,6 +12,9 @@ namespace DC.Core
         /// <summary>Estrelas para destravar (alem do chefe da regiao 2).</summary>
         public const int Stars = 60;
         /// <summary>Nivel base dos gerados da regiao. PROVISORIO.</summary>
+        /// <summary>Contrato gerado da regiao (CONTEUDO_REGIOES §1.2, PROVISORIO): pagamento = GenPay + 22 x camadas; tempos por sala (s) ate a
+        /// entrega: 3a estrela, ovo, gelo (MeltTime) e mensagem.</summary>
+        public const int GenPay = 165; public const float GenPar = 22f, GenEgg = 28f, GenMelt = 30f, GenLimit = 14f;
         public const int TierBase = 18;
 
         public static readonly RoomDef[] Rooms = { };

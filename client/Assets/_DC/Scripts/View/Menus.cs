@@ -54,8 +54,9 @@ namespace DC
         // configuracoes
         Text _volSomT, _volMusT, _exportStatus, _versionT;
         readonly Image[] _barSom = new Image[Ajustes.VolMax], _barMus = new Image[Ajustes.VolMax];
-        Button _vibraBtn, _ptBtn, _enBtn;
-        Image _ptCheck, _enCheck;
+        Button _vibraBtn;
+        readonly Button[] _langBtn = new Button[4];   // ordem de Textos.Lingua: Português, English / Español, Bahasa Indonesia
+        readonly Image[] _langCheck = new Image[4];
 
         // ------------------------------------------------------------------ mostrar
 
@@ -278,10 +279,12 @@ namespace DC
             }
             _vibraBtn.interactable = Ajustes.TemVibra;
             _vibraBtn.GetComponentInChildren<Text>().text = Ajustes.TemVibra ? Textos.Vibra(Ajustes.Vibra) : Textos.VibraSoCelular;
-            bool en = Ajustes.Ingles;
-            _ptCheck.enabled = !en; _enCheck.enabled = en;
-            ((Image)_ptBtn.targetGraphic).color = en ? Art.PaperEdge : Art.Good;
-            ((Image)_enBtn.targetGraphic).color = en ? Art.Good : Art.PaperEdge;
+            for (int i = 0; i < _langBtn.Length; i++)
+            {
+                bool on = (int)Ajustes.Idioma == i;
+                _langCheck[i].enabled = on;
+                ((Image)_langBtn[i].targetGraphic).color = on ? Art.Good : Art.PaperEdge;
+            }
             _versionT.text = Textos.Versao(_g.Version) + "  ·  " + Textos.IdAnonimo(_g.InstallShort);
         }
 
@@ -692,21 +695,27 @@ namespace DC
             Image face = Card(m, "Cartao", new Vector2(0.03f, 0.03f), new Vector2(0.97f, 0.97f));
             Transform f = face.transform;
             Loc(Ink(f, "Titulo", 56, new Vector2(0.05f, 0.925f), new Vector2(0.95f, 0.99f), TextAnchor.MiddleCenter, true), () => Textos.Config);
-            _volSomT = VolRow(f, false, 0.82f, 0.91f, _barSom);
-            _volMusT = VolRow(f, true, 0.715f, 0.805f, _barMus);
-            _vibraBtn = Art.NewButton(f, "", 40, Art.PaperEdge, new Vector2(0.04f, 0.61f), new Vector2(0.96f, 0.7f), ToggleVibra);
-            Loc(Ink(f, "Idioma", 34, new Vector2(0.05f, 0.555f), new Vector2(0.95f, 0.6f), TextAnchor.MiddleLeft, true), () => Textos.Idioma);
-            _ptBtn = Art.NewButton(f, Textos.Portugues, 40, Art.PaperEdge, new Vector2(0.04f, 0.46f), new Vector2(0.49f, 0.55f), () => _g.SetIdioma(false));
-            _enBtn = Art.NewButton(f, Textos.English, 40, Art.PaperEdge, new Vector2(0.51f, 0.46f), new Vector2(0.96f, 0.55f), () => _g.SetIdioma(true));
-            _ptCheck = Art.Img(_ptBtn.transform, "Visto", Art.Check(), Art.Tinta, new Vector2(0.04f, 0.22f), new Vector2(0.18f, 0.78f));
-            _enCheck = Art.Img(_enBtn.transform, "Visto", Art.Check(), Art.Tinta, new Vector2(0.04f, 0.22f), new Vector2(0.18f, 0.78f));
-            Btn(f, () => Textos.ExportarDiario, 42, Art.Gold, new Vector2(0.04f, 0.355f), new Vector2(0.96f, 0.445f), Export);
-            Text help = Shrink(Loc(Ink(f, "Ajuda", 26, new Vector2(0.05f, 0.29f), new Vector2(0.95f, 0.35f)), () => Textos.ExportarAjuda), 18);
+            _volSomT = VolRow(f, false, 0.828f, 0.918f, _barSom);
+            _volMusT = VolRow(f, true, 0.73f, 0.82f, _barMus);
+            _vibraBtn = Art.NewButton(f, "", 40, Art.PaperEdge, new Vector2(0.04f, 0.632f), new Vector2(0.96f, 0.722f), ToggleVibra);
+            Loc(Ink(f, "Idioma", 34, new Vector2(0.05f, 0.59f), new Vector2(0.95f, 0.628f), TextAnchor.MiddleLeft, true), () => Textos.Idioma);
+            // 4 idiomas em grade 2x2, cada um no proprio idioma; linhas de 0,082 do cartao = ~147 px de referencia (alvo de 48 dp)
+            for (int i = 0; i < _langBtn.Length; i++)
+            {
+                Textos.Lingua l = (Textos.Lingua)i;
+                float x0 = i % 2 == 0 ? 0.04f : 0.51f, y1 = i < 2 ? 0.585f : 0.495f;
+                _langBtn[i] = Art.NewButton(f, Textos.Nomes[i], 40, Art.PaperEdge, new Vector2(x0, y1 - 0.082f), new Vector2(x0 + 0.45f, y1), () => _g.SetIdioma(l));
+                RectTransform label = _langBtn[i].GetComponentInChildren<Text>().rectTransform;
+                label.anchorMin = new Vector2(0.18f, 0f); label.anchorMax = new Vector2(0.97f, 1f);   // o visto fica a esquerda, fora do texto
+                _langCheck[i] = Art.Img(_langBtn[i].transform, "Visto", Art.Check(), Art.Tinta, new Vector2(0.03f, 0.22f), new Vector2(0.17f, 0.78f));
+            }
+            Btn(f, () => Textos.ExportarDiario, 42, Art.Gold, new Vector2(0.04f, 0.323f), new Vector2(0.96f, 0.405f), Export);
+            Text help = Shrink(Loc(Ink(f, "Ajuda", 26, new Vector2(0.05f, 0.27f), new Vector2(0.95f, 0.32f)), () => Textos.ExportarAjuda), 18);
             help.color = Art.A(Art.Tinta, 0.82f);
-            _exportStatus = Shrink(Ink(f, "Status", 28, new Vector2(0.05f, 0.25f), new Vector2(0.95f, 0.29f), TextAnchor.MiddleCenter, true), 18);
-            Text priv = Shrink(Loc(Ink(f, "Privacidade", 26, new Vector2(0.05f, 0.15f), new Vector2(0.95f, 0.245f)), () => Textos.Privacidade), 18);
+            _exportStatus = Shrink(Ink(f, "Status", 28, new Vector2(0.05f, 0.237f), new Vector2(0.95f, 0.27f), TextAnchor.MiddleCenter, true), 18);
+            Text priv = Shrink(Loc(Ink(f, "Privacidade", 26, new Vector2(0.05f, 0.152f), new Vector2(0.95f, 0.236f)), () => Textos.Privacidade), 18);
             priv.color = Art.A(Art.Tinta, 0.82f);
-            _versionT = Shrink(Ink(f, "Versao", 26, new Vector2(0.05f, 0.105f), new Vector2(0.95f, 0.15f)), 16);
+            _versionT = Shrink(Ink(f, "Versao", 26, new Vector2(0.05f, 0.106f), new Vector2(0.95f, 0.15f)), 16);
             _versionT.color = Art.A(Art.Tinta, 0.75f);
             Btn(f, () => Textos.Voltar, 42, Art.PaperEdge, new Vector2(0.25f, 0.015f), new Vector2(0.75f, 0.1f), () => _settings.gameObject.SetActive(false));
             return m;

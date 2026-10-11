@@ -78,6 +78,8 @@ namespace DC.Core
         Bat, Thief, Guard, Brute, Ogre, Archer, Slime, Captain,
         GoblinMiner, Mole, BogFrog, BombBeetle, Minecart, Ghost, Skeleton, Spider, Mummy, Gargoyle, Salamander, Imp, KoboldBomber, MagmaElemental,
         MoleQueen, StoneGolem, SpiderWidow, Necromancer, KoboldForeman, ElderDragon,
+        // variacoes (nao contam nos 20): brasa do elemental de magma e ovo de salamandra do Dragao (CONTEUDO_REGIOES §5)
+        MagmaShard, SalamanderEgg,
     }
     public enum Upgrade { Life, Dash, Bag, Pack }
     public enum Weapon { Sling, Boomerang, Bomb }
@@ -108,10 +110,17 @@ namespace DC.Core
 
     public enum EnemyState { Idle, Chase, Lurk, Grab, Flee, Telegraph, Recover }
 
-    public enum Outcome { Running, Delivered, Died, CargoStolen, CargoBroken, PetDied, Abandoned, TimeUp, Exploded }
+    /// <summary>Lancamento: Melted = o cristal de gelo derreteu; Escaped = o balao escapou (espelho quebrado e balao estourado = CargoBroken).</summary>
+    public enum Outcome { Running, Delivered, Died, CargoStolen, CargoBroken, PetDied, Abandoned, TimeUp, Exploded, Melted, Escaped }
 
     /// <summary>Dica contextual da FTUE (texto em Hints.Text).</summary>
-    public enum Hint { None, PlantToFight, PickUp, Dash, Thief, DoorNeedsCargo, GuardDoor, Chest, WaitPet, DragToWalk, CakeNoDash, BarrelFuse, ArcherAim, SecretWall, MessageDoor }
+    public enum Hint
+    {
+        None, PlantToFight, PickUp, Dash, Thief, DoorNeedsCargo, GuardDoor, Chest, WaitPet, DragToWalk, CakeNoDash, BarrelFuse, ArcherAim, SecretWall, MessageDoor,
+        // lancamento (CONTEUDO_REGIOES §1.4): as raias de regiao ligam pelo gancho HintRn (Run.cs); Dark, MapReveal e Asleep o nucleo ja liga
+        Water, CartBell, Asleep, MoleTrail, FrogTongue, BeetleFuse, HeartPull, IceMelt, CageScream, Dark, LanternOut, Web, GhostCargo, SkeletonRise,
+        MummyGrab, GargoyleWake, MirrorFront, BalloonRise, Lava, Vent, PlantBite, MapReveal, ImpSwap,
+    }
 
     public static class Hints
     {
@@ -133,6 +142,29 @@ namespace DC.Core
                 case Hint.ArcherAim: return "arqueiro mirando: saia da linha";
                 case Hint.SecretWall: return "parede rachada: atravesse com a carga";
                 case Hint.MessageDoor: return "a mensagem abre a porta trancada";
+                case Hint.Water: return "água freia todo mundo: o ladrão também";
+                case Hint.CartBell: return "vagonete! saia do trilho";
+                case Hint.Asleep: return "mineiro dormindo: passe a mais de 2 m";
+                case Hint.MoleTrail: return "toupeira por baixo: carregue a carga";
+                case Hint.FrogTongue: return "sapo: não pouse a menos de 3 m dele";
+                case Hint.BeetleFuse: return "besouro vai explodir: dash ou atire de longe";
+                case Hint.HeartPull: return "o coração atrai inimigos e moedas";
+                case Hint.IceMelt: return "o gelo derrete: passe pela água";
+                case Hint.CageScream: return "o grifinho vai gritar: o dash acalma";
+                case Hint.Dark: return "no escuro só se mira o que está na luz";
+                case Hint.LanternOut: return "a lanterna apagou: leve-a até uma tocha";
+                case Hint.Web: return "teia: o dash rasga";
+                case Hint.GhostCargo: return "o fantasma está levando a carga: pegue de volta";
+                case Hint.SkeletonRise: return "lute perto da carga: o esqueleto não volta";
+                case Hint.MummyGrab: return "agarrado: dash ou pouse e lute";
+                case Hint.GargoyleWake: return "a gárgula acorda com a carga por perto";
+                case Hint.MirrorFront: return "o espelho reflete o que vem de frente";
+                case Hint.BalloonRise: return "balão no chão escapa em 4 s: pegue!";
+                case Hint.Lava: return "empurre inimigos na lava com o dash";
+                case Hint.Vent: return "respiro brilhando: vai sair fogo";
+                case Hint.PlantBite: return "a planta morde quem fica perto: dê um passo";
+                case Hint.MapReveal: return "o mapa mostra baús enterrados";
+                case Hint.ImpSwap: return "diabrete vai trocar de lugar com a carga";
                 default: return "";
             }
         }
@@ -386,6 +418,10 @@ namespace DC.Core
         { Type = t; Name = name; Hp = hp; Speed = speed; Radius = radius; Damage = dmg; Reach = reach; Trigger = trigger; Tele = tele; Cooldown = cd; Locks = locks; this.boss = boss; this.risk = risk; }
         /// <summary>Chefe ou mini-chefe (Ogro, Capitao e os 6 novos): a mensagem nao abre a porta dele e o dash nao o empurra (menos o Capitao).</summary>
         public bool Boss => boss;
+        /// <summary>Mini-chefe (Capitao, Rainha Toupeira, Viuva Aranha, Capataz Kobold).</summary>
+        public bool Mini => Type == EnemyType.Captain || Type == EnemyType.MoleQueen || Type == EnemyType.SpiderWidow || Type == EnemyType.KoboldForeman;
+        /// <summary>Perigo, nao inimigo (vagonete): nao e alvo, nao conta no teto de vivos nem acorda ninguem.</summary>
+        public bool Hazard => Type == EnemyType.Minecart;
         /// <summary>Risco que este inimigo traz para a carga (icone da porta).</summary>
         public CargoRisk Risk => risk | (Type == EnemyType.Thief || Type == EnemyType.Captain ? CargoRisk.Thief : Type == EnemyType.Archer ? CargoRisk.Archer
                                : Type == EnemyType.Brute || Type == EnemyType.Ogre ? CargoRisk.Smash : CargoRisk.None);
@@ -422,6 +458,8 @@ namespace DC.Core
             new EnemyDef(EnemyType.Necromancer,    "Necromante",         48, 1.2f, 0.60f, 2, 1.5f, 1.3f, 0.9f, 2.0f, L, B, No) { Provisional = true, Region = 3 },
             new EnemyDef(EnemyType.KoboldForeman,  "Capataz Kobold",     30, 1.8f, 0.60f, 2, 3.0f, 2.5f, 0.7f, 1.6f, L, B, Ar) { Provisional = true, Region = 4 },
             new EnemyDef(EnemyType.ElderDragon,    "Dragão Ancião",      70, 1.2f, 1.00f, 3, 2.5f, 2.0f, 1.2f, 2.4f, L, B, Sm) { Provisional = true, Region = 4 },
+            new EnemyDef(EnemyType.MagmaShard,     "Brasa de magma",     4,  1.8f, 0.40f, 1, 0.8f, 0.7f, 0.5f, 1.2f, false, false, No) { Provisional = true, Region = 4 },
+            new EnemyDef(EnemyType.SalamanderEgg,  "Ovo de salamandra",  2,  0f,   0.30f, 0, 0f,   0f,   6.0f, 0f,   false, false, No) { Provisional = true, Region = 4 },
         };
     }
 
@@ -480,11 +518,25 @@ namespace DC.Core
         };
     }
 
+    /// <summary>Inimigo da sala. Asleep = nasce dormindo (zZ): nao age ate acordar (courier a Balance.WakeRange, golpe nele, explosao a
+    /// Balance.WakeBlast, vizinho acordado a Balance.WakeNeighbor por Balance.WakeDelay s, ou Run.Wake de um grito); o 1o golpe dobra.</summary>
     public struct Spawn
     {
-        public EnemyType Type; public V2 Pos;
-        public Spawn(EnemyType t, float x, float y) { Type = t; Pos = new V2(x, y); }
+        public EnemyType Type; public V2 Pos; public bool Asleep;
+        public Spawn(EnemyType t, float x, float y, bool asleep = false) { Type = t; Pos = new V2(x, y); Asleep = asleep; }
     }
+
+    // ---- terreno das salas (CONTEUDO_REGIOES §1.1). So os dados; o comportamento de cada um fica com a raia da regiao (Run.RegiaoN.cs),
+    //      menos o que e comum e ja esta no nucleo: lava solida para andar e transparente para tiro, agua que freia, luz/mira no escuro,
+    //      bau enterrado e parede rachada disfarcada.
+    /// <summary>Teia no chao (Webs): centro e raio.</summary>
+    public struct Web { public V2 Pos; public float Radius; public Web(float x, float y, float r) { Pos = new V2(x, y); Radius = r; } }
+    /// <summary>Respiro de fogo (Vents): centro, raio e fase do ciclo (s).</summary>
+    public struct Vent { public V2 Pos; public float Radius, Phase; public Vent(float x, float y, float r, float phase) { Pos = new V2(x, y); Radius = r; Phase = phase; } }
+    /// <summary>Trilho do vagonete (Rails): de A a B e fase do ciclo (s).</summary>
+    public struct Rail { public V2 A, B; public float Phase; public Rail(float x1, float y1, float x2, float y2, float phase) { A = new V2(x1, y1); B = new V2(x2, y2); Phase = phase; } }
+    /// <summary>Bau enterrado (Buried): so aparece com o Mapa nas maos, o perk Faro de bau ou o Treasure Detour; moedas fixas.</summary>
+    public struct BuriedChest { public V2 Pos; public int Coins; public BuriedChest(float x, float y, int coins) { Pos = new V2(x, y); Coins = coins; } }
 
     /// <summary>Sala 9 x 14 m. Entrada embaixo no centro (Balance.Entrance); as portas da parede de cima saem do contrato (uma por sala
     /// da proxima camada). Threat = caveiras no icone da porta (0-3); Risk = icone de risco para a carga; ChestCoins = moedas do bau
@@ -502,8 +554,28 @@ namespace DC.Core
         public readonly Spawn[] Wave; public readonly RoomTrigger WaveTrigger; public readonly bool WaveLocks;
         public int Secret { get; internal set; }
         public readonly V2 SecretPos;
-        public readonly CargoRisk Risk;
+        readonly CargoRisk risk;
+        /// <summary>Icone de risco da carga: o dos inimigos da sala e do reforco (+ Pancada se ha lava ou respiro).</summary>
+        public CargoRisk Risk => risk | (Lava.Length > 0 || Vents.Length > 0 ? CargoRisk.Smash : CargoRisk.None);
         public int Region { get; internal set; } = 1;
+        // terreno (CONTEUDO_REGIOES §1.1), escrito no inicializador da sala: new RoomDef(...) { Water = new[] { ... } }
+        /// <summary>Sala escura (luz em volta do courier, das tochas e da lanterna; a mira so pega o que esta na luz). Torches = tochas nas paredes.</summary>
+        public bool Dark { get; set; }
+        public V2[] Torches { get; set; } = NoPoints;
+        /// <summary>Agua (nao solida: freia quem anda nela) e lava (solida para andar, transparente para tiro).</summary>
+        public Rect[] Water { get; set; } = NoRects;
+        public Rect[] Lava { get; set; } = NoRects;
+        public Web[] Webs { get; set; } = new Web[0];
+        public Vent[] Vents { get; set; } = new Vent[0];
+        public Rail[] Rails { get; set; } = new Rail[0];
+        public BuriedChest[] Buried { get; set; } = new BuriedChest[0];
+        /// <summary>Parede rachada disfarcada: so aparece e so abre com o Mapa, o Faro de bau ou o Treasure Detour.</summary>
+        public bool SecretHidden { get; set; }
+        /// <summary>Pontos de salto do Necromante (B3).</summary>
+        public V2[] Blinks { get; set; } = NoPoints;
+        /// <summary>Projeto de equipamento no bau desta sala (CONTEUDO_REGIOES §8): sai na 1a abertura e a porta o mostra enquanto nao foi pego.</summary>
+        public Gear Blueprint { get; set; }
+        static readonly V2[] NoPoints = new V2[0]; static readonly Rect[] NoRects = new Rect[0];
         public bool Delivery => Code[0] == 'D';
         public bool Boss => Code[0] == 'B';
         public bool Mini => Code[0] == 'M';
@@ -514,8 +586,8 @@ namespace DC.Core
         {
             Id = id; Code = code; Name = name; Lesson = lesson; Threat = threat; Obstacles = obstacles; Spawns = spawns; RescueSpot = rescueSpot; ChestPos = chestPos; ChestCoins = chestCoins;
             Wave = wave ?? new Spawn[0]; WaveTrigger = wave == null ? RoomTrigger.None : trigger; WaveLocks = waveLocks; Secret = secret; SecretPos = secretPos;
-            foreach (Spawn s in Spawns) { Risk |= EnemyDef.All[(int)s.Type].Risk; if (s.Type == EnemyType.Ogre) Risk |= CargoRisk.Thief; }   // o Ogro chama ladroes
-            foreach (Spawn s in Wave) Risk |= EnemyDef.All[(int)s.Type].Risk;
+            foreach (Spawn s in Spawns) { risk |= EnemyDef.All[(int)s.Type].Risk; if (s.Type == EnemyType.Ogre) risk |= CargoRisk.Thief; }   // o Ogro chama ladroes
+            foreach (Spawn s in Wave) risk |= EnemyDef.All[(int)s.Type].Risk;
         }
     }
 
@@ -533,6 +605,8 @@ namespace DC.Core
         /// <summary>Template do evento (contrato do quadro de eventos) e a vaga dele no quadro (0-4); None/0 nos outros.</summary>
         public LiveEvent Event { get; internal set; }
         public int Slot { get; internal set; }
+        /// <summary>Cristal de gelo: tempo (s) para derreter do cheio ao zero fora da agua = o campo EggTarget do contrato (0 nas outras cargas).</summary>
+        public float MeltTime => Cargo == CargoType.IceCrystal ? EggTarget : 0f;
         public ContractKind Kind { get; internal set; }
         public string Name { get; internal set; }
         public float ParTime { get; internal set; }

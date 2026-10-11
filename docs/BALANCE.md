@@ -1,5 +1,60 @@
 # Balance — medição do bot
 
+# Lançamento — núcleo, Leva A (2026-10-11)
+
+Fonte: [`CONTRATO_LANCAMENTO.md`](CONTRATO_LANCAMENTO.md) §2–§7 e, no que é do núcleo, [`CONTEUDO_REGIOES.md`](CONTEUDO_REGIOES.md). Só o que mudou; o resto da v1 abaixo continua valendo. API no topo do `Sim.cs` (seção "LANCAMENTO"); números em `MetaDefs.cs` (`Balance` parcial, `GearDef`, `ModifierDef`, `EventDef`, `Season`, `Config`). **Todo número novo é PROVISÓRIO** até o bot das regiões 2–4 (Leva B) e o playtest medirem.
+
+## Região 1: antes e depois
+
+Nenhum número da região 1 mudou (salas, contratos, inimigos, cargas, perks sorteados). Os contratos gerados da região 1 (dia, código) são **idênticos aos da beta**: o teste `Codigo_RegiaoVemDoCodigo_Regiao1IgualABeta_*` compara a impressão digital de 5 payloads com a do código original. A única mudança que chega ao bot da campanha é a **maestria** (+2% de pagamento por nível na carga):
+
+| Campanha do bot (100 sementes) | v1 (antes) | lançamento (depois) |
+|---|---|---|
+| fecha | 100% | 100% |
+| tentativas | 31,8 | 31,8 |
+| mortes | 4,6 | 4,5 |
+| tempo de jogo do bot | 35,7 min | 35,7 min |
+| moedas ganhas / gastas | 10.211 / 9.159 | 10.237 / 9.148 |
+| estrelas | 62,6 de 72 | 62,7 de 72 |
+| guilda no fim | 7,0/7,0/7,0/6,8 | 7,0/7,0/7,0/6,8 |
+
+Tabela realista por contrato: C1–C11 e C13–C15 idênticas; C12 +4 moedas médias; C16–C24 com ruído de ±3 pontos (a guilda compra em outra ordem com +2–6% de pagamento). H1 (56/72/83%), H2 (28,8% de 139 bifurcações) e armas no C12 iguais. Os marcos de reputação **não** entram no bot: são resgatados pelo jogador (decisão L4).
+
+## Números novos (provisórios)
+
+| Sistema | Número |
+|---|---|
+| Regiões | destravam com 30 / 60 / 95 estrelas + o último contrato da anterior (o chefe); sem conteúdo ficam fechadas |
+| Gerado por região (dia, código, raro, evento) | pagamento = base + 22 × camadas, base 40 / 110 / 165 / 220; por sala: 3ª estrela 18 / 20 / 22 / 22 s, ovo 23 / 25 / 28 / 28 s, gelo 27 / 27 / 30 / 30 s, mensagem 12 / 13 / 14 / 14 s; nível base 10 / 14 / 18 / 22 |
+| Modificadores | abrem com 40 estrelas; 0–2 por contrato; Neblina +15% (luz 3,5 m), Pressa +20% (tempo-alvo ×0,7), Horda +25% (+1 perseguidor da região por sala e por reforço), Frágil +25% (qualquer carga quebra com 2 rachaduras; gelo falha abaixo de 40%), Pão-duro +20% (baús ×0,5); o do dia vem com 1 |
+| Eventos | 1 por semana (segunda a domingo) em rodízio de 5; 3 vagas (+2 com o pacote): vaga 1 = região 1 com 4 camadas, 2 e 3 = região mais alta com 5 e 6; recompensa fixa 150 / 200 / 300 (+150 / 150 do pacote), 1× por vaga e semana; as 3 vagas = 1 projeto (sem projeto faltando: 300 moedas). Fragile Week ×1,5 · No-Damage ×3, vida 1, sem cura e sem perks de vida · Treasure baús ×2, paredes rachadas e baús enterrados abertos · Boss Run cura 2 por sala · sem resgate em evento |
+| Temporada | 28 dias; 20 objetivos com recompensa fixa (100–300 moedas, 4 projetos, roupa Fantasma no último) |
+| Contrato raro | depois de 8 h fora (`rare_hours`); ×2; 1× |
+| Reroll | dia e raro, 1× por dia cada; 60 moedas, depois 120 no mesmo dia (`reroll_base`, `reroll_step`) |
+| Equipamento | 3 projetos destravam; 5 níveis, 600 / 1.200 / 2.000 / 3.000; dispara sozinho (sem botão): fumaça 2,5 m, 3–4 s, 1–3 usos por contrato; gancho 1,5–5 m, cone de 30°, recarga 10→6 s; armadilha 3–5 s, 1–2 presas; botas passivas |
+| Maestria | 3 / 8 / 15 / 25 / 40 entregas da carga; +2% por nível |
+| Marcos | 10 / 30 / 60 / 95 / 150 estrelas: 50 / 150 / 300 / 500 / 1.000 moedas (+ roupa Fantasma no de 95) |
+| Sem fim | abre com o último contrato da campanha; nível 10 + 2 por camada; mini-chefe a cada 5 camadas e chefe a cada 10; 15 moedas por camada, teto de 800 por dia |
+| Perks novos | Mola ×1,4 · Segundo fôlego 2 de vida · Isolamento ovo ×1,2, gelo ÷0,6 · Caçador +2 · Couro grosso −1 em golpe de 2+ · Olhos de gato ×1,6 · Assobio 1,5 s · Primeiros socorros +1 · Corredor ×1,2; só no sorteio da região 2 em diante |
+| Terreno comum | água ×0,75; dormindo acorda a 2 m (explosão 4 m, vizinho 3 m por 1 s), 1º golpe ×2; luz do courier 3,5 m (lanterna 5,5 nas mãos, 4,0 no chão), tocha 2,5; baú enterrado 1,5 s (Faro 1,0) |
+| Monetização | Starter Pack 1.500 moedas + roupa Explorador + 1 projeto de cada; baú do dia 80–120 moedas (+1 projeto com o equipamento aberto); interstitial nunca nos 3 primeiros do dia, no máximo 1 a cada 3 contratos e 240 s; retomar dá vida cheia e, na mensagem, pelo menos 20 s |
+
+## Decisões (com o porquê)
+
+- **L1. Campanha linear em índice global** (região 1 = C1–C24, depois M2-1…M4-16 = 24–71): um `Reputation`, um vetor de estrelas e o mesmo save; a região só soma a trava de estrelas. Custo: mudar o número de contratos ou de salas de uma região desloca as seguintes no save (combinado: 16 contratos por região; aviso no `Content`).
+- **L2. Perks novos só a partir da região 2** (Olhos de gato, 3): a região 1 continua com as mesmas ofertas e o bot da campanha não muda.
+- **L3. Equipamento sem botão** (CONTEUDO_REGIOES §8): o controle continua de um dedo. Substituiu o "usar" manual da primeira versão desta leva.
+- **L4. Marcos e temporada resgatados pelo jogador**, não automáticos: o resgate é um momento de UI e não injeta moedas no bot da campanha.
+- **L5. Projetos de equipamento em salas fixas** (`RoomDef.Blueprint`, 12 baús nas regiões 2–4) em vez de sorteio: conteúdo sempre visível na porta. Até a região 2, os projetos vêm da temporada, do baú do dia e do Starter Pack.
+- **L6. Código carrega a região nos 2 bits altos:** os códigos da beta com esses bits em 0 (e todo contrato da região 1) continuam iguais; os outros passam a apontar para a região 2–4 (fechada até ter conteúdo). Contrato do dia/código em curso de um save v2 é regenerado na região 1, como era.
+- **L7. Evento 1× por vaga e semana** (sem "rejogar pagando 50%" do CONTEUDO_REGIOES §9.1; fica para a decisão do coordenador).
+
+## O que ainda não dá para medir (depende do conteúdo da Leva B)
+
+Água, lava, baú enterrado, parede disfarçada e projeto no baú em jogo, e o resgate "só na mesma região", só têm teste de estrutura (ou nenhum) porque a região 1 não tem nada disso; as raias R2–R4 testam com as salas delas. O bot não usa equipamento, modificador, evento nem rewarded: o impacto deles na economia (sobra de ~20 mil moedas estimada no CONTEUDO_REGIOES §10.3) é a medida da Leva B.
+
+---
+
 # v1.0-beta (2026-10-10)
 
 Fonte das regras: [`CONTRATO_V1.md`](CONTRATO_V1.md) §2–§10 (e o que continua do [`CONTRATO_V01.md`](CONTRATO_V01.md)). Núcleo em `client/Assets/_DC/Scripts/Core/` (API comentada no topo do `Sim.cs`). Números do contrato que mudaram estão nas decisões 21–41, com o antes e o depois.

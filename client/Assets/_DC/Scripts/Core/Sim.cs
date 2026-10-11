@@ -88,10 +88,82 @@ using System.Text;
 //               MessageDoor, Stun, CaptainCall. Diario (DiaryName): contract_stars, perk_pick, weapon_equip, daily_start, daily_end,
 //               code_start. Ev.Shot ganhou B = (int)Weapon. CurrencySource B: 3 = bonus do dia. CurrencySink B: 10 + (int)Weapon = nivel de arma.
 //   Save:       v=2 (Sim.SaveVersion). Le v1 (Mochila 0, estrelas 1 por contrato concluido, contrato em curso descartado porque os
-//               contratos mudaram) e v0. v3+ = SaveRefused como antes.
+//               contratos mudaram) e v0. (Lancamento: v=3, ver abaixo.)
 //   Bot:        bot.Act(sim) ja escolhe perk quando ha oferta (Bot.ChoosePerk). Bot.WeaponFor(sim, def) = arma que a campanha leva.
 //               Bot.PlayCampaign joga os 24 (compra guilda e armas, troca a arma pela carga). Bot.Finish(sim, bot) joga um contrato ja
 //               comecado (dia/codigo). Medicao: Bot.MeasureCampaignTable, Bot.MeasureRoute (H2), Bot.MeasureGenerated.
+//
+// ---------------------------------------------------------------------------------------------------------------------------------
+// LANCAMENTO, Leva A (CONTRATO_LANCAMENTO §2-§7; CONTEUDO_REGIOES no que e do nucleo) — ACRESCIMOS. Nada acima foi renomeado; o que
+// mudou de comportamento esta marcado (MUDOU). Numeros novos sao PROVISORIOS (Balance/MetaDefs.cs; BALANCE.md "Lancamento").
+// ---------------------------------------------------------------------------------------------------------------------------------
+//   Regioes:    RegionDef.All[0..3] / RegionDef.Of(1..4): Id, Name, Theme ("poroes", "minas", "cripta", "forja": a View escolhe piso,
+//               parede, paleta e musica por ele), Stars (para destravar), First (indice global do 1o contrato), Contracts, Rooms/Normal/
+//               Secrets (ids globais), Mini/Boss/Delivery (-1 = nao ha), MiniAt/BossAt, CargoCount, TierBase, GenPay/GenPar/GenEgg/
+//               GenMelt/GenLimit (gerado da regiao), HasContent (as regioes 2-4 nascem vazias e ficam fechadas). sim.RegionOpen(r) =
+//               conteudo + ultimo contrato da anterior entregue + RegionDef.Stars; sim.OpenRegions(). ContractDef.Region, RoomDef.Region,
+//               run.Region. Content.Rooms/Content.Contracts = concatenacao (regiao 1 primeiro: ids e indices da v1 iguais); Sim.Contracts
+//               = todos. (MUDOU) sim.Unlocked(i) tambem pede RegionOpen. Conteudo novo: Content/RegiaoN.cs (ids LOCAIS; Content.Make) e
+//               comportamento em Run.RegiaoN.cs (ganchos parciais no fim de Run.cs: EnterRoomRn, StepRn, EnemyRn, SpeedRn, EnemyDiedRn,
+//               HintRn; uteis: Wake, CargoGrabbed, Breaks, InWater, InLight, Finish(Outcome.Melted/Escaped)).
+//   Enums (no fim): CargoType +8 (ArcaneHeart..TreasureMap), EnemyType +14 +6 chefes + MagmaShard, SalamanderEgg, Perk +15,
+//               ContractKind.Rare/Event/Endless, Outcome.Melted/Escaped, Hint +23 (texto em Hints.Text), Ev (A/B no topo de MetaDefs.cs).
+//               Tipos novos: LiveEvent, Modifier ([Flags]), Gear, Outfit, Product, Reward, Goal, Web, Vent, Rail, BuriedChest, Trap.
+//               EnemyDef/CargoDef novos com Provisional = true: sem comportamento o inimigo persegue e golpeia (Melee; parado e sem dano =
+//               inerte) e a carga e normal. EnemyDef.Boss (os 6 novos), .Mini, .Hazard (vagonete: nao e alvo nem conta no teto), .Region.
+//               CargoDef.Region/.Fragile. PerkDef.Region: os novos so entram no sorteio de contrato da regiao 2 em diante (Olhos de gato,
+//               3): a regiao 1 sorteia como na v1.
+//   Terreno:    RoomDef no inicializador: Dark, Torches, Water, Lava, Webs, Vents, Rails, Buried, SecretHidden, Blinks, Blueprint.
+//               Spawn.Asleep / Enemy.Asleep (zZ). (MUDOU) RoomDef.Risk virou propriedade (lava ou respiro = Pancada). O nucleo ja faz:
+//               lava solida para andar e transparente para tiro (Run.Blocked x Run.ShotBlocked, Nav.ShotClear; run.LineClear e a de
+//               tiro), agua x0,75 (run.InWater; chefes, voadores, Pe firme e Botas nao), escuro (run.Dark, run.Lit, run.InLight(p),
+//               run.Torches; Cargo.Out = lanterna apagada; a mira, run.CanHit, so pega o que esta na luz), dormindo (acorda com o courier a
+//               2 m, explosao a 4 m, vizinho acordado a 3 m por 1 s; o 1o golpe dobra), bau enterrado (run.Buried; so com run.Revealed) e
+//               parede rachada disfarcada. Trilho, respiro, teia e fogo no chao sao das raias.
+//   Run novo:   run.Id, run.Mods/Has(Modifier), run.ParTime (Pressa), run.EggTarget (Isolamento; so ovo), run.MeltTime/IceFailAt (gelo:
+//               ContractDef.MeltTime = o campo EggTarget no cristal), run.Tier (sem fim sobe por camada), run.BreakAt, run.VisionRadius
+//               (Neblina), run.LightMul, run.SureFooted, run.BootsLevel, run.Kills/ChestsOpened/SecretsFound/BossesClean/HuntCoins,
+//               run.SecondWindUsed, run.Gear/GearLevel/SmokeLeft/HookCd/Traps (o equipamento dispara sozinho, sem botao: fumaca quando
+//               pegam a carga, gancho andando para a carga no chao, armadilha no 1o pouso da sala, botas passivas), run.SafeDoor,
+//               Door.Blueprint/ChestKnown/Enemies, Chest.Blueprint.
+//   Relogio:    o Core nao le relogio: data AAAAMMDD e instante em segundos Unix vem da View. sim.OpenSession(agora, data) ao abrir e ao
+//               voltar do fundo (conta a sessao; depois de Config.RareHours h oferece o raro), sim.Touch(agora) ao pausar/sair.
+//               Sim.Week(data) (segunda a domingo), Sim.SeasonOf(data), Sim.SeasonDaysLeft(data), Sim.DayNumber(data).
+//   Contratos:  Sim.DailyContract(data) continua = o do dia NA REGIAO 1 (atalho da v1); o do jogador e sim.DailyFor(data) (regiao
+//               sorteada entre as destravadas, muda com o reroll) e e o que StartDaily joga: a View deve mostrar DailyFor. Com os
+//               modificadores abertos o dia vem com Sim.DailyModifier(data). Codigo: a regiao sai dos 2 bits altos do payload
+//               (Content.RegionOf/WithRegion; regiao 1 = igual a beta); sim.NewCode(entropia) gera numa regiao destravada; StartCode
+//               recusa regiao fechada. Raro: sim.RareAvailable, sim.RareDate, sim.RareContract (x2), sim.StartRare(resgate), sim.RareDone.
+//               Reroll: sim.RerollCost, sim.CanReroll(raro), sim.Reroll(raro) (1x por dia cada; o preco cresce no dia). Evento:
+//               Sim.EventOf(data), sim.EventsOpen, sim.EventSlots(data) (3; +2 com o pacote), sim.EventContract(data, k), Sim.EventReward(k),
+//               sim.EventAvailable/EventDone, sim.StartEvent(data, k, resgate) (sem resgate em evento); as 3 vagas na semana dao
+//               ContractResult.EventProject. Sem fim: sim.EndlessOpen, sim.EndlessContract(data), sim.StartEndless(data),
+//               sim.EndlessBest/EndlessWeekBest/EndlessCoinsLeft. Modificadores: sim.ModifiersOpen, sim.StartContract(i, resgate, mods) e
+//               sim.StartCode(codigo, resgate, mods) com 0-2 (null se invalido), ModifierDef.All (Name, Text, Pay %).
+//   Meta:       temporada: Season.Goals[20], sim.SeasonId, sim.SeasonProgress(i), SeasonReady(i), ClaimSeason(i), SeasonClaimed(i).
+//               Maestria: sim.MasteryCount/MasteryLevel(carga) (+2% no pagamento por nivel). Marcos: Balance.Milestones,
+//               sim.MilestoneReady/ClaimMilestone/MilestoneClaimed(i). Equipamento: GearDef.All (+ SmokeTime, SmokeUses, HookCooldown,
+//               TrapTime, TrapCatches por nivel), sim.GearOpen, sim.Blueprints(g), GearUnlocked, GearLevel (0-5), GearCost, CanUpgradeGear,
+//               UpgradeGear, EquipGear (Gear.None = vazio; so fora do contrato), GearEquipped, ProjectTaken(sala). Roupas: OutfitDef.All,
+//               sim.OwnsOutfit, sim.EquipOutfit, sim.OutfitEquipped.
+//   Monetizacao (o Core nao fala com SDK): rewarded = sim.RewardOffer(t) (mostra o botao?), sim.RewardId(t) (rw-<contrato>-<tipo>) e,
+//               depois do anuncio assistido ate o fim, sim.GrantReward(t): Resume volta para a ENTRADA da sala da falha com vida cheia
+//               (1x por contrato, nunca na 1a sessao, nao no sem fim nem depois de desistir); DoubleBonus paga ContractResult.Bonus de novo;
+//               SafeRoute liga run.SafeDoor; DailyChest paga Sim.DailyChestCoins(data) + sim.DailyChestBlueprint(data) (mostre antes).
+//               Ids gravados no save: fechar e reabrir nao repete. Ao mostrar a oferta: sim.Log(Ev.RewardedOffer, (int)t). Interstitial:
+//               sim.InterstitialDue(agora) entre contratos; depois de mostrar, sim.InterstitialShown(agora). IAP: com a compra
+//               confirmada, sim.Purchase(produto) (falso = nada a conceder, ex.: restaurar o que ja tem); sim.Owns, sim.RemoveAds,
+//               sim.StarterOffered (mostrar a oferta depois do C3).
+//   Config:     sim.Config = Config.Parse(texto de Resources/config.json ou da URL opcional). Chave desconhecida ou invalida = padrao.
+//   Diario:     nomes novos em SimEvent.DiaryName. device_fps_bucket: a cada 60 s, sim.Log(Ev.DeviceFps, Sim.FpsBucket(fps)).
+//   Resultado:  ContractResult.RunId, PayPct, Mods, Mastery, EventReward, EventProject, HuntCoins, EndlessLayers, EndlessCoins, Bonus,
+//               BonusDoubled; Total soma tudo. LostCargo.Region: o resgate so aparece num contrato da mesma regiao.
+//   Save:       v=3 (Sim.SaveVersion). Le v2 (contrato em curso mantido; dia/codigo em curso da beta regenerados na regiao 1), v1 e v0
+//               (migracoes explicitas, Dirty = true); v4+ = SaveRefused. Linhas novas: ses, rare, rr, ev, ssn, mst, mls, gear, fit, iap,
+//               ads, end, rw, bpr; no contrato em curso: rx.
+//   Bot:        Bot.PlayCampaign(semente, ..., region: 1) e Bot.MeasureCampaignTable(campanhas, sementes, region: 1) jogam e medem ate o
+//               fim da regiao pedida (padrao a 1, como antes); MeasureRoute (H2) so na regiao 1. O bot nao usa equipamento, modificador,
+//               evento nem rewarded.
 
 namespace DC.Core
 {
@@ -136,6 +208,8 @@ namespace DC.Core
         /// <summary>Bonus do contrato = pagamento acima do basico (integridade, modificadores, maestria, evento, raro) + bonus do dia: o que o
         /// rewarded "dobrar bonus" paga de novo.</summary>
         public int Bonus; public bool BonusDoubled;
+        /// <summary>Projeto da semana ganho ao completar as 3 vagas do evento (None = nao).</summary>
+        public Gear EventProject;
     }
 
     public sealed partial class Sim
@@ -351,7 +425,7 @@ namespace DC.Core
             RunsStarted++;
             run.AddCargo(NextCargoId++, def.Cargo, 0, false, CargoState.Held);
             LostCargo lost = Pending;
-            if (lost != null && (def.Kind == ContractKind.Endless || lost.Region != def.Region)) lost = null;   // resgate so na mesma regiao (fica pendente)
+            if (lost != null && (def.Kind == ContractKind.Endless || def.Kind == ContractKind.Event || lost.Region != def.Region)) lost = null;   // resgate so na mesma regiao e fora de evento/sem fim (fica pendente)
             else Pending = null;
             bool take = rescue && lost != null && !RescuedIds.Contains(lost.Id);
             run.RescueOffered = lost != null; run.RescueAccepted = take; run.RescueValue = take ? lost.Value : 0;
@@ -511,10 +585,13 @@ namespace DC.Core
               .Append(mask).Append(',').Append(r.PadUsed ? 1 : 0);
             for (int i = 0; i < Balance.PerkOfferSize; i++) sb.Append(',').Append(off != null && i < off.Length ? (int)off[i] : -1);
             sb.Append('\n');
-            // rx (v3) = id da tentativa, modificadores, vaga do evento, segundo folego, blueprint achado, inimigos, baus, secretas, chefes sem dano, Cacador
+            int buried = 0;
+            for (int i = 0; i < r.Buried.Count && i < 30; i++) if (r.Buried[i].Opened) buried |= 1 << i;
+            // rx (v3) = id da tentativa, modificadores, vaga do evento, segundo folego, fumacas restantes, inimigos, baus, secretas, chefes sem dano,
+            // Cacador, baus enterrados abertos na sala (bits)
             sb.Append("rx=").Append(r.Id).Append(',').Append((int)r.Mods).Append(',').Append(r.Contract.Slot).Append(',').Append(r.SecondWindUsed ? 1 : 0).Append(',')
-              .Append(r.BlueprintFound ? 1 : 0).Append(',').Append(r.Kills).Append(',').Append(r.ChestsOpened).Append(',').Append(r.SecretsFound).Append(',')
-              .Append(r.BossesClean).Append(',').Append(r.HuntCoins).Append('\n');
+              .Append(r.SmokeLeft).Append(',').Append(r.Kills).Append(',').Append(r.ChestsOpened).Append(',').Append(r.SecretsFound).Append(',')
+              .Append(r.BossesClean).Append(',').Append(r.HuntCoins).Append(',').Append(buried).Append('\n');
             for (int i = 0; i < r.Cargos.Count; i++)
             {
                 Cargo g = r.Cargos[i];
@@ -606,10 +683,11 @@ namespace DC.Core
                 case ContractKind.Rare: if (!IsDate(date)) return null; def = Content.Generate(payload, ContractKind.Rare, date); break;
                 case ContractKind.Event:
                     if (!IsDate(date)) return null;
-                    def = Content.EventContract(EventOf(date), payload, date, sim.BeatenBosses());
-                    if (def != null) def.Slot = Clamp(x.Length > 2 ? I(x[2], 0) : 0, 0, Balance.EventRewards.Length - 1);
+                    int slot = Clamp(x.Length > 2 ? I(x[2], 0) : 0, 0, Balance.EventRewards.Length - 1);
+                    def = Content.EventContract(EventOf(date), payload, date, sim.BeatenBosses(), EventLayers(slot));
+                    if (def != null) def.Slot = slot;
                     break;
-                case ContractKind.Endless: def = Content.Endless(date, sim.OpenRegions()); break;
+                case ContractKind.Endless: def = Content.Endless(date, sim.OpenRegions(), sim.Beaten(true), sim.Beaten(false)); break;
                 default: return null;
             }
             if (def == null || layer < 0 || layer >= def.Layers.Length || room < 0 || room >= Content.Rooms.Length) return null;
@@ -617,17 +695,18 @@ namespace DC.Core
             if (!inLayer && Content.Rooms[room].IsSecret)   // sala secreta: vale se alguma sala da camada tem a parede rachada para ela
                 foreach (int r0 in def.Layers[layer]) if (Content.Rooms[r0].Secret == room) inLayer = true;
             if (!inLayer) return null;
-            int mods = x.Length >= 10 ? I(x[1], 0) & 31 : 0;
+            bool rx = x.Length >= 11;
+            int mods = rx ? I(x[1], 0) & 31 : 0;
             var run = new Run(sim, def, I(p[5], 1), hp)
             {
                 Layer = layer, Time = Math.Max(0f, F(p[4], 0f)), Hatched = p[7] == "1" && def.Cargo == CargoType.Egg,
                 RescueValue = Math.Max(0, I(p[9], 0)), RoomsNormal = Math.Max(0, I(p[10], 0)), RoomsFought = Math.Max(0, I(p[11], 0)),
                 ChestCoins = Math.Max(0, I(p[12], 0)), RescueOffered = p[13] == "1", PadUsed = k[4] == "1",
-                Id = x.Length >= 10 ? Math.Max(0, I(x[0], 0)) : Math.Max(0, sim.RunsStarted - 1), Mods = (Modifier)mods,
+                Id = rx ? Math.Max(0, I(x[0], 0)) : Math.Max(0, sim.RunsStarted - 1), Mods = (Modifier)mods,
             };
-            if (x.Length >= 10)
+            if (rx)
             {
-                run.SecondWindUsed = x[3] == "1"; run.BlueprintFound = x[4] == "1";
+                run.SecondWindUsed = x[3] == "1"; run.SmokeLeft = Clamp(I(x[4], 0), 0, run.SmokeLeft);
                 run.Kills = Math.Max(0, I(x[5], 0)); run.ChestsOpened = Math.Max(0, I(x[6], 0)); run.SecretsFound = Math.Max(0, I(x[7], 0));
                 run.BossesClean = Math.Max(0, I(x[8], 0)); run.HuntCoins = Math.Max(0, I(x[9], 0));
             }
@@ -646,12 +725,12 @@ namespace DC.Core
                 if (i == 0 && state != CargoState.Held && !run.Hatched) return null;   // carga do contrato fora das maos so se chocou
                 Cargo c = run.AddCargo(Math.Max(1, I(g[0], 1)), (CargoType)type, Math.Max(0, I(g[2], 0)), rescue, state);
                 if (i == 0 && run.Hatched) c.State = CargoState.Gone;
-                if (c.Type == CargoType.Relic && c.Cracks >= run.BreakAt) return null;
+                if (run.Breaks(c)) return null;
             }
             if (run.Cargos.Count == 0) return null;
             run.RescueAccepted = run.RescueCargo != null;
             if (run.Hatched) run.Pet = new Pet { Hp = Clamp(I(p[8], Balance.PetHp), 1, Balance.PetHp) };
-            run.EnterRoom(room, p[6] == "1");
+            run.EnterRoom(room, p[6] == "1", rx ? Math.Max(0, I(x[10], 0)) : 0);
             if (run.RescueCargo != null && run.RescueCargo.State == CargoState.Ground) run.RescueCargo.Pos = run.Room.RescueSpot;
             var offer = new List<Perk>();
             for (int i = 0; i < Balance.PerkOfferSize; i++) { int q = I(k[5 + i], -1); if (q >= 0 && q < PerkDef.All.Length && !run.Has((Perk)q)) offer.Add((Perk)q); }

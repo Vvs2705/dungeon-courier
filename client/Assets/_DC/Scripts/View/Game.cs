@@ -29,6 +29,7 @@ namespace DC
     ///   -pausa        (com -testsession -contract) abre a pausa logo no inicio (foto).   -tela perk: escolha de perk de exemplo.
     ///   -weapon W     (com -testsession -contract) arma 0 estilingue, 1 bumerangue, 2 bombinha: destrava so na memoria e equipa.
     ///   -reset        apaga o save antes de carregar.   -testsession  nao le nem grava save nem diario (semente fixa 1).
+    ///   -lang L       (com -testsession) pt|en|es|id: forca o idioma so na memoria (fotos por idioma; a escolha gravada nao muda).
     /// </summary>
     public sealed class Game : MonoBehaviour
     {
@@ -79,6 +80,7 @@ namespace DC
             _speed = Mathf.Clamp(ArgF("-speed", 1f), 0.1f, 20f);
             Audio.Init(gameObject);
             Ajustes.Init();   // idioma e volumes antes de montar as telas
+            if (_test && Textos.DeCodigo(Arg("-lang")) is Textos.Lingua lang) Textos.Lang = lang;   // dev: fotos por idioma, sem gravar
             if (!_test && Arg("-reset") != null) { PlayerPrefs.DeleteKey(SaveKey); PlayerPrefs.Save(); }
             string saved = _test ? "" : PlayerPrefs.GetString(SaveKey, "");
             // jogador novo: semente aleatoria (variedade entre jogadores); -testsession: semente 1 (fotos repetiveis)
@@ -286,12 +288,12 @@ namespace DC
             if (Sim != null && !Sim.SaveRefused) Sim.SeeDate(Hoje);
         }
 
-        public void SetIdioma(bool ingles)
+        public void SetIdioma(Textos.Lingua l)
         {
-            if (Ajustes.Ingles == ingles) return;
-            Ajustes.Ingles = ingles;
+            if (Ajustes.Idioma == l) return;
+            Ajustes.Idioma = l;
             _hud.Relocalizar();
-            Log("settings", "idioma", ingles ? "en" : "pt");
+            Log("settings", "idioma", Textos.Codigos[(int)l]);
         }
 
         /// <summary>Configuracoes > Exportar diario: Android compartilha o CSV; Windows abre a pasta.</summary>

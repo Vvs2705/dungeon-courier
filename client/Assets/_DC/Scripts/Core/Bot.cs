@@ -10,7 +10,7 @@ namespace DC.Core
     /// outro o bot so segue o caminho. Joga o verbo de cada carga (o que um jogador que leu a carga faria): reliquia sem dash e pousando
     /// para abater quem encosta; bolo sem dash; barril pousado no maximo ~1,6 s; mensagem sem lutar nem bau; porta escolhida pelo icone de risco
     /// da carga. ponytail: heuristica de regras, nao busca; serve para medir, nao para jogar bem.</summary>
-    public sealed class Bot
+    public sealed partial class Bot   // partial: logica do bot por regiao em Bot.RegiaoN.cs (raias de regiao)
     {
         public readonly float Aggression, Reaction, Greed;
         readonly Rng rng;

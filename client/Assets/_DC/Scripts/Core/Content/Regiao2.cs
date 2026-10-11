@@ -18,6 +18,9 @@ namespace DC.Core
         /// <summary>Estrelas para destravar (alem do Ogro vencido = ultimo contrato da regiao 1).</summary>
         public const int Stars = 30;
         /// <summary>Nivel base dos contratos gerados da regiao (dia/codigo/raro/evento): vida dos inimigos x Balance.HpMul. PROVISORIO.</summary>
+        /// <summary>Contrato gerado da regiao (CONTEUDO_REGIOES §1.2, PROVISORIO): pagamento = GenPay + 22 x camadas; tempos por sala (s) ate a
+        /// entrega: 3a estrela, ovo, gelo (MeltTime) e mensagem.</summary>
+        public const int GenPay = 110; public const float GenPar = 20f, GenEgg = 25f, GenMelt = 27f, GenLimit = 13f;
         public const int TierBase = 14;
 
         // ids locais (exemplo): public const int R1 = 0, R2 = 1, ..., S1 = 10, M = 11, B = 12, D = 13;

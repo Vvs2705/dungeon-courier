@@ -416,7 +416,8 @@ namespace DC
 
     /// <summary>Ajustes do jogador no PlayerPrefs, fora do save de progresso (valem no -testsession): volume de Som e de Musica (o Audio
     /// guarda 0..1 em dc.som/dc.musica; a tela mostra 10 degraus), Vibracao (dc_vibra; so no Android, Handheld.Vibrate; no PC aparece
-    /// "so no celular") e Idioma (dc_idioma "pt"/"en"; 1ª abertura: portugues se o aparelho estiver em portugues, senao ingles).</summary>
+    /// "so no celular") e Idioma (dc_idioma "pt"/"en"/"es"/"id"; sem escolha gravada vale o idioma do aparelho: portugues, espanhol,
+    /// indonesio ou, nos outros, ingles).</summary>
     public static class Ajustes
     {
         const string VibraKey = "dc_vibra", IdiomaKey = "dc_idioma", SomV01 = "dc_som";
@@ -428,15 +429,26 @@ namespace DC
         /// <summary>Le o idioma; o som desligado da v0.1 (dc_som = 0) vira volume 0. Chamar no Awake, antes de montar as telas.</summary>
         public static void Init()
         {
-            string lang = PlayerPrefs.GetString(IdiomaKey, "");
-            Textos.En = lang == "" ? Application.systemLanguage != SystemLanguage.Portuguese : lang == "en";
+            Textos.Lang = Textos.DeCodigo(PlayerPrefs.GetString(IdiomaKey, "")) ?? DoAparelho();
             if (!PlayerPrefs.HasKey("dc.som") && PlayerPrefs.GetInt(SomV01, 1) == 0) SetVol(0, VolMusica);
         }
 
-        public static bool Ingles
+        static Textos.Lingua DoAparelho()
         {
-            get => Textos.En;
-            set { Textos.En = value; PlayerPrefs.SetString(IdiomaKey, value ? "en" : "pt"); PlayerPrefs.Save(); }
+            switch (Application.systemLanguage)
+            {
+                case SystemLanguage.Portuguese: return Textos.Lingua.Pt;
+                case SystemLanguage.Spanish: return Textos.Lingua.Es;
+                case SystemLanguage.Indonesian: return Textos.Lingua.Id;
+                default: return Textos.Lingua.En;
+            }
+        }
+
+        /// <summary>Escolha do jogador (Configuracoes): troca e grava.</summary>
+        public static Textos.Lingua Idioma
+        {
+            get => Textos.Lang;
+            set { Textos.Lang = value; PlayerPrefs.SetString(IdiomaKey, Textos.Codigos[(int)value]); PlayerPrefs.Save(); }
         }
 
         /// <summary>0..10 (degraus da tela) sobre o Audio.Som/Musica 0..1.</summary>

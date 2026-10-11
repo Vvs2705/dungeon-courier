@@ -5,10 +5,16 @@ namespace DC.Core
     /// <summary>Regiao (CONTRATO_LANCAMENTO §2). Ids globais (salas em Content.Rooms, contratos em Content.Contracts). Stars = estrelas para
     /// destravar (alem do chefe da regiao anterior, que e o ultimo contrato dela: a campanha e linear). Theme = id do tema para a View
     /// (piso, parede, paleta, musica). Mini/Boss/Delivery = ids das salas M/B/D (-1 = ainda nao ha). MiniAt/BossAt = indice global do
-    /// contrato com o M/B (-1). CargoCount = cargas que o sorteio dos gerados desta regiao usa (as que estrearam ate ela).</summary>
+    /// contrato com o M/B (-1). CargoCount = cargas que o sorteio dos gerados desta regiao usa (as que estrearam ate ela). Gen* = contrato gerado
+    /// da regiao (dia/codigo/raro/evento): pagamento = GenPay + 22 x camadas; tempos por sala ate a entrega (3a estrela, ovo, gelo, mensagem).</summary>
     public sealed class RegionDef
     {
         public readonly int Id, Stars, First, Mini, Boss, Delivery, MiniAt, BossAt, CargoCount, TierBase;
+        public int GenPay { get; internal set; } = 40;
+        public float GenPar { get; internal set; } = Balance.GenParPerRoom;
+        public float GenEgg { get; internal set; } = Balance.GenEggPerRoom;
+        public float GenMelt { get; internal set; } = 27f;
+        public float GenLimit { get; internal set; } = Balance.GenLimitPerRoom;
         public readonly string Name, Theme;
         public readonly int[] Rooms, Normal, Secrets;
         public readonly ContractDef[] Contracts;
@@ -70,14 +76,20 @@ namespace DC.Core
             Regions = new[]
             {
                 Add(cons, Regiao1.Id, Regiao1.Name, Regiao1.Theme, 0, Regiao1.Rooms, Regiao1.Normal, Regiao1.Contracts, Balance.GenTierBase),
-                Add(cons, Regiao2.Id, Regiao2.Name, Regiao2.Theme, Regiao2.Stars, Regiao2.Rooms, Regiao2.Normal, Regiao2.Contracts, Regiao2.TierBase),
-                Add(cons, Regiao3.Id, Regiao3.Name, Regiao3.Theme, Regiao3.Stars, Regiao3.Rooms, Regiao3.Normal, Regiao3.Contracts, Regiao3.TierBase),
-                Add(cons, Regiao4.Id, Regiao4.Name, Regiao4.Theme, Regiao4.Stars, Regiao4.Rooms, Regiao4.Normal, Regiao4.Contracts, Regiao4.TierBase),
+                Gen(Add(cons, Regiao2.Id, Regiao2.Name, Regiao2.Theme, Regiao2.Stars, Regiao2.Rooms, Regiao2.Normal, Regiao2.Contracts, Regiao2.TierBase),
+                    Regiao2.GenPay, Regiao2.GenPar, Regiao2.GenEgg, Regiao2.GenMelt, Regiao2.GenLimit),
+                Gen(Add(cons, Regiao3.Id, Regiao3.Name, Regiao3.Theme, Regiao3.Stars, Regiao3.Rooms, Regiao3.Normal, Regiao3.Contracts, Regiao3.TierBase),
+                    Regiao3.GenPay, Regiao3.GenPar, Regiao3.GenEgg, Regiao3.GenMelt, Regiao3.GenLimit),
+                Gen(Add(cons, Regiao4.Id, Regiao4.Name, Regiao4.Theme, Regiao4.Stars, Regiao4.Rooms, Regiao4.Normal, Regiao4.Contracts, Regiao4.TierBase),
+                    Regiao4.GenPay, Regiao4.GenPar, Regiao4.GenEgg, Regiao4.GenMelt, Regiao4.GenLimit),
             };
             Rooms = RoomsBuilding.ToArray();
             Contracts = cons.ToArray();
             RoomsBuilding = null;
         }
+
+        static RegionDef Gen(RegionDef r, int pay, float par, float egg, float melt, float limit)
+        { r.GenPay = pay; r.GenPar = par; r.GenEgg = egg; r.GenMelt = melt; r.GenLimit = limit; return r; }
 
         /// <summary>Soma a base global nas salas (Id, Secret) e nos contratos (Index, salas das camadas) da regiao e registra.</summary>
         static RegionDef Add(List<ContractDef> cons, int id, string name, string theme, int stars, RoomDef[] rooms, int[] normal, ContractDef[] contracts, int tierBase)
@@ -121,9 +133,9 @@ namespace DC.Core
 
         /// <summary>Contrato gerado (dia, codigo, raro, evento) a partir do payload: carga, 4-6 camadas de 2-3 salas normais da regiao,
         /// pagamento e tempos pelas taxas medidas (Balance.Gen*). Regiao = a dos 2 bits altos (ou `region` > 0). null = regiao sem conteudo.
-        /// `cargo` forca a carga (Fragile Week, Midnight) sem mudar as salas. Deterministico: mesmo payload = mesmo contrato em qualquer
-        /// aparelho; na regiao 1 e identico ao da v1.0-beta.</summary>
-        public static ContractDef Generate(int payload, ContractKind kind, int date = 0, int region = 0, CargoType? cargo = null)
+        /// `cargo` forca a carga (Fragile Week, Midnight) e `layers` (4-6) as camadas (vagas do evento) sem mudar o sorteio das salas.
+        /// Deterministico: mesmo payload = mesmo contrato em qualquer aparelho; na regiao 1 e identico ao da v1.0-beta.</summary>
+        public static ContractDef Generate(int payload, ContractKind kind, int date = 0, int region = 0, CargoType? cargo = null, int layers = 0)
         {
             payload &= ContractCode.MaxPayload;
             RegionDef reg = RegionDef.Of(region > 0 ? region : RegionOf(payload));
@@ -131,7 +143,8 @@ namespace DC.Core
             var rng = new Rng(Rng.Hash(payload, 0x6E4));
             var c = (CargoType)rng.Int(reg.CargoCount);
             if (cargo.HasValue) c = cargo.Value;
-            int layers = 4 + rng.Int(3);
+            int rolled = 4 + rng.Int(3);
+            if (layers <= 0) layers = rolled;
             var pool = new List<int>();
             var ls = new int[layers][];
             for (int l = 0; l < layers; l++)
@@ -152,21 +165,22 @@ namespace DC.Core
 
         static ContractDef Build(ContractKind kind, string code, CargoType c, int layers, int[][] ls, int payload, int date, RegionDef reg)
         {
-            int rooms = ls.Length + 1, pay = 40 + 22 * layers;
+            int rooms = ls.Length + 1, pay = reg.GenPay + 22 * layers;
             string label = kind == ContractKind.Daily ? "DIA" : kind == ContractKind.Rare ? "RARO" : kind == ContractKind.Event ? "EVENTO" : kind == ContractKind.Endless ? "SEMFIM" : code;
             string note = (kind == ContractKind.Daily ? "contrato do dia: " : kind == ContractKind.Rare ? "contrato raro: " : kind == ContractKind.Event ? "evento: "
                           : kind == ContractKind.Endless ? "desafio sem fim: " : "contrato " + code + ": ") + CargoDef.All[(int)c].Name;
-            return new ContractDef(-1, label, c, pay, c == CargoType.Egg ? Balance.GenEggPerRoom * rooms : 0f, note, reg.Delivery, ls)
+            float egg = c == CargoType.Egg ? reg.GenEgg * rooms : c == CargoType.IceCrystal ? reg.GenMelt * rooms : 0f;   // no gelo e o MeltTime
+            return new ContractDef(-1, label, c, pay, egg, note, reg.Delivery, ls)
             {
-                Kind = kind, ShareCode = kind == ContractKind.Event ? null : code, Payload = payload, Date = date, ParTime = Balance.GenParPerRoom * rooms,
-                Tier = reg.TierBase + 3 * (layers - 4), TimeLimit = c == CargoType.Message ? Balance.GenLimitPerRoom * rooms : 0f, Region = reg.Id, Name = note,
+                Kind = kind, ShareCode = kind == ContractKind.Event ? null : code, Payload = payload, Date = date, ParTime = reg.GenPar * rooms,
+                Tier = reg.TierBase + 3 * (layers - 4), TimeLimit = c == CargoType.Message ? reg.GenLimit * rooms : 0f, Region = reg.Id, Name = note,
             };
         }
 
         /// <summary>Contrato do quadro de eventos (CONTRATO_LANCAMENTO §6.1): gerado do payload com a regra do template. Fragile Week = carga
         /// fragil; Midnight = lanterna (salas escuras); Boss Courier Run = as salas de chefe ja vencidas em sequencia (`bosses`; vazio = gerado
         /// comum); No-Damage e Treasure Detour mudam o Run (vida 1; baus x2 e paredes rachadas abertas).</summary>
-        public static ContractDef EventContract(LiveEvent ev, int payload, int date, int[] bosses)
+        public static ContractDef EventContract(LiveEvent ev, int payload, int date, int[] bosses, int layers = 0)
         {
             payload &= ContractCode.MaxPayload;
             RegionDef reg = RegionDef.Of(RegionOf(payload));
@@ -188,14 +202,15 @@ namespace DC.Core
                 def = Build(ContractKind.Event, ContractCode.Encode(payload), CargoType.Box, 4 + bosses.Length, ls, payload, date, reg);
                 def.ParTime = Balance.GenParPerRoom * 4f * (bosses.Length + 1);
             }
-            else def = Generate(payload, ContractKind.Event, date, 0, cargo);
+            else def = Generate(payload, ContractKind.Event, date, 0, cargo, layers);
             def.Event = ev;
             return def;
         }
 
         /// <summary>Desafio sem fim (§6.8): Balance.EndlessLayers camadas de 2 salas misturando as salas normais das `regions`, a dificuldade
-        /// sobe por camada (Run.Tier). Mesma semana = mesmo desafio para todos (payload pela semana); ShareCode compara.</summary>
-        public static ContractDef Endless(int week, int[] regions)
+        /// sobe por camada (Run.Tier); a cada 5 camadas uma sala de mini-chefe e a cada 10 uma de chefe, em ciclo (`minis`/`bosses` = salas
+        /// vencidas). Mesma semana = mesmo desafio para todos (payload pela semana); ShareCode compara.</summary>
+        public static ContractDef Endless(int week, int[] regions, int[] minis = null, int[] bosses = null)
         {
             int payload = (int)(Rng.Hash(week, 0xE4D) & ContractCode.MaxPayload);
             var rng = new Rng(Rng.Hash(payload, 0x6E4));
@@ -206,6 +221,9 @@ namespace DC.Core
             var ls = new int[Balance.EndlessLayers][];
             for (int l = 0; l < ls.Length; l++)
             {
+                int at = l + 1;
+                if (bosses != null && bosses.Length > 0 && at % Balance.EndlessBossEvery == 0) { ls[l] = new[] { bosses[(at / Balance.EndlessBossEvery - 1) % bosses.Length] }; continue; }
+                if (minis != null && minis.Length > 0 && at % Balance.EndlessMiniEvery == 0) { ls[l] = new[] { minis[(at / Balance.EndlessMiniEvery - at / Balance.EndlessBossEvery - 1) % minis.Length] }; continue; }
                 int n = l == 0 ? 1 : 2;
                 ls[l] = new int[n];
                 for (int i = 0; i < n; i++)

@@ -15,7 +15,7 @@ namespace DC
     /// contrato (faixa de cima, escolha de perk, pausa) -> cena da entrega -> resultado (estrelas, pagamento, codigo para compartilhar).
     /// Este arquivo: estrutura, faixa do contrato, oferta de resgate, pausa, cena e resultado. Menus.cs: titulo, menu, quadro, codigo,
     /// guilda/armas, perk, configuracoes e creditos.
-    /// Textos: Textos.cs (pt-BR/EN; trocar o idioma chama Relocalizar). Cores: docs/ART_BIBLE.md §3/§10 (cartoes de papel com borda de
+    /// Textos: Textos.cs (pt-BR/EN/ES/ID; trocar o idioma chama Relocalizar). Cores: docs/ART_BIBLE.md §3/§10 (cartoes de papel com borda de
     /// tinta). Alvo de toque: botao com >= 144 px de referencia de altura (= 48 dp num aparelho de 360 dp de largura, porque o canvas
     /// casa a largura) ou area de toque estendida (Art.Toque). Estado nunca so por cor: cadeado, estrela vazada, visto, sublinhado.
     /// </summary>

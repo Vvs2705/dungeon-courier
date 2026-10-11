@@ -176,13 +176,19 @@ namespace DC.Core
         /// <summary>Recompensa fixa da vaga (moedas; paga 1x por semana na entrega), mostrada antes.</summary>
         public static int EventReward(int k) => k >= 0 && k < Balance.EventRewards.Length ? Balance.EventRewards[k] : 0;
 
-        /// <summary>Contrato da vaga k do quadro da semana (regiao sorteada entre as destravadas).</summary>
+        /// <summary>Contrato da vaga k do quadro da semana (CONTEUDO_REGIOES §9.1): vaga 0 = regiao 1 com 4 camadas; 1 e 2 = a regiao mais alta
+        /// destravada com 5 e 6 camadas; do pacote, 3 = regiao sorteada com 5 e 4 = a mais alta com 6.</summary>
+        public static int EventLayers(int k) => k == 0 ? 4 : k == 2 || k == 4 ? 6 : 5;
+
         public ContractDef EventContract(int date, int k)
         {
             if (!IsDate(date) || k < 0 || k >= Balance.EventRewards.Length) return null;
             int w = Week(date);
-            int p = Content.WithRegion((int)(Rng.Hash(w, 0xE7E0 + k) & ContractCode.MaxPayload), PickRegion(w * 8 + k, 0xE7E1));
-            ContractDef def = Content.EventContract(EventOf(date), p, date, BeatenBosses());
+            int[] open = OpenRegions();
+            int region = k == 0 ? 1 : k == 3 ? PickRegion(w * 8 + k, 0xE7E1) : open[open.Length - 1];
+            int layers = EventLayers(k);
+            int p = Content.WithRegion((int)(Rng.Hash(w, 0xE7E0 + k) & ContractCode.MaxPayload), region);
+            ContractDef def = Content.EventContract(EventOf(date), p, date, BeatenBosses(), layers);
             if (def != null) def.Slot = k;
             return def;
         }
@@ -192,6 +198,14 @@ namespace DC.Core
             if (InContract || !EventAvailable(date, k)) return null;
             SeeDate(date);
             return Begin(EventContract(date, k), rescue, Modifier.None);
+        }
+
+        /// <summary>Salas de mini-chefe (mini = true) ou de chefe ja vencidas, na ordem das regioes (desafio sem fim).</summary>
+        internal int[] Beaten(bool mini)
+        {
+            var l = new List<int>();
+            foreach (RegionDef r in RegionDef.All) { int at = mini ? r.MiniAt : r.BossAt; if (at >= 0 && Reputation > at) l.Add(mini ? r.Mini : r.Boss); }
+            return l.ToArray();
         }
 
         /// <summary>Salas de chefe ja vencidas (M e B de cada regiao, na ordem): a Boss Courier Run.</summary>
@@ -295,15 +309,17 @@ namespace DC.Core
             return true;
         }
 
-        /// <summary>Usa o equipamento lateral no contrato em curso (1x por sala; Run.UseGear).</summary>
-        public bool UseGear() => InContract && Run.UseGear();
-
         /// <summary>O equipamento que ainda precisa de blueprint, comecando de h % 4 (None = todos completos).</summary>
         internal Gear NeededBlueprint(uint h)
         {
             for (int i = 0; i < 4; i++) { var g = (Gear)(1 + (int)((h + (uint)i) % 4u)); if (blueprints[(int)g] < Balance.GearBlueprints) return g; }
             return Gear.None;
         }
+
+        readonly HashSet<int> projects = new HashSet<int>();
+        /// <summary>O projeto do bau desta sala (RoomDef.Blueprint) ja foi pego (sai 1 vez; a porta deixa de mostrar).</summary>
+        public bool ProjectTaken(int room) => projects.Contains(room);
+        internal void TakeProject(int room, Gear g) { if (projects.Add(room)) AddBlueprint(g, 1); }
 
         internal void AddBlueprint(Gear g, int n)
         {
@@ -434,7 +450,11 @@ namespace DC.Core
                     Run nr = LoadRun(this, Parse(checkpoint), SaveVersion);
                     if (nr == null) return false;
                     nr.Courier.Hp = nr.Courier.MaxHp;
-                    if (failed.Room.Id == nr.Room.Id && failed.Chest != null && failed.Chest.Opened && nr.Chest != null) nr.Chest.Opened = true;   // bau nao paga 2x
+                    if (failed.Room.Id == nr.Room.Id)   // bau (e enterrado) aberto na tentativa que falhou continua aberto: nao paga 2x
+                    {
+                        if (failed.Chest != null && failed.Chest.Opened && nr.Chest != null) nr.Chest.Opened = true;
+                        for (int i = 0; i < nr.Buried.Count && i < failed.Buried.Count; i++) nr.Buried[i].Opened |= failed.Buried[i].Opened;
+                    }
                     if (nr.HasTimer && nr.TimeLeft < Balance.ResumeMinTime) nr.Time = Math.Max(0f, nr.Contract.TimeLimit - Balance.ResumeMinTime);
                     nr.Kills = 0; nr.ChestsOpened = 0; nr.SecretsFound = 0; nr.BossesClean = 0; nr.HuntCoins = 0;   // ja contados na falha
                     if (Pending != null && Pending.Id == failed.Main.Id) Pending = null;
@@ -481,7 +501,7 @@ namespace DC.Core
         /// <summary>Mostrar interstitial agora? So entre contratos, nunca nos 3 primeiros do dia, no maximo 1 a cada 3 contratos e 4 min, nunca
         /// com Remove Ads (Config muda os numeros e pode desligar). Relogio voltando = nao.</summary>
         public bool InterstitialDue(long now) => Config.InterstitialOn && !RemoveAds && !InContract && !SaveRefused && ContractsToday > Config.AdFreeContracts
-                                                 && adSince >= Config.AdEveryContracts && now >= adLast && (adLast == 0 || now - adLast >= Config.AdEverySeconds);
+                                                 && adSince >= Config.AdEveryContracts && (adLast == 0 || now - adLast >= Config.AdEverySeconds);
         /// <summary>A View mostrou o interstitial.</summary>
         public void InterstitialShown(long now)
         {
@@ -498,7 +518,10 @@ namespace DC.Core
         /// <summary>Abre com o ultimo contrato da campanha entregue (com a regiao 4 cheia, o chefe dela).</summary>
         public bool EndlessOpen => Contracts.Length > 0 && Reputation >= Contracts.Length;
         /// <summary>O desafio da semana da data (o mesmo para todos com as mesmas regioes; ShareCode compara).</summary>
-        public ContractDef EndlessContract(int date) => Content.Endless(Week(date), OpenRegions());
+        public ContractDef EndlessContract(int date) => Content.Endless(Week(date), OpenRegions(), Beaten(true), Beaten(false));
+        int endDay, endToday;
+        /// <summary>Moedas que o sem fim ainda paga hoje (teto Balance.EndlessDailyCap por dia, antes da Bolsa).</summary>
+        public int EndlessCoinsLeft => Math.Max(0, Balance.EndlessDailyCap - (endDay == LastDateSeen ? endToday : 0));
 
         public Run StartEndless(int date)
         {
@@ -522,8 +545,15 @@ namespace DC.Core
             {
                 int w = Week(def.Date);
                 if (evWeek != w) { evWeek = w; evMask = 0; }
+                int was = evMask;
                 evMask |= 1 << def.Slot;
                 res.EventReward = EventReward(def.Slot);
+                if ((evMask & 7) == 7 && (was & 7) != 7)   // as 3 vagas da semana: o projeto da semana (sem projeto faltando = 300 moedas)
+                {
+                    var g = (Gear)(1 + w % 4);
+                    if (Blueprints(g) >= Balance.GearBlueprints) g = NeededBlueprint((uint)w);
+                    if (g == Gear.None) res.EventReward += Balance.EventProjectCoins; else { AddBlueprint(g, 1); res.EventProject = g; }
+                }
                 Coins += res.EventReward;
                 Emit(Ev.EventReward, res.EventReward, def.Slot, Balance.Client);
                 Emit(Ev.CurrencySource, res.EventReward, 6, Balance.Client);
@@ -537,7 +567,10 @@ namespace DC.Core
             {
                 int layers = r.Layer;
                 res.EndlessLayers = layers;
-                if (layers > 0) { res.EndlessCoins = Credit(layers * Balance.EndlessCoinsPerLayer); Emit(Ev.CurrencySource, res.EndlessCoins, 7, r.Courier.Pos); }
+                int raw = Math.Min(layers * Balance.EndlessCoinsPerLayer, EndlessCoinsLeft);   // teto diario
+                if (endDay != LastDateSeen) { endDay = LastDateSeen; endToday = 0; }
+                endToday += raw;
+                if (raw > 0) { res.EndlessCoins = Credit(raw); Emit(Ev.CurrencySource, res.EndlessCoins, 7, r.Courier.Pos); }
                 if (r.Contract.Date != EndlessWeek) { EndlessWeek = r.Contract.Date; EndlessWeekBest = 0; }
                 EndlessWeekBest = Math.Max(EndlessWeekBest, layers);
                 EndlessBest = Math.Max(EndlessBest, layers);
@@ -563,7 +596,8 @@ namespace DC.Core
             sb.Append("fit=").Append(outfits).Append(',').Append((int)OutfitEquipped).Append('\n');
             sb.Append("iap=").Append(owned).Append('\n');
             sb.Append("ads=").Append(adLast).Append(',').Append(adSince).Append(',').Append(adDate).Append(',').Append(adToday).Append('\n');
-            sb.Append("end=").Append(EndlessBest).Append(',').Append(EndlessWeekBest).Append(',').Append(EndlessWeek).Append('\n');
+            sb.Append("end=").Append(EndlessBest).Append(',').Append(EndlessWeekBest).Append(',').Append(EndlessWeek).Append(',').Append(endDay).Append(',').Append(endToday).Append('\n');
+            if (projects.Count > 0) { var ids = new List<int>(projects); ids.Sort(); sb.Append("bpr=").Append(string.Join(",", ids)).Append('\n'); }
             if (rewardIds.Count > 0) sb.Append("rw=").Append(string.Join(",", rewardIds)).Append('\n');
         }
 
@@ -601,7 +635,8 @@ namespace DC.Core
             a = Get(kv, "ads").Split(',');
             if (a.Length >= 4) { adLast = Math.Max(0L, L(a[0], 0L)); adSince = Math.Max(0, I(a[1], 0)); adDate = I(a[2], 0); adToday = Math.Max(0, I(a[3], 0)); }
             a = Get(kv, "end").Split(',');
-            if (a.Length >= 3) { EndlessBest = Math.Max(0, I(a[0], 0)); EndlessWeekBest = Math.Max(0, I(a[1], 0)); EndlessWeek = Math.Max(0, I(a[2], 0)); }
+            if (a.Length >= 5) { EndlessBest = Math.Max(0, I(a[0], 0)); EndlessWeekBest = Math.Max(0, I(a[1], 0)); EndlessWeek = Math.Max(0, I(a[2], 0)); endDay = I(a[3], 0); endToday = Math.Max(0, I(a[4], 0)); }
+            foreach (string id in Get(kv, "bpr").Split(',')) { int r = I(id, -1); if (r >= 0 && r < Content.Rooms.Length && Content.Rooms[r].Blueprint != Gear.None) projects.Add(r); }
             foreach (string id in Get(kv, "rw").Split(',')) if (id.StartsWith("rw-", StringComparison.Ordinal) && rewardIds.Count < Balance.RewardIds) rewardIds.Add(id);
         }
     }

@@ -70,19 +70,26 @@ namespace DC.Core
         };
     }
 
-    /// <summary>Equipamento lateral: destrava com Balance.GearBlueprints blueprints e sobe de nivel com Coins (Cost[n] = preco do nivel n+1).</summary>
+    /// <summary>Equipamento lateral (CONTEUDO_REGIOES §8): destrava com Balance.GearBlueprints projetos e sobe ate o nivel 5 com Coins (Cost[n] =
+    /// preco do nivel n+1). Sem botao (controle de um dedo): dispara sozinho. Fumaca: quando um inimigo pega a carga (usos por contrato por
+    /// nivel). Gancho: andando sem carga na direcao da carga do contrato no chao (+-30 graus, 1,5-5 m) por 0,25 s; recarga por nivel.
+    /// Armadilha: no 1o pouso da carga em cada sala, 0,6 m do outro lado da carga. Botas: passivas.</summary>
     public sealed class GearDef
     {
         public readonly Gear Type; public readonly string Name, Text; public readonly int[] Cost;
         GearDef(Gear t, string name, string text, int[] cost) { Type = t; Name = name; Text = text; Cost = cost; }
         /// <summary>Indice = (int)Gear (0 = None).</summary>
+        static readonly int[] Costs = { 0, 600, 1200, 2000, 3000 };
+        /// <summary>Por nivel (indice 0 = nivel 1): fumaca = segundos e usos por contrato; gancho = recarga (s); armadilha = segundos e quantos prende.</summary>
+        public static readonly float[] SmokeTime = { 3f, 3.5f, 3.5f, 4f, 4f }, HookCooldown = { 10f, 9f, 8f, 7f, 6f }, TrapTime = { 3f, 4f, 4f, 5f, 5f };
+        public static readonly int[] SmokeUses = { 1, 1, 2, 2, 3 }, TrapCatches = { 1, 1, 2, 2, 2 };
         public static readonly GearDef[] All =
         {
-            new GearDef(Gear.None, "", "", new[] { 0, 0, 0 }),
-            new GearDef(Gear.Smoke, "Bomba de fumaça", "ladrões perdem a carga de vista por 3 s", new[] { 0, 350, 800 }),
-            new GearDef(Gear.Hook, "Gancho", "puxa a carga de até 5 m para as mãos", new[] { 0, 350, 800 }),
-            new GearDef(Gear.Trap, "Armadilha de urso", "prende o inimigo mais perto por 3 s", new[] { 0, 350, 800 }),
-            new GearDef(Gear.Boots, "Botas de lama", "lama e água não freiam (passivo)", new[] { 0, 350, 800 }),
+            new GearDef(Gear.None, "", "", new[] { 0, 0, 0, 0, 0 }),
+            new GearDef(Gear.Smoke, "Bomba de fumaça", "quem pega a carga a solta e a perde de vista por 3 s", Costs),
+            new GearDef(Gear.Hook, "Gancho", "andando para a carga no chão (1,5-5 m), ela vem para as mãos", Costs),
+            new GearDef(Gear.Trap, "Armadilha de urso", "no 1º pouso da sala: prende o 1º inimigo que passar por 3 s", Costs),
+            new GearDef(Gear.Boots, "Botas de lama", "água e poça de limo não freiam (passivo)", Costs),
         };
     }
 
@@ -152,8 +159,26 @@ namespace DC.Core
         /// <summary>Contrato raro: pagamento x2 (o intervalo de 8 h esta no Config).</summary>
         public const int RarePct = 200;
         /// <summary>Equipamento lateral: 3 blueprints destravam; nivel 1-3; abre depois do C6. Efeito +0,5 s/m por nivel.</summary>
-        public const int GearBlueprints = 3, GearMaxLevel = 3, GearOpenAfter = 6;
-        public const float SmokeTime = 3f, HookRange = 5f, TrapTime = 3f, GearPerLevel = 0.5f, TrapRange = 4f;
+        public const int GearBlueprints = 3, GearMaxLevel = 5, GearOpenAfter = 6;
+        /// <summary>Fumaca: nuvem de 2,5 m. Gancho: 1,5-5 m, cone de 30 graus (cos 0,866), 0,25 s andando. Armadilha: 0,6 m alem da carga, pega a
+        /// 0,5 m; no nivel 5 prende tambem mini-chefe por 1,5 s. Projeto da semana (3 vagas do evento): sem projeto faltando = 300 moedas.</summary>
+        public const float SmokeRadius = 2.5f, HookMin = 1.5f, HookRange = 5f, HookCone = 0.866f, HookAim = 0.25f, TrapOffset = 0.6f, TrapReach = 0.5f, TrapMini = 1.5f;
+        public const int EventProjectCoins = 300;
+        // terreno comum (CONTEUDO_REGIOES §1.1)
+        /// <summary>Dormindo acorda com o courier a 2 m, explosao a 4 m ou vizinho acordado a 3 m por 1 s; 1o golpe x2.</summary>
+        public const float WakeRange = 2f, WakeBlast = 4f, WakeNeighbor = 3f, WakeDelay = 1f; public const int SleepHitMul = 2;
+        /// <summary>Agua: quem anda nela vai a x0,75 (nao chefes, nao voadores; Pe firme e Botas ignoram).</summary>
+        public const float WaterSlow = 0.75f;
+        /// <summary>Luz no escuro (e na Neblina): courier 3,5 m (lanterna nas maos 5,5), tocha 2,5, lanterna no chao 4,0. Tochas padrao da Midnight
+        /// em sala sem tocha.</summary>
+        public const float LightCourier = 3.5f, LightLantern = 5.5f, LightTorch = 2.5f, LightLanternGround = 4f;
+        public static readonly V2[] MidnightTorches = { new V2(0.3f, 5f), new V2(8.7f, 10f) };
+        /// <summary>Bau enterrado: 1,5 s parado a 1,2 m (Faro de bau: 1,0 s).</summary>
+        public const float BuriedTime = 1.5f, BuriedSenseTime = 1f;
+        /// <summary>Boss Courier Run: cura 2 por sala. Fragil: qualquer carga quebra com 2 rachaduras; o gelo falha abaixo de 40%.</summary>
+        public const int BossRunHeal = 2, FragileBreak = 2; public const float FragileIce = 0.4f;
+        /// <summary>Desafio sem fim: mini-chefe a cada 5 camadas, chefe a cada 10; teto de 800 moedas por dia.</summary>
+        public const int EndlessMiniEvery = 5, EndlessBossEvery = 10, EndlessDailyCap = 800;
         /// <summary>Maestria por carga: entregas para os niveis 1-5; +2% de pagamento por nivel naquela carga.</summary>
         public static readonly int[] MasterySteps = { 3, 8, 15, 25, 40 };
         public const int MasteryPct = 2;

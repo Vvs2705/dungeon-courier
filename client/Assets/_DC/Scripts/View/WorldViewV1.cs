@@ -69,7 +69,6 @@ namespace DC
         float _bossX0, _bossW, _bossY, _bossGhostF, _dripT, _dustT, _sparkT;
         bool _padWas;
 
-        static string T(string pt, string en) => Textos.En ? en : pt;
         /// <summary>Cor do papel no mundo: Lote 3 pelo ASSETS §8 (arqueiro ciano-petroleo, limo rosa-chiclete); o resto pelo Art.Role.</summary>
         static Color Papel(EnemyType t) => t == EnemyType.Archer ? ArcherTeal : t == EnemyType.Slime ? SlimePink : Art.Role(t);
         /// <summary>1o clipe da lista que a folha tem, ou -1 (sem alocar: foreach em array).</summary>
@@ -547,7 +546,7 @@ namespace DC
             _bossParts.Add(_bossFill = Rect(up, "ChefeVida", cx, y, w, BossH, Art.Bad, OPlate + 3));
             _bossParts.Add(Art.NewSprite(up, "ChefeIcone", Art.Horns(), Art.Gold, OPlate + 4, new Vector2(x0 - 0.28f, y), Vector2.one * 0.46f));
             _bossName = NewLabel(30);
-            _bossName.text = room.Boss ? T("Ogro", "Ogre") : T("Capitão Ladrão", "Thief Captain");
+            _bossName.text = Textos.Inimigo(room.Boss ? EnemyType.Ogre : EnemyType.Captain);
             _bossName.enabled = true;
             _roomLabels.Add(_bossName); _roomLabelPos.Add(up.TransformPoint(new Vector3(cx, y, 0f)));
         }
@@ -689,7 +688,7 @@ namespace DC
                         Puff(Art.Square(), at + new Vector2(Random.Range(-0.8f, 0.8f), -0.2f), new Vector2(Random.Range(-2.5f, 2.5f), Random.Range(1.5f, 4.5f)),
                              Random.value < 0.5f ? Art.Block : Art.WallTop, Random.Range(0.12f, 0.22f), 0.06f, 0.7f);
                     Burst(at, Art.A(Art.Dim, 0.8f), 10, 2.5f, 0.3f, 0.6f);
-                    Float(at + new Vector2(0f, 1.2f), T("passagem secreta!", "secret passage!"), Art.Gold, 52);
+                    Float(at + new Vector2(0f, 1.2f), Textos.PassagemSecreta, Art.Gold, 52);
                     Shake(0.15f, 0.3f);
                     break;
                 }
@@ -701,7 +700,7 @@ namespace DC
                         Burst(at, Art.CargoColor(CargoType.Message), 8, 2.5f, 0.12f, 0.45f);
                         Puff(Art.Key(), at, new Vector2(0f, 1.4f), Art.Gold, 0.45f, 0.5f, 0.8f);
                     }
-                    Float(V(run.Courier.Pos), T("a mensagem abre a porta!", "the message opens the door!"), Art.CargoColor(CargoType.Message), 40);
+                    Float(V(run.Courier.Pos), Textos.MensagemAbre, Art.CargoColor(CargoType.Message), 40);
                     break;
                 case Ev.Stun: Burst(p + new Vector2(0f, 0.6f / Tilt), Art.Gold, 5, 2f, 0.08f, 0.3f); break;
                 case Ev.CaptainCall:
@@ -713,7 +712,7 @@ namespace DC
                     break;
                 case Ev.RoomEvent:
                     if (e.B <= 0) break;
-                    Float(new Vector2(Balance.RoomW / 2f, Balance.RoomH - 2.5f), T("reforço!", "reinforcements!"), Art.Bad, 60);
+                    Float(new Vector2(Balance.RoomW / 2f, Balance.RoomH - 2.5f), Textos.Reforco, Art.Bad, 60);
                     Puff(Art.Glow(), new Vector2(Balance.RoomW / 2f, Balance.RoomH - 0.5f), Vector2.zero, Art.A(Art.Bad, 0.45f), 9f, 11f, 0.5f, OMark);
                     Shake(0.1f, 0.25f);
                     break;
@@ -735,7 +734,7 @@ namespace DC
                 case Ev.ContractEnd:
                     if (e.B == (int)Outcome.TimeUp)
                     {
-                        Float(V(run.Courier.Pos), T("tempo esgotado!", "time's up!"), Art.Bad, 56);
+                        Float(V(run.Courier.Pos), Textos.TempoEsgotado, Art.Bad, 56);
                         Burst(V(run.Courier.Pos), Art.CargoColor(CargoType.Message), 12, 3f, 0.12f, 0.6f);
                     }
                     break;
@@ -756,7 +755,7 @@ namespace DC
             for (int i = 0, n = barrel ? 10 : 5; i < n; i++)
                 Puff(Art.Disc(), at + Random.insideUnitCircle * (0.4f * radius), Random.insideUnitCircle * 1.5f + new Vector2(0f, 0.8f), Art.A(Smoke, 0.85f), 0.25f, 0.65f, Random.Range(0.6f, 1f));
             Shake(barrel ? 0.35f : 0.16f, barrel ? 0.4f : 0.22f);
-            if (barrel) Float(at, T("BUM!", "BOOM!"), Boom, 64);
+            if (barrel) Float(at, Textos.Bum, Boom, 64);
         }
 
         void HideLabelsV1()
