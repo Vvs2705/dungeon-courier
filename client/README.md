@@ -8,3 +8,5 @@ Unity **6000.3.23f1**, Built-in RP, Input System, uGUI por código, retrato. `cl
   - **APK com caminho longo ou com espaços** (ex.: worktree em `...\MEUS PROJETOS\...\.claude\worktrees\...`): o CMake do Gradle falha em `prefab_command.bat`. Mapeie uma unidade curta, gere e desfaça: `subst R: <pasta client>` → `Unity -batchmode -quit -projectPath R:\ -executeMethod DC.EditorTools.Setup.BuildAndroidRelease` → `subst R: /D`.
 - `Assets/_DC/Resources/Sprites/` — sprites gerados por `client/tools/render_sprites.py` (Blender); ver `docs/RENDER_SPRITES.md`.
 - Flags de dev do build: `-autoplay N`, `-bot`, `-speed N`, `-shot foto.png -shotdelay s`, `-contract K` (1-based), `-reset`, `-testsession`.
+
+**Higienização (disco cheio):** pode apagar sem perder nada `client/Library/Bee/` (cache de build do Unity, ~4 GB depois de um APK; volta no próximo build, que fica mais lento), `client/Builds/win*/` (builds regeneráveis; o release fica no GitHub) e `client/Temp/`. **Não apague** `arte/` (arte crua fora do git, insubstituível sem gastar crédito), `client/Assets/` nem o trabalho não commitado.
