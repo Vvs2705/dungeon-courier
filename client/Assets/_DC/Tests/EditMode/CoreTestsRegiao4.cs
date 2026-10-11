@@ -172,6 +172,20 @@ namespace DC.Tests
             Assert.AreEqual(50 - Balance.VentEnemyDamage, brute.Hp, "3 de dano no inimigo");
             Assert.AreEqual(50, mag.Hp, "elemental (forja) imune");
             Assert.IsTrue(Has(evs, Ev.VentFire));
+            // barril pousado no respiro: o fogo direto detona na hora (M4-11 passa pela R4-2 na camada 3)
+            Sim s6 = InRoomWith(C4(10), 3, Room4(Regiao4.R2), CargoType.Barrel); Run r6 = s6.Run; r6.Enemies.Clear(); r6.Courier.Hp = 99;
+            Steps(s6, 1, Up); Hold4(s6, 0.25f);
+            r6.Main.Pos = r6.Room.Vents[1].Pos; r6.Main.Fuse = 0f;   // respiro 1 (fase 2 s): fogo entre 1 e 2 s
+            for (int i = 0; i < StepsFor(2f) && s6.InContract; i++) { r6.Main.Fuse = 0f; r6.Enemies.Clear(); Hold4(s6, Dt); }
+            Assert.AreEqual(Outcome.Exploded, s6.LastResult.Outcome, "respiro detona o barril");
+            // cristal de gelo no respiro: -25 de gelo (o M4-5 passa pela R4-2 na camada 3; o gelo e da raia R2: IceOf/MeltIce)
+            Sim s7 = InRoomWith(C4(4), 3, Room4(Regiao4.R2), CargoType.IceCrystal); Run r7 = s7.Run; r7.Enemies.Clear(); r7.Courier.Hp = 99;
+            Steps(s7, 1, Up); Hold4(s7, 0.25f);
+            r7.Main.Pos = r7.Room.Vents[1].Pos;
+            float ice0 = r7.IceOf(r7.Main), melt = 100f / r7.MeltTime * 2.2f;   // derrete sozinho ~2 s (x3 so perto de lava)
+            for (int i = 0; i < StepsFor(2f) && s7.InContract; i++) { r7.Enemies.Clear(); Hold4(s7, Dt); }
+            Assert.Less(r7.IceOf(r7.Main), ice0 - Balance.VentIce + 1f, "o fogo do respiro tira 25 de gelo");
+            Assert.Greater(r7.IceOf(r7.Main), ice0 - Balance.VentIce - melt * 3f - 1f);
 
             // B4: as fissuras so ligam na fase 2 do Dragao
             Sim s3 = InRoomWith(C4(15), 4, Room4(Regiao4.B), CargoType.Box);
@@ -223,7 +237,15 @@ namespace DC.Tests
             Assert.AreEqual(CargoState.Ground, r3.Main.State);
             r3.Forge.Fires.Add(new FirePatch { Pos = r3.Main.Pos, Radius = 0.5f, Left = 3f });
             Steps(s3, 2, V2.Zero);
-            Assert.AreEqual(Outcome.Exploded, s3.LastResult.Outcome, "fogo no chao detona o barril");
+            Assert.IsTrue(s3.InContract, "fogo no chao acende o pavio (nao detona na hora)");
+            Assert.GreaterOrEqual(r3.Main.Fuse, Balance.BarrelFuse - Balance.FireFuse - 0.01f, "o pavio fica com 1 s");
+            Steps(s3, StepsFor(Balance.FireFuse), V2.Zero);
+            Assert.AreEqual(Outcome.Exploded, s3.LastResult.Outcome, "1 s depois explode");
+            // courier: atravessar rapido nao queima (0,5 s de folga), ficar queima
+            var s5 = Sim4(); Run r5 = Start(s5, C4(0)); r5.Enemies.Clear(); r5.Courier.Hp = 99;
+            r5.Forge.Fires.Add(new FirePatch { Pos = new V2(4.5f, 2.2f), Radius = 0.45f, Left = 9f });
+            Steps(s5, StepsFor(0.6f), Up);
+            Assert.Greater(r5.Courier.Pos.Y, 3f); Assert.AreEqual(99, r5.Courier.Hp, "passou pelo fogo sem parar");
         }
 
         // ------------------------------------------------------------------ inimigos
@@ -412,7 +434,8 @@ namespace DC.Tests
                 r.Courier.Hp = 99; r.Enemies.RemoveAll(e => e != d);
                 evs = Hold4(sim, Dt, shoot: true);
                 if (Has(evs, Ev.TakeOff)) took = true;
-                if (r.Forge.Flying && took && !flyChecked) { flyChecked = true; Assert.IsFalse(r.CanHit(d), "no ar nao e alvo"); }
+                if (r.Forge.Flying && took && V2.Dist(d.Pos, r.Courier.Pos) < 3f) { flyChecked = true; Assert.IsFalse(r.CanHit(d), "no ar nao e alvo"); }
+                if (r.Forge.Flying) foreach (SimEvent e in evs) Assert.IsFalse(e.Kind == Ev.EnemyHit && e.A == d.Id, "no ar nao leva dano");
                 foreach (SimEvent e in evs) if (e.Kind == Ev.Land) { landed = true; Assert.AreEqual(1, e.B, "o pouso acertou o courier parado"); }
                 if (landed && r.Forge.HeadDown > 0f) foreach (SimEvent e in evs) if (e.Kind == Ev.EnemyHit && e.A == d.Id) doubled = true;
             }
@@ -520,14 +543,16 @@ namespace DC.Tests
         public void Campanha_Regiao4_PeloBot_FechaOs16_DragaoVencivel()
         {
             RegionDef reg = RegionDef.Of(4);
-            int finished = 0;
+            int finished = 0, attempts = 0;
             for (int s = 0; s < 4; s++)
             {
                 Bot.Campaign cp = Bot.PlayCampaign(7100 + s, region: 4, from: Bot.Regiao3EndSave(7100 + s), maxAttempts: 80);
                 if (cp.Finished) finished++;
+                attempts += cp.Attempts;
                 for (int c = reg.First; c < reg.First + reg.Contracts.Length; c++) if (cp.Finished) Assert.GreaterOrEqual(cp.AttemptsPer[c], 1, Sim.Contracts[c].Code);
             }
             Assert.GreaterOrEqual(finished, 3, "o bot fecha a regiao 4 (Dragao vencivel)");
+            Assert.LessOrEqual(attempts / 4.0, 16 * 2.0, "tentativas demais por contrato");
         }
 
         [Test]

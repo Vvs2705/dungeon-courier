@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
 using DC.Core;
 using NUnit.Framework;
 
@@ -135,6 +137,21 @@ namespace DC.Tests
             Assert.AreEqual(2, debut[CargoType.IceCrystal], "cristal estreia no M2-3"); Assert.AreEqual(4, debut[CargoType.ArcaneHeart], "coracao no M2-5");
             Assert.AreEqual(9, debut[CargoType.GriffinCage], "gaiola no M2-10");
             Assert.AreEqual(10, RegionDef.Of(2).CargoCount);
+        }
+
+        /// <summary>Achado do bot da regiao 2 (o dash da gaiola): a porta aberta no passo anterior nao deixa passar o courier cujo dash acabou
+        /// de largar a carga (antes ele atravessava sem ela e o contrato travava na sala seguinte).</summary>
+        [Test]
+        public void Porta_DashQueLargaACargaNaoAtravessa()
+        {
+            Sim s = R2At("R2-1"); Run r = s.Run; r.Enemies.Clear();
+            r.Courier.Pos = new V2(r.Doors[0].Pos.X, 13.2f);   // a um passo de dash do limiar da porta
+            Steps(s, 1, V2.Zero);
+            Assert.IsTrue(r.Doors[0].Open, "carga nas maos: porta aberta");
+            int layer = r.Layer;
+            Steps(s, 6, Up, dashFirst: true);
+            Assert.AreEqual(layer, r.Layer, "o dash largou a carga: nao atravessa sem ela");
+            Assert.AreEqual(CargoState.Ground, r.Main.State); Assert.IsTrue(s.InContract);
         }
 
         // ------------------------------------------------------------------ inimigos
@@ -516,6 +533,141 @@ namespace DC.Tests
             Assert.AreEqual(1, CountEv(evs, Ev.CageCalm, r3.Main.Id)); Assert.AreEqual(Balance.CageEvery, r3.CageLeft, 0.1f);
             evs = NoThief(s3, StepsFor(3f), V2.Zero);
             Assert.AreEqual(0, CountEv(evs, Ev.CageScream, r3.Main.Id), "acalmado: sem grito aos 6 s");
+        }
+    }
+
+    /// <summary>Medicao do bot na regiao 2 (docs/BALANCE_REGIAO2.md). A campanha da regiao 2 parte do estado do fim da regiao 1 medido pelo
+    /// bot (BALANCE.md: 62,7 estrelas, guilda 7/7/7/6,8, armas 2,4/2,1/2,0, sobra de 1.089 moedas) e compra como o Bot.PlayCampaign; cada
+    /// contrato e medido a partir do save que a campanha tinha antes da 1a tentativa dele. Asserts de faixa larga; o alvo fino fica no doc.</summary>
+    public class BalanceTestsRegiao2
+    {
+        const int Camps = 6, Seeds = 10;
+        static Bot.Campaign[] camps; static Bot.Stats[] table, lo, hi;
+
+        /// <summary>Save do fim da regiao 1 (estrelas pelo DevStars, guilda e armas pela media do bot da regiao 1).</summary>
+        public static string EndOfRegion1(int seed)
+        {
+            Sim s = Sim.Load("v=3\nseed=" + seed + "\nrep=" + RegionDef.Of(2).First + "\ncoins=1089\nlv=7,7,7,7\nwlv=2,2,2\n");
+            s.DevStars(63);
+            return s.Save();
+        }
+
+        static void Measure()
+        {
+            if (table != null) return;
+            RegionDef g = RegionDef.Of(2); int n = g.Contracts.Length;
+            camps = new Bot.Campaign[Camps]; table = new Bot.Stats[n]; lo = new Bot.Stats[n]; hi = new Bot.Stats[n];
+            for (int c = 0; c < n; c++) { table[c] = new Bot.Stats { Contract = g.First + c }; lo[c] = new Bot.Stats { Contract = g.First + c }; hi[c] = new Bot.Stats { Contract = g.First + c }; }
+            for (int k = 0; k < Camps; k++)
+            {
+                camps[k] = Bot.PlayCampaign(6000 + k, region: 2, from: EndOfRegion1(6000 + k));
+                for (int c = 0; c < n; c++)
+                {
+                    string before = camps[k].Before[g.First + c];
+                    if (before == null) continue;
+                    Bot.MeasureFrom(before, g.First + c, Seeds, 1000 + 100 * k, 0.5f, table[c]);
+                    if (c < 3) continue;   // H1 do 4o em diante (os tutoriais nao tem reforco)
+                    Bot.MeasureFrom(before, g.First + c, Seeds / 2, 2000 + 100 * k, 0.1f, lo[c]);
+                    Bot.MeasureFrom(before, g.First + c, Seeds / 2, 3000 + 100 * k, 0.9f, hi[c]);
+                }
+            }
+        }
+
+        static double FightPct(Bot.Stats[] t) { int f = 0, r = 0; for (int c = 3; c < t.Length; c++) { f += t[c].RoomsFought; r += t[c].RoomsNormal; } return r == 0 ? 0 : 100.0 * f / r; }
+
+        [Test]
+        public void Campanha_Regiao2_PeloBot_FechaOs16_DuracaoH1EMoedas()
+        {
+            Measure();
+            RegionDef g = RegionDef.Of(2);
+            foreach (Bot.Campaign cp in camps) { Assert.IsTrue(cp.Finished, "o bot fecha a regiao 2"); Assert.GreaterOrEqual(cp.Coins, 0); }
+            double sum = 0; int nn = 0;
+            for (int c = 0; c < table.Length; c++)
+            {
+                Bot.Stats s = table[c]; ContractDef d = g.Contracts[c]; string k = d.Code;
+                Assert.AreEqual(Camps * Seeds, s.Runs, k);
+                Assert.AreEqual(0, s.Timeout, k + ": bot preso (desistiu por tempo)");
+                Assert.That(s.AvgTime, Is.InRange(5.0, 360.0), k);
+                Assert.GreaterOrEqual(s.Pct(s.Delivered), 40.0, k + ": quase ninguem entrega com a guilda da campanha");
+                Assert.Less(s.Pct(s.Died), 40.0, k + ": morte demais");
+                if (c < 3) { Assert.Less(s.AvgTime, 60.0, k + ": tutorial longo"); Assert.GreaterOrEqual(s.Pct(s.Delivered), 85.0, k + ": tutorial"); }
+                else if (d.Cargo != CargoType.Message) { sum += s.AvgTime; nn++; }
+            }
+            Assert.GreaterOrEqual(sum / nn, 60.0, "do 4o em diante, sem a mensagem (alvo do bot 90-180 s: BALANCE_REGIAO2.md)");
+            Assert.GreaterOrEqual(table[table.Length - 1].AvgTime, 90.0, "M2-16 (chefe)");
+            double low = FightPct(lo), mid = FightPct(table), high = FightPct(hi);
+            Assert.Greater(high - low, 15.0, "H1: a agressividade muda a luta");
+            Assert.That(mid, Is.InRange(30.0, 80.0), "H1 com agressividade 0,5");
+
+            var ci = CultureInfo.InvariantCulture; var sb = new StringBuilder();
+            sb.AppendLine("| Contrato | Carga | Salas | % concluído | % morte | % falha de carga | duração média (s) | mediana (s) | % salas com luta | moedas médias | estrelas | 3 estrelas % | rachaduras |");
+            sb.AppendLine("|---|---|---|---|---|---|---|---|---|---|---|---|---|");
+            for (int c = 0; c < table.Length; c++)
+            {
+                Bot.Stats s = table[c]; ContractDef d = g.Contracts[c];
+                sb.AppendLine(string.Format(ci, "| {0} | {1} | {2} | {3:0} | {4:0} | {5:0} | {6:0} | {7:0} | {8:0} | {9:0} | {10:0.00} | {11:0} | {12:0.00} |", d.Code, CargoDef.All[(int)d.Cargo].Name,
+                    d.Rooms, s.Pct(s.Delivered), s.Pct(s.Died), s.Pct(s.CargoFail), s.AvgTime, s.MedianTime, s.FightPct, s.AvgCoins, s.AvgStars, s.Pct(s.ThreeStars), s.AvgCracks));
+            }
+            int att = 0, deaths = 0, coins = 0, stars = 0, spent = 0, earned = 0; float time = 0f; var per = new StringBuilder();
+            foreach (Bot.Campaign cp in camps) { att += cp.Attempts; deaths += cp.Deaths; coins += cp.Coins; stars += cp.Stars; spent += cp.Spent; earned += cp.Earned; time += cp.Time; }
+            for (int c = 0; c < table.Length; c++) { double a = 0, t = 0; foreach (Bot.Campaign cp in camps) { a += cp.AttemptsPer[g.First + c]; t += cp.TimePer[g.First + c]; } per.Append(string.Format(ci, " {0}={1:0.00}·{2:0}", g.Contracts[c].Code, a / Camps, t / Camps)); }
+            sb.AppendLine(string.Format(ci, "Campanha da regiao 2 ({0} sementes, do fim da regiao 1): fecha 100% · tentativas {1:0.0} · mortes {2:0.0} · tempo do bot {3:0.0} min · moedas ganhas {4:0} · gastas {5:0} · paradas no fim {6:0} · estrelas no fim {7:0.0}",
+                Camps, att / (double)Camps, deaths / (double)Camps, time / Camps / 60f, earned / (double)Camps, spent / (double)Camps, coins / (double)Camps, stars / (double)Camps));
+            sb.AppendLine("Por contrato (tentativas · tempo da entrega s):" + per);
+            sb.AppendLine(string.Format(ci, "Duracao M2-4..M2-16 sem a mensagem: media {0:0} s · H1 (% de salas com luta) agressividade 0,1 / 0,5 / 0,9 = {1:0}% / {2:0}% / {3:0}%", sum / nn, low, mid, high));
+            TestContext.WriteLine(sb.ToString());
+        }
+
+        /// <summary>Contratos gerados da regiao 2 (codigo com a regiao nos bits altos): 4-6 camadas das salas normais da regiao, entrega D2,
+        /// cargas ate a gaiola; o bot (guilda 6, armas 2) joga sem travar.</summary>
+        [Test]
+        public void ContratosGerados_Regiao2_SoComSalasDaRegiao_RodamPeloBot()
+        {
+            RegionDef g = RegionDef.Of(2);
+            var st = new Bot.Stats { Contract = -1 };
+            for (int p = 0; p < 30; p++)
+            {
+                int payload = Content.WithRegion(4000 + 37 * p, 2);
+                ContractDef d = Sim.CodeContract(ContractCode.Encode(payload));
+                Assert.AreEqual(2, d.Region); Assert.Less((int)d.Cargo, g.CargoCount); Assert.AreEqual(g.Delivery, d.Layers[d.Layers.Length - 1][0]);
+                Assert.AreEqual(d.Cargo == CargoType.IceCrystal ? Regiao2.GenMelt * d.Rooms : 0f, d.MeltTime, 1e-3f);
+                for (int l = 0; l < d.Layers.Length - 1; l++) foreach (int id in d.Layers[l]) Assert.IsTrue(Content.Rooms[id].Normal && Content.Rooms[id].Region == 2, d.ShareCode + ": sala " + Content.Rooms[id].Code);
+                Sim sim = Bot.MeasureSim(4000 + p, Weapon.Boomerang, 2, 6);
+                Assert.IsNotNull(sim.StartCode(ContractCode.Encode(payload), false), "codigo da regiao 2 aberto");
+                ContractResult res = Bot.Finish(sim, new Bot(4000 + p));
+                Assert.AreNotEqual(Outcome.Abandoned, res.Outcome, d.ShareCode + ": bot preso");
+                if (res.Delivered) st.Delivered++;
+                st.Runs++;
+            }
+            Assert.Greater(st.Pct(st.Delivered), 50.0, "gerados da regiao 2 com guilda 6");
+        }
+
+        /// <summary>As caveiras da porta contam a verdade na regiao 2, com a regra da regiao 1 (folga de 0,3 entre as medias; nenhuma sala passa
+        /// da media do icone vizinho).</summary>
+        [Test]
+        public void IconeDeAmeaca_Regiao2_AcompanhaODanoMedido()
+        {
+            Measure();
+            var dmg = new double[Content.Rooms.Length]; var visits = new int[Content.Rooms.Length];
+            foreach (Bot.Stats s in table) for (int r = 0; r < dmg.Length; r++) { dmg[r] += s.RoomDamage[r]; visits[r] += s.RoomVisits[r]; }
+            var mean = new double[4]; var count = new int[4];
+            foreach (int id in RegionDef.Of(2).Normal)
+            {
+                RoomDef a = Content.Rooms[id];
+                Assert.GreaterOrEqual(visits[id], 30, a.Code + ": poucas visitas para medir");
+                mean[a.Threat] += dmg[id] / visits[id]; count[a.Threat]++;
+            }
+            for (int t = 1; t <= 3; t++) { Assert.Greater(count[t], 0, "icone " + t + " sem sala"); mean[t] /= count[t]; }
+            for (int t = 1; t < 3; t++) Assert.Greater(mean[t + 1] - mean[t], 0.3, "icones " + t + " e " + (t + 1) + " sem folga de dano");
+            var sb = new StringBuilder("| Sala | Ícone | Risco da carga | Visitas | Dano por visita |\n|---|---|---|---|---|\n");
+            foreach (int id in RegionDef.Of(2).Normal)
+            {
+                RoomDef a = Content.Rooms[id]; double d = dmg[id] / visits[id];
+                if (a.Threat < 3) Assert.Less(d, mean[a.Threat + 1], a.Code + " (icone " + a.Threat + ") tira mais vida que a media do icone " + (a.Threat + 1));
+                if (a.Threat > 1) Assert.Greater(d, mean[a.Threat - 1], a.Code + " (icone " + a.Threat + ") tira menos vida que a media do icone " + (a.Threat - 1));
+                sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "| {0} {1} | {2} | {3} | {4} | {5:0.00} |", a.Code, a.Name, a.Threat, a.Risk, visits[id], d));
+            }
+            TestContext.WriteLine(sb.ToString());
         }
     }
 }

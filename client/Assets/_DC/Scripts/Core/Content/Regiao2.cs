@@ -34,7 +34,9 @@ namespace DC.Core
                         BombBeetle = EnemyType.BombBeetle, Minecart = EnemyType.Minecart, MoleQueen = EnemyType.MoleQueen, StoneGolem = EnemyType.StoneGolem;
         const RoomTrigger Half = RoomTrigger.Half, Down = RoomTrigger.CargoDown;
 
-        // Ameaca (caveiras) = hipotese do desenho (CONTEUDO_REGIOES §2.1); a medicao do bot esta em BALANCE_REGIAO2.md.
+        // Ameaca (caveiras) = terco do dano medio por visita do bot (BALANCE_REGIAO2.md; teste IconeDeAmeaca_Regiao2_AcompanhaODanoMedido):
+        // 1 = R2-1, R2-5, R2-8 · 2 = R2-2, R2-4, R2-6, R2-7 · 3 = R2-3, R2-9, R2-10. Mudou do desenho: R2-3 1->3 (o bau ao lado de quem dorme
+        // acorda a mina), R2-6 3->2 (o besouro se evita abrindo distancia), R2-5 e R2-8 2->1.
         // Regras de desenho (CoreTestsRegiao2.LevelDesign_Regioes_*): as da regiao 1 + agua a 1,2 m+ da entrada; trilho em 4 <= y <= 11,5 sem
         // obstaculo em cima; nenhum spawn, bau, bau enterrado ou resgate a menos de 1 m de um trilho; vagonete numa ponta de cada trilho.
         public static readonly RoomDef[] Rooms =
@@ -49,7 +51,7 @@ namespace DC.Core
                 new[] { S(Minecart, 0.6f, 6.5f), S(Thief, 1.5f, 11.5f), S(GoblinMiner, 7.0f, 11.6f), S(Bat, 4.5f, 11.8f) }, P(1.5f, 3.0f),
                 wave: new[] { S(Thief, 8.0f, 12.5f) }, trigger: Down)
             { Rails = new[] { T(0.0f, 6.5f, 9.0f, 6.5f, 0.0f) } },
-            new RoomDef(R3, "R2-3", "Mina Adormecida", "mineiros dormindo (zZ) só acordam com o courier a 2 m, grito, explosão ou golpe: o corredor do meio passa em silêncio; o baú fica colado num dorminhoco", 1,
+            new RoomDef(R3, "R2-3", "Mina Adormecida", "mineiros dormindo (zZ) só acordam com o courier a 2 m, grito, explosão ou golpe: o corredor do meio passa em silêncio; o baú fica colado num dorminhoco", 3,
                 new[] { O(2.5f, 6.0f, 1.0f, 0.4f), O(6.5f, 6.0f, 1.0f, 0.4f), O(4.5f, 9.5f, 0.6f, 0.6f) },
                 new[] { Z(GoblinMiner, 0.8f, 10.5f), Z(GoblinMiner, 8.2f, 10.5f), S(Bat, 4.5f, 12.0f) }, P(2.0f, 3.0f), P(8.2f, 12.0f), 40,
                 wave: new[] { S(Bat, 0.8f, 3.6f) }, trigger: Half),
@@ -58,12 +60,12 @@ namespace DC.Core
                 new[] { S(Mole, 4.5f, 10.0f), S(Mole, 1.5f, 11.5f), S(Bat, 7.5f, 11.5f) }, P(1.5f, 3.0f), P(0.8f, 9.5f), 35,
                 wave: new[] { S(Mole, 8.0f, 12.0f) }, trigger: Down)
             { Water = new[] { O(6.8f, 4.6f, 1.4f, 1.1f) }, Buried = new[] { Bc(8.2f, 12.0f, 30) } },
-            new RoomDef(R5, "R2-5", "Lodaçal do Sapo", "o sapo puxa a carga do chão a até 3 m (linha de aviso 0,7 s): pouse fora do anel dele e abata-o de 3 a 5 m", 2,
+            new RoomDef(R5, "R2-5", "Lodaçal do Sapo", "o sapo puxa a carga do chão a até 3 m (linha de aviso 0,7 s): pouse fora do anel dele e abata-o de 3 a 5 m", 1,
                 new[] { O(4.5f, 5.0f, 0.6f, 0.6f), O(4.5f, 10.6f, 0.6f, 0.6f) },
                 new[] { S(BogFrog, 2.0f, 9.5f), S(BogFrog, 7.0f, 7.0f), S(Thief, 8.0f, 11.5f) }, P(2.0f, 3.0f), P(0.8f, 6.0f), 35,
                 wave: new[] { S(Slime, 0.8f, 3.6f) }, trigger: Half)
             { Water = new[] { O(2.0f, 9.5f, 1.4f, 1.2f), O(7.0f, 7.0f, 1.4f, 1.2f) }, Blueprint = Gear.Boots },
-            new RoomDef(R6, "R2-6", "Corredor dos Besouros", "o besouro corre até você, brilha 1 s e explode (1,5 m): atire de longe ou dê dash; a explosão acerta inimigos: leve-o até o Bruto", 3,
+            new RoomDef(R6, "R2-6", "Corredor dos Besouros", "o besouro corre até você, brilha 1 s e explode (1,5 m): atire de longe ou dê dash; a explosão acerta inimigos: leve-o até o Bruto", 2,
                 new[] { O(2.0f, 6.0f, 0.5f, 0.5f), O(7.0f, 6.0f, 0.5f, 0.5f), O(4.5f, 8.5f, 0.5f, 0.5f) },
                 new[] { S(BombBeetle, 1.5f, 11.0f), S(BombBeetle, 7.5f, 11.0f), S(Brute, 4.5f, 11.0f) }, P(2.0f, 3.0f), P(8.2f, 9.0f), 40,
                 wave: new[] { S(BombBeetle, 0.8f, 3.6f), S(BombBeetle, 8.2f, 3.6f) }, trigger: Half),
@@ -72,7 +74,7 @@ namespace DC.Core
                 new[] { S(Minecart, 0.6f, 4.8f), S(Minecart, 8.4f, 9.6f), S(Thief, 8.0f, 7.2f), S(Archer, 7.5f, 11.6f), S(Bat, 1.5f, 11.8f) }, P(1.5f, 2.8f), P(0.8f, 11.2f), 40,
                 wave: new[] { S(Thief, 8.0f, 12.5f) }, trigger: Down, secret: S1, secretPos: P(0f, 7.2f))
             { Rails = new[] { T(0.0f, 4.8f, 9.0f, 4.8f, 0.0f), T(0.0f, 9.6f, 9.0f, 9.6f, 2.35f) }, Blueprint = Gear.Smoke },
-            new RoomDef(R8, "R2-8", "Eclusa do Guarda", "luta obrigatória: pouse a carga na água (ladrão mais lento, a toupeira não sai ali) e derrube o Guarda", 2,
+            new RoomDef(R8, "R2-8", "Eclusa do Guarda", "luta obrigatória: pouse a carga na água (ladrão mais lento, a toupeira não sai ali) e derrube o Guarda", 1,
                 new[] { O(1.2f, 9.5f, 0.4f, 1.0f), O(7.8f, 9.5f, 0.4f, 1.0f) },
                 new[] { S(Guard, 4.5f, 12.4f), S(Thief, 1.0f, 6.5f), S(Mole, 7.8f, 6.0f) }, P(7.0f, 2.8f),
                 wave: new[] { S(Thief, 8.0f, 12.5f) }, trigger: Down)

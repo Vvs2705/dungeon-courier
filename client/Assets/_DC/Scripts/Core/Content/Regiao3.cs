@@ -41,14 +41,14 @@ namespace DC.Core
                 new[] { S(Skeleton, 4.5f, 10.5f) }, P(1.5f, 2.5f),
                 wave: new[] { S(Bat, 8.2f, 3.6f) }, trigger: Half)
             { Dark = true, Torches = new[] { P(0.3f, 4.0f), P(8.7f, 7.0f), P(0.3f, 10.5f) } },
-            new RoomDef(R2, "R3-2", "Ossário", "esqueleto derrubado se remonta em 4 s, a menos que a carga esteja a 3 m dele ou que o dash espalhe os ossos: lute perto da carga", 2,
+            new RoomDef(R2, "R3-2", "Ossário", "esqueleto derrubado se remonta em 4 s, a menos que a carga esteja a 3 m dele ou que o dash espalhe os ossos: lute perto da carga", 1,
                 new[] { O(2.0f, 7.0f, 0.6f, 0.3f), O(7.0f, 7.0f, 0.6f, 0.3f), O(4.5f, 9.5f, 0.6f, 0.3f) },
                 new[] { S(Skeleton, 2.5f, 10.5f), S(Skeleton, 6.5f, 10.5f), S(Thief, 8.0f, 8.5f) }, P(2.0f, 2.5f), P(0.8f, 9.0f), 40,
                 wave: new[] { S(Skeleton, 0.8f, 3.6f) }, trigger: Half)
             { Dark = true, Torches = new[] { P(0.3f, 5.5f), P(8.7f, 5.5f), P(0.3f, 11.0f) }, Blueprint = Gear.Hook },
-            new RoomDef(R3, "R3-3", "Teia Grande", "teia prende 1 s quem passa carregando e freia 50% sem carga; carga pousada na teia leva +1 s para pegar; o dash rasga a teia", 2,
+            new RoomDef(R3, "R3-3", "Teia Grande", "teia prende 1 s quem passa carregando e freia 50% sem carga; carga pousada na teia leva +1 s para pegar; o dash rasga a teia", 1,
                 new[] { O(1.0f, 8.5f, 0.4f, 0.4f), O(8.0f, 8.5f, 0.4f, 0.4f) },
-                new[] { S(Spider, 4.5f, 11.5f), S(Spider, 1.5f, 9.6f), S(Bat, 7.5f, 12.0f) }, P(1.5f, 2.5f),
+                new[] { S(Spider, 4.5f, 11.5f), S(Spider, 1.5f, 9.6f) }, P(1.5f, 2.5f),
                 wave: new[] { S(Spider, 8.2f, 3.6f) }, trigger: Half)
             {
                 Dark = true, Torches = new[] { P(0.3f, 4.0f), P(8.7f, 4.0f), P(8.7f, 10.0f) },
@@ -59,7 +59,7 @@ namespace DC.Core
                 new[] { S(Ghost, 4.5f, 12.5f), S(Ghost, 1.0f, 10.0f), S(Archer, 7.5f, 11.8f) }, P(2.0f, 2.5f), P(8.2f, 10.0f), 40,
                 wave: new[] { S(Ghost, 0.8f, 3.6f) }, trigger: Half, secret: S1, secretPos: P(Balance.RoomW, 7.2f))
             { Dark = true, Torches = new[] { P(0.3f, 4.5f), P(8.7f, 4.5f), P(0.3f, 11.5f), P(8.7f, 11.5f) }, Blueprint = Gear.Smoke },
-            new RoomDef(R5, "R3-5", "Sarcófagos", "múmia é lenta (1 m/s) mas agarra: segura até levar 2 golpes ou até o dash (que larga a carga); não deixe ela encostar com a carga nas mãos", 2,
+            new RoomDef(R5, "R3-5", "Sarcófagos", "múmia é lenta (1 m/s) mas agarra: segura até levar 2 golpes ou até o dash (que larga a carga); não deixe ela encostar com a carga nas mãos", 1,
                 new[] { O(2.0f, 7.5f, 0.4f, 0.9f), O(7.0f, 7.5f, 0.4f, 0.9f), O(4.5f, 10.5f, 0.9f, 0.4f) },
                 new[] { S(Mummy, 2.0f, 10.5f), S(Mummy, 7.0f, 10.5f) }, P(2.0f, 2.5f), P(4.5f, 8.0f), 45,
                 wave: new[] { S(Skeleton, 8.2f, 3.6f) }, trigger: Half)
@@ -69,7 +69,7 @@ namespace DC.Core
                 new[] { S(Gargoyle, 1.0f, 9.0f), S(Gargoyle, 8.0f, 9.0f), S(Archer, 4.5f, 12.0f) }, P(2.0f, 2.5f), P(0.8f, 11.5f), 45,
                 wave: new[] { S(Bat, 0.8f, 3.6f), S(Bat, 8.2f, 3.6f) }, trigger: Half)
             { Dark = true, Torches = new[] { P(0.3f, 6.0f), P(8.7f, 6.0f), P(0.3f, 12.0f), P(8.7f, 12.0f) } },
-            new RoomDef(R7, "R3-7", "Emboscada na Cripta", "emboscada: passar da metade ergue dois esqueletos e um fantasma por cima e a porta fecha; mate perto da carga ou eles voltam", 3,
+            new RoomDef(R7, "R3-7", "Emboscada na Cripta", "emboscada: passar da metade ergue dois esqueletos e um fantasma por cima e a porta fecha; mate perto da carga ou eles voltam", 2,
                 new[] { O(2.0f, 6.0f, 0.6f, 0.3f), O(7.0f, 6.0f, 0.6f, 0.3f), O(2.0f, 9.0f, 0.6f, 0.3f), O(7.0f, 9.0f, 0.6f, 0.3f) },
                 new[] { S(Spider, 4.5f, 10.5f), S(Bat, 1.5f, 11.5f) }, P(2.0f, 2.5f),
                 wave: new[] { S(Skeleton, 1.5f, 12.5f), S(Skeleton, 7.5f, 12.5f), S(Ghost, 4.5f, 12.8f) }, trigger: Half, waveLocks: true)
@@ -122,22 +122,22 @@ namespace DC.Core
         // campanha da regiao 3 (BALANCE_REGIAO3.md): ParTime (3a estrela) = 1,6x; ovo = 2x; mensagem = 2,5x.
         public static readonly ContractDef[] Contracts =
         {
-            K("M3-1",  Lantern, 255, "região 3: escuro; lanterna ilumina 5,5 m", 60f, 0f, 0f, 12, false, L(R1), L(R2, R3)),
-            K("M3-2",  Box,     258, "esqueletos, teias e fantasmas sem lanterna", 90f, 0f, 0f, 13, false, L(R1), L(R4, R5), L(R2, R3)),
-            K("M3-3",  Mirror,  261, "espelho encantado: reflete flecha e teia", 95f, 0f, 0f, 14, false, L(R3), L(R6, R4), L(R1, R8)),
-            K("M3-4",  Egg,     265, "ovo no escuro", 160f, 205f, 0f, 15, true, L(R2), L(R5, R1), L(R3, R6), L(R7, R4), L(R9, R8), L(R1, R10)),
-            K("M3-5",  Balloon, 269, "balão de gás: leve, mas escapa do chão em 4 s", 160f, 0f, 0f, 16, true, L(R5), L(R1, R4), L(R8, R2), L(R3, R6), L(R10, R9), L(R7, R2)),
-            K("M3-6",  Relic,   273, "relíquia entre múmias e gárgulas", 190f, 0f, 0f, 17, true, L(R4), L(R2, R6), L(R5, R1), L(R7, R3), L(R8, R9), L(R4, R2)),
-            K("M3-7",  Lantern, 277, "lanterna em 5 camadas", 170f, 0f, 0f, 18, true, L(R8), L(R1, R7), L(R3, R5, R4), L(R6, R2), L(R10, R9)),
-            K("M3-8",  Box,     325, "mini-chefe: Viúva Aranha", 225f, 0f, 0f, 19, true, L(R2), L(R4, R6), L(R9, R1), L(R8, R5), L(R3, R7), L(M)),
-            K("M3-9",  Mirror,  285, "espelho em 6 camadas", 195f, 0f, 0f, 20, true, L(R1), L(R6, R3), L(R10, R2), L(R4, R9), L(R5, R8), L(R7, R6)),
-            K("M3-10", Msg,     289, "mensagem no escuro", 85f, 0f, 135f, 21, true, L(R5), L(R8, R3), L(R10, R2), L(R4, R9), L(R1, R6), L(R7, R8)),
-            K("M3-11", Balloon, 293, "balão em 6 camadas", 210f, 0f, 0f, 22, true, L(R7), L(R9, R3), L(R6, R10), L(R5, R2), L(R8, R4), L(R1, R7)),
-            K("M3-12", Heart,   297, "coração no escuro: a horda vem para a luz", 200f, 0f, 0f, 23, true, L(R4), L(R6, R1), L(R2, R10), L(R9, R8), L(R3, R5), L(R7, R4)),
-            K("M3-13", Barrel,  301, "barril entre esqueletos", 190f, 0f, 0f, 24, true, L(R1), L(R5, R7), L(R8, R10, R3), L(R2, R6), L(R9, R4), L(R5, R1)),
-            K("M3-14", Cage,    305, "gaiola na cripta: o grito acorda as gárgulas", 200f, 0f, 0f, 25, true, L(R6), L(R3, R10), L(R7, R2), L(R4, R9), L(R8, R1), L(R5, R3)),
-            K("M3-15", Mirror,  309, "espelho em 6 camadas", 210f, 0f, 0f, 26, true, L(R10), L(R2, R8), L(R6, R5), L(R9, R1, R4), L(R3, R7), L(R10, R6)),
-            K("M3-16", Lantern, 410, "chefe: Necromante", 325f, 0f, 0f, 27, true, L(R10), L(R8, R7), L(R9, R6, R3), L(R5, R2), L(B)),
+            K("M3-1",  Lantern, 255, "região 3: escuro; lanterna ilumina 5,5 m", 35f, 0f, 0f, 12, false, L(R1), L(R2, R3)),
+            K("M3-2",  Box,     258, "esqueletos, teias e fantasmas sem lanterna", 60f, 0f, 0f, 13, false, L(R1), L(R4, R5), L(R2, R3)),
+            K("M3-3",  Mirror,  261, "espelho encantado: reflete flecha e teia", 45f, 0f, 0f, 14, false, L(R3), L(R6, R4), L(R1, R8)),
+            K("M3-4",  Egg,     265, "ovo no escuro", 145f, 180f, 0f, 15, true, L(R2), L(R5, R9), L(R3, R6), L(R7, R4), L(R9, R8), L(R10, R5)),
+            K("M3-5",  Balloon, 269, "balão de gás: leve, mas escapa do chão em 4 s", 145f, 0f, 0f, 16, true, L(R5), L(R9, R4), L(R8, R2), L(R3, R6), L(R10, R9), L(R7, R2)),
+            K("M3-6",  Relic,   273, "relíquia entre múmias e gárgulas", 165f, 0f, 0f, 17, true, L(R4), L(R2, R6), L(R5, R1), L(R7, R3), L(R8, R9), L(R4, R2)),
+            K("M3-7",  Lantern, 277, "lanterna em 6 camadas", 175f, 0f, 0f, 18, true, L(R8), L(R1, R7), L(R3, R5, R4), L(R6, R2), L(R10, R9), L(R5, R2)),
+            K("M3-8",  Box,     325, "mini-chefe: Viúva Aranha", 195f, 0f, 0f, 19, true, L(R2), L(R4, R6), L(R9, R1), L(R8, R5), L(R3, R7), L(M)),
+            K("M3-9",  Mirror,  285, "espelho em 6 camadas", 155f, 0f, 0f, 20, true, L(R2), L(R6, R3), L(R10, R2), L(R4, R9), L(R5, R8), L(R7, R6)),
+            K("M3-10", Msg,     289, "mensagem no escuro", 75f, 0f, 115f, 21, true, L(R5), L(R8, R3), L(R10, R2), L(R4, R9), L(R1, R6), L(R7, R8)),
+            K("M3-11", Balloon, 293, "balão em 6 camadas", 165f, 0f, 0f, 22, true, L(R7), L(R9, R3), L(R6, R10), L(R5, R2), L(R8, R4), L(R1, R7)),
+            K("M3-12", Heart,   297, "coração no escuro: a horda vem para a luz", 170f, 0f, 0f, 23, true, L(R4), L(R6, R1), L(R2, R10), L(R9, R8), L(R3, R5), L(R7, R4)),
+            K("M3-13", Barrel,  301, "barril entre esqueletos", 180f, 0f, 0f, 24, true, L(R1), L(R5, R7), L(R8, R10, R3), L(R2, R6), L(R9, R4), L(R5, R1)),
+            K("M3-14", Cage,    305, "gaiola na cripta: o grito acorda as gárgulas", 150f, 0f, 0f, 25, true, L(R6), L(R3, R10), L(R7, R2), L(R4, R9), L(R8, R1), L(R5, R3)),
+            K("M3-15", Mirror,  309, "espelho em 6 camadas", 170f, 0f, 0f, 26, true, L(R10), L(R2, R8), L(R6, R5), L(R9, R1, R4), L(R3, R7), L(R10, R6)),
+            K("M3-16", Lantern, 410, "chefe: Necromante", 265f, 0f, 0f, 27, true, L(R1), L(R4, R8), L(R9, R6, R3), L(R5, R2), L(B)),
         };
     }
 }

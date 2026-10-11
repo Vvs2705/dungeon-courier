@@ -27,7 +27,7 @@ namespace DC.Core
     //   Strike Salamander = corte; Telegraph/Strike Imp = redemoinho ou sumico / troca ou surge; Telegraph KoboldBomber = arremesso;
     //   Strike KoboldBomber = frasco cai (Pos = impacto; o do Capataz tambem); Telegraph/Strike KoboldForeman = chicote ou giro;
     //   Telegraph/Strike ElderDragon = aviso / sopro; EnemyDie MagmaElemental = divide em brasas; Stun = diabrete acertado no redemoinho.
-    // Gelo (raia R2): o fogo daqui chama ForgeIce(carga, pontos de 0-100) - parcial: implemente em Run.Regiao2.cs.
+    // Gelo (raia R2): o fogo direto daqui tira gelo pelo MeltIce(carga, pontos) de Run.Regiao2.cs; o x3 perto do fogo pode usar NearFire(p).
     // Deterministico: so o rng da sala; nada de Math.Sin/Cos (o giro do sopro usa seno/cosseno fixos de 2 graus).
 
     public enum ForgeMarkKind { Flask, Whip, Spin, Breath, Land, Swap, Blink }
@@ -64,9 +64,6 @@ namespace DC.Core
         readonly List<int> called4 = new List<int>();
         readonly List<Enemy> split4 = new List<Enemy>();
         float flaskT4, callT4, eggT4, flyT4, airT4, fireStay4; int flyStage4;
-
-        /// <summary>Gelo do cristal (raia R2): o fogo da regiao 4 tira `points` (0-100) do gelo da carga no chao.</summary>
-        partial void ForgeIce(Cargo g, float points);
 
         partial void EnterRoomR4()
         {
@@ -135,7 +132,7 @@ namespace DC.Core
                 return;
             }
             if (g.Type == CargoType.Lantern) g.Out = true;
-            if (g.Type == CargoType.IceCrystal) { if (ice > 0f) ForgeIce(g, ice); return; }
+            if (g.Type == CargoType.IceCrystal) { if (ice > 0f) MeltIce(g, ice); return; }   // gelo: Run.Regiao2.cs
             int k = g.Type == CargoType.Balloon && fire ? Math.Max(1, cracks) : cracks;
             for (int i = 0; i < k && Running && g.State == CargoState.Ground; i++) Crack(g);
         }

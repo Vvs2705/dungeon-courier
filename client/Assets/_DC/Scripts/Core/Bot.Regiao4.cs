@@ -24,6 +24,22 @@ namespace DC.Core
                    + "\ngear=" + (int)Gear.Smoke + ",0,3,2,0,3,0,5,0,0,5\n";
         }
 
+        /// <summary>Tabela realista da regiao 4 (como MeasureCampaignTable): `campaigns` campanhas do bot a partir do fim estimado da regiao 3
+        /// (sementes 7100..) e cada contrato medido `seeds` vezes a partir do save que a campanha tinha antes da 1a tentativa dele.</summary>
+        public static Stats[] MeasureRegion4(int campaigns, int seeds, Campaign[] camps = null)
+        {
+            RegionDef reg = RegionDef.Of(4);
+            var t = new Stats[reg.Contracts.Length];
+            for (int c = 0; c < t.Length; c++) t[c] = new Stats { Contract = reg.First + c };
+            for (int k = 0; k < campaigns; k++)
+            {
+                Campaign cp = PlayCampaign(7100 + k, region: 4, from: Regiao3EndSave(7100 + k));
+                if (camps != null && k < camps.Length) camps[k] = cp;
+                for (int c = 0; c < t.Length; c++) if (cp.Before[reg.First + c] != null) MeasureFrom(cp.Before[reg.First + c], reg.First + c, seeds, 1000 + 100 * k, 0.5f, t[c]);
+            }
+            return t;
+        }
+
         partial void OnRoomR4(Run r)
         {
             wantBuried4 = false;
@@ -172,8 +188,8 @@ namespace DC.Core
                     Go(e.Pos + dir * 0.5f); act = 1; return;
                 }
             // e) planta no chao: pousar e "dar o passo" com o dash (a planta morde quem fica ao lado) e lutar de longe dela; sem luta, pega de volta
-            Cargo plant = null;
-            foreach (Cargo g in r.Cargos) if (g.Type == CargoType.Flytrap && g.State == CargoState.Ground) plant = g;
+            Cargo plant = null; float pd = float.MaxValue;
+            foreach (Cargo g in r.Cargos) if (g.Type == CargoType.Flytrap && g.State == CargoState.Ground && V2.Dist(c.Pos, g.Pos) < pd) { pd = V2.Dist(c.Pos, g.Pos); plant = g; }
             if (plant != null)
             {
                 bool busy = false;
@@ -181,13 +197,14 @@ namespace DC.Core
                     if (e.Alive && (e.Carry != null || (e.State == EnemyState.Telegraph && V2.Dist(e.Pos, c.Pos) - Balance.CourierR <= e.Def.Reach + 0.4f))) busy = true;
                 Enemy near = Nearest(r, c.Pos), lockr = null;
                 foreach (Enemy e in r.Enemies) if (e.Alive && e.Def.Locks) lockr = e;
-                float nd = near != null ? V2.Dist(near.Pos, c.Pos) : float.MaxValue, pd = V2.Dist(c.Pos, plant.Pos);
-                bool fight = near != null && nd <= Balance.ShotRange && (fightRoom || lockr != null || nd <= 2.5f) && !bored;
-                if (!busy && fight)
+                float nd = near != null ? V2.Dist(near.Pos, c.Pos) : float.MaxValue;
+                bool beside = pd - Balance.CourierR <= Balance.PlantReach + 0.2f;
+                if (!busy && beside && c.State == CourierState.Planted && near != null && nd <= Balance.ShotRange)   // parado ao lado dela: vai ser mordido
                 {
-                    if (pd - Balance.CourierR <= Balance.PlantReach + 0.2f && c.State == CourierState.Planted && c.DashReady) { Go(Escape(r, c.Pos, plant.Pos)); act = 1; return; }
-                    if (pd <= 3.6f && pd - Balance.CourierR > Balance.PlantReach) { stop = true; act = 0; return; }
+                    Go(Escape(r, c.Pos, plant.Pos)); act = c.DashReady ? 1 : 0; return;   // sem dash, andar a pega de volta (melhor que a mordida)
                 }
+                bool fight = near != null && nd <= Balance.ShotRange && (fightRoom || lockr != null) && !bored;
+                if (!busy && fight && !beside && pd <= 3.6f) { stop = true; act = 0; return; }
             }
             // f) baus enterrados revelados (Mapa / Faro de bau): ganancia, com a sala calma
             if (wantBuried4 && r.Revealed && !bored)

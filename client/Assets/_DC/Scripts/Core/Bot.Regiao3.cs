@@ -91,6 +91,15 @@ namespace DC.Core
                 foreach (Enemy e in r.Enemies)
                     if (e.Alive && e.Type == EnemyType.Archer && e.State == EnemyState.Telegraph && V2.SegDist(c.Pos, e.Pos, e.Pos + e.Aim * Balance.ArrowRange) <= Balance.CourierR + 0.35f)
                     { Go(e.Pos); act = 0; return; }
+            // d2) espelho ja rachado nas maos: flecha ou teia vindo de frente racharia de novo: sair de lado (de lado ela acerta o courier, nao o espelho)
+            if (r.Holds(CargoType.Mirror) && !MirrorOk(r))
+                for (int k = 0; k < r.Arrows.Count + r.Spits.Count; k++)
+                {
+                    Arrow a = k < r.Arrows.Count ? r.Arrows[k] : r.Spits[k - r.Arrows.Count];
+                    if (V2.Dot(a.Dir, c.Pos - a.Pos) <= 0f || V2.Dist(a.Pos, c.Pos) > 5f || V2.SegDist(c.Pos, a.Pos, a.Pos + a.Dir * 6f) > Balance.CourierR + 0.4f) continue;
+                    V2 side = a.Dir.Right; if (V2.Dot(c.Pos - a.Pos, side) < 0f) side = side * -1f;
+                    Go(Run.FreeNear(r.Room, c.Pos + side * 1.5f, Balance.CourierR)); act = 0; return;
+                }
             // e) lanterna apagada nas maos no escuro: ate a tocha mais perto
             if (r.Dark)
                 foreach (Cargo g in r.Cargos)

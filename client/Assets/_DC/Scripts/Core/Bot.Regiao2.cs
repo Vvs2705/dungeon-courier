@@ -42,6 +42,10 @@ namespace DC.Core
             }
             foreach (Rock k in r.Rocks)
                 if (k.Fall > 0f && V2.Dist(c.Pos, k.Pos) <= Balance.RockHalf * 1.42f + Balance.CourierR + 0.2f) { Go(Escape(r, c.Pos, k.Pos)); act = 0; return; }
+            // 1b) besouro chegando: abrir distancia (ele e mais lento) para que morra a mais de 1,5 m (morto explode onde estiver)
+            foreach (Enemy e in r.Enemies)
+                if (e.Alive && e.Type == EnemyType.BombBeetle && !e.Asleep && e.Stun <= 0f && V2.Dist(e.Pos, c.Pos) < e.Def.Reach + Balance.CourierR + 0.7f)
+                { Go(Escape(r, c.Pos, e.Pos)); act = 0; return; }
             // 2) trilho com o sino tocando ou o vagonete passando: sair de cima
             foreach (Enemy e in r.Enemies)
             {
@@ -125,7 +129,7 @@ namespace DC.Core
                 foreach (Enemy e in r.Enemies)   // toupeira fora da terra (2 s): a janela para abater
                 {
                     R2Foe f = r.R2Of(e);
-                    if (e.Alive && f != null && e.Type == EnemyType.Mole && f.Act == R2Act.Up && r.CanHit(e) && V2.Dist(e.Pos, c.Pos) <= Balance.ShotRange - 0.5f) { stop = true; return; }
+                    if (e.Alive && f != null && e.Type == EnemyType.Mole && f.Act == R2Act.Up && r.CanHit(e) && V2.Dist(e.Pos, c.Pos) <= Balance.ShotRange - 0.5f && (fightRoom || r.Main.State == CargoState.Ground)) { stop = true; return; }
                 }
             }
             if (stop) return;

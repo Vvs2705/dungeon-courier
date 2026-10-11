@@ -163,7 +163,10 @@ using System.Text;
 //               ads, end, rw, bpr; no contrato em curso: rx.
 //   Bot:        Bot.PlayCampaign(semente, ..., region: 1) e Bot.MeasureCampaignTable(campanhas, sementes, region: 1) jogam e medem ate o
 //               fim da regiao pedida (padrao a 1, como antes); MeasureRoute (H2) so na regiao 1. O bot nao usa equipamento, modificador,
-//               evento nem rewarded.
+//               evento nem rewarded. PlayCampaign(..., from: save) comeca de um save (ex.: Bot.Regiao3EndSave, fim estimado da regiao 3) e
+//               compra nivel de equipamento destravado (regiao 1: nenhum). Regiao 4: Bot.MeasureRegion4; API da View no topo de Run.Regiao4.cs
+//               (run.Forge, VentState/VentFireIn, NearFire, InLava; eventos BossPhase, TakeOff, Land, PlantBite, LavaBurn, VentFire, EggHatch,
+//               ForemanCall). run.Untouchable(e) = intocavel (Dragao no ar; gancho HitMulRn no fim de Run.cs, 2 = dano x2 na cabeca baixa).
 
 namespace DC.Core
 {

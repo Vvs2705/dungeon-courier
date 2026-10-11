@@ -480,7 +480,7 @@ namespace DC.Core
                 foreach (Door d in Doors)
                     if (Math.Abs(p.X - d.Pos.X) <= Balance.DoorHalf)
                     {
-                        if (d.Open) { GoThrough(d); return; }
+                        if (d.Open && CarryOk) { GoThrough(d); return; }   // Open e do fim do passo anterior: o dash deste passo pode ter largado a carga
                         touching = d.Index;
                         if (lastBlocked != d.Index) Emit(Ev.DoorBlocked, d.Index, (int)(d.Locked ? Hint.GuardDoor : Hatched ? Hint.WaitPet : Hint.DoorNeedsCargo));
                     }

@@ -15,12 +15,18 @@ namespace DC.Core
     //   (mumia segurando o courier), Cargo.Out (lanterna apagada), Cargo.Fuse no balao = s no chao (escapa em Balance.BalloonRise),
     //   Cargo.PickExtra/PickT (teia, casulo), run.LightCut/TorchCut (luz a menos: Necromante fase 3). O tiro refletido pelo espelho e um
     //   Shot de estilingue com Damage 2.
+    //   Estados: EnemyState.Telegraph so no golpe corpo a corpo (mordida, agarrao da mumia), para o bot e a dica de dash; aviso em linha ou
+    //   no chao (cuspe, mergulho, leque, fio, raio) = EnemyState.Lurk + R3Foe.Act + run.Warns; fantasma possuindo = EnemyState.Grab
+    //   (Act Possess); mumia segurando = Grab (Act Hold); gargula de pedra = Idle (Statue), mergulho = Chase, empoleirada = Recover,
+    //   voltando = Flee; Viuva no teto = Flee (Ceiling/Drop); Necromante na fumaca = Flee (Smoke).
     // Eventos novos (A/B): EnemyRevive A=id novo B=remontes · BonesScatter A=id do esqueleto (ossos espalhados de vez) · Webbed A=0 courier /
     //   1 carga · Raise A=id do Necromante B=quantos (runas) · Blink A=id (Pos = destino) · LanternOut / LanternLit A=id da carga · Reflect A=0
     //   flecha / 1 teia / 2 raio, B=rachaduras do espelho · WebTorn A=0 (o dash rasgou; Pos = teia).
     // Reusados: Telegraph/Strike B=(int)tipo (fantasma possuindo; aranha cuspe e mordida; mumia agarra; gargula acorda/mergulha; Viuva leque,
     //   fio e despencar; Necromante raio), ThiefGrab/ThiefEscape (fantasma possui / some com a carga), BossPhase A=id B=fase (Viuva 2;
     //   Necromante 2 e 3), Summon A=id B=quantos (Viuva chama aranhas), Stun A=id (reflexo), EnemyDie/CargoDrop/CargoPickup como sempre.
+    // Ajustes medidos sobre o desenho (BALANCE_REGIAO3.md): esqueletos erguidos pelo Necromante com vida sem nivel; pegar de volta a carga
+    // possuida repele o fantasma 1,5 m; morcego fora da R3-1, R3-3 e R3-5; rotas do M3-4/5/7/9/16 e icones de ameaca pela medicao.
 
     /// <summary>O que o inimigo da regiao 3 esta fazendo (a View escolhe o clipe por aqui).</summary>
     public enum R3Act { None, Statue, Wake, Dive, Perch, Fly, Possess, Spit, Grab, Hold, Fan, Thread, Pull, Ceiling, Drop, Cast, Raise, Smoke }
@@ -228,7 +234,7 @@ namespace DC.Core
             foreach (Enemy e in Enemies) if (e.Alive && e.Type == EnemyType.Ghost && e.Carry != null) { h = Hint.GhostCargo; return; }
             foreach (Cargo g in Cargos) if (g.Type == CargoType.Balloon && g.State == CargoState.Ground) { h = Hint.BalloonRise; return; }
             if (h == Hint.ArcherAim && Holds(CargoType.Mirror)) { h = Hint.MirrorFront; return; }
-            if (h != Hint.None && h != Hint.Dark) return;
+            if (h != Hint.None && h != Hint.Dark && h != Hint.PickUp) return;
             var c = Courier;
             if (Dark) foreach (Cargo g in Cargos) if (g.Type == CargoType.Lantern && g.Out && g.State == CargoState.Held) { h = Hint.LanternOut; return; }
             foreach (BonePile b in Bones) if (!CargoNear3(b.Pos)) { h = Hint.SkeletonRise; return; }

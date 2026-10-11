@@ -146,7 +146,7 @@ def die(msg):
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("--model", required=True, help="FBX/GLB rigado (ou o FBX de um clipe do placeholder)")
+    p.add_argument("--model", required=True, help="FBX/GLB rigado (ou o FBX de um clipe do placeholder); .blend = o FBX ja importado e salvo")
     p.add_argument("--out", required=True)
     p.add_argument("--anims", help="pasta com 1 FBX por clipe (Mixamo Without Skin ou placeholder)")
     p.add_argument("--self", dest="self_", action="store_true", help="usar as actions ja no modelo")
@@ -184,6 +184,12 @@ def parse_args():
 
 
 def import_file(path):
+    if path.lower().endswith(".blend"):  # FBX do Tripo ja importado e salvo (2026-10-11): o import do FBX levava 10+ min
+        with bpy.data.libraries.load(path) as (src, dst):  # com o PC sem memoria e estourava o corte de 900 s
+            dst.objects = list(src.objects)
+        for o in dst.objects:
+            bpy.context.scene.collection.objects.link(o)
+        return list(dst.objects)
     before = set(bpy.data.objects)
     (bpy.ops.import_scene.gltf if path.lower().endswith((".glb", ".gltf")) else bpy.ops.import_scene.fbx)(filepath=path)
     return [o for o in bpy.data.objects if o not in before]

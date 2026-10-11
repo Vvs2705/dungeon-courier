@@ -82,6 +82,11 @@ O que entra para o DC:
 | `align_arms` automático (2026-10-11) | Sem a opção, o retarget mede o ângulo entre o braço do rig e o do clipe. Acima de 15°, alinha e escreve `AVISO rig em pose A` no log; o meta registra `align_arms`. Os rigs em T (≤ 9°) não mudam. Evita uma importação só para inspecionar o rig (2 a 10 min cada, com o PC sem memória) |
 | `ground_cut` no preset (2026-10-11) | Clipes que entram e saem do chão (Emerge/Burrow da toupeira e da rainha). A malha é cortada em z = 0 (bmesh `bisect_plane`), e a parte enterrada não entra na folha nem nos limites. O contorno fecha a borda do buraco. O clipe vai com `"ground_cut": true` no meta, e a View não precisa recortar |
 | Laço por nome com `look`, `sleep`, `stun`, `charge` (2026-10-11) | Look da toupeira, Sleep do mineiro, Stun e Charge do golem são laços |
+| Laço por nome com `perch` e `hold` (Lote 5) | Perch da gárgula e Hold da múmia (segura o courier) são laços. O `Hold.fbx` do `--hold` continua fora da pasta `-Anims`, então não vira clipe |
+| `footprint=(largura, comprimento)` no preset (Lote 5) | Escala **não uniforme** da planta: o eixo longo do modelo vai para Y, o comprimento vira `comprimento` e a largura e a altura viram `largura`. O sarcófago do Tripo (~1,4:1) veste o obstáculo de 0,8 × 1,8 m da sala R3-5 sem crédito novo. O log escreve `PLANTA ...` |
+| `tilt=graus` no preset (Lote 5) | Depois da escala, gira a frente (−Y) para cima em volta de X e apoia o ponto mais baixo no chão. Faz a aranha e a viúva **empinadas** (35° e 30°) a partir do mesmo modelo, sem crédito. O log escreve `EMPINA ...` |
+| `--model` aceita `.blend` (Lote 5) | Com o PC sem memória (0,3 a 0,7 GB livres), o import do FBX do Tripo passou de 10 min e o `.ps1` cortou três personagens em 900 s. O FBX é importado uma vez e salvo em `.blend` (comando no §2); o render lê o `.blend` (`bpy.data.libraries.load`) em segundos. O resultado é o mesmo do FBX: são os mesmos objetos, salvos logo depois do import |
+| `ETAPA` no log (Lote 5) | Linhas `ETAPA modelo/clipes/limites <s>` e saída sem buffer: se o `.ps1` cortar no timeout, o log mostra onde o tempo foi |
 
 ## 2. Como usar
 
@@ -134,6 +139,26 @@ blender.exe -b --factory-startup --python-exit-code 1 --python client\tools\anim
 .\client\tools\render_sprites.ps1 -Nome golem               -Model $env:TEMP\dc_in\golem\tripo_convert_a14abc19-....fbx           -Anims $env:TEMP\dc_arte\mixamo\golem
 .\client\tools\render_sprites.ps1 -Nome golem_fim           -Model (o do golem)                                                   -Anims $env:TEMP\dc_arte\mixamo\golem_fim
 .\client\tools\render_sprites.ps1 -Nome picareta -Model $env:TEMP\dc_in\picareta\tripo_convert_828ff8b7-....fbx  (sapo, besouro, vagonete, coracao, cristal, gaiola, lanterna_mina, escora: idem)
+```
+
+**Comandos do Lote 5 (2026-10-11).** Mesma extração em `%TEMP%\dc_in\<nome>\`. Com o PC sem memória, cada personagem foi antes convertido para `.blend` (um Blender por vez, também com corte de 900 s):
+
+```
+blender.exe -b --factory-startup --python-exit-code 1 --python-expr "import bpy,sys; a=sys.argv[sys.argv.index('--')+1:]; bpy.ops.wm.read_factory_settings(use_empty=True); bpy.context.scene.render.fps=30; bpy.ops.import_scene.fbx(filepath=a[0]); bpy.ops.file.pack_all(); bpy.ops.wm.save_as_mainfile(filepath=a[1])" -- %TEMP%\dc_in\esqueleto\tripo_convert_c1aedaea-....fbx %TEMP%\dc_in\esqueleto\esqueleto.blend
+blender.exe -b --factory-startup --python-exit-code 1 --python client\tools\anim_blender.py -- --rig %TEMP%\dc_arte\mixamo\courier\Idle.fbx --out %TEMP%\dc_anim_l5 --only SkelAttack,BoneCollapse,BoneRise,MummyGrab,MummyHold,GargStatue,GargWake,GargDive,GargPerch,NecroIdle,NecroCast,NecroSummon
+.\client\tools\render_sprites.ps1 -Nome esqueleto  -Model $env:TEMP\dc_in\esqueleto\esqueleto.blend -Anims $env:TEMP\dc_arte\mixamo\esqueleto `
+    -Extra @("--attach", "$env:TEMP\dc_in\clava\tripo_convert_....fbx:RightHand:-0.04,-0.25,-0.02:31.9,44.1,-78.0:0.49")
+.\client\tools\render_sprites.ps1 -Nome mumia      -Model $env:TEMP\dc_in\mumia\mumia.blend          -Anims $env:TEMP\dc_arte\mixamo\mumia
+.\client\tools\render_sprites.ps1 -Nome gargula    -Model $env:TEMP\dc_in\gargula\gargula.blend      -Anims $env:TEMP\dc_arte\mixamo\gargula
+.\client\tools\render_sprites.ps1 -Nome necromante -Model $env:TEMP\dc_in\necromante\necromante.blend -Anims $env:TEMP\dc_arte\mixamo\necromante `
+    -Extra @("--attach", "$env:TEMP\dc_in\cajado\tripo_convert_....fbx:RightHand:-0.04,0.251,-0.02:-180,90,90:1.40")
+.\client\tools\render_sprites.ps1 -Nome necromante_fim -Model (o mesmo .blend) -Anims $env:TEMP\dc_arte\mixamo\necromante_fim -Extra (o mesmo cajado)
+.\client\tools\render_sprites.ps1 -Nome arqueiro   -Model $env:TEMP\dc_in\arqueiro\arqueiro.blend    -Anims $env:TEMP\dc_arte\mixamo\arqueiro -Extra (o arco do Lote 3)
+.\client\tools\render_sprites.ps1 -Nome courier_icone -Model $env:TEMP\dc_in\courier\courier.blend  -Anims $env:TEMP\dc_arte\mixamo\courier_icone -Hold $env:TEMP\dc_arte\mixamo\Hold.fbx
+.\client\tools\render_sprites.ps1 -Nome caixa_icone -Model $env:TEMP\dc_in\caixa\tripo_convert_dc019326-....fbx
+.\client\tools\render_sprites.ps1 -Nome aranha_empinada -Model $env:TEMP\dc_in\aranha\tripo_convert_....fbx   (viuva_empinada: o FBX da viúva)
+.\client\tools\render_sprites.ps1 -Nome lanterna_apagada -Model $env:TEMP\dc_in\lanterna_apagada\tripo_convert_8b1eb15f-....fbx   (cópia da lanterna com o basecolor editado, §7)
+.\client\tools\render_sprites.ps1 -Nome clava -Model $env:TEMP\dc_in\clava\tripo_convert_....fbx   (cajado, fantasma, aranha, viuva, lanterna, espelho, balao, lapide, vela, sarcofago: idem)
 ```
 
 **Tempo medido** (PC de 7,7 GB):
@@ -208,6 +233,18 @@ Todos os presets usam `scale` 120, `outline` 3 e `max_frames` 12, exceto onde a 
 | `golem_fim` | altura 2,60 m | 1 | 576, máx. 7 | 4 032 px | rig em pose A (automático) |
 | `picareta` / `coracao` / `gaiola` / `lanterna_mina` | altura 0,45 / 0,45 / 0,50 / 0,50 m | 1 | 96 | — | Static |
 | `sapo` / `besouro` / `vagonete` / `cristal` / `escora` | largura 0,90 / 0,60 / 1,20 / 0,50 / 1,20 m | 1 | 144 / 112 / 208 / 96 / 176 | — | Static |
+| `esqueleto` | altura 1,35 m | 4 com espelho (3) | **256** (224 recortava a clava no alto e o monte do Collapse) | 3 072 px | Idle 199–289; Collapse e Rise 6 quadros; clava pelo `--attach` na linha |
+| `mumia` | altura 1,50 m | 4 com espelho (3) | 224 | 2 688 px | Idle 199–289; Hold 8 quadros |
+| `gargula` | altura 1,40 m | 4 com espelho (3) | 256 | 3 072 px | Statue 1 quadro |
+| `necromante` / `necromante_fim` | altura 1,60 m | 4 com espelho (3) / 1 | 320 / 320 | 3 840 px | cajado pelo `--attach` na linha (nos dois) |
+| `clava` / `cajado` | largura 0,49 m / altura 1,40 m | 1 | 96 / 144 | — | Static (o item solto; na mão vem do `--attach`) |
+| `fantasma` / `lanterna` / `lanterna_apagada` / `espelho` / `vela` | altura 0,90 / 0,45 / 0,45 / 0,50 / 0,70 m | 1 | 128 / 96 / 96 / 96 / 112 | — | Static; `lanterna_apagada` = o mesmo modelo com a chama pintada de vidro escuro no basecolor (§7) |
+| `aranha` / `aranha_empinada` | largura 0,80 m | 1 | 128 / 144 | — | Static; `tilt` 35° |
+| `viuva` / `viuva_empinada` | largura 2,00 m | 1 | 320 / 352 | — | Static; `tilt` 30° |
+| `balao` / `lapide` | largura 0,60 / 1,20 m | 1 | 128 / 176 | — | Static |
+| `sarcofago` | `footprint` 0,80 × 1,80 m | 4 com espelho (3) | 288 | 288 × 864 px | Static em 3 linhas: S/N = comprido em profundidade, W = atravessado (as duas orientações do obstáculo) |
+| `courier_icone` | altura 1,30 m, **320 px/m** | 1, câmera a 35° e −45° (3/4 de frente) | 512 | 512 px | CarryIdle 1 quadro (janela 199–289) com `--hold`; contorno 6 px. Para o ícone da loja (`loja_assets.py`) |
+| `caixa_icone` | largura 0,50 m, 320 px/m | 1, 35° e −45° | 256 | — | Static; a caixa na mesma escala e câmera do `courier_icone` |
 
 As células foram calculadas pela geometria de projeto com 10% de margem e conferidas na folha (o `folhas.py` imprime a margem mínima).
 - Em 2026-10-10, o bruto, o ogro, o ogro_fim e o pilar encostavam na borda e subiram de célula.
@@ -233,7 +270,7 @@ O `meta.json` usa listas planas, que o `JsonUtility` lê:
 | `pivot` | [0,5, y/size] (normalizado, origem no canto inferior esquerdo, como o `Sprite.Create`) |
 | `pivot_px` | o mesmo em px |
 | `elev`, `yaw`, `light`, `outline_px`, `src_fps`, `preset`, `model_scale`, `hold`, `attach`, `align_arms` | rastreio (`attach` = lista dos `--attach` sem a pasta do FBX, com osso, deslocamento, giro e tamanho; 2026-10-09. `align_arms`: 2026-10-10) |
-| `clips[]` | `name`, `file`, `frames`, `loop` (pelo nome: idle, walk, run, lurk, look, sleep, stun, charge), `fps` (real do clipe), `duration_s`, `src_frames`, `hands` (só em ator com mãos), `stride_mps` (opcional, ver abaixo), `src_range` (opcional, 2026-10-10: [início, fim] do clipe de origem quando o preset usa só uma faixa) e `ground_cut` (opcional, 2026-10-11: `true` quando a parte abaixo do chão já foi cortada no render) |
+| `clips[]` | `name`, `file`, `frames`, `loop` (pelo nome: idle, walk, run, lurk, look, sleep, stun, charge, perch, hold), `fps` (real do clipe), `duration_s`, `src_frames`, `hands` (só em ator com mãos), `stride_mps` (opcional, ver abaixo), `src_range` (opcional, 2026-10-10: [início, fim] do clipe de origem quando o preset usa só uma faixa) e `ground_cut` (opcional, 2026-10-11: `true` quando a parte abaixo do chão já foi cortada no render) |
 
 **`stride_mps`** (por clipe; **campo novo de 2026-10-09**, opcional):
 - Aparece só em clipe em laço cujo quadril andava na origem (root motion) mais de 0,3 m/s.
@@ -351,6 +388,12 @@ carga.sortingOrder = portador.sortingOrder + (clip.hands[k + 2] > 0.5f ? 1 : -1)
 - **Rig em pose A:** desde 2026-10-11 o render alinha sozinho acima de 15° e avisa no log (bruto −49,5°, ogro −22°, toupeira 32°, rainha 28°, golem 22°; arqueiro −9°, capitão −3° e mineiro −4° ficam como estão).
 - **Andar para trás é lento para ator pequeno:** o Walking Backwards do ARKANA dá 0,89 m/s no X Bot e 0,36 m/s no goblin de 1,0 m. A 1,4 m/s da Sim, seriam 3,9× (teto da View 2,3×). O mineiro usa o Running Backwards (0,86 m/s → 1,63×). O arqueiro (Lote 3) continua com o andar para trás (2,38×); a troca é o mesmo arquivo e um re-render.
 - **Golem do Tripo diferente do prompt:** a malha não tem os cristais ciano nas costas (0 pixel ciano no basecolor). Tem uma gema âmbar no **peito** e a pedra é bege, não cinza-azulada. O ponto fraco do Core é **por trás** (×2), e o sprite sugere o contrário. Precisa de um brilho procedural nas costas na View ou de um modelo novo.
+  - **Decisão (2026-10-11, coordenador):** a View desenha o brilho por código; o modelo fica. **Onde fica o ponto das costas na folha do `golem`** (célula 448, 120 px/m, pivô em (224; 145,8) px), estimado pela geometria: altura do `Spine2` ≈ 1,6 m e 0,35 m atrás do eixo, projetado a 60°. **Deslocamento a partir do pivô, em px da célula (x para a direita, y para cima):**
+    - linha N (de costas para a câmera): (0; +60), **desenhar por cima** do sprite;
+    - linha W (de perfil, olhando para a esquerda): (+42; +96), desenhar por cima (fica na borda das costas);
+    - linha S (de frente): (0; +132), **atrás do corpo**: desenhar por baixo do sprite ou não desenhar;
+    - E (espelho do W): (−42; +96).
+  - É estimativa geométrica (±10 px: o tronco balança no Walk e se curva no Slam e no Charge). Se a View precisar do ponto exato por quadro, o caminho é um campo como o `hands` com o osso `Spine2` deslocado, num re-render do golem.
 - **Sentado visto de frente a 60°:** as pernas para a câmera descem na tela, e o mineiro dormindo (Sleep) e o golem atordoado (Stun) quase não diminuem de altura na linha S. A leitura de "sentado" vem do perfil e do tronco caído. Os joelhos do Stun foram dobrados para a perna não passar da célula.
 - **O `--attach` usa o repouso:** deslocamento e giro valem na pose em T. A conta para o escudo está em §9; se a pose do braço do guarda mudar, refaça a conta e confira a folha.
 - **Chapéu do courier a 60°:** a aba larga cobre o tronco nas vistas S e N, e na corrida S só se veem o chapéu e um pé. É do modelo e da câmera (`ART_BIBLE.md` §2), não do clipe. Com a caixa por cima (frente = 1), a leitura "courier com carga" continua.
