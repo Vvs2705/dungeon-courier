@@ -23,7 +23,7 @@ namespace DC.EditorTools
         const string Scene = "Assets/_DC/Scenes/Main.unity";
         const string ApkDir = "Builds/android";
         /// <summary>Versao mostrada ao jogador (Application.version) e no diario.</summary>
-        public const string Version = "1.0.0-beta";
+        public const string Version = "1.1.0-beta";
 
         /// <summary>versionCode do Android, gerado da versao (nunca editado a mao, nunca reutilizado): (maior*10000 + menor*100 + patch)*10
         /// + estagio (alpha 1, beta 2, rc 5, final 9). 1.0.0-beta = 100002; 1.0.0 = 100009; 1.0.1-beta = 100012. A v0.1 usava 1.</summary>
