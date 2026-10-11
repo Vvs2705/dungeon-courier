@@ -95,14 +95,17 @@ using System.Text;
 
 namespace DC.Core
 {
-    /// <summary>Carga perdida (morte ou ladrao que escapou), pendente para resgate no proximo contrato. Value = pagamento base dela
-    /// (Pay x multiplicador da carga): o bonus do resgate e Balance.RescueBonus disso. Contract = -1 se veio de contrato gerado.</summary>
+    /// <summary>Carga perdida (morte ou ladrao que escapou), pendente para resgate no proximo contrato DA MESMA REGIAO. Value = pagamento
+    /// base dela (Pay x multiplicador da carga): o bonus do resgate e Balance.RescueBonus disso. Contract = -1 se veio de contrato gerado.</summary>
     public sealed class LostCargo
     {
         public int Id; public CargoType Type; public int Cracks, Room, Value, Contract;
+        /// <summary>Regiao da sala onde ficou (o resgate so aparece num contrato desta regiao).</summary>
+        public int Region => Room >= 0 && Room < Content.Rooms.Length ? Content.Rooms[Room].Region : 1;
     }
 
-    /// <summary>Resultado de um contrato, com o pagamento detalhado (Total = Payment + RescueBonus + ChestCoins + DailyBonus).</summary>
+    /// <summary>Resultado de um contrato, com o pagamento detalhado (Total = Payment + RescueBonus + ChestCoins + DailyBonus + EventReward +
+    /// HuntCoins + EndlessCoins; o rewarded "dobrar bonus" soma Bonus de novo e liga BonusDoubled).</summary>
     public sealed class ContractResult
     {
         public int Contract; public Outcome Outcome; public float Time;
@@ -124,11 +127,20 @@ namespace DC.Core
         /// <summary>Perks escolhidos na run.</summary>
         public Perk[] Perks;
         public Weapon Weapon;
+        // lancamento
+        /// <summary>Id da tentativa (rewarded rw-&lt;RunId&gt;-&lt;tipo&gt;). PayPct = multiplicador extra do pagamento em % (modificadores,
+        /// maestria, evento, raro; 100 = nenhum). Mods = modificadores. Mastery = nivel de maestria da carga depois da entrega.</summary>
+        public int RunId, PayPct = 100, Mastery; public Modifier Mods;
+        /// <summary>Recompensa fixa do evento (1x por vaga e semana), moedas do Cacador, camadas e moedas do desafio sem fim.</summary>
+        public int EventReward, HuntCoins, EndlessLayers, EndlessCoins;
+        /// <summary>Bonus do contrato = pagamento acima do basico (integridade, modificadores, maestria, evento, raro) + bonus do dia: o que o
+        /// rewarded "dobrar bonus" paga de novo.</summary>
+        public int Bonus; public bool BonusDoubled;
     }
 
-    public sealed class Sim
+    public sealed partial class Sim
     {
-        public const int SaveVersion = 2;
+        public const int SaveVersion = 3;
         public static ContractDef[] Contracts => Content.Contracts;
 
         public int Seed, RunsStarted, NextCargoId = 1;
@@ -150,7 +162,8 @@ namespace DC.Core
         public Sim(int seed = 1) { Seed = seed; }
 
         public bool InContract => Run != null && Run.Running;
-        public bool Unlocked(int i) => i >= 0 && i < Contracts.Length && i <= Reputation;
+        /// <summary>Contrato i da campanha aberto: em sequencia (i &lt;= Reputation) e a regiao dele destravada.</summary>
+        public bool Unlocked(int i) => i >= 0 && i < Contracts.Length && i <= Reputation && RegionOpen(Contracts[i].Region);
         /// <summary>A guilda abre depois do 1º contrato (o 1º upgrade sai antes do C2).</summary>
         public bool GuildOpen => Reputation >= 1;
         public int MaxHp => Balance.BaseHp + Balance.LifePerLevel * Levels[(int)Upgrade.Life];
@@ -176,11 +189,33 @@ namespace DC.Core
             return true;
         }
 
+        // ------------------------------------------------------------------ regioes
+
+        /// <summary>Regiao destravada: a 1 sempre; as outras com conteudo, o ultimo contrato da anterior entregue (o chefe dela: a campanha e
+        /// linear, entao Reputation &gt;= First) e RegionDef.Stars estrelas.</summary>
+        public bool RegionOpen(int region)
+        {
+            RegionDef r = RegionDef.Of(region);
+            if (r == null) return false;
+            return region == 1 || (r.HasContent && Reputation >= r.First && Stars >= r.Stars);
+        }
+
+        /// <summary>Ids (1-4) das regioes destravadas, em ordem (sempre comeca com 1).</summary>
+        public int[] OpenRegions()
+        {
+            var l = new List<int>();
+            foreach (RegionDef r in RegionDef.All) if (RegionOpen(r.Id)) l.Add(r.Id);
+            return l.ToArray();
+        }
+
+        /// <summary>Regiao sorteada pela semente entre as destravadas (dia, raro, evento, codigo novo).</summary>
+        int PickRegion(int seed, int salt) { int[] open = OpenRegions(); return open[(int)(Rng.Hash(seed, salt) % (uint)open.Length)]; }
+
         // ------------------------------------------------------------------ estrelas e armas
 
         /// <summary>Melhor resultado (0-3 estrelas) do contrato i da campanha.</summary>
         public int StarsOf(int i) => i >= 0 && i < best.Length ? best[i] : 0;
-        /// <summary>Soma das estrelas da campanha: a "reputacao" mostrada na UI; destrava armas.</summary>
+        /// <summary>Soma das estrelas da campanha: a "reputacao" mostrada na UI; destrava armas, regioes, modificadores e marcos.</summary>
         public int Stars { get { int s = 0; foreach (int b in best) s += b; return s; } }
 
         /// <summary>SO teste/fotos (-testsession -weapon W): preenche as estrelas em ordem ate a soma dar n (no maximo 3 por contrato), so na
@@ -237,11 +272,12 @@ namespace DC.Core
         public bool DailyOpen => Reputation >= Balance.OpenAfter;
         public bool CodeOpen => Reputation >= Balance.OpenAfter;
 
-        /// <summary>Chame ao abrir o menu: guarda a maior data vista (voltar o relogio nao libera o dia de novo).</summary>
+        /// <summary>Chame ao abrir o menu: guarda a maior data vista (voltar o relogio nao libera o dia de novo). Vira a temporada.</summary>
         public void SeeDate(int date)
         {
             if (SaveRefused || !IsDate(date) || date <= LastDateSeen) return;
             LastDateSeen = date;
+            SeasonSync();
             Dirty = true;
         }
 
@@ -250,26 +286,41 @@ namespace DC.Core
         public bool DailyAvailable(int date) => DailyOpen && !SaveRefused && IsDate(date) && date >= LastDateSeen && date > DailyDone;
 
         public static int DailyPayload(int date) => (int)(Rng.Hash(date, 0xDA11) & ContractCode.MaxPayload);
-        /// <summary>O contrato do dia da data (o mesmo para todos os jogadores).</summary>
-        public static ContractDef DailyContract(int date) => Content.Generate(DailyPayload(date), ContractKind.Daily, date);
-        /// <summary>Contrato do codigo (6 caracteres; maiusculas/espacos/tracos aceitos) ou null se invalido.</summary>
+        /// <summary>O contrato do dia da data NA REGIAO 1 (sem reroll): atalho da v1. Com mais regioes destravadas ou reroll, o do jogador e
+        /// sim.DailyFor(data) (e o que StartDaily joga).</summary>
+        public static ContractDef DailyContract(int date) => Content.Generate(Content.WithRegion(DailyPayload(date), 1), ContractKind.Daily, date);
+        /// <summary>O contrato do dia deste jogador: regiao sorteada pela data entre as destravadas; muda com o reroll do dia.</summary>
+        public ContractDef DailyFor(int date)
+        {
+            int n = date == rrDate ? rrDaily : 0;
+            int p = (int)(Rng.Hash(date, 0xDA11 + n * 0x9E37) & ContractCode.MaxPayload);
+            return Content.Generate(Content.WithRegion(p, PickRegion(date, 0xDA12)), ContractKind.Daily, date);
+        }
+        /// <summary>Contrato do codigo (6 caracteres; maiusculas/espacos/tracos aceitos) ou null se invalido (ou regiao sem conteudo). A
+        /// regiao sai do codigo (RegionOf do payload).</summary>
         public static ContractDef CodeContract(string code) => ContractCode.TryDecode(code, out int p) ? Content.Generate(p, ContractKind.Code) : null;
+        /// <summary>Codigo novo para compartilhar, numa regiao destravada (a entropia vem da View).</summary>
+        public string NewCode(uint entropy) => ContractCode.Encode(Content.WithRegion((int)(Rng.Hash((int)entropy, 0x5EED) & ContractCode.MaxPayload), PickRegion((int)entropy, 0x5EEE)));
 
+        /// <summary>Contrato do dia (vem com 1 modificador pela data quando os modificadores estao abertos).</summary>
         public Run StartDaily(int date, bool rescue)
         {
             if (InContract || !DailyAvailable(date)) return null;
             SeeDate(date);
-            Run r = Begin(DailyContract(date), rescue);
+            Run r = Begin(DailyFor(date), rescue, ModifiersOpen ? DailyModifier(date) : Modifier.None);
             if (r != null) Emit(Ev.DailyStart, date, 0, Balance.Entrance);
             return r;
         }
 
-        public Run StartCode(string code, bool rescue)
+        public Run StartCode(string code, bool rescue) => StartCode(code, rescue, Modifier.None);
+
+        /// <summary>Contrato por codigo (null = invalido, fechado ou regiao do codigo ainda bloqueada para este jogador).</summary>
+        public Run StartCode(string code, bool rescue, Modifier mods)
         {
-            if (InContract || !CodeOpen || SaveRefused) return null;
+            if (InContract || !CodeOpen || SaveRefused || !ModsOk(mods)) return null;
             ContractDef def = CodeContract(code);
-            if (def == null) return null;
-            Run r = Begin(def, rescue);
+            if (def == null || !RegionOpen(def.Region)) return null;
+            Run r = Begin(def, rescue, mods);
             if (r != null) Emit(Ev.CodeStart, def.Payload, 0, Balance.Entrance);
             return r;
         }
@@ -280,33 +331,40 @@ namespace DC.Core
         // ------------------------------------------------------------------ contrato
 
         /// <summary>Comeca o contrato i (precisa estar desbloqueado e nenhum outro em curso). rescue = aceitar a carga perdida pendente:
-        /// ela aparece no chao da 1ª sala. A oferta expira aqui, aceita ou nao.</summary>
-        public Run StartContract(int index, bool rescue)
+        /// ela aparece no chao da 1ª sala. A oferta expira aqui, aceita ou nao (so num contrato da mesma regiao da carga).</summary>
+        public Run StartContract(int index, bool rescue) => StartContract(index, rescue, Modifier.None);
+
+        /// <summary>Com modificadores (0-2, depois de Balance.ModifiersStars estrelas; null se invalido).</summary>
+        public Run StartContract(int index, bool rescue, Modifier mods)
         {
-            if (!Unlocked(index)) return null;
-            return Begin(Contracts[index], rescue);
+            if (!Unlocked(index) || !ModsOk(mods)) return null;
+            return Begin(Contracts[index], rescue, mods);
         }
 
         /// <summary>Medicao do bot (H2): comeca um contrato montado na hora, sem resgate.</summary>
-        internal Run StartDef(ContractDef def) => Begin(def, false);
+        internal Run StartDef(ContractDef def) => Begin(def, false, Modifier.None);
 
-        Run Begin(ContractDef def, bool rescue)
+        Run Begin(ContractDef def, bool rescue, Modifier mods)
         {
-            if (SaveRefused || InContract) return null;
-            var run = new Run(this, def, (int)Rng.Hash(Seed, RunsStarted), MaxHp);
+            if (SaveRefused || InContract || def == null) return null;
+            var run = new Run(this, def, (int)Rng.Hash(Seed, RunsStarted), MaxHp) { Id = RunsStarted, Mods = mods };
             RunsStarted++;
             run.AddCargo(NextCargoId++, def.Cargo, 0, false, CargoState.Held);
             LostCargo lost = Pending;
-            Pending = null;
+            if (lost != null && (def.Kind == ContractKind.Endless || lost.Region != def.Region)) lost = null;   // resgate so na mesma regiao (fica pendente)
+            else Pending = null;
             bool take = rescue && lost != null && !RescuedIds.Contains(lost.Id);
             run.RescueOffered = lost != null; run.RescueAccepted = take; run.RescueValue = take ? lost.Value : 0;
             if (take) run.AddCargo(lost.Id, lost.Type, lost.Cracks, true, CargoState.Ground);
             Run = run; LastResult = null;
             Emit(Ev.ContractStart, def.Index, take ? 1 : 0, Balance.Entrance);
             if (lost != null) Emit(Ev.CargoRescueOffer, lost.Id, take ? 1 : 0, Balance.Entrance);
+            if (mods != Modifier.None) Emit(Ev.ModifierPick, (int)mods, def.Index, Balance.Entrance);
+            if (def.Event != LiveEvent.None) Emit(Ev.EventStart, (int)def.Event, def.Slot, Balance.Entrance);
             run.EnterRoom(def.Layers[0][0], false);
             if (take) run.RescueCargo.Pos = run.Room.RescueSpot;
             Dirty = true;
+            Checkpoint();
             return run;
         }
 
@@ -326,6 +384,17 @@ namespace DC.Core
             Settle();
         }
 
+        /// <summary>Multiplicador extra do pagamento (%): 100 + modificadores + 2% por nivel de maestria da carga; x evento (Fragile Week 150%,
+        /// No-Damage 300%); x2 no raro.</summary>
+        int PayPct(Run r)
+        {
+            ContractDef def = r.Contract;
+            int pct = 100 + ModifierDef.PayOf(r.Mods) + Balance.MasteryPct * MasteryLevel(def.Cargo);
+            pct = pct * EventDef.All[(int)def.Event].PayPct / 100;
+            if (def.Kind == ContractKind.Rare) pct = pct * Balance.RarePct / 100;
+            return pct;
+        }
+
         void Settle()
         {
             Run r = Run; ContractDef def = r.Contract; Cargo main = r.Main;
@@ -339,12 +408,15 @@ namespace DC.Core
                 RoomsNormal = r.RoomsNormal, RoomsFought = r.RoomsFought,
                 Def = def, Kind = def.Kind, ShareCode = def.ShareCode, Perks = r.Perks.ToArray(), Weapon = r.Weapon,
                 StarDelivered = delivered, StarIntact = delivered && main.Cracks == 0 && !r.Hatched,
-                StarTime = delivered && def.ParTime > 0f && r.Time <= def.ParTime + 1e-3f,
+                StarTime = delivered && r.ParTime > 0f && r.Time <= r.ParTime + 1e-3f,
+                RunId = r.Id, Mods = r.Mods, PayPct = PayPct(r), HuntCoins = r.HuntCoins,
             };
             res.Stars = (res.StarDelivered ? 1 : 0) + (res.StarIntact ? 1 : 0) + (res.StarTime ? 1 : 0);
             if (delivered)
             {
-                res.Payment = Credit(def.Pay * Balance.Pct(res.CargoMul) * Balance.Pct(res.IntegrityMul) / 10000.0);
+                int cargoPct = Balance.Pct(res.CargoMul);
+                res.Payment = Credit((long)def.Pay * cargoPct * Balance.Pct(res.IntegrityMul) * res.PayPct / 1000000.0);
+                res.Bonus = Math.Max(0, res.Payment - Round(def.Pay * cargoPct / 100.0 * Balance.Pct(CoinMul) / 100.0));
                 Emit(Ev.CurrencySource, res.Payment, 0, Balance.Client);
                 Cargo rc = r.RescueCargo;
                 if (rc != null && rc.State == CargoState.Held && !RescuedIds.Contains(rc.Id))
@@ -359,10 +431,12 @@ namespace DC.Core
                 {
                     DailyDone = def.Date;
                     res.DailyBonus = Credit(Balance.DailyBonus);
+                    res.Bonus += res.DailyBonus;
                     Emit(Ev.CurrencySource, res.DailyBonus, 3, Balance.Client);
                 }
+                SettleDelivered(res, r);
             }
-            else if (r.Outcome == Outcome.Died || r.Outcome == Outcome.CargoStolen)
+            else if ((r.Outcome == Outcome.Died || r.Outcome == Outcome.CargoStolen) && def.Kind != ContractKind.Endless)
             {
                 // a carga do contrato fica na masmorra (so 1 pendente: a mais nova substitui)
                 Pending = new LostCargo { Id = main.Id, Type = main.Type, Cracks = main.Cracks, Room = r.Room.Id, Contract = def.Index, Value = Round(def.Pay * Balance.Pct(CargoDef.All[(int)main.Type].PayMul) / 100.0) };
@@ -374,10 +448,12 @@ namespace DC.Core
                 best[def.Index] = res.Stars; res.NewBest = true;
                 for (int w = 0; w < was.Length; w++) if (!was[w] && WeaponUnlocked((Weapon)w)) Emit(Ev.WeaponUnlock, w, Stars, Balance.Client);
             }
-            res.Total = res.Payment + res.RescueBonus + res.ChestCoins + res.DailyBonus;
+            SettleMeta(res, r);
+            res.Total = res.Payment + res.RescueBonus + res.ChestCoins + res.DailyBonus + res.EventReward + res.HuntCoins + res.EndlessCoins;
             Emit(Ev.ContractStars, res.Stars, def.Index, r.Courier.Pos);
             Emit(Ev.ContractEnd, def.Index, (int)r.Outcome, r.Courier.Pos);
             if (def.Kind == ContractKind.Daily) Emit(Ev.DailyEnd, def.Date, (int)r.Outcome, r.Courier.Pos);
+            if (def.Event != LiveEvent.None) Emit(Ev.EventEnd, (int)def.Event, (int)r.Outcome, r.Courier.Pos);
             if (r.RescueAccepted) Emit(Ev.CargoRescueResult, r.RescueCargo.Id, res.RescueDelivered ? 1 : 0, r.Courier.Pos);
             LastResult = res;
             Dirty = true;
@@ -385,11 +461,10 @@ namespace DC.Core
 
         // ------------------------------------------------------------------ save (chave=valor; lixo vira estado inicial)
 
-        /// <summary>Texto do save (v=2). null se SaveRefused (nao grave por cima de um save de versao futura). Limpa Dirty.</summary>
+        /// <summary>Texto do save (v=3). null se SaveRefused (nao grave por cima de um save de versao futura). Limpa Dirty.</summary>
         public string Save()
         {
             if (SaveRefused) return null;
-            var ci = CultureInfo.InvariantCulture;
             var sb = new StringBuilder();
             sb.Append("v=").Append(SaveVersion).Append('\n');
             sb.Append("seed=").Append(Seed).Append('\n');
@@ -414,50 +489,55 @@ namespace DC.Core
                 ids.Sort();
                 sb.Append("resc=").Append(string.Join(",", ids)).Append('\n');
             }
-            if (InContract)
-            {
-                Run r = Run;
-                sb.Append("run=").Append(r.Contract.Index).Append(',').Append(r.Layer).Append(',').Append(r.Room.Id).Append(',').Append(r.Courier.Hp).Append(',')
-                  .Append(r.Time.ToString("0.###", ci)).Append(',').Append(r.Seed).Append(',').Append(r.Chest != null && r.Chest.Opened ? 1 : 0).Append(',')
-                  .Append(r.Hatched ? 1 : 0).Append(',').Append(r.Pet != null ? r.Pet.Hp : 0).Append(',').Append(r.RescueValue).Append(',')
-                  .Append(r.RoomsNormal).Append(',').Append(r.RoomsFought).Append(',').Append(r.ChestCoins).Append(',').Append(r.RescueOffered ? 1 : 0).Append('\n');
-                int mask = 0;
-                foreach (Perk p in r.Perks) mask |= 1 << (int)p;
-                Perk[] off = r.PerkOffer;
-                // rk = tipo, payload, data, perks (bits), acolchoada usada, oferta aberta (3 perks ou -1)
-                sb.Append("rk=").Append((int)r.Contract.Kind).Append(',').Append(r.Contract.Payload).Append(',').Append(r.Contract.Date).Append(',')
-                  .Append(mask).Append(',').Append(r.PadUsed ? 1 : 0);
-                for (int i = 0; i < Balance.PerkOfferSize; i++) sb.Append(',').Append(off != null && i < off.Length ? (int)off[i] : -1);
-                sb.Append('\n');
-                for (int i = 0; i < r.Cargos.Count; i++)
-                {
-                    Cargo g = r.Cargos[i];
-                    // ao retomar: 0 = nas maos, 1 = no chao no ponto de resgate (resgate ainda nao pego na 1ª sala), 2 = fora do jogo
-                    int st = g.State == CargoState.Gone ? 2 : g.Rescue && r.Layer == 0 && g.State == CargoState.Ground ? 1 : 0;
-                    sb.Append("cg").Append(i).Append('=').Append(g.Id).Append(',').Append((int)g.Type).Append(',').Append(g.Cracks).Append(',')
-                      .Append(g.Rescue ? 1 : 0).Append(',').Append(st).Append('\n');
-                }
-            }
+            SaveMeta(sb);
+            if (InContract) WriteRun(sb, Run);
             Dirty = false;
             return sb.ToString();
         }
 
-        /// <summary>Le o save. Sem linha v = v0 (so meta: coins, lv, rep); v1 = sem estrelas/armas/Mochila (estrela 1 em cada contrato
-        /// concluido; contrato em curso descartado, porque os contratos da v1.0 mudaram). As duas migram para v2 (Dirty = true para
-        /// regravar). Versao futura = estado novo com SaveRefused (o texto original nao e tocado). Valores fora da faixa sao corrigidos;
-        /// contrato em curso invalido e descartado.</summary>
+        /// <summary>Linhas do contrato em curso (run, rk, rx, cgN): o save e o ponto de retomada do rewarded (Checkpoint).</summary>
+        static void WriteRun(StringBuilder sb, Run r)
+        {
+            var ci = CultureInfo.InvariantCulture;
+            sb.Append("run=").Append(r.Contract.Index).Append(',').Append(r.Layer).Append(',').Append(r.Room.Id).Append(',').Append(r.Courier.Hp).Append(',')
+              .Append(r.Time.ToString("0.###", ci)).Append(',').Append(r.Seed).Append(',').Append(r.Chest != null && r.Chest.Opened ? 1 : 0).Append(',')
+              .Append(r.Hatched ? 1 : 0).Append(',').Append(r.Pet != null ? r.Pet.Hp : 0).Append(',').Append(r.RescueValue).Append(',')
+              .Append(r.RoomsNormal).Append(',').Append(r.RoomsFought).Append(',').Append(r.ChestCoins).Append(',').Append(r.RescueOffered ? 1 : 0).Append('\n');
+            int mask = 0;
+            foreach (Perk p in r.Perks) mask |= 1 << (int)p;
+            Perk[] off = r.PerkOffer;
+            // rk = tipo, payload, data, perks (bits), acolchoada usada, oferta aberta (3 perks ou -1)
+            sb.Append("rk=").Append((int)r.Contract.Kind).Append(',').Append(r.Contract.Payload).Append(',').Append(r.Contract.Date).Append(',')
+              .Append(mask).Append(',').Append(r.PadUsed ? 1 : 0);
+            for (int i = 0; i < Balance.PerkOfferSize; i++) sb.Append(',').Append(off != null && i < off.Length ? (int)off[i] : -1);
+            sb.Append('\n');
+            // rx (v3) = id da tentativa, modificadores, vaga do evento, segundo folego, blueprint achado, inimigos, baus, secretas, chefes sem dano, Cacador
+            sb.Append("rx=").Append(r.Id).Append(',').Append((int)r.Mods).Append(',').Append(r.Contract.Slot).Append(',').Append(r.SecondWindUsed ? 1 : 0).Append(',')
+              .Append(r.BlueprintFound ? 1 : 0).Append(',').Append(r.Kills).Append(',').Append(r.ChestsOpened).Append(',').Append(r.SecretsFound).Append(',')
+              .Append(r.BossesClean).Append(',').Append(r.HuntCoins).Append('\n');
+            for (int i = 0; i < r.Cargos.Count; i++)
+            {
+                Cargo g = r.Cargos[i];
+                // ao retomar: 0 = nas maos, 1 = no chao no ponto de resgate (resgate ainda nao pego na 1ª sala), 2 = fora do jogo
+                int st = g.State == CargoState.Gone ? 2 : g.Rescue && r.Layer == 0 && g.State == CargoState.Ground ? 1 : 0;
+                sb.Append("cg").Append(i).Append('=').Append(g.Id).Append(',').Append((int)g.Type).Append(',').Append(g.Cracks).Append(',')
+                  .Append(g.Rescue ? 1 : 0).Append(',').Append(st).Append('\n');
+            }
+        }
+
+        /// <summary>Le o save. Migracoes explicitas (Dirty = true para regravar em v3): v0 (sem linha v: so coins, lv, rep) · v1 (sem
+        /// estrelas/armas/Mochila: estrela 1 em cada contrato concluido; contrato em curso descartado porque os contratos da v1.0 mudaram) ·
+        /// v2 (sem os sistemas do lancamento: tudo no padrao; contrato em curso mantido, dia/codigo gerados na regiao 1 como na beta).
+        /// Versao futura = estado novo com SaveRefused (o texto original nao e tocado). Valores fora da faixa sao corrigidos; contrato em
+        /// curso invalido e descartado.</summary>
         public static Sim Load(string text)
         {
             var sim = new Sim();
             if (string.IsNullOrEmpty(text)) return sim;
-            var kv = new Dictionary<string, string>();
-            foreach (string raw in text.Split('\n'))
-            {
-                int eq = raw.IndexOf('=');
-                if (eq > 0) kv[raw.Substring(0, eq).Trim()] = raw.Substring(eq + 1).Trim();
-            }
+            Dictionary<string, string> kv = Parse(text);
             int v = kv.TryGetValue("v", out string vs) ? I(vs, 0) : 0;
             if (v > SaveVersion) { sim.SaveRefused = true; return sim; }
+            if (v < SaveVersion) sim.Dirty = true;
 
             sim.Coins = Math.Max(0, I(Get(kv, "coins"), 0));
             sim.Reputation = Clamp(I(Get(kv, "rep"), 0), 0, Contracts.Length);
@@ -465,7 +545,7 @@ namespace DC.Core
             for (int i = 0; i < Math.Min(lv.Length, sim.Levels.Length); i++) sim.Levels[i] = Clamp(I(lv[i], 0), 0, Balance.UpgradeMax);
             if (v < 2)
                 for (int i = 0; i < sim.Reputation && i < sim.best.Length; i++) sim.best[i] = 1;   // migracao: concluido = 1 estrela
-            if (v <= 0) { sim.Dirty = true; return sim; }   // migracao v0 -> v2: v0 nao tinha contrato em curso nem carga pendente
+            if (v <= 0) return sim;   // migracao v0 -> v3: v0 nao tinha contrato em curso nem carga pendente
 
             sim.Seed = I(Get(kv, "seed"), 1);
             sim.RunsStarted = Math.Max(0, I(Get(kv, "runs"), 0));
@@ -478,7 +558,7 @@ namespace DC.Core
                 if (id > 0 && type >= 0 && type < CargoDef.All.Length)
                     sim.Pending = new LostCargo { Id = id, Type = (CargoType)type, Cracks = Clamp(I(p[2], 0), 0, Balance.RelicBreak - 1), Room = Clamp(I(p[3], 0), 0, Content.Rooms.Length - 1), Value = Math.Max(0, I(p[4], 0)), Contract = I(p[5], 0) };
             }
-            if (v == 1) { sim.Dirty = true; return sim; }   // migracao v1 -> v2: o contrato em curso da v1 e descartado (contratos mudaram)
+            if (v == 1) return sim;   // migracao v1 -> v3: o contrato em curso da v1 e descartado (contratos mudaram)
 
             string st = Get(kv, "stars");
             for (int i = 0; i < Math.Min(st.Length, sim.best.Length); i++) sim.best[i] = st[i] >= '0' && st[i] <= '3' ? st[i] - '0' : 0;
@@ -489,33 +569,68 @@ namespace DC.Core
             int ds = I(Get(kv, "dseen"), 0), dd = I(Get(kv, "ddone"), 0);
             sim.LastDateSeen = IsDate(ds) ? ds : 0;
             sim.DailyDone = IsDate(dd) ? dd : 0;
-            LoadRun(sim, kv);
+            if (v >= 3) sim.LoadMeta(kv);   // v2 -> v3: sistemas do lancamento no padrao
+            else sim.SeasonSync();
+            sim.Run = LoadRun(sim, kv, v);
+            if (sim.Run != null) sim.Checkpoint();
             return sim;
         }
 
-        static void LoadRun(Sim sim, Dictionary<string, string> kv)
+        static Dictionary<string, string> Parse(string text)
+        {
+            var kv = new Dictionary<string, string>();
+            foreach (string raw in text.Split('\n'))
+            {
+                int eq = raw.IndexOf('=');
+                if (eq > 0) kv[raw.Substring(0, eq).Trim()] = raw.Substring(eq + 1).Trim();
+            }
+            return kv;
+        }
+
+        /// <summary>Contrato em curso a partir das linhas run/rk/rx/cgN (null = invalido). v = versao do save (v2: gerados na regiao 1).</summary>
+        static Run LoadRun(Sim sim, Dictionary<string, string> kv, int v)
         {
             string[] p = Get(kv, "run").Split(',');
             string[] k = Get(kv, "rk").Split(',');
-            if (p.Length < 14 || k.Length < 5 + Balance.PerkOfferSize) return;
-            int ci = I(p[0], -2), layer = I(p[1], -1), room = I(p[2], -1), hp = I(p[3], 0), kind = I(k[0], -1);
-            if (hp <= 0) return;
+            string[] x = Get(kv, "rx").Split(',');
+            if (p.Length < 14 || k.Length < 5 + Balance.PerkOfferSize) return null;
+            int ci = I(p[0], -2), layer = I(p[1], -1), room = I(p[2], -1), hp = I(p[3], 0), kind = I(k[0], -1), payload = I(k[1], 0), date = I(k[2], 0);
+            if (hp <= 0) return null;
+            int old = v < 3 ? 1 : 0;   // v2: dia/codigo da beta eram sempre da regiao 1
             ContractDef def;
-            if (kind == (int)ContractKind.Campaign) { if (ci < 0 || ci >= Contracts.Length) return; def = Contracts[ci]; }
-            else if (kind == (int)ContractKind.Daily) { int date = I(k[2], 0); if (!IsDate(date)) return; def = DailyContract(date); }
-            else if (kind == (int)ContractKind.Code) def = Content.Generate(I(k[1], 0), ContractKind.Code);
-            else return;
-            if (layer < 0 || layer >= def.Layers.Length || room < 0 || room >= Content.Rooms.Length) return;
+            switch ((ContractKind)kind)
+            {
+                case ContractKind.Campaign: if (ci < 0 || ci >= Contracts.Length) return null; def = Contracts[ci]; break;
+                case ContractKind.Daily: if (!IsDate(date)) return null; def = Content.Generate(payload, ContractKind.Daily, date, old); break;
+                case ContractKind.Code: def = Content.Generate(payload, ContractKind.Code, 0, old); break;
+                case ContractKind.Rare: if (!IsDate(date)) return null; def = Content.Generate(payload, ContractKind.Rare, date); break;
+                case ContractKind.Event:
+                    if (!IsDate(date)) return null;
+                    def = Content.EventContract(EventOf(date), payload, date, sim.BeatenBosses());
+                    if (def != null) def.Slot = Clamp(x.Length > 2 ? I(x[2], 0) : 0, 0, Balance.EventRewards.Length - 1);
+                    break;
+                case ContractKind.Endless: def = Content.Endless(date, sim.OpenRegions()); break;
+                default: return null;
+            }
+            if (def == null || layer < 0 || layer >= def.Layers.Length || room < 0 || room >= Content.Rooms.Length) return null;
             bool inLayer = Array.IndexOf(def.Layers[layer], room) >= 0;
             if (!inLayer && Content.Rooms[room].IsSecret)   // sala secreta: vale se alguma sala da camada tem a parede rachada para ela
                 foreach (int r0 in def.Layers[layer]) if (Content.Rooms[r0].Secret == room) inLayer = true;
-            if (!inLayer) return;
+            if (!inLayer) return null;
+            int mods = x.Length >= 10 ? I(x[1], 0) & 31 : 0;
             var run = new Run(sim, def, I(p[5], 1), hp)
             {
                 Layer = layer, Time = Math.Max(0f, F(p[4], 0f)), Hatched = p[7] == "1" && def.Cargo == CargoType.Egg,
                 RescueValue = Math.Max(0, I(p[9], 0)), RoomsNormal = Math.Max(0, I(p[10], 0)), RoomsFought = Math.Max(0, I(p[11], 0)),
                 ChestCoins = Math.Max(0, I(p[12], 0)), RescueOffered = p[13] == "1", PadUsed = k[4] == "1",
+                Id = x.Length >= 10 ? Math.Max(0, I(x[0], 0)) : Math.Max(0, sim.RunsStarted - 1), Mods = (Modifier)mods,
             };
+            if (x.Length >= 10)
+            {
+                run.SecondWindUsed = x[3] == "1"; run.BlueprintFound = x[4] == "1";
+                run.Kills = Math.Max(0, I(x[5], 0)); run.ChestsOpened = Math.Max(0, I(x[6], 0)); run.SecretsFound = Math.Max(0, I(x[7], 0));
+                run.BossesClean = Math.Max(0, I(x[8], 0)); run.HuntCoins = Math.Max(0, I(x[9], 0));
+            }
             int mask = I(k[3], 0);
             for (int i = 0; i < PerkDef.All.Length; i++) if ((mask & (1 << i)) != 0) run.Apply((Perk)i, false);
             run.Courier.Hp = Clamp(hp, 1, run.Courier.MaxHp);
@@ -524,16 +639,16 @@ namespace DC.Core
                 string[] g = Get(kv, "cg" + i).Split(',');
                 if (g.Length < 5) break;
                 int type = I(g[1], -1), st = I(g[4], 2);
-                if (type < 0 || type >= CargoDef.All.Length) return;
+                if (type < 0 || type >= CargoDef.All.Length) return null;
                 bool rescue = i == 1 && g[3] == "1";
-                if (i == 0 && (CargoType)type != def.Cargo) return;
+                if (i == 0 && (CargoType)type != def.Cargo) return null;
                 CargoState state = st == 0 ? CargoState.Held : st == 1 && rescue && layer == 0 ? CargoState.Ground : CargoState.Gone;
-                if (i == 0 && state != CargoState.Held && !run.Hatched) return;   // carga do contrato fora das maos so se chocou
+                if (i == 0 && state != CargoState.Held && !run.Hatched) return null;   // carga do contrato fora das maos so se chocou
                 Cargo c = run.AddCargo(Math.Max(1, I(g[0], 1)), (CargoType)type, Math.Max(0, I(g[2], 0)), rescue, state);
                 if (i == 0 && run.Hatched) c.State = CargoState.Gone;
-                if (c.Type == CargoType.Relic && c.Cracks >= Balance.RelicBreak) return;
+                if (c.Type == CargoType.Relic && c.Cracks >= run.BreakAt) return null;
             }
-            if (run.Cargos.Count == 0) return;
+            if (run.Cargos.Count == 0) return null;
             run.RescueAccepted = run.RescueCargo != null;
             if (run.Hatched) run.Pet = new Pet { Hp = Clamp(I(p[8], Balance.PetHp), 1, Balance.PetHp) };
             run.EnterRoom(room, p[6] == "1");
@@ -541,12 +656,13 @@ namespace DC.Core
             var offer = new List<Perk>();
             for (int i = 0; i < Balance.PerkOfferSize; i++) { int q = I(k[5 + i], -1); if (q >= 0 && q < PerkDef.All.Length && !run.Has((Perk)q)) offer.Add((Perk)q); }
             if (offer.Count > 0) run.Reoffer(offer.ToArray());
-            sim.Run = run;
+            return run;
         }
 
         static string Get(Dictionary<string, string> kv, string k) => kv.TryGetValue(k, out string s) ? s : "";
         static int Clamp(int v, int lo, int hi) => Math.Max(lo, Math.Min(hi, v));
         static int I(string s, int d) => int.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out int v) ? v : d;
+        static long L(string s, long d) => long.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out long v) ? v : d;
         static float F(string s, float d) => float.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out float v) && !float.IsNaN(v) && !float.IsInfinity(v) ? v : d;
     }
 }

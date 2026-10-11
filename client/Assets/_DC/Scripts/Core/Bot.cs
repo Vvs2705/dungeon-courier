@@ -48,7 +48,10 @@ namespace DC.Core
 
         // ------------------------------------------------------------------ perk, porta, arma
 
-        static readonly Perk[] PerkRank = { Perk.ExtraHeart, Perk.QuickHand, Perk.Padded, Perk.DoubleDash, Perk.IronBoot, Perk.LightStep, Perk.QuickPlant, Perk.Lookout, Perk.ChestLuck, Perk.Magnet };
+        static readonly Perk[] PerkRank = { Perk.ExtraHeart, Perk.QuickHand, Perk.Padded, Perk.DoubleDash, Perk.IronBoot, Perk.LightStep, Perk.QuickPlant, Perk.Lookout, Perk.ChestLuck, Perk.Magnet,
+                                            // lancamento (so saem da regiao 2 em diante): depois dos da v1, para a regiao 1 nao mudar
+                                            Perk.SecondWind, Perk.ThickSkin, Perk.CargoShield, Perk.Counter, Perk.Whistle, Perk.FirmGrip, Perk.Spring, Perk.SureFoot,
+                                            Perk.Runner, Perk.Insulated, Perk.FirstAid, Perk.Hunter, Perk.CatEyes, Perk.Scout, Perk.ChestSense };
 
         /// <summary>Indice (0..2) da perk preferida: a da carga primeiro (acolchoada para reliquia/bolo/ovo; passo leve para pesada/mensagem).</summary>
         public static int ChoosePerk(Run r)
@@ -365,14 +368,15 @@ namespace DC.Core
 
         /// <summary>Tabela realista: `campaigns` campanhas do bot (sementes 5000..), e cada contrato medido `seeds` vezes a partir do save
         /// de cada campanha antes da 1a tentativa dele (guilda e armas que o bot tinha ao chegar la).</summary>
-        public static Stats[] MeasureCampaignTable(int campaigns, int seeds)
+        public static Stats[] MeasureCampaignTable(int campaigns, int seeds, int region = 1)
         {
-            var t = new Stats[Sim.Contracts.Length];
-            for (int c = 0; c < t.Length; c++) t[c] = new Stats { Contract = c };
+            RegionDef reg = RegionDef.Of(region);
+            var t = new Stats[reg.Contracts.Length];   // t[k] = contrato reg.First + k (na regiao 1, o indice e o proprio contrato)
+            for (int c = 0; c < t.Length; c++) t[c] = new Stats { Contract = reg.First + c };
             for (int k = 0; k < campaigns; k++)
             {
-                Campaign cp = PlayCampaign(5000 + k);
-                for (int c = 0; c < t.Length; c++) if (cp.Before[c] != null) MeasureFrom(cp.Before[c], c, seeds, 1000 + 100 * k, 0.5f, t[c]);
+                Campaign cp = PlayCampaign(5000 + k, region: region);
+                for (int c = 0; c < t.Length; c++) if (cp.Before[reg.First + c] != null) MeasureFrom(cp.Before[reg.First + c], reg.First + c, seeds, 1000 + 100 * k, 0.5f, t[c]);
             }
             return t;
         }
@@ -452,10 +456,10 @@ namespace DC.Core
 
         public static Route MeasureRoute(int seeds, int baseSeed = 3000)
         {
-            int n = CargoDef.All.Length;
+            int n = RegionDef.Of(1).CargoCount;   // H2 e da regiao 1: as 7 cargas dela nos 24 contratos dela
             var counts = new Dictionary<string, int[,]>();
             var thief = new int[n]; var thiefForks = new int[n];
-            foreach (ContractDef def0 in Sim.Contracts)
+            foreach (ContractDef def0 in Regiao1.Contracts)
                 for (int t = 0; t < n; t++)
                 {
                     var def = new ContractDef("H2", (CargoType)t, def0.Pay, (CargoType)t == CargoType.Egg ? 999f : 0f, def0.Note, Trim(def0.Layers))
@@ -539,10 +543,12 @@ namespace DC.Core
 
         /// <summary>Campanha do zero: joga o proximo contrato bloqueado (aceitando o resgate quando ha pendente), refaz o que falha, troca a
         /// arma pela carga e compra o mais barato que couber (guilda ou nivel de arma destravada) antes de cada contrato.</summary>
-        public static Campaign PlayCampaign(int seed, float aggression = 0.5f, float reaction = 0.25f, int maxAttempts = 150)
+        public static Campaign PlayCampaign(int seed, float aggression = 0.5f, float reaction = 0.25f, int maxAttempts = 150, int region = 1)
         {
             var sim = new Sim(seed); var bot = new Bot(seed * 13 + 5, aggression, reaction); var cp = new Campaign();
-            while (sim.Reputation < Sim.Contracts.Length && cp.Attempts < maxAttempts)
+            RegionDef reg = RegionDef.Of(region);
+            int end = reg.First + reg.Contracts.Length;   // joga ate o fim da regiao `region` (padrao: a regiao 1, os 24 da v1)
+            while (sim.Reputation < end && cp.Attempts < maxAttempts)
             {
                 while (true)
                 {
@@ -570,7 +576,7 @@ namespace DC.Core
                     for (int w = 1; w < WeaponDef.All.Length; w++) if (cp.UnlockAt[w] < 0 && sim.WeaponUnlocked((Weapon)w)) cp.UnlockAt[w] = c;
                 }
             }
-            cp.Finished = sim.Reputation >= Sim.Contracts.Length;
+            cp.Finished = sim.Reputation >= end;
             cp.Coins = sim.Coins; cp.Stars = sim.Stars;
             Array.Copy(sim.Levels, cp.Levels, cp.Levels.Length);
             for (int w = 0; w < WeaponDef.All.Length; w++) cp.WeaponLevels[w] = sim.WeaponLevel((Weapon)w);

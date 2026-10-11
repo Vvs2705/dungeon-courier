@@ -755,7 +755,7 @@ namespace DC.Tests
             sim.PickPerk(k >= 0 ? k : 0);
             r.Main.Cracks = 1; r.Courier.Hp = 2;
             string a = sim.Save();
-            StringAssert.StartsWith("v=2\n", a);
+            StringAssert.StartsWith("v=3\n", a);
             Sim b = Sim.Load(a);
             for (int i = 0; i < Sim.Contracts.Length; i++) Assert.AreEqual(sim.StarsOf(i), b.StarsOf(i));
             Assert.AreEqual(Weapon.Boomerang, b.Equipped); Assert.AreEqual(2, b.WeaponLevel(Weapon.Boomerang));
@@ -782,7 +782,7 @@ namespace DC.Tests
             const string v1 = "v=1\nseed=4\nruns=3\nnid=5\ncoins=250\nrep=5\nlv=2,1,3\npend=4,1,1,4,91,4\nresc=2\nrun=1,0,1,5,3.5,77,0,0,0,0,0,0,0,0\ncg0=4,0,0,0,0\n";
             Sim s = Sim.Load(v1);
             Assert.IsFalse(s.SaveRefused);
-            Assert.IsTrue(s.Dirty, "migracao tem de regravar em v2");
+            Assert.IsTrue(s.Dirty, "migracao tem de regravar em v3");
             Assert.AreEqual(250, s.Coins); Assert.AreEqual(5, s.Reputation);
             Assert.AreEqual(new[] { 2, 1, 3, 0 }, s.Levels, "Mochila nasce no nivel 0");
             for (int i = 0; i < Sim.Contracts.Length; i++) Assert.AreEqual(i < 5 ? 1 : 0, s.StarsOf(i), "C" + (i + 1));
@@ -790,7 +790,7 @@ namespace DC.Tests
             Assert.IsNotNull(s.Pending); Assert.IsTrue(s.RescuedIds.Contains(2));
             Assert.AreEqual(Weapon.Sling, s.Equipped);
             string v2 = s.Save();
-            StringAssert.StartsWith("v=2\n", v2);
+            StringAssert.StartsWith("v=3\n", v2);
             Assert.AreEqual(v2, Sim.Load(v2).Save());
         }
 
@@ -802,6 +802,7 @@ namespace DC.Tests
             int normal = 0, secret = 0;
             foreach (RoomDef room in Content.Rooms)
             {
+                if (room.Region != 1) continue;   // lancamento: so a regiao 1 (as outras tem os testes da propria raia)
                 if (room.Normal) normal++;
                 if (room.IsSecret) { secret++; Assert.Greater(room.ChestCoins, 0, room.Code + ": sala secreta sem bau"); }
                 foreach (Spawn s in room.Wave)
@@ -822,11 +823,11 @@ namespace DC.Tests
             for (int s = 0; s < Content.Rooms.Length; s++)
                 if (Content.Rooms[s].IsSecret) Assert.IsTrue(System.Array.Exists(Content.Rooms, x => x.Secret == s), Content.Rooms[s].Code + ": sala secreta sem parede que leve a ela");
 
-            Assert.AreEqual(24, Sim.Contracts.Length);
+            Assert.AreEqual(24, Regiao1.Contracts.Length);
             var debut = new HashSet<CargoType>();
-            for (int c = 0; c < Sim.Contracts.Length; c++)
+            for (int c = 0; c < Regiao1.Contracts.Length; c++)
             {
-                ContractDef d = Sim.Contracts[c];
+                ContractDef d = Regiao1.Contracts[c];
                 int layers = d.Layers.Length - 1;
                 bool boss = false;
                 foreach (int id in d.Layers[layers - 1]) if (Content.Rooms[id].Boss || Content.Rooms[id].Mini) boss = true;
@@ -839,7 +840,7 @@ namespace DC.Tests
                 Assert.AreEqual(d.Cargo == CargoType.Message, d.HasTimer, d.Code);
                 Assert.AreEqual(d.Cargo == CargoType.Egg, d.EggTarget > 0f, d.Code);
             }
-            Assert.AreEqual(CargoDef.All.Length, debut.Count, "todas as cargas aparecem na campanha");
+            Assert.AreEqual(RegionDef.Of(1).CargoCount, debut.Count, "todas as cargas da regiao 1 aparecem na campanha dela");
         }
     }
 }

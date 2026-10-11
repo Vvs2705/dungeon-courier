@@ -70,14 +70,22 @@ namespace DC.Core
 
     /// <summary>Porta na parede de cima. Threat/ChestCoins/Risk = icones (da sala de destino). Locked = Guarda/Ogro/Capitao/emboscada viva
     /// (a mensagem nas maos destranca Guarda e emboscada); Open = atravessavel agora (destrancada e com a carga nas maos, ou o filhote perto).</summary>
-    public sealed class Door { public int Index; public V2 Pos; public int Room, Threat, ChestCoins; public bool Locked, Open; public CargoRisk Risk; }
+    public sealed class Door
+    {
+        public int Index; public V2 Pos; public int Room, Threat, ChestCoins; public bool Locked, Open; public CargoRisk Risk;
+        /// <summary>Lancamento: Blueprint = o bau da sala de destino tem este blueprint (conteudo visivel; None = so moedas). ChestKnown = Faro de
+        /// bau (mostre as moedas exatas). Enemies = inimigos da sala de destino (Batedor; -1 = sem o perk).</summary>
+        public Gear Blueprint; public bool ChestKnown; public int Enemies = -1;
+    }
 
-    public sealed class Chest { public V2 Pos; public int Coins; public bool Opened; public float Progress; }
+    /// <summary>Blueprint = equipamento cujo blueprint sai deste bau (None = so moedas).</summary>
+    public sealed class Chest { public V2 Pos; public int Coins; public bool Opened; public float Progress; public Gear Blueprint; }
 
     public sealed class Pet { public V2 Pos; public int Hp; }
 
-    /// <summary>Um contrato em curso. Criado por Sim.StartContract/StartDaily/StartCode (ou Sim.Load ao retomar); avancado por Sim.Tick.</summary>
-    public sealed class Run
+    /// <summary>Um contrato em curso. Criado por Sim.StartContract/StartDaily/StartCode (ou Sim.Load ao retomar); avancado por Sim.Tick.
+    /// partial: os comportamentos novos de cada regiao ficam em Run.RegiaoN.cs (ganchos no fim deste arquivo).</summary>
+    public sealed partial class Run
     {
         public readonly Sim Sim; public readonly ContractDef Contract; public readonly int Seed;
         public int Layer; public RoomDef Room; public float Time; public Outcome Outcome; public Hint Hint;
@@ -103,19 +111,52 @@ namespace DC.Core
         public SecretWall Secret;
         /// <summary>Reforcos que ja vieram nesta visita (teto Balance.MaxWaves); WaveDone = chegou no teto.</summary>
         public int Waves;
-        public bool WaveDone => Waves >= Balance.MaxWaves(Contract.Tier);
+        public bool WaveDone => Waves >= Balance.MaxWaves(Tier);
         /// <summary>Inimigos do reforco que ainda vao chegar (fila de Balance.WaveGap s).</summary>
         public int WavePending => pending.Count;
         readonly List<Spawn> pending = new List<Spawn>(); float pendT;
         /// <summary>Carga acolchoada ja usada (o 1o golpe na carga foi ignorado).</summary>
         public bool PadUsed;
 
+        // ---- lancamento (CONTRATO_LANCAMENTO §2-§7)
+        /// <summary>Id da tentativa (Sim.RunsStarted ao comecar): base dos ids de rewarded rw-&lt;Id&gt;-&lt;tipo&gt;.</summary>
+        public int Id { get; internal set; }
+        /// <summary>Modificadores escolhidos (0-2; o do dia vem com 1).</summary>
+        public Modifier Mods { get; internal set; }
+        public bool Has(Modifier m) => (Mods & m) != 0;
+        public int Region => Contract.Region;
+        /// <summary>Tempo-alvo da 3a estrela (Pressa: x0,7).</summary>
+        public float ParTime => Contract.ParTime * (Has(Modifier.Rush) ? Balance.RushPar : 1f);
+        /// <summary>Tempo-alvo do ovo (Isolamento: x1,2).</summary>
+        public float EggTarget => Contract.EggTarget * (Has(Perk.Insulated) ? Balance.PerkInsulatedEgg : 1f);
+        /// <summary>Nivel efetivo (vida dos inimigos e teto de reforcos): no desafio sem fim sobe a cada camada.</summary>
+        public int Tier => Contract.Tier + (Contract.Kind == ContractKind.Endless ? Layer * Balance.EndlessTierPerLayer : 0);
+        /// <summary>Rachaduras que quebram a reliquia (Fragil: 2 em vez de 3). O espelho (R3) usa o mesmo numero.</summary>
+        public int BreakAt => Balance.RelicBreak - (Has(Modifier.Fragile) ? 1 : 0);
+        /// <summary>Sala escura (Midnight Delivery; a raia R3 liga nas salas da cripta). VisionRadius = Neblina (0 = sem limite). LightMul =
+        /// Olhos de gato. MeltMul = Isolamento no cristal de gelo (R2). SureFooted = lama/agua/teia nao freiam (Pe firme ou Botas de lama).</summary>
+        public bool Dark;
+        public float VisionRadius => Has(Modifier.Fog) ? Balance.FogRadius : 0f;
+        public float LightMul => Has(Perk.CatEyes) ? Balance.PerkCatEyes : 1f;
+        public float MeltMul => Has(Perk.Insulated) ? Balance.PerkInsulatedMelt : 1f;
+        public bool SureFooted => Has(Perk.SureFoot) || Gear == Gear.Boots;
+        /// <summary>Estatisticas da tentativa (quadro de temporada): inimigos derrotados, baus, salas secretas, chefes vencidos sem dano, moedas
+        /// do Cacador.</summary>
+        public int Kills, ChestsOpened, SecretsFound, BossesClean, HuntCoins;
+        /// <summary>Segundo folego ja usado; ja achou o blueprint desta tentativa (1 por contrato).</summary>
+        public bool SecondWindUsed, BlueprintFound;
+        /// <summary>Equipamento lateral da tentativa e o nivel; GearCharges = usos restantes nesta sala (1 por sala; Botas e passiva).</summary>
+        public readonly Gear Gear; public readonly int GearLevel; public int GearCharges;
+        /// <summary>Porta da rota mais segura revelada pelo rewarded (-1 = nao revelada; vale so nesta sala).</summary>
+        public int SafeDoor = -1;
+        bool gripUsed, shieldUsed; int roomDamage;
+
         public Cargo Main => Cargos[0];
         public Cargo RescueCargo => Cargos.Count > 1 ? Cargos[1] : null;
         public bool Running => Outcome == Outcome.Running;
         public int LayerCount => Contract.Layers.Length;
         /// <summary>Segundos ate o ovo chocar (0 se nao e ovo ou ja chocou).</summary>
-        public float EggLeft => Contract.EggTarget > 0f && !Hatched ? Math.Max(0f, Contract.EggTarget - Time) : 0f;
+        public float EggLeft => Contract.EggTarget > 0f && !Hatched ? Math.Max(0f, EggTarget - Time) : 0f;
         /// <summary>Mensagem urgente: cronometro do contrato.</summary>
         public bool HasTimer => Contract.HasTimer;
         public float TimeLeft => HasTimer ? Math.Max(0f, Contract.TimeLimit - Time) : 0f;
@@ -131,7 +172,10 @@ namespace DC.Core
             Sim = sim; Contract = contract; Seed = seed;
             Weapon = sim.WeaponUnlocked(sim.Equipped) ? sim.Equipped : Weapon.Sling;
             WeaponLevel = Math.Max(1, sim.WeaponLevel(Weapon));
-            Courier.MaxHp = sim.MaxHp; Courier.Hp = Math.Max(1, Math.Min(hp, Courier.MaxHp)); Courier.DashCdMax = sim.DashCooldown;
+            Gear = sim.GearUnlocked(sim.GearEquipped) ? sim.GearEquipped : Gear.None;
+            GearLevel = sim.GearLevel(Gear);
+            Courier.MaxHp = contract.Event == LiveEvent.NoDamage ? 1 : sim.MaxHp;   // No-Damage Contract: 1 de vida
+            Courier.Hp = Math.Max(1, Math.Min(hp, Courier.MaxHp)); Courier.DashCdMax = sim.DashCooldown;
         }
 
         internal Cargo AddCargo(int id, CargoType type, int cracks, bool rescue, CargoState state)
@@ -155,6 +199,8 @@ namespace DC.Core
             nav = new Nav(Room);
             Enemies.Clear(); Shots.Clear(); Doors.Clear(); Arrows.Clear(); Puddles.Clear();
             FoughtHere = false; summonT = 0f; lastBlocked = -1; Waves = 0; downT = 0f; msgDoor = false; pending.Clear(); pendT = 0f;
+            gripUsed = false; shieldUsed = false; roomDamage = 0; SafeDoor = -1; Dark = Contract.Event == LiveEvent.Midnight;
+            GearCharges = Gear != Gear.None && Gear != Gear.Boots ? 1 : 0;
             var c = Courier;
             c.Pos = Balance.Entrance; c.Facing = V2.Up; c.IdleT = 0f; c.DashT = 0f; c.ShotCd = 0f; c.Slowed = false;
             if (c.State == CourierState.Dashing) c.State = CourierState.Walking;
@@ -164,29 +210,47 @@ namespace DC.Core
                 bool fixedSpot = EnemyDef.All[(int)s.Type].Locks;   // Guarda/Ogro/Capitao no lugar exato; o resto varia +-0,4 m por semente
                 Spawn(s.Type, fixedSpot ? s.Pos : s.Pos + new V2(rng.Range(-0.4f, 0.4f), rng.Range(-0.4f, 0.4f)));
             }
+            if (Has(Modifier.Horde) && !Room.Delivery)   // Horda: +1 inimigo por sala (o 1o que nao tranca, ou um morcego)
+            {
+                EnemyType extra = EnemyType.Bat;
+                foreach (Spawn s in Room.Spawns) if (!EnemyDef.All[(int)s.Type].Locks) { extra = s.Type; break; }
+                Spawn(extra, new V2(rng.Range(1f, Balance.RoomW - 1f), rng.Range(9f, 12f)));
+            }
+            bool scout = Has(Perk.Scout), sense = Has(Perk.ChestSense);
             if (Layer + 1 < LayerCount)
             {
                 int[] next = Contract.Layers[Layer + 1];
                 for (int i = 0; i < next.Length; i++)
                 {
                     RoomDef to = Content.Rooms[next[i]];
-                    Doors.Add(new Door { Index = i, Pos = new V2(Balance.DoorX(next.Length, i), Balance.RoomH), Room = to.Id, Threat = to.Threat, ChestCoins = to.ChestCoins, Risk = to.Risk });
+                    Doors.Add(new Door { Index = i, Pos = new V2(Balance.DoorX(next.Length, i), Balance.RoomH), Room = to.Id, Threat = to.Threat, ChestCoins = to.ChestCoins, Risk = to.Risk,
+                                         Blueprint = BlueprintAt(to.Id), ChestKnown = sense, Enemies = scout ? to.Spawns.Length + (Has(Modifier.Horde) ? 1 : 0) : -1 });
                 }
             }
             Secret = Room.Secret >= 0 ? new SecretWall { Pos = Room.SecretPos, Room = Room.Secret } : null;
-            Chest = Room.ChestCoins > 0 ? new Chest { Pos = Room.ChestPos, Coins = Room.ChestCoins, Opened = chestTaken } : null;
+            Chest = Room.ChestCoins > 0 ? new Chest { Pos = Room.ChestPos, Coins = Room.ChestCoins, Opened = chestTaken, Blueprint = chestTaken ? Gear.None : BlueprintAt(Room.Id) } : null;
             foreach (Cargo g in Cargos) if (g.State == CargoState.Held) g.Pos = c.Pos;
             c.State = HasHeld ? CourierState.Carrying : CourierState.Walking;
             if (Pet != null) Pet.Pos = c.Pos + new V2(0.8f, 0f);
+            EnterRoomR2(); EnterRoomR3(); EnterRoomR4();
             UpdateDoors();
             Emit(Ev.RoomEnter, roomId, Layer);
+        }
+
+        /// <summary>Bau com blueprint (equipamento lateral): no maximo 1 por tentativa, so em sala com bau, ~1 em 3 pela semente, do
+        /// equipamento que ainda falta (Sim.NeededBlueprint). Visivel na porta antes de entrar.</summary>
+        Gear BlueprintAt(int roomId)
+        {
+            if (BlueprintFound || !Sim.GearOpen || Contract.Kind == ContractKind.Endless || Content.Rooms[roomId].ChestCoins <= 0) return Gear.None;
+            uint h = Rng.Hash(Seed ^ 0xB1E, roomId);
+            return h % 3 == 0 ? Sim.NeededBlueprint(h) : Gear.None;
         }
 
         /// <summary>Poe um inimigo na sala (usado pelos spawns, reforcos, ladroes chamados e pelos testes).</summary>
         public Enemy Spawn(EnemyType type, V2 pos)
         {
             EnemyDef d = EnemyDef.All[(int)type];
-            var e = new Enemy { Id = ++nextId, Type = type, Def = d, Pos = pos, Hp = type == EnemyType.Bat || type == EnemyType.Slime ? d.Hp : Math.Max(1, (int)Math.Round(d.Hp * Balance.HpMul(Contract.Tier))), State = EnemyState.Idle, Phase = rng.Float() };
+            var e = new Enemy { Id = ++nextId, Type = type, Def = d, Pos = pos, Hp = type == EnemyType.Bat || type == EnemyType.Slime ? d.Hp : Math.Max(1, (int)Math.Round(d.Hp * Balance.HpMul(Tier))), State = EnemyState.Idle, Phase = rng.Float() };
             if (type == EnemyType.Bat) ClampRoom(ref e.Pos, d.Radius); else e.Pos = FreeNear(Room, e.Pos, d.Radius);
             Enemies.Add(e);
             return e;
@@ -261,7 +325,7 @@ namespace DC.Core
 
             if (c.State == CourierState.Dashing)
             {
-                MoveCourier(c.DashDir * (Balance.DashDist / Balance.DashTime * Math.Min(dt, c.DashT)));   // 3 m exatos em 0,18 s
+                MoveCourier(c.DashDir * (Balance.DashDist * (Has(Perk.Spring) ? Balance.PerkSpring : 1f) / Balance.DashTime * Math.Min(dt, c.DashT)));   // 3 m exatos em 0,18 s (Mola: +40%)
                 if (!Running) return;
                 PushEnemies();
                 c.DashT -= dt;
@@ -271,8 +335,10 @@ namespace DC.Core
             {
                 c.IdleT = 0f; c.Facing = dir; awaitMove = false;
                 bool held = HasHeld;
-                float mul = held ? (Holds(CargoType.Heavy) ? Balance.HeavySpeedMul : 1f) * (Has(Perk.LightStep) ? Balance.PerkLightStep : 1f) : Balance.FreeSpeedMul;
-                float speed = Balance.CarrySpeed * mul * Math.Min(1f, ml) * (c.Slowed ? 1f - Balance.PuddleSlow : 1f);
+                float mul = held ? (Holds(CargoType.Heavy) ? Balance.HeavySpeedMul : 1f) * (Has(Perk.LightStep) ? Balance.PerkLightStep : 1f)
+                                 : Balance.FreeSpeedMul * (Has(Perk.Runner) ? Balance.PerkRunner : 1f);
+                float region = 1f; SpeedR2(ref region); SpeedR3(ref region); SpeedR4(ref region);
+                float speed = Balance.CarrySpeed * mul * Math.Min(1f, ml) * (c.Slowed ? 1f - Balance.PuddleSlow : 1f) * region;
                 MoveCourier(dir * (speed * dt));
                 if (!Running) return;
                 PickUp();
@@ -299,6 +365,8 @@ namespace DC.Core
             UpdateWave();
             UpdateCargos();
             if (!Running) return;
+            StepR2(); StepR3(); StepR4();
+            if (!Running) return;
             UpdatePet();
             if (!Running) return;
             UpdateDoors();
@@ -320,6 +388,7 @@ namespace DC.Core
 
         void CloseRoom()
         {
+            if ((Room.Boss || Room.Mini) && roomDamage == 0 && AliveLocker() == null) BossesClean++;   // chefe vencido sem dano (temporada)
             if (!Room.Normal) return;
             RoomsNormal++;
             if (FoughtHere) RoomsFought++;
@@ -332,7 +401,7 @@ namespace DC.Core
         {
             var r = new Rng(Rng.Hash(Seed, 4242 + Layer));
             var pool = new List<Perk>();
-            for (int i = 0; i < PerkDef.All.Length; i++) if (!Perks.Contains((Perk)i)) pool.Add((Perk)i);
+            for (int i = 0; i < PerkDef.All.Length; i++) if (!Perks.Contains((Perk)i) && PerkDef.All[i].Region <= Contract.Region) pool.Add((Perk)i);
             if (pool.Count == 0) return;
             var offer = new Perk[Math.Min(Balance.PerkOfferSize, pool.Count)];
             for (int i = 0; i < offer.Length; i++) { int k = r.Int(pool.Count); offer[i] = pool[k]; pool.RemoveAt(k); }
@@ -381,7 +450,8 @@ namespace DC.Core
                     }
             lastBlocked = touching;
             float into = Secret == null ? 0f : (Secret.Pos.X < Balance.RoomW * 0.5f ? -delta.X : delta.X) / Math.Max(1e-5f, delta.Len);
-            if (Secret != null && CarryOk && into >= Balance.SecretPush && Math.Abs(p.Y - Secret.Pos.Y) <= Balance.DoorHalf   // empurrar CONTRA a parede (passar rente nao abre)
+            float push = Contract.Event == LiveEvent.Treasure ? -1f : Balance.SecretPush;   // Treasure Detour: paredes rachadas abertas (encostar basta)
+            if (Secret != null && CarryOk && into >= push && Math.Abs(p.Y - Secret.Pos.Y) <= Balance.DoorHalf   // empurrar CONTRA a parede (passar rente nao abre)
                 && (Secret.Pos.X < Balance.RoomW * 0.5f ? p.X <= Balance.CourierR + 0.02f : p.X >= Balance.RoomW - Balance.CourierR - 0.02f))
             {
                 EnterSecret();
@@ -401,6 +471,7 @@ namespace DC.Core
             Heal();
             if (Balance.PerkLayer(Layer) && !Room.Delivery) OfferPerks();
             Sim.Dirty = true;
+            Sim.Checkpoint();
         }
 
         /// <summary>Parede rachada: sala secreta na mesma camada (as portas dela levam as mesmas salas da proxima camada).</summary>
@@ -408,11 +479,13 @@ namespace DC.Core
         {
             int to = Secret.Room;
             CloseRoom();
+            SecretsFound++;
             Emit(Ev.SecretFound, to, 0);
             foreach (Cargo g in Cargos) if (g.State != CargoState.Held) g.State = CargoState.Gone;
             EnterRoom(to, false);
             Heal();
             Sim.Dirty = true;
+            Sim.Checkpoint();
         }
 
         /// <summary>Sala nova (porta ou parede rachada): +Balance.RoomHeal de vida, ate o maximo.</summary>
@@ -456,8 +529,10 @@ namespace DC.Core
         void StartDash(V2 dir)
         {
             var c = Courier;
+            bool grip = Has(Perk.FirmGrip) && !gripUsed && HasHeld;   // Alca firme: o 1o dash de cada sala leva a carga junto
+            if (grip) gripUsed = true;
             foreach (Cargo g in Cargos)
-                if (g.State == CargoState.Held)
+                if (g.State == CargoState.Held && !grip)
                 {
                     ToGround(g, c.Pos, 1);   // larga no ponto de partida
                     if (g.Type == CargoType.Relic) Crack(g);   // reliquia que cai racha (pousar nao: e pousar com cuidado)
@@ -481,7 +556,7 @@ namespace DC.Core
                 e.Pos = e.Pos + away * (iron ? Balance.PerkIronPush : Balance.DashPush);
                 if (e.Type == EnemyType.Bat) ClampRoom(ref e.Pos, e.Def.Radius); else Collide(Room, ref e.Pos, e.Def.Radius);
                 e.PushedDash = c.DashCount;
-                if (e.Carry != null) Knock(e);   // o dash e um golpe: o ladrao derruba a carga (o Capitao conta 1 golpe)
+                if (e.Carry != null) { if (Has(Perk.Counter)) DropFromThief(e, 2); else Knock(e); }   // o dash e um golpe: o ladrao derruba (o Capitao conta 1; Contragolpe: derruba ja)
                 if (e.State == EnemyState.Grab) { e.GrabT = 0f; e.State = EnemyState.Chase; }
                 if (e.State == EnemyState.Telegraph) { e.State = EnemyState.Recover; e.Cd = e.Def.Cooldown * 0.5f; }
                 if (iron) { e.Stun = Balance.PerkIronStun; Emit(Ev.Stun, e.Id, 0, e.Pos); }
@@ -567,8 +642,11 @@ namespace DC.Core
             if (e.Hp <= 0)
             {
                 Emit(Ev.EnemyDie, e.Id, (int)e.Type, e.Pos);
+                Kills++;
                 if (!e.Def.Locks && !(e.Wave && Room.WaveLocks)) FoughtHere = true;   // H1: Guarda/chefe e emboscada sao luta obrigatoria
                 if (e.Type == EnemyType.Slime) { Puddles.Add(new Puddle { Pos = e.Pos, Radius = Balance.PuddleR, Left = Balance.PuddleTime }); Emit(Ev.PuddleSpawn, e.Id, 0, e.Pos); }
+                if (Has(Perk.Hunter)) { int k = Sim.Credit(Balance.PerkHunterCoins); HuntCoins += k; Emit(Ev.CurrencySource, k, 4, e.Pos); }
+                EnemyDiedR2(e); EnemyDiedR3(e); EnemyDiedR4(e);
             }
         }
 
@@ -609,9 +687,15 @@ namespace DC.Core
         {
             var c = Courier;
             if (c.State == CourierState.Dead) return;
-            c.Hp -= dmg;
+            if (dmg >= 2 && Has(Perk.ThickSkin)) dmg--;   // Couro grosso
+            c.Hp -= dmg; roomDamage += dmg;
             Emit(Ev.DamageTaken, dmg, Math.Max(0, c.Hp));
             Sim.Dirty = true;
+            if (c.Hp <= 0 && Has(Perk.SecondWind) && !SecondWindUsed)   // Segundo folego: 1x por contrato volta com 2 de vida
+            {
+                SecondWindUsed = true; c.Hp = Math.Min(c.MaxHp, Balance.PerkSecondWindHp);
+                Emit(Ev.SecondWind);
+            }
             if (c.Hp <= 0)
             {
                 c.Hp = 0; c.State = CourierState.Dead; DeathRoom = Room.Id;
@@ -635,11 +719,12 @@ namespace DC.Core
         void Crack(Cargo g)
         {
             if (g.State == CargoState.Gone) return;
+            if (g.State == CargoState.Ground && Has(Perk.CargoShield) && !shieldUsed) { shieldUsed = true; return; }   // Escudo da carga: 1o golpe por sala no chao
             if (Has(Perk.Padded) && !PadUsed) { PadUsed = true; Sim.Dirty = true; return; }   // Carga acolchoada: 1o golpe ignorado
             g.Cracks++;
             Emit(Ev.CargoIntegrity, g.Id, g.Cracks, g.Pos);
             Sim.Dirty = true;
-            if (g.Type == CargoType.Relic && g.Cracks >= Balance.RelicBreak)
+            if (g.Type == CargoType.Relic && g.Cracks >= BreakAt)
             {
                 g.State = CargoState.Gone;
                 Emit(Ev.CargoBroken, g.Id, 0, g.Pos);
@@ -664,10 +749,14 @@ namespace DC.Core
                     case EnemyType.Captain: Thief(e); break;
                     case EnemyType.Archer: Archer(e); break;
                     case EnemyType.Slime: Slime(e); break;
-                    default: Melee(e); break;
+                    default:   // inimigos das regioes 2-4: o gancho da regiao trata; sem comportamento ainda = persegue e golpeia
+                        bool handled = false;
+                        EnemyR2(e, ref handled); if (!handled) EnemyR3(e, ref handled); if (!handled) EnemyR4(e, ref handled);
+                        if (!handled) Melee(e);
+                        break;
                 }
             }
-            if (Room.Boss && Running && AliveLocker() != null)
+            if (Running && Count(EnemyType.Ogre) > 0)   // o Ogro chama um ladrao a cada 10 s (so ele: os chefes novos tem regra propria)
             {
                 summonT += Balance.Step;
                 if (summonT >= Balance.OgreSummon - 1e-4f)
@@ -817,6 +906,7 @@ namespace DC.Core
                 float side = e.Pos.X < Balance.RoomW * 0.5f ? e.Def.Radius + 0.05f : Balance.RoomW - e.Def.Radius - 0.05f;   // foge para a borda mais perto
                 e.FleeGoal = FreeNear(Room, new V2(side, e.Pos.Y), e.Def.Radius);
                 Emit(Ev.ThiefGrab, t.Id, e.Id, e.Pos);
+                if (Has(Perk.Whistle)) e.Stun = Balance.PerkWhistle;   // Assobio: quem pega a carga fica parado 1,5 s
                 if (captain)
                 {
                     int n = 0;
@@ -942,7 +1032,7 @@ namespace DC.Core
                 if (p.Left <= 1e-4f) { Puddles.RemoveAt(i); continue; }
                 if (V2.Dist(p.Pos, Courier.Pos) <= p.Radius) slowed = true;
             }
-            Courier.Slowed = slowed;
+            Courier.Slowed = slowed && !SureFooted;
         }
 
         // ------------------------------------------------------------------ cargas, filhote, bau, portas
@@ -973,7 +1063,7 @@ namespace DC.Core
                 Emit(Ev.ThiefSpawn, t.Id, 0, t.Pos);
             }
             if (!Running) return;
-            if (Contract.EggTarget > 0f && !Hatched && Main.State != CargoState.Gone && Time >= Contract.EggTarget - 1e-4f) Hatch();
+            if (Contract.EggTarget > 0f && !Hatched && Main.State != CargoState.Gone && Time >= EggTarget - 1e-4f) Hatch();
         }
 
         void Hatch()
@@ -1008,11 +1098,16 @@ namespace DC.Core
             Chest.Progress += Balance.Step;
             if (Chest.Progress < Balance.ChestTime - 1e-4f) return;
             Chest.Opened = true;
-            int coins = Sim.Credit(Chest.Coins * (Has(Perk.ChestLuck) ? Balance.Pct(Balance.PerkChestLuck) : 100) / 100.0);
-            ChestCoins += coins;
+            double raw = Chest.Coins * (Has(Perk.ChestLuck) ? Balance.Pct(Balance.PerkChestLuck) : 100) / 100.0;
+            if (Has(Modifier.Stingy)) raw = raw * Balance.StingyChestPct / 100.0;                          // Pao-duro
+            if (Contract.Event == LiveEvent.Treasure) raw = raw * Balance.TreasureChestPct / 100.0;       // Treasure Detour
+            int coins = Sim.Credit(raw);
+            ChestCoins += coins; ChestsOpened++;
             Emit(Ev.ChestOpen, coins, 0, Chest.Pos);
             Emit(Ev.OptionalLoot, coins, Room.Id, Chest.Pos);
             Emit(Ev.CurrencySource, coins, 1, Chest.Pos);
+            if (Has(Perk.FirstAid)) Courier.Hp = Math.Min(Courier.MaxHp, Courier.Hp + Balance.PerkFirstAid);
+            if (Chest.Blueprint != Gear.None) { BlueprintFound = true; Sim.AddBlueprint(Chest.Blueprint, 1); }
             Sim.Dirty = true;
         }
 
@@ -1062,6 +1157,73 @@ namespace DC.Core
             }
             return Hint.None;
         }
+
+        // ------------------------------------------------------------------ equipamento lateral e rota segura (lancamento)
+
+        /// <summary>Usa o equipamento lateral (1x por sala). Fumaca: ladroes/Capitao parados (perdem a carga de vista) por 3 s; Gancho: a carga
+        /// mais perto ate 5 m (no chao ou na mao de um ladrao) vem para as maos; Armadilha: prende o inimigo mais perto (nao chefe) ate 4 m por
+        /// 3 s. Cada nivel acima do 1 soma Balance.GearPerLevel (s ou m). Botas sao passivas. Falso = nada a fazer (o uso nao e gasto).</summary>
+        internal bool UseGear()
+        {
+            if (!Running || PerkOffer != null || GearCharges <= 0) return false;
+            float bonus = Balance.GearPerLevel * (GearLevel - 1);
+            var c = Courier;
+            if (Gear == Gear.Smoke)
+            {
+                bool any = false;
+                foreach (Enemy e in Enemies) if (e.Alive && (e.Type == EnemyType.Thief || e.Type == EnemyType.Captain)) { e.Stun = Math.Max(e.Stun, Balance.SmokeTime + bonus); any = true; }
+                if (!any) return false;
+            }
+            else if (Gear == Gear.Hook)
+            {
+                Cargo best = null; float bd = Balance.HookRange + bonus + 1e-4f;
+                foreach (Cargo g in Cargos)
+                    if ((g.State == CargoState.Ground || g.State == CargoState.Stolen) && V2.Dist(g.Pos, c.Pos) <= bd) { bd = V2.Dist(g.Pos, c.Pos); best = g; }
+                if (best == null) return false;
+                foreach (Enemy e in Enemies) if (e.Carry == best) { e.Carry = null; e.State = EnemyState.Chase; e.ExitT = 0f; }
+                best.State = CargoState.Held; best.Pos = c.Pos; best.AloneT = 0f; best.PickT = 0f; best.Fuse = 0f; best.Armed = true;
+                if (c.State == CourierState.Planted) { c.State = CourierState.Carrying; c.IdleT = 0f; }
+                Emit(Ev.CargoPickup, best.Id, 1, c.Pos);
+            }
+            else if (Gear == Gear.Trap)
+            {
+                Enemy best = null; float bd = Balance.TrapRange + bonus + 1e-4f;
+                foreach (Enemy e in Enemies) if (e.Alive && !e.Def.Boss && V2.Dist(e.Pos, c.Pos) <= bd) { bd = V2.Dist(e.Pos, c.Pos); best = e; }
+                if (best == null) return false;
+                best.Stun = Math.Max(best.Stun, Balance.TrapTime + bonus);
+                Emit(Ev.Stun, best.Id, 0, best.Pos);
+            }
+            else return false;
+            GearCharges--;
+            Emit(Ev.GearUse, (int)Gear, GearLevel);
+            Sim.Dirty = true;
+            return true;
+        }
+
+        /// <summary>Rewarded "revelar rota segura": a porta com menos caveiras e menos riscos para a carga (empate = a da esquerda).</summary>
+        internal void RevealSafe()
+        {
+            int bs = int.MaxValue;
+            foreach (Door d in Doors)
+            {
+                int risk = 0; for (int k = (int)d.Risk; k != 0; k &= k - 1) risk++;
+                int s = d.Threat * 10 + risk;
+                if (s < bs) { bs = s; SafeDoor = d.Index; }
+            }
+        }
+
+        // ------------------------------------------------------------------ ganchos das regioes 2-4 (implemente em Run.RegiaoN.cs)
+        // Metodos parciais classicos: sem implementacao, o compilador os remove (custo zero). Cada regiao implementa so os seus.
+        //   EnterRoomRn()                     ao montar a sala (depois dos spawns, antes das portas): perigos da sala, Dark, trilhos...
+        //   StepRn()                          1x por passo de 1/30 s, depois das cargas: verbos das cargas novas, poças de fogo, gelo...
+        //   EnemyRn(e, ref handled)           comportamento do inimigo novo; handled = true se tratou (senao vira Melee)
+        //   SpeedRn(ref mul)                  multiplicador da velocidade do courier andando (agua -25%, balao +15%...)
+        //   EnemyDiedRn(e)                    inimigo derrotado (esqueleto remonta, elemental divide...)
+        partial void EnterRoomR2(); partial void EnterRoomR3(); partial void EnterRoomR4();
+        partial void StepR2(); partial void StepR3(); partial void StepR4();
+        partial void EnemyR2(Enemy e, ref bool handled); partial void EnemyR3(Enemy e, ref bool handled); partial void EnemyR4(Enemy e, ref bool handled);
+        partial void SpeedR2(ref float mul); partial void SpeedR3(ref float mul); partial void SpeedR4(ref float mul);
+        partial void EnemyDiedR2(Enemy e); partial void EnemyDiedR3(Enemy e); partial void EnemyDiedR4(Enemy e);
 
         // ------------------------------------------------------------------ geometria e navegacao
 

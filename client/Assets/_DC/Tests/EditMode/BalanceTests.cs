@@ -225,7 +225,7 @@ namespace DC.Tests
             sb.AppendLine(line.ToString());
             Bot.Route r0 = Route();
             var h2 = new StringBuilder(string.Format(ci, "H2: bifurcações em que a carga não muda a porta {0:0.0}% de {1} · porta mais escolhida {2:0.0}% · porta com ladrão escolhida:", r0.SameDoorPct, r0.ForkCount, r0.ModalPct));
-            for (int i = 0; i < CargoDef.All.Length; i++) h2.Append(string.Format(ci, " {0} {1:0}%", CargoDef.All[i].Name, r0.ThiefPct[i]));
+            for (int i = 0; i < RegionDef.Of(1).CargoCount; i++) h2.Append(string.Format(ci, " {0} {1:0}%", CargoDef.All[i].Name, r0.ThiefPct[i]));
             sb.AppendLine(h2.ToString());
             var h1 = new StringBuilder("H1 (guilda 3, estilingue 2, C4-C24, 20 sementes): % salas com luta por agressividade");
             foreach (float ag in new[] { 0.1f, 0.5f, 0.9f })
