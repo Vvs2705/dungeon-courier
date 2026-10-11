@@ -605,6 +605,168 @@ CLIPS["PickThrow"] = [(0,) + _T[0], (5,) + _T[4], (10,) + _T[8], (15, _T[8][0], 
 FREE = {"Emerge", "Burrow"}
 
 
+# ---- Lote 5 (regiao 3, 2026-10-11) ------------------------------------------------------------------------------
+# mumia: curvada, bracos esticados a frente (a pose classica); gargula agachada no pedestal (maos no chao a frente)
+MUMMY = pose(KNEES, Spine=R(("X", 12)), Neck=R(("X", -8)),
+             **both({"LeftArm": A("Spine2", (0.25, -0.95, -0.15)), "LeftForeArm": A("Spine2", (0.2, -0.97, 0.0))}))
+GARG_CROUCH = pose(SQUAT, Spine=R(("X", 30)), Spine1=R(("X", 10)), Neck=R(("X", -30)),
+                   **both({"LeftArm": A("", (0.25, -0.5, -0.83)), "LeftForeArm": A("", (0.15, -0.35, -0.93))}))
+# necromante: antebraco direito a frente com a mao a frente e a palma para dentro (giro +90): o cajado preso a mao
+# (--attach) fica em pe; com o braco caido do Breathing Idle ele ficaria deitado, por isso o Idle e daqui
+NECRO_STAFF = {"RightArm": A("Spine2", (-0.25, -0.05, -0.97)), "RightForeArm": A("Spine2", (-0.05, -1, 0.05)),
+               "RightHand": A("", (0, -1, 0), 90)}
+NECRO_LEFT = {"LeftArm": A("Spine2", (0.25, -0.05, -0.97)), "LeftForeArm": A("Spine2", (0.15, -0.35, -0.92))}
+NECRO_IDLE = pose(STAND, NECRO_STAFF, NECRO_LEFT, Spine=R(("X", 8)), Neck=R(("X", -6)))
+SKEL_HEAP = pose(legs((0.45, -0.6, -0.66), (0.3, 0.75, -0.6), (-0.45, -0.6, -0.66), (-0.3, 0.75, -0.6)),
+                 Spine=R(("X", 70)), Spine1=R(("X", 12)), Neck=R(("X", 30), ("Z", 15)),
+                 **both({"LeftArm": A("", (0.6, -0.3, -0.74)), "LeftForeArm": A("", (0.5, -0.5, -0.71))}))
+
+CLIPS.update({
+    # esqueleto: clava de cima para baixo, 12 quadros; impacto no quadro 6 (ImpactFrac 0,5 x 12 = 14,5 -> chave 15)
+    "SkelAttack": [
+        (0, READY, "io"),
+        # o braco da clava sobe pela frente (de baixo direto para tras-alto ele passava pelo lado, em T)
+        (2, pose(KNEES, Spine=R(("Z", -6)), RightArm=A("Spine2", (-0.25, -0.75, 0.6)), RightForeArm=A("Spine2", (-0.15, -0.5, 0.85)),
+                 LeftArm=A("Spine2", (0.3, -0.4, -0.87)), LeftForeArm=A("Spine2", (0.15, -0.7, -0.7))), "io"),
+        (5, pose(KNEES, Spine=R(("Z", -14), ("X", -6)), Spine1=R(("Z", -6)), Neck=R(("Z", 10)),
+                 RightArm=A("Spine2", (-0.35, 0.3, 0.88)), RightForeArm=A("Spine2", (-0.1, 0.6, 0.8)),
+                 LeftArm=A("Spine2", (0.35, -0.6, -0.72)), LeftForeArm=A("Spine2", (0.15, -0.9, 0.2))), "io"),
+        (12, pose(KNEES, Spine=R(("Z", -18), ("X", -9)), Spine1=R(("Z", -8), ("X", -4)), Neck=R(("Z", 12), ("X", 6)),
+                  RightArm=A("Spine2", (-0.3, 0.38, 0.87)), RightForeArm=A("Spine2", (-0.1, 0.7, 0.71)),
+                  LeftArm=A("Spine2", (0.35, -0.65, -0.67)), LeftForeArm=A("Spine2", (0.15, -0.9, 0.25))), "io"),
+        (15, pose(STEP, Spine=R(("Z", 14), ("X", 20)), Spine1=R(("Z", 8), ("X", 12)), Neck=R(("Z", -8), ("X", -18)),
+                  RightArm=A("Spine2", (-0.1, -0.85, -0.5)), RightForeArm=A("Spine2", (-0.05, -0.7, -0.7)),
+                  LeftArm=A("Spine2", (0.4, 0.35, -0.85)), LeftForeArm=A("Spine2", (0.25, 0.1, -0.96))), "out"),
+        (19, pose(STEP, Spine=R(("Z", 18), ("X", 24)), Spine1=R(("Z", 8), ("X", 14)), Neck=R(("Z", -8), ("X", -20)),
+                  RightArm=A("Spine2", (-0.05, -0.7, -0.7)), RightForeArm=A("Spine2", (0.05, -0.4, -0.92)),
+                  LeftArm=A("Spine2", (0.4, 0.4, -0.82)), LeftForeArm=A("Spine2", (0.25, 0.15, -0.95))), "io"),
+        (24, pose(KNEES, Spine=R(("Z", 5), ("X", 6)), Neck=R(("X", -4)),
+                  RightArm=A("Spine2", (-0.3, -0.4, -0.86)), RightForeArm=A("Spine2", (-0.15, -0.65, -0.74)),
+                  LeftArm=A("Spine2", (0.3, 0.0, -0.95)), LeftForeArm=A("Spine2", (0.2, -0.3, -0.93))), "io"),
+        (29, READY, "io"),
+    ],
+    # esqueleto desmonta em pilha em 0,3 s (o ultimo quadro amostrado ja e a pilha: chave repetida em 7 e 9)
+    "BoneCollapse": [(0, READY, "io"),
+                     (2, pose(KNEES, Spine=R(("X", -8)), Neck=R(("X", -14)),
+                              **both({"LeftArm": A("Spine2", (0.35, -0.6, -0.72)), "LeftForeArm": A("Spine2", (0.25, -0.7, -0.67))})), "out"),
+                     (5, pose(SQUAT, Spine=R(("X", 40)), Spine1=R(("X", 10)), Neck=R(("X", 20)),
+                              **both({"LeftArm": A("", (0.5, -0.4, -0.77)), "LeftForeArm": A("", (0.45, -0.5, -0.74))})), "io"),
+                     (7, SKEL_HEAP, "io"), (9, SKEL_HEAP, "io")],
+    # o inverso (a View estica para 4 s): pilha -> agacha -> de pe
+    "BoneRise": [(0, SKEL_HEAP, "io"), (2, SKEL_HEAP, "io"),
+                 (4, pose(SQUAT, Spine=R(("X", 40)), Spine1=R(("X", 10)), Neck=R(("X", 20)),
+                          **both({"LeftArm": A("", (0.5, -0.4, -0.77)), "LeftForeArm": A("", (0.45, -0.5, -0.74))})), "io"),
+                 (7, READY, "out"), (9, READY, "io")],
+    # mumia agarra: 12 quadros; impacto no quadro 7 (ImpactFrac 0,6 x 12 = 16,9 -> chave 17)
+    "MummyGrab": [
+        (0, MUMMY, "io"),
+        (6, pose(KNEES, Spine=R(("X", -6)), Neck=R(("X", -12)), loc=(0, 0.04, 0),
+                 **both({"LeftArm": A("Spine2", (0.4, -0.6, 0.6)), "LeftForeArm": A("Spine2", (0.3, -0.5, 0.81))})), "io"),
+        (11, pose(KNEES, Spine=R(("X", -10)), Neck=R(("X", -14)), loc=(0, 0.06, 0),
+                  **both({"LeftArm": A("Spine2", (0.45, -0.5, 0.74)), "LeftForeArm": A("Spine2", (0.3, -0.4, 0.87))})), "io"),
+        (15, pose(KNEES, Spine=R(("X", -11)), Neck=R(("X", -15)), loc=(0, 0.06, 0),
+                  **both({"LeftArm": A("Spine2", (0.45, -0.52, 0.72)), "LeftForeArm": A("Spine2", (0.3, -0.42, 0.86))})), "io"),
+        (17, pose(LUNGE, Spine=R(("X", 22)), Spine1=R(("X", 10)), Neck=R(("X", -20)), loc=(0, -0.12, 0),
+                  **both({"LeftArm": A("Spine2", (0.15, -0.97, 0.1)), "LeftForeArm": A("Spine2", (-0.1, -0.97, 0.15))})), "out"),
+        (21, pose(LUNGE, Spine=R(("X", 24)), Spine1=R(("X", 12)), Neck=R(("X", -20)), loc=(0, -0.13, 0),
+                  **both({"LeftArm": A("Spine2", (0.12, -0.97, 0.15)), "LeftForeArm": A("Spine2", (-0.2, -0.95, 0.2))})), "io"),
+        (25, pose(STEP, Spine=R(("X", 16)), Neck=R(("X", -12)), loc=(0, -0.08, 0),
+                  **both({"LeftArm": A("Spine2", (0.2, -0.95, -0.1)), "LeftForeArm": A("Spine2", (0.1, -0.97, 0.0))})), "io"),
+        (29, MUMMY, "io"),
+    ],
+    # mumia segura apertando (laco: 20 = 0)
+    "MummyHold": [(0, pose(STEP, Spine=R(("X", 16)), Neck=R(("X", -14)),
+                            **both({"LeftArm": A("Spine2", (0.15, -0.97, 0.1)), "LeftForeArm": A("Spine2", (-0.25, -0.95, 0.2))})), "io"),
+                  (10, pose(STEP, Spine=R(("X", 22)), Spine1=R(("X", 6)), Neck=R(("X", -10)),
+                            **both({"LeftArm": A("Spine2", (0.1, -0.97, 0.2)), "LeftForeArm": A("Spine2", (-0.4, -0.88, 0.25))})), "io"),
+                  (20, pose(STEP, Spine=R(("X", 16)), Neck=R(("X", -14)),
+                            **both({"LeftArm": A("Spine2", (0.15, -0.97, 0.1)), "LeftForeArm": A("Spine2", (-0.25, -0.95, 0.2))})), "io")],
+    # gargula de pedra no pedestal: 1 quadro agachado (o preset pede 1 quadro)
+    "GargStatue": [(0, GARG_CROUCH, "io"), (9, GARG_CROUCH, "io")],
+    # acorda (telegraph de 0,9 s): agachada -> levanta com os bracos em V (asas) e a cabeca para tras -> inclina para mergulhar
+    "GargWake": [(0, GARG_CROUCH, "io"),
+                 (4, pose(SQUAT, Spine=R(("X", 15)), Neck=R(("X", -26)),
+                          **both({"LeftArm": A("Spine2", (0.3, -0.8, 0.5)), "LeftForeArm": A("Spine2", (0.2, -0.6, 0.77))})), "io"),
+                 (10, pose(KNEES, Spine=R(("X", -10)), Spine1=R(("X", -6)), Neck=R(("X", -24)),
+                           **both({"LeftArm": A("Spine2", (0.38, 0.05, 0.92)), "LeftForeArm": A("Spine2", (0.25, 0.0, 0.97))})), "out"),
+                 (18, pose(KNEES, Spine=R(("X", -12)), Spine1=R(("X", -8)), Neck=R(("X", -28)),
+                           **both({"LeftArm": A("Spine2", (0.4, 0.1, 0.91)), "LeftForeArm": A("Spine2", (0.28, 0.05, 0.96))})), "io"),
+                 (23, pose(KNEES, Spine=R(("X", 10)), Spine1=R(("X", 4)), Neck=R(("X", -30)),
+                           **both({"LeftArm": A("Spine2", (0.3, 0.75, 0.3)), "LeftForeArm": A("Spine2", (0.25, 0.8, 0.2))})), "io"),
+                 (27, pose(SQUAT, Spine=R(("X", 35)), Spine1=R(("X", 12)), Neck=R(("X", -35)),
+                           **both({"LeftArm": A("", (0.2, 0.6, -0.77)), "LeftForeArm": A("", (0.15, 0.7, -0.7))})), "io")],
+    # mergulho: corpo na horizontal, pernas para tras, garras a frente (sem trava do pe: voa a ~0,6 m do chao), 6 quadros
+    "GargDive": [(0, pose(legs((0.1, 0.95, -0.3), (0.08, 0.98, 0.1), (-0.1, 0.95, -0.3), (-0.08, 0.98, 0.1)),
+                          Spine=R(("X", 78)), Spine1=R(("X", 6)), Neck=R(("X", -55)), loc=(0, 0, -0.45),
+                          **both({"LeftArm": A("", (0.25, -0.9, -0.35)), "LeftForeArm": A("", (0.2, -0.95, -0.25))})), "io"),
+                 (7, pose(legs((0.1, 0.95, -0.25), (0.08, 0.98, 0.15), (-0.1, 0.95, -0.25), (-0.08, 0.98, 0.15)),
+                          Spine=R(("X", 82)), Spine1=R(("X", 6)), Neck=R(("X", -58)), loc=(0, 0, -0.5),
+                          **both({"LeftArm": A("", (0.3, -0.85, -0.42)), "LeftForeArm": A("", (0.25, -0.9, -0.36))})), "io"),
+                 (15, pose(legs((0.1, 0.95, -0.3), (0.08, 0.98, 0.1), (-0.1, 0.95, -0.3), (-0.08, 0.98, 0.1)),
+                           Spine=R(("X", 78)), Spine1=R(("X", 6)), Neck=R(("X", -55)), loc=(0, 0, -0.45),
+                           **both({"LeftArm": A("", (0.25, -0.9, -0.35)), "LeftForeArm": A("", (0.2, -0.95, -0.25))})), "io")],
+    # pousada no fim da faixa, agachada ofegando (laco: 24 = 0)
+    "GargPerch": [(0, GARG_CROUCH, "io"),
+                  (12, pose(SQUAT, Spine=R(("X", 24)), Spine1=R(("X", 6)), Neck=R(("X", -24)),
+                            **both({"LeftArm": A("", (0.25, -0.5, -0.83)), "LeftForeArm": A("", (0.15, -0.35, -0.93))})), "io"),
+                  (24, GARG_CROUCH, "io")],
+    # necromante parado com o cajado em pe (laco: 60 = 0)
+    "NecroIdle": [(0, NECRO_IDLE, "io"),
+                  (30, pose(STAND, NECRO_STAFF, NECRO_LEFT, Spine=R(("X", 6)), Spine1=R(("X", -3)), Neck=R(("X", -8))), "io"),
+                  (60, NECRO_IDLE, "io")],
+    # raio: ergue o cajado e carrega -> aponta o cajado ao alvo (mao fletida para baixo: o cranio vai a frente);
+    # 12 quadros, impacto no quadro 10 (ImpactFrac 0,8 x 12 = 24,2 -> chave 24)
+    "NecroCast": [(0, NECRO_IDLE, "io"),
+                  (8, pose(STAND, NECRO_LEFT, Spine=R(("X", -6)), Spine1=R(("X", -4)), Neck=R(("X", -10)),
+                           RightArm=A("Spine2", (-0.3, -0.5, 0.8)), RightForeArm=A("Spine2", (-0.1, -0.7, 0.7)),
+                           RightHand=A("", (0, -1, 0.05), 90)), "io"),
+                  (16, pose(STAND, Spine=R(("X", -9)), Spine1=R(("X", -5)), Neck=R(("X", -12)),
+                            RightArm=A("Spine2", (-0.3, -0.45, 0.84)), RightForeArm=A("Spine2", (-0.1, -0.65, 0.75)),
+                            RightHand=A("", (0, -1, 0.05), 90),
+                            LeftArm=A("Spine2", (0.2, -0.95, 0.1)), LeftForeArm=A("Spine2", (0.1, -0.95, 0.3))), "io"),
+                  (22, pose(STAND, Spine=R(("X", -10)), Spine1=R(("X", -5)), Neck=R(("X", -12)),
+                            RightArm=A("Spine2", (-0.3, -0.42, 0.86)), RightForeArm=A("Spine2", (-0.1, -0.62, 0.78)),
+                            RightHand=A("", (0, -1, 0.05), 90),
+                            LeftArm=A("Spine2", (0.2, -0.96, 0.12)), LeftForeArm=A("Spine2", (0.1, -0.95, 0.32))), "io"),
+                  (24, pose(STEP, Spine=R(("X", 14)), Spine1=R(("X", 8)), Neck=R(("X", -16)),
+                            RightArm=A("Spine2", (-0.1, -0.95, 0.3)), RightForeArm=A("Spine2", (0.0, -0.95, 0.3)),
+                            RightHand=A("", (0, -0.6, -0.8), 90),
+                            LeftArm=A("Spine2", (0.35, 0.2, -0.92)), LeftForeArm=A("Spine2", (0.25, -0.1, -0.96))), "out"),
+                  (27, pose(STEP, Spine=R(("X", 16)), Spine1=R(("X", 8)), Neck=R(("X", -16)),
+                            RightArm=A("Spine2", (-0.1, -0.95, 0.28)), RightForeArm=A("Spine2", (0.0, -0.96, 0.28)),
+                            RightHand=A("", (0, -0.62, -0.78), 90),
+                            LeftArm=A("Spine2", (0.35, 0.22, -0.91)), LeftForeArm=A("Spine2", (0.25, -0.1, -0.96))), "io"),
+                  (29, pose(STEP, Spine=R(("X", 12)), Spine1=R(("X", 6)), Neck=R(("X", -12)),
+                            RightArm=A("Spine2", (-0.15, -0.9, 0.2)), RightForeArm=A("Spine2", (0.0, -0.97, 0.2)),
+                            RightHand=A("", (0, -0.7, -0.7), 90),
+                            LeftArm=A("Spine2", (0.3, 0.1, -0.95)), LeftForeArm=A("Spine2", (0.2, -0.2, -0.96))), "io")],
+    # erguer os esqueletos: abaixa -> ergue o cajado acima da cabeca com as duas maos -> segura tremendo -> volta
+    "NecroSummon": [(0, NECRO_IDLE, "io"),
+                    (8, pose(KNEES, NECRO_STAFF, Spine=R(("X", 18)), Neck=R(("X", 10)),
+                             LeftArm=A("Spine2", (0.3, -0.5, -0.81)), LeftForeArm=A("Spine2", (0.15, -0.8, -0.58))), "io"),
+                    # os bracos sobem pela frente (de baixo direto para o alto eles passavam pelos lados, em T)
+                    (12, pose(STAND, Spine=R(("X", 4)), Neck=R(("X", -6)),
+                              RightArm=A("Spine2", (-0.25, -0.8, 0.5)), RightForeArm=A("Spine2", (-0.05, -0.6, 0.8)),
+                              RightHand=A("", (0, -0.6, 0.8), 90),
+                              LeftArm=A("Spine2", (0.25, -0.8, 0.5)), LeftForeArm=A("Spine2", (0.05, -0.6, 0.8))), "io"),
+                    (16, pose(STAND, Spine=R(("X", -10)), Spine1=R(("X", -6)), Neck=R(("X", -20)),
+                              RightArm=A("Spine2", (-0.3, -0.15, 0.94)), RightForeArm=A("Spine2", (0.05, -0.1, 0.99)),
+                              RightHand=A("", (0.05, -0.1, 0.99), 90),
+                              LeftArm=A("Spine2", (0.3, -0.15, 0.94)), LeftForeArm=A("Spine2", (-0.05, -0.1, 0.99))), "out"),
+                    (24, pose(STAND, Spine=R(("X", -12)), Spine1=R(("X", -6), ("Z", 3)), Neck=R(("X", -22), ("Z", -4)),
+                              RightArm=A("Spine2", (-0.28, -0.12, 0.95)), RightForeArm=A("Spine2", (0.05, -0.08, 0.99)),
+                              RightHand=A("", (0.05, -0.08, 0.99), 90),
+                              LeftArm=A("Spine2", (0.28, -0.12, 0.95)), LeftForeArm=A("Spine2", (-0.05, -0.08, 0.99))), "io"),
+                    (28, pose(STAND, Spine=R(("X", 2)), Neck=R(("X", -8)),
+                              RightArm=A("Spine2", (-0.25, -0.85, 0.45)), RightForeArm=A("Spine2", (-0.05, -0.7, 0.7)),
+                              RightHand=A("", (0, -0.7, 0.7), 90),
+                              LeftArm=A("Spine2", (0.25, -0.85, 0.45)), LeftForeArm=A("Spine2", (0.05, -0.7, 0.7))), "io"),
+                    (31, pose(KNEES, NECRO_STAFF, NECRO_LEFT, Spine=R(("X", 4)), Neck=R(("X", -4))), "io"),
+                    (36, NECRO_IDLE, "io")],
+})
+FREE.add("GargDive")  # voa: o pe nao fica no chao
+
+
 def die(msg):
     print("ERRO " + msg)
     sys.exit(1)

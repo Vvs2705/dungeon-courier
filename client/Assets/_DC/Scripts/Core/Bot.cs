@@ -82,6 +82,7 @@ namespace DC.Core
                 case CargoType.Egg: c = (smash ? 0.9f : 0f) + (archer ? 0.6f : 0f); break;
                 case CargoType.Barrel: c = (thief ? 1.0f : 0f) + (smash ? 0.4f : 0f); break;
                 case CargoType.Heavy: c = thief ? 0.6f : 0f; break;
+                case CargoType.TreasureMap: c = thief ? 1.2f : 0f; break;   // regiao 4: ladroes preferem o mapa
             }
             return c;
         }
@@ -121,7 +122,12 @@ namespace DC.Core
                 float s = -d.Threat * (1.2f - Aggression) + (d.ChestCoins > 0 && !msg ? Greed * 1.5f : 0f) - (r.Hatched ? 0f : RiskCost(t, d.Risk, d.Threat)) + rng.Range(0f, 1.2f);
                 if (s > best) { best = s; door = d.Index; }
             }
+            OnRoomR4(r);
         }
+
+        // ganchos das regioes (Bot.RegiaoN.cs); sem implementacao custam zero. PlanRn: act -1 = nao decidiu, 0 = plano feito, 1 = dash.
+        partial void OnRoomR4(Run r);
+        partial void PlanR4(Run r, ref int act);
 
         // ------------------------------------------------------------------ plano
 
@@ -161,6 +167,7 @@ namespace DC.Core
         {
             Courier c = r.Courier;
             if (c.State == CourierState.Dashing) return false;
+            int r4 = -1; PlanR4(r, ref r4); if (r4 >= 0) return r4 == 1;   // regiao 4 (Bot.Regiao4.cs): avisos no chao, respiros, fogo, lava, planta, mapa
             Enemy near = Nearest(r, c.Pos);
             float nearD = near != null ? V2.Dist(near.Pos, c.Pos) : float.MaxValue;
             // alvo atras de pilar (bumerangue): parado nao adianta; andar ate ter linha
@@ -541,11 +548,13 @@ namespace DC.Core
             public readonly float[] ClockAt = new float[Sim.Contracts.Length];
         }
 
-        /// <summary>Campanha do zero: joga o proximo contrato bloqueado (aceitando o resgate quando ha pendente), refaz o que falha, troca a
-        /// arma pela carga e compra o mais barato que couber (guilda ou nivel de arma destravada) antes de cada contrato.</summary>
-        public static Campaign PlayCampaign(int seed, float aggression = 0.5f, float reaction = 0.25f, int maxAttempts = 150, int region = 1)
+        /// <summary>Campanha do zero (ou do save `from`, ex.: o estado estimado do fim da regiao anterior): joga o proximo contrato bloqueado
+        /// (aceitando o resgate quando ha pendente), refaz o que falha, troca a arma pela carga e compra o mais barato que couber (guilda, nivel
+        /// de arma ou de equipamento destravado; equipa o 1o destravado) antes de cada contrato.</summary>
+        public static Campaign PlayCampaign(int seed, float aggression = 0.5f, float reaction = 0.25f, int maxAttempts = 150, int region = 1, string from = null)
         {
-            var sim = new Sim(seed); var bot = new Bot(seed * 13 + 5, aggression, reaction); var cp = new Campaign();
+            var sim = from == null ? new Sim(seed) : Sim.Load(from); var bot = new Bot(seed * 13 + 5, aggression, reaction); var cp = new Campaign();
+            sim.Seed = seed;
             RegionDef reg = RegionDef.Of(region);
             int end = reg.First + reg.Contracts.Length;   // joga ate o fim da regiao `region` (padrao: a regiao 1, os 24 da v1)
             while (sim.Reputation < end && cp.Attempts < maxAttempts)
@@ -555,10 +564,12 @@ namespace DC.Core
                     int pick = -1, cost = int.MaxValue;
                     for (int u = 0; u < Balance.UpgradeLines; u++) { int k = sim.UpgradeCost((Upgrade)u); if (sim.CanBuy((Upgrade)u) && k < cost) { cost = k; pick = u; } }
                     for (int w = 0; w < WeaponDef.All.Length; w++) { int k = sim.WeaponCost((Weapon)w); if (sim.CanUpgradeWeapon((Weapon)w) && k < cost) { cost = k; pick = 10 + w; } }
+                    for (int g = 1; g < GearDef.All.Length; g++) { int k = sim.GearCost((Gear)g); if (sim.CanUpgradeGear((Gear)g) && k < cost) { cost = k; pick = 20 + g; } }
                     if (pick < 0) break;
                     cp.Spent += cost;
-                    if (pick >= 10) sim.UpgradeWeapon((Weapon)(pick - 10)); else sim.Buy((Upgrade)pick);
+                    if (pick >= 20) sim.UpgradeGear((Gear)(pick - 20)); else if (pick >= 10) sim.UpgradeWeapon((Weapon)(pick - 10)); else sim.Buy((Upgrade)pick);
                 }
+                for (int g = 1; g < GearDef.All.Length && sim.GearEquipped == Gear.None; g++) if (sim.GearUnlocked((Gear)g)) sim.EquipGear((Gear)g);   // regiao 1: nenhum destravado
                 int c = sim.Reputation;
                 sim.Equip(WeaponFor(sim, Sim.Contracts[c]));
                 if (cp.Before[c] == null) cp.Before[c] = sim.Save();

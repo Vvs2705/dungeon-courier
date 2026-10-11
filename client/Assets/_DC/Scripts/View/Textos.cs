@@ -39,6 +39,7 @@ namespace DC
         static string F(string pt, string en, string es, string id, object a) => string.Format(Inv, L(pt, en, es, id), a);
         static string F(string pt, string en, string es, string id, object a, object b) => string.Format(Inv, L(pt, en, es, id), a, b);
         static string F(string pt, string en, string es, string id, object a, object b, object c) => string.Format(Inv, L(pt, en, es, id), a, b, c);
+        static string F(string pt, string en, string es, string id, object a, object b, object c, object d) => string.Format(Inv, L(pt, en, es, id), a, b, c, d);
 
         // ------------------------------------------------------------------ geral
         public static string Voltar => L("VOLTAR", "BACK", "VOLVER", "KEMBALI");
@@ -72,7 +73,17 @@ namespace DC
         public static string Estrelas(int tem, int total) => string.Format(Inv, "{0}/{1}", tem, total);
         public static string Dia => L("Contrato do dia", "Daily contract", "Contrato del día", "Kontrak harian");
         /// <summary>Rotulo curto do contrato nas telas: C12 / Dia / K7M2QX (o Core chama o do dia de "DIA"; o diario guarda o codigo cru).</summary>
-        public static string Rotulo(ContractDef c) => c.Kind == ContractKind.Daily ? L("Dia", "Daily", "Día", "Harian") : c.Code;
+        public static string Rotulo(ContractDef c)
+        {
+            switch (c.Kind)
+            {
+                case ContractKind.Daily: return L("Dia", "Daily", "Día", "Harian");
+                case ContractKind.Rare: return L("Raro", "Rare", "Raro", "Langka");
+                case ContractKind.Event: return L("Evento", "Event", "Evento", "Event");
+                case ContractKind.Endless: return L("Sem fim", "Endless", "Sin fin", "Tanpa akhir");
+                default: return c.Code;
+            }
+        }
         public static string DiaLinha(string carga, int moedas) => F("{0} · recompensa extra +{1} moedas", "{0} · extra reward +{1} coins",
             "{0} · recompensa extra +{1} monedas", "{0} · hadiah ekstra +{1} koin", carga, moedas);
         public static string DiaFeito => L("feito hoje: volte amanhã", "done today: come back tomorrow", "hecho hoy: vuelve mañana", "selesai hari ini: kembali besok");
@@ -464,6 +475,22 @@ namespace DC
                     "lawan waktu; membuka pintu terkunci");
                 case CargoType.Heavy: return L("-25% de velocidade carregando", "-25% speed while carrying", "-25% de velocidad con la carga", "-25% kecepatan saat membawa");
                 case CargoType.Barrel: return L("no chão por 3 s, explode", "explodes after 3 s on the ground", "3 s en el suelo y explota", "3 dtk di lantai, meledak");
+                // lancamento (CONTRATO_LANCAMENTO §3: o verbo de cada carga nova)
+                case CargoType.ArcaneHeart: return L("atrai moedas e inimigos", "attracts coins and enemies", "atrae monedas y enemigos", "menarik koin dan musuh");
+                case CargoType.IceCrystal: return L("derrete com o tempo; a água recongela", "melts over time; water refreezes it",
+                    "se derrite con el tiempo; el agua lo recongela", "mencair seiring waktu; air membekukannya lagi");
+                case CargoType.GriffinCage: return L("o grifinho grita e atrai inimigos; o dash acalma", "the chick screams and draws enemies; dash calms it",
+                    "el grifo grita y atrae enemigos; el dash lo calma", "anak grifon menjerit dan menarik musuh; dash menenangkan");
+                case CargoType.Lantern: return L("ilumina o escuro; se cair, apaga", "lights the dark; goes out if knocked down", "ilumina la oscuridad; si cae, se apaga",
+                    "menerangi gelap; padam jika jatuh");
+                case CargoType.Mirror: return L("reflete tiros de frente; 3 reflexos = quebra", "reflects shots from the front; 3 reflections = broken",
+                    "refleja disparos de frente; 3 reflejos = se rompe", "memantulkan tembakan dari depan; 3 pantulan = pecah");
+                case CargoType.Balloon: return L("+15% de velocidade; no chão escapa em 4 s", "+15% speed; floats off after 4 s on the ground",
+                    "+15% de velocidad; en el suelo escapa en 4 s", "+15% kecepatan; di lantai lepas dalam 4 dtk");
+                case CargoType.Flytrap: return L("no chão morde inimigos; não fique perto sem ela", "bites enemies on the ground; don't linger near it",
+                    "en el suelo muerde enemigos; no te quedes cerca sin ella", "di lantai menggigit musuh; jangan dekat tanpa membawanya");
+                case CargoType.TreasureMap: return L("revela baús enterrados; ladrões o preferem", "reveals buried chests; thieves love it",
+                    "revela cofres enterrados; los ladrones lo prefieren", "menunjukkan peti terkubur; pencuri mengincarnya");
                 default: return c.Index == 0 ? L("primeiro contrato", "first contract", "primer contrato", "kontrak pertama")
                     : L("entregue inteira: bônus", "deliver it intact: bonus", "entrégala intacta: bono", "antar utuh: bonus");
             }
@@ -574,27 +601,45 @@ namespace DC
         public static string RotuloPagamento => L("Pagamento", "Payment", "Pago", "Bayaran");
         public static string RotuloTotal => L("Total", "Total", "Total", "Total");
 
-        /// <summary>Pagamento detalhado (rotulo | valor) do ContractResult: base x carga x integridade x bolsa = pagamento; + baus + resgate
-        /// (+ bonus do contrato do dia). No maximo 10 linhas (Hud._resLabel).</summary>
+        /// <summary>Pagamento detalhado (rotulo | valor) do ContractResult: base x carga x integridade x bolsa x extras = pagamento; + baus +
+        /// resgate (+ dia, evento, Cacador, bonus dobrado; no sem fim, pisos e moedas). No maximo Hud.ResLinhas linhas.</summary>
         public static string[][] Pagamento(ContractResult r, ContractDef c)
         {
             string tempo = L("Tempo", "Time", "Tiempo", "Waktu");
+            string bau = L("Moedas dos baús", "Chest coins", "Monedas de cofres", "Koin dari peti");
+            var rows = new List<string[]>();
             if (!r.Delivered)
-                return new[] { new[] { tempo, Tempo(r.Time) }, new[] { L("Moedas dos baús", "Chest coins", "Monedas de cofres", "Koin dari peti"), "+" + r.ChestCoins },
-                    new[] { RotuloTotal, "+" + r.Total } };
-            var rows = new List<string[]>
             {
-                new[] { L("Pagamento base", "Base pay", "Pago base", "Bayaran dasar"), r.Base.ToString(Inv) },
-                new[] { r.Hatched ? F("Carga: {0} (chocou)", "Cargo: {0} (hatched)", "Carga: {0} (eclosionó)", "Paket: {0} (menetas)", Carga(c.Cargo))
-                    : F("Carga: {0}", "Cargo: {0}", "Carga: {0}", "Paket: {0}", Carga(c.Cargo)), Mul(r.CargoMul) },
-                new[] { F("Integridade: {0}", "Integrity: {0}", "Integridad: {0}", "Keutuhan: {0}", Rachaduras(r.Cracks)), Mul(r.IntegrityMul) },
-                new[] { L("Bolsa da guilda", "Guild purse", "Bolsa del gremio", "Dompet guild"), Mul(r.BagMul) },
-                new[] { RotuloPagamento, r.Payment.ToString(Inv) },
-                new[] { L("Baús", "Chests", "Cofres", "Peti"), "+" + r.ChestCoins },
-                new[] { r.RescueAccepted && !r.RescueDelivered ? L("Resgate (não entregue)", "Rescue (not delivered)", "Rescate (no entregado)", "Penyelamatan (tak terkirim)")
-                    : L("Resgate", "Rescue", "Rescate", "Penyelamatan"), "+" + r.RescueBonus },
-            };
+                rows.Add(new[] { tempo, Tempo(r.Time) });
+                if (r.Kind == ContractKind.Endless)
+                {
+                    rows.Add(new[] { L("Pisos vencidos", "Floors cleared", "Pisos superados", "Lantai dilewati"), r.EndlessLayers.ToString(Inv) });
+                    rows.Add(new[] { L("Moedas do sem fim", "Endless coins", "Monedas sin fin", "Koin tanpa akhir"), "+" + r.EndlessCoins });
+                }
+                rows.Add(new[] { bau, "+" + r.ChestCoins });
+                if (r.HuntCoins > 0) rows.Add(new[] { PerkNome(Perk.Hunter), "+" + r.HuntCoins });
+                rows.Add(new[] { RotuloTotal, "+" + r.Total });
+                return rows.ToArray();
+            }
+            rows.Add(new[] { L("Pagamento base", "Base pay", "Pago base", "Bayaran dasar"), r.Base.ToString(Inv) });
+            rows.Add(new[] { r.Hatched ? F("Carga: {0} (chocou)", "Cargo: {0} (hatched)", "Carga: {0} (eclosionó)", "Paket: {0} (menetas)", Carga(c.Cargo))
+                : F("Carga: {0}", "Cargo: {0}", "Carga: {0}", "Paket: {0}", Carga(c.Cargo)), Mul(r.CargoMul) });
+            rows.Add(new[] { F("Integridade: {0}", "Integrity: {0}", "Integridad: {0}", "Keutuhan: {0}", Rachaduras(r.Cracks)), Mul(r.IntegrityMul) });
+            rows.Add(new[] { L("Bolsa da guilda", "Guild purse", "Bolsa del gremio", "Dompet guild"), Mul(r.BagMul) });
+            if (r.PayPct != 100)   // modificadores, maestria, evento, raro
+                rows.Add(new[] { L("Extras (modificador, maestria, evento)", "Extras (modifier, mastery, event)", "Extras (modificador, maestría, evento)",
+                    "Ekstra (pengubah, keahlian, event)"), Mul(r.PayPct / 100f) });
+            rows.Add(new[] { RotuloPagamento, r.Payment.ToString(Inv) });
+            rows.Add(new[] { L("Baús", "Chests", "Cofres", "Peti"), "+" + r.ChestCoins });
+            if (r.RescueAccepted)
+                rows.Add(new[] { !r.RescueDelivered ? L("Resgate (não entregue)", "Rescue (not delivered)", "Rescate (no entregado)", "Penyelamatan (tak terkirim)")
+                    : L("Resgate", "Rescue", "Rescate", "Penyelamatan"), "+" + r.RescueBonus });
             if (r.DailyBonus > 0) rows.Add(new[] { L("Bônus do contrato do dia", "Daily contract bonus", "Bono del contrato del día", "Bonus kontrak harian"), "+" + r.DailyBonus });
+            if (r.EventReward > 0) rows.Add(new[] { L("Recompensa do evento", "Event reward", "Recompensa del evento", "Hadiah event"), "+" + r.EventReward });
+            if (r.EventProject != Gear.None) rows.Add(new[] { F("Projeto da semana: {0}", "Weekly blueprint: {0}", "Plano de la semana: {0}", "Cetak biru minggu ini: {0}",
+                GearNome(r.EventProject)), "+1" });
+            if (r.HuntCoins > 0) rows.Add(new[] { PerkNome(Perk.Hunter), "+" + r.HuntCoins });
+            if (r.BonusDoubled) rows.Add(new[] { L("Bônus dobrado (anúncio)", "Double bonus (ad)", "Bono doble (anuncio)", "Bonus ganda (iklan)"), "+" + r.Bonus });
             rows.Add(new[] { tempo, Tempo(r.Time) });
             rows.Add(new[] { RotuloTotal, "+" + r.Total });
             return rows.ToArray();
@@ -632,6 +677,379 @@ namespace DC
             "Privacy: the game collects no personal data and does not use the internet. Progress and the playtest log stay on this device; nothing leaves it unless you tap Export log.",
             "Privacidad: el juego no recopila datos personales y no usa internet. El progreso y el registro de prueba quedan solo en este dispositivo; nada sale de él si no tocas Exportar registro.",
             "Privasi: game ini tidak mengumpulkan data pribadi dan tidak memakai internet. Progres dan catatan uji hanya ada di perangkat ini; tak ada yang keluar kecuali kamu ketuk Ekspor catatan.");
+
+        // ------------------------------------------------------------------ lancamento (CONTRATO_LANCAMENTO §6-§7): regioes, raro,
+        // modificadores, eventos, temporada, equipamento, marcos e maestria, sem fim, roupas, loja e anuncios. Glossario novo: projeto =
+        // blueprint / plano / cetak biru; equipamento = gear / equipo / perlengkapan; camada (contrato) = floor / piso / lantai.
+
+        /// <summary>Nome da regiao 1-4 (glossario do docs/UI_V1.md); fora disso, o do Core.</summary>
+        public static string NomeRegiao(int r)
+        {
+            switch (r)
+            {
+                case 1: return L("Porões da Guilda", "Guild Cellars", "Sótanos del Gremio", "Ruang Bawah Guild");
+                case 2: return L("Minas Alagadas", "Flooded Mines", "Minas Inundadas", "Tambang Banjir");
+                case 3: return L("Cripta Assombrada", "Haunted Crypt", "Cripta Embrujada", "Kripta Berhantu");
+                case 4: return L("Forja do Dragão", "Dragon's Forge", "Forja del Dragón", "Tempaan Naga");
+                default: RegionDef d = RegionDef.Of(r); return d != null ? d.Name : "";
+            }
+        }
+
+        // mapa das regioes
+        public static string Mapa => L("Mapa das regiões", "Region map", "Mapa de regiones", "Peta wilayah");
+        public static string MapaCabeca => L("Toque numa região aberta para ver os contratos dela no quadro.", "Tap an open region to see its contracts on the board.",
+            "Toca una región abierta para ver sus contratos en el tablero.", "Ketuk wilayah yang terbuka untuk melihat kontraknya di papan.");
+        public static string RegiaoProgresso(int feitos, int total, int est, int estMax) => F("{0}/{1} contratos · {2}/{3} estrelas", "{0}/{1} contracts · {2}/{3} stars",
+            "{0}/{1} contratos · {2}/{3} estrellas", "{0}/{1} kontrak · {2}/{3} bintang", feitos, total, est, estMax);
+        public static string RegiaoTrava(int estrelas, string chefe) => F("abre com {0} estrelas e vencendo: {1}", "opens at {0} stars after beating: {1}",
+            "abre con {0} estrellas y venciendo a: {1}", "terbuka di {0} bintang setelah mengalahkan: {1}", estrelas, chefe);
+        public static string EmBreve => L("em breve", "coming soon", "próximamente", "segera hadir");
+        public static string NoQuadro => L("NO QUADRO", "ON BOARD", "EN TABLERO", "DI PAPAN");
+        public static string Ver => L("VER", "VIEW", "VER", "LIHAT");
+
+        // quadro: botoes e contrato do dia com modificador
+        public static string Eventos => L("EVENTOS", "EVENTS", "EVENTOS", "EVENT");
+        public static string SemFimBotao => L("SEM FIM", "ENDLESS", "SIN FIN", "TANPA AKHIR");
+        public static string DiaLinhaMod(string carga, string mod, int pct, int moedas) => F("{0} · {1} +{2}% · extra +{3} moedas", "{0} · {1} +{2}% · extra +{3} coins",
+            "{0} · {1} +{2}% · extra +{3} monedas", "{0} · {1} +{2}% · ekstra +{3} koin", carga, mod, pct, moedas);
+        /// <summary>"Contrato do dia · Minas Alagadas" (titulo do cartao com a regiao; lista curta, nao frase).</summary>
+        public static string ComRegiao(string titulo, int regiao) => titulo + " · " + NomeRegiao(regiao);
+
+        // contrato raro e rerolls (§6.4, §6.5)
+        public static string Raro => L("Contrato raro ×2", "Rare contract ×2", "Contrato raro ×2", "Kontrak langka ×2");
+        public static string RaroEspera(int h) => F("volte depois de {0} h fora para ganhar um", "come back after {0} h away to get one",
+            "vuelve tras {0} h fuera para recibir uno", "kembali setelah {0} jam pergi untuk dapat satu", h);
+        public static string RaroFeito(int h) => F("entregue! o próximo vem depois de {0} h fora", "delivered! the next one comes after {0} h away",
+            "¡entregado! el próximo llega tras {0} h fuera", "terkirim! berikutnya datang setelah {0} jam pergi", h);
+        public static string VolteAmanha => L("Volte amanhã para o contrato raro.", "Come back tomorrow for the rare contract.",
+            "Vuelve mañana por el contrato raro.", "Kembali besok untuk kontrak langka.");
+        public static string Trocar => L("TROCAR", "SWAP", "CAMBIAR", "GANTI");
+
+        // modificadores (§6.2)
+        public static string Modificadores => L("Modificadores", "Modifiers", "Modificadores", "Pengubah");
+        public static string ModCabeca(string contrato) => F("{0}: escolha até 2 (opcional). Cada um deixa o contrato mais difícil e paga mais.",
+            "{0}: pick up to 2 (optional). Each one makes the contract harder and pays more.",
+            "{0}: elige hasta 2 (opcional). Cada uno hace el contrato más difícil y paga más.",
+            "{0}: pilih sampai 2 (opsional). Masing-masing membuat kontrak lebih sulit dan bayaran lebih besar.", contrato);
+        public static string ModTotal(int pct) => F("Pagamento extra: +{0}%", "Extra payment: +{0}%", "Pago extra: +{0}%", "Bayaran ekstra: +{0}%", pct);
+        public static string Escolhido => L("ESCOLHIDO", "ON", "ACTIVO", "AKTIF");
+        public static string Escolher => L("ESCOLHER", "PICK", "ELEGIR", "PILIH");
+
+        static ModifierDef ModDef(Modifier m) { foreach (ModifierDef d in ModifierDef.All) if (d.Type == m) return d; return null; }
+
+        /// <summary>Nome do modificador: pt do Core (ModifierDef.Name); o resto pela tabela.</summary>
+        public static string ModNome(Modifier m)
+        {
+            ModifierDef d = ModDef(m);
+            string pt = d != null ? d.Name : m.ToString();
+            switch (m)
+            {
+                case Modifier.Fog: return L(pt, "Fog", "Niebla", "Kabut");
+                case Modifier.Rush: return L(pt, "Rush", "Prisa", "Buru-buru");
+                case Modifier.Horde: return L(pt, "Horde", "Horda", "Gerombolan");
+                case Modifier.Fragile: return L(pt, "Fragile", "Frágil", "Rapuh");
+                case Modifier.Stingy: return L(pt, "Stingy", "Tacaño", "Pelit");
+                default: return pt;
+            }
+        }
+
+        public static string ModEfeito(Modifier m)
+        {
+            ModifierDef d = ModDef(m);
+            string pt = d != null ? d.Text : "";
+            switch (m)
+            {
+                case Modifier.Fog: return L(pt, "short sight", "visión corta", "pandangan pendek");
+                case Modifier.Rush: return L(pt, "target time -30%", "tiempo objetivo -30%", "waktu target -30%");
+                case Modifier.Horde: return L(pt, "+1 enemy per room", "+1 enemigo por sala", "+1 musuh per ruang");
+                case Modifier.Fragile: return L(pt, "the cargo breaks at 2 cracks instead of 3", "la carga se rompe con 2 grietas en vez de 3",
+                    "paket pecah di 2 retakan, bukan 3");
+                case Modifier.Stingy: return L(pt, "chests -50%", "cofres -50%", "peti -50%");
+                default: return pt;
+            }
+        }
+
+        // eventos (§6.1)
+        public static string QuadroEventos => L("Quadro de eventos", "Event board", "Tablero de eventos", "Papan event");
+        public static string EventoNome(LiveEvent e)
+        {
+            string pt = EventDef.All[(int)e].Name;
+            switch (e)
+            {
+                case LiveEvent.FragileWeek: return L(pt, "Fragile Week", "Semana Frágil", "Pekan Rapuh");
+                case LiveEvent.Midnight: return L(pt, "Midnight Delivery", "Entrega de Medianoche", "Antaran Tengah Malam");
+                case LiveEvent.NoDamage: return L(pt, "No-Damage Contract", "Contrato Sin Daño", "Kontrak Tanpa Luka");
+                case LiveEvent.Treasure: return L(pt, "Treasure Detour", "Desvío del Tesoro", "Jalan Pintas Harta");
+                case LiveEvent.BossRun: return L(pt, "Boss Courier Run", "Carrera de Jefes", "Lomba Para Bos");
+                default: return pt;
+            }
+        }
+
+        public static string EventoRegra(LiveEvent e)
+        {
+            string pt = EventDef.All[(int)e].Text;
+            switch (e)
+            {
+                case LiveEvent.FragileWeek: return L(pt, "fragile cargo only; +50% payment", "solo cargas frágiles; +50% de pago", "hanya paket rapuh; +50% bayaran");
+                case LiveEvent.Midnight: return L(pt, "every room is dark; you carry the lantern", "todas las salas a oscuras; llevas la linterna",
+                    "semua ruang gelap; kamu membawa lentera");
+                case LiveEvent.NoDamage: return L(pt, "1 health; payment ×3", "1 de vida; pago ×3", "1 nyawa; bayaran ×3");
+                case LiveEvent.Treasure: return L(pt, "double chests and cracked walls open", "cofres dobles y paredes agrietadas abiertas",
+                    "peti ganda dan dinding retak terbuka");
+                case LiveEvent.BossRun: return L(pt, "the bosses you beat, back to back", "los jefes que venciste, uno tras otro", "bos yang sudah dikalahkan, berturut-turut");
+                default: return pt;
+            }
+        }
+
+        public static string EventoCabeca(string nome, string regra, int dias) => F("Evento da semana: {0} ({1}). Termina em {2} dias.",
+            "Event of the week: {0} ({1}). Ends in {2} days.", "Evento de la semana: {0} ({1}). Termina en {2} días.",
+            "Event minggu ini: {0} ({1}). Berakhir dalam {2} hari.", nome, regra, dias);
+        public static string EventoFechado => L("O quadro de eventos abre depois do C3.", "The event board opens after C3.",
+            "El tablero de eventos abre después del C3.", "Papan event terbuka setelah C3.");
+        public static string Vaga(int k, string regiao) => F("Vaga {0} · {1}", "Slot {0} · {1}", "Puesto {0} · {1}", "Slot {0} · {1}", k, regiao);
+        public static string VagaLinha(int camadas, string carga) => F("{0} camadas · {1}", "{0} floors · {1}", "{0} pisos · {1}", "{0} lantai · {1}", camadas, carga);
+        public static string ProjetoSemana(string equip) => F("As 3 primeiras vagas na semana: +1 projeto ({0}).", "First 3 slots this week: +1 blueprint ({0}).",
+            "Los 3 primeros puestos en la semana: +1 plano ({0}).", "3 slot pertama minggu ini: +1 cetak biru ({0}).", equip);
+        public static string ProjetoSemanaMoedas(int m) => F("As 3 primeiras vagas na semana: +{0} moedas.", "First 3 slots this week: +{0} coins.",
+            "Los 3 primeros puestos en la semana: +{0} monedas.", "3 slot pertama minggu ini: +{0} koin.", m);
+        public static string ProjetoGanho => L("Projeto da semana ganho! Volte na próxima semana.", "Weekly blueprint earned! Come back next week.",
+            "¡Plano de la semana ganado! Vuelve la próxima semana.", "Cetak biru minggu ini didapat! Kembali minggu depan.");
+        public static string PacoteEvento => L("PACOTE DE EVENTO", "EVENT PACK", "PAQUETE DE EVENTO", "PAKET EVENT");
+
+        // quadro de temporada (§6.3)
+        public static string Temporada => L("Quadro de temporada", "Season board", "Tablero de temporada", "Papan musim");
+        public static string TemporadaBotao => L("TEMPORADA", "SEASON", "TEMPORADA", "MUSIM");
+        public static string TemporadaCabeca(int dias) => F("Temporada de 28 dias: faltam {0}. Recompensas fixas, sem passe pago.",
+            "28-day season: {0} days left. Fixed rewards, no paid pass.", "Temporada de 28 días: faltan {0}. Recompensas fijas, sin pase de pago.",
+            "Musim 28 hari: sisa {0} hari. Hadiah tetap, tanpa pass berbayar.", dias);
+        public static string Coletar => L("COLETAR", "CLAIM", "RECLAMAR", "AMBIL");
+        public static string Coletado => L("COLETADO", "CLAIMED", "RECLAMADO", "DIAMBIL");
+        public static string Progresso(int tem, int alvo) => string.Format(Inv, "{0}/{1}", tem, alvo);
+        public static string PremioProjeto(Gear g) => F("projeto: {0}", "blueprint: {0}", "plano: {0}", "cetak biru: {0}", GearNome(g));
+        public static string PremioRoupa(Outfit o) => F("roupa: {0}", "outfit: {0}", "traje: {0}", "pakaian: {0}", RoupaNome(o));
+
+        /// <summary>Objetivo da temporada: pt do Core (GoalDef.Text, com a 1a letra maiuscula); o resto pelo tipo e pelo alvo.</summary>
+        public static string ObjetivoTemporada(GoalDef g)
+        {
+            if (Lang == Lingua.Pt) return g.Text.Length > 0 ? char.ToUpperInvariant(g.Text[0]) + g.Text.Substring(1) : "";
+            int n = g.Target;
+            switch (g.Kind)
+            {
+                case Goal.Deliver: return F(null, "Deliver {0} contracts", "Entrega {0} contratos", "Antar {0} kontrak", n);
+                case Goal.DeliverCargo: return F(null, "Deliver {0} × {1}", "Entrega {0} × {1}", "Antar {0} × {1}", n, Carga(g.Cargo));
+                case Goal.Hatched: return F(null, "Deliver {0} hatched eggs", "Entrega {0} huevos eclosionados", "Antar {0} telur yang menetas", n);
+                case Goal.Chests: return F(null, "Open {0} chests", "Abre {0} cofres", "Buka {0} peti", n);
+                case Goal.ThreeStars: return F(null, "Get 3 stars on {0} contracts", "Logra 3 estrellas en {0} contratos", "Raih 3 bintang di {0} kontrak", n);
+                case Goal.BossClean: return F(null, "Bosses beaten without damage: {0}", "Jefes vencidos sin daño: {0}", "Bos dikalahkan tanpa luka: {0}", n);
+                case Goal.Secrets: return F(null, "Find {0} secret rooms", "Encuentra {0} salas secretas", "Temukan {0} ruang rahasia", n);
+                case Goal.Daily: return F(null, "Complete {0} daily contracts", "Completa {0} contratos del día", "Selesaikan {0} kontrak harian", n);
+                case Goal.Rescue: return F(null, "Rescue {0} lost cargos", "Rescata {0} cargas perdidas", "Selamatkan {0} paket hilang", n);
+                case Goal.Kills: return F(null, "Defeat {0} enemies", "Derrota a {0} enemigos", "Kalahkan {0} musuh", n);
+                case Goal.WithModifier: return F(null, "Contracts delivered with a modifier: {0}", "Contratos entregados con modificador: {0}",
+                    "Kontrak terkirim dengan pengubah: {0}", n);
+                case Goal.Event: return F(null, "Deliver {0} event contracts", "Entrega {0} contratos de evento", "Antar {0} kontrak event", n);
+                case Goal.Code: return F(null, "Contracts delivered by code: {0}", "Contratos entregados por código: {0}", "Kontrak lewat kode terkirim: {0}", n);
+                case Goal.Intact: return F(null, "Deliver {0} intact cargos", "Entrega {0} cargas intactas", "Antar {0} paket utuh", n);
+                case Goal.Rare: return F(null, "Rare contracts delivered: {0}", "Contratos raros entregados: {0}", "Kontrak langka terkirim: {0}", n);
+                default: return g.Text;
+            }
+        }
+
+        // marcos e maestria (§6.7)
+        public static string Marcos => L("Marcos e maestria", "Milestones & mastery", "Logros y maestría", "Pencapaian & keahlian");
+        public static string MarcosBotao => L("MARCOS", "MILESTONES", "LOGROS", "PENCAPAIAN");
+        public static string AbaMarcos => L("MARCOS", "MILESTONES", "LOGROS", "PENCAPAIAN");
+        public static string AbaMaestria => L("MAESTRIA", "MASTERY", "MAESTRÍA", "KEAHLIAN");
+        public static string MarcosCabeca => L("Marcos de estrelas dão moedas (e uma roupa). Maestria: entregas da mesma carga dão +2% de pagamento por nível.",
+            "Star milestones give coins (and an outfit). Mastery: deliveries of the same cargo give +2% payment per level.",
+            "Los logros de estrellas dan monedas (y un traje). Maestría: las entregas de la misma carga dan +2% de pago por nivel.",
+            "Pencapaian bintang memberi koin (dan pakaian). Keahlian: pengantaran paket yang sama memberi +2% bayaran per level.");
+        public static string MarcoNome(int n) => F("{0} estrelas", "{0} stars", "{0} estrellas", "{0} bintang", n);
+        public static string VoceTem(int n) => F("você tem {0}", "you have {0}", "tienes {0}", "kamu punya {0}", n);
+        public static string Entregas(int n, int prox) => F("{0} entregas · próximo nível com {1}", "{0} deliveries · next level at {1}",
+            "{0} entregas · siguiente nivel con {1}", "{0} pengantaran · level berikut di {1}", n, prox);
+        public static string EntregasMax(int n) => F("{0} entregas · nível máximo", "{0} deliveries · max level", "{0} entregas · nivel máximo",
+            "{0} pengantaran · level maksimal", n);
+        public static string PagamentoMais(int pct) => F("+{0}% pagamento", "+{0}% pay", "+{0}% de pago", "+{0}% bayaran", pct);
+        public static string NivelCurto(int n) => F("NÍVEL {0}", "LEVEL {0}", "NIVEL {0}", "LEVEL {0}", n);
+
+        // desafio sem fim (§6.8)
+        public static string SemFim => L("Desafio sem fim", "Endless challenge", "Desafío sin fin", "Tantangan tanpa akhir");
+        public static string SemFimRegras(int mini, int chefe, int moedas, int teto) => F(
+            "Pisos sem fim misturando as regiões abertas, cada vez mais difíceis. Mini-chefe a cada {0} pisos e chefe a cada {1}. {2} moedas por piso (até {3} por dia).",
+            "Endless floors mixing the open regions, harder and harder. A mini-boss every {0} floors and a boss every {1}. {2} coins per floor (up to {3} a day).",
+            "Pisos sin fin que mezclan las regiones abiertas, cada vez más difíciles. Minijefe cada {0} pisos y jefe cada {1}. {2} monedas por piso (hasta {3} al día).",
+            "Lantai tanpa akhir dari wilayah yang terbuka, makin lama makin sulit. Mini-bos tiap {0} lantai dan bos tiap {1}. {2} koin per lantai (maks {3} per hari).",
+            mini, chefe, moedas, teto);
+        public static string SemFimRecorde(int best, int semana) => F("Recorde: {0} pisos · nesta semana: {1}", "Best: {0} floors · this week: {1}",
+            "Récord: {0} pisos · esta semana: {1}", "Rekor: {0} lantai · minggu ini: {1}", best, semana);
+        public static string SemFimCodigo(string c) => F("Código da semana: {0} (o mesmo desafio para todos)", "Code of the week: {0} (the same challenge for everyone)",
+            "Código de la semana: {0} (el mismo desafío para todos)", "Kode minggu ini: {0} (tantangan sama untuk semua)", c);
+        public static string SemFimMoedas(int n) => F("Moedas que ainda rendem hoje: {0}", "Coins still available today: {0}", "Monedas que aún rinden hoy: {0}",
+            "Koin yang masih bisa didapat hari ini: {0}", n);
+        public static string SemFimFechado => L("Abre ao vencer o chefe da última região.", "Opens after beating the last region's boss.",
+            "Se abre al vencer al jefe de la última región.", "Terbuka setelah mengalahkan bos wilayah terakhir.");
+        /// <summary>Faixa do contrato no sem fim (no lugar das bolinhas das camadas).</summary>
+        public static string SemFimPiso(int piso, int best) => F("piso {0} · recorde {1}", "floor {0} · best {1}", "piso {0} · récord {1}", "lantai {0} · rekor {1}", piso, best);
+
+        // equipamento lateral (§6.6; aba da guilda)
+        public static string AbaEquip => L("EQUIPAMENTO", "GEAR", "EQUIPO", "PERLENGKAPAN");
+        public static string Equipado => L("EQUIPADO", "EQUIPPED", "EQUIPADO", "DIPAKAI");
+        public static string Projetos(int n, int max) => F("projetos {0}/{1}", "blueprints {0}/{1}", "planos {0}/{1}", "cetak biru {0}/{1}", n, max);
+
+        /// <summary>Nome do equipamento: pt do Core (GearDef.Name); o resto pela tabela.</summary>
+        public static string GearNome(Gear g)
+        {
+            string pt = (int)g >= 0 && (int)g < GearDef.All.Length ? GearDef.All[(int)g].Name : g.ToString();
+            switch (g)
+            {
+                case Gear.Smoke: return L(pt, "Smoke bomb", "Bomba de humo", "Bom asap");
+                case Gear.Hook: return L(pt, "Grappling hook", "Gancho", "Kait");
+                case Gear.Trap: return L(pt, "Bear trap", "Trampa para osos", "Perangkap beruang");
+                case Gear.Boots: return L(pt, "Mud boots", "Botas de barro", "Sepatu lumpur");
+                default: return pt;
+            }
+        }
+
+        public static string GearEfeito(Gear g)
+        {
+            string pt = (int)g >= 0 && (int)g < GearDef.All.Length ? GearDef.All[(int)g].Text : "";
+            switch (g)
+            {
+                case Gear.Smoke: return L(pt, "whoever grabs the cargo drops it and loses sight of it for 3 s",
+                    "quien toma la carga la suelta y la pierde de vista 3 s", "yang mengambil paket menjatuhkannya dan kehilangan jejak 3 dtk");
+                case Gear.Hook: return L(pt, "walk toward the cargo on the ground (1.5-5 m) and it flies to your hands",
+                    "camina hacia la carga en el suelo (1,5-5 m) y vuelve a tus manos", "jalan ke arah paket di lantai (1,5-5 m), paket melayang ke tangan");
+                case Gear.Trap: return L(pt, "on the 1st set-down in a room: holds the 1st enemy that passes for 3 s",
+                    "al dejar la carga por 1.ª vez en la sala: atrapa al primer enemigo que pase 3 s",
+                    "saat pertama menaruh paket di ruang: menjebak musuh pertama yang lewat 3 dtk");
+                case Gear.Boots: return L(pt, "water and slime puddles don't slow you (passive)", "el agua y los charcos de limo no te frenan (pasivo)",
+                    "air dan genangan slime tak memperlambat (pasif)");
+                default: return pt;
+            }
+        }
+
+        // roupas do courier (cosmetico)
+        public static string Roupas => L("Roupas do courier", "Courier outfits", "Trajes del courier", "Pakaian kurir");
+        public static string RoupasBotao => L("ROUPAS", "OUTFITS", "TRAJES", "PAKAIAN");
+        public static string RoupasCabeca => L("Só visual: não muda o jogo.", "Cosmetic only: no gameplay change.", "Solo estético: no cambia el juego.",
+            "Hanya tampilan: tak mengubah permainan.");
+
+        /// <summary>Nome da roupa: pt do Core (OutfitDef.Name); o resto pela tabela.</summary>
+        public static string RoupaNome(Outfit o)
+        {
+            string pt = (int)o >= 0 && (int)o < OutfitDef.All.Length ? OutfitDef.All[(int)o].Name : o.ToString();
+            switch (o)
+            {
+                case Outfit.Classic: return L(pt, "Classic", "Clásico", "Klasik");
+                case Outfit.Night: return L(pt, "Night", "Nocturno", "Malam");
+                case Outfit.Royal: return L(pt, "Royal", "Real", "Bangsawan");
+                case Outfit.Explorer: return L(pt, "Explorer", "Explorador", "Penjelajah");
+                case Outfit.Forge: return L(pt, "Forge firefighter", "Bombero de forja", "Pemadam tempaan");
+                case Outfit.Ghost: return L(pt, "Ghost", "Fantasma", "Hantu");
+                default: return pt;
+            }
+        }
+
+        public static string RoupaOrigem(Outfit o)
+        {
+            switch (o)
+            {
+                case Outfit.Classic: return L("a de sempre (grátis)", "the usual one (free)", "el de siempre (gratis)", "yang biasa (gratis)");
+                case Outfit.Explorer: return L("na loja ou no Pacote inicial", "in the shop or the Starter Pack", "en la tienda o el Paquete inicial", "di toko atau Paket pemula");
+                case Outfit.Ghost: return L("marco de 95 estrelas ou temporada (não se compra)", "95-star milestone or season (not for sale)",
+                    "logro de 95 estrellas o temporada (no se compra)", "pencapaian 95 bintang atau musim (tak dijual)");
+                default: return L("na loja", "in the shop", "en la tienda", "di toko");
+            }
+        }
+
+        // loja (IAP de teste; conteudo fixo e listado, nada aleatorio)
+        public static string Loja => L("Loja", "Shop", "Tienda", "Toko");
+        public static string LojaBotao => L("LOJA", "SHOP", "TIENDA", "TOKO");
+        public static string LojaCabeca => L("Compras de teste: nada é cobrado. Conteúdo fixo e listado, nada aleatório.",
+            "Test purchases: nothing is charged. Fixed, listed content, nothing random.",
+            "Compras de prueba: no se cobra nada. Contenido fijo y listado, nada aleatorio.",
+            "Pembelian uji: tidak ada tagihan. Isi tetap dan tertulis, tanpa acak.");
+        public static string Comprado => L("COMPRADO", "OWNED", "COMPRADO", "DIMILIKI");
+        public static string Preco(string valor) => F("R$ {0} (teste)", "R$ {0} (test)", "R$ {0} (prueba)", "R$ {0} (uji)", valor);
+        public static string StarterDepois(int c) => F("aparece depois do C{0}", "shows up after C{0}", "aparece después del C{0}", "muncul setelah C{0}", c);
+        public static string PacoteSemana => L("comprado: vale até domingo", "owned: valid until Sunday", "comprado: vale hasta el domingo", "dimiliki: berlaku sampai Minggu");
+        public static string LojaTeste => L("Loja de teste", "Test store", "Tienda de prueba", "Toko uji");
+        public static string ConfirmarCompra(string nome, string preco) => F("Comprar {0} por {1}?\n\nCompra de teste: nada é cobrado.",
+            "Buy {0} for {1}?\n\nTest purchase: nothing is charged.", "¿Comprar {0} por {1}?\n\nCompra de prueba: no se cobra nada.",
+            "Beli {0} seharga {1}?\n\nPembelian uji: tidak ada tagihan.", nome, preco);
+        public static string Confirmar => L("CONFIRMAR", "CONFIRM", "CONFIRMAR", "KONFIRMASI");
+        public static string Cancelar => L("CANCELAR", "CANCEL", "CANCELAR", "BATAL");
+
+        public static string ProdutoNome(Product p)
+        {
+            switch (p)
+            {
+                case Product.RemoveAds: return L("Remover anúncios", "Remove ads", "Quitar anuncios", "Hapus iklan");
+                case Product.StarterPack: return L("Pacote inicial", "Starter Pack", "Paquete inicial", "Paket pemula");
+                case Product.EventPack: return L("Pacote de evento", "Event pack", "Paquete de evento", "Paket event");
+                default:
+                    Outfit o = p == Product.OutfitNight ? Outfit.Night : p == Product.OutfitRoyal ? Outfit.Royal : p == Product.OutfitExplorer ? Outfit.Explorer : Outfit.Forge;
+                    return F("Roupa {0}", "{0} outfit", "Traje {0}", "Pakaian {0}", RoupaNome(o));
+            }
+        }
+
+        /// <summary>O que vem na compra, sempre fixo e listado (guardrail: nada aleatorio pago).</summary>
+        public static string ProdutoConteudo(Product p)
+        {
+            switch (p)
+            {
+                case Product.RemoveAds: return L("Tira os anúncios entre contratos. Os anúncios com recompensa continuam opcionais.",
+                    "Removes ads between contracts. Reward ads stay optional.", "Quita los anuncios entre contratos. Los anuncios con recompensa siguen siendo opcionales.",
+                    "Menghapus iklan antar kontrak. Iklan berhadiah tetap opsional.");
+                case Product.StarterPack: return F("{0} moedas + roupa Explorador + 1 projeto de cada equipamento (4)",
+                    "{0} coins + Explorer outfit + 1 blueprint of each gear (4)", "{0} monedas + traje Explorador + 1 plano de cada equipo (4)",
+                    "{0} koin + pakaian Penjelajah + 1 cetak biru tiap perlengkapan (4)", Balance.StarterCoins);
+                case Product.EventPack: return F("+{0} vagas no evento desta semana (+{1} e +{2} moedas)", "+{0} slots in this week's event (+{1} and +{2} coins)",
+                    "+{0} puestos en el evento de esta semana (+{1} y +{2} monedas)", "+{0} slot di event minggu ini (+{1} dan +{2} koin)",
+                    Balance.EventPackContracts, Sim.EventReward(3), Sim.EventReward(4));
+                default: return L("Só visual: troca a roupa do courier.", "Cosmetic only: changes the courier's outfit.", "Solo estético: cambia el traje del courier.",
+                    "Hanya tampilan: mengganti pakaian kurir.");
+            }
+        }
+
+        // anuncios (simulador de teste) e ofertas de rewarded (§7)
+        public static string AnuncioTeste => L("ANÚNCIO DE TESTE", "TEST AD", "ANUNCIO DE PRUEBA", "IKLAN UJI");
+        public static string AnuncioGanha(string premio) => F("Assista até o fim para ganhar:\n{0}", "Watch to the end to get:\n{0}",
+            "Mira hasta el final para ganar:\n{0}", "Tonton sampai habis untuk dapat:\n{0}", premio);
+        public static string AnuncioEntre => L("Anúncio entre contratos.\nRemover anúncios tira este.", "Ad between contracts.\nRemove ads turns these off.",
+            "Anuncio entre contratos.\nQuitar anuncios los desactiva.", "Iklan antar kontrak.\nHapus iklan mematikannya.");
+        public static string AnuncioSemSdk => L("simulador no PC: nenhum anúncio real", "PC simulator: no real ad", "simulador en PC: ningún anuncio real",
+            "simulator PC: bukan iklan asli");
+        public static string Fechar => L("FECHAR", "CLOSE", "CERRAR", "TUTUP");
+        public static string PularSemPremio => L("PULAR (sem recompensa)", "SKIP (no reward)", "SALTAR (sin recompensa)", "LEWATI (tanpa hadiah)");
+        public static string PremioRetomar => L("voltar à entrada da sala com vida cheia", "back to the room entrance with full health",
+            "volver a la entrada de la sala con vida llena", "kembali ke pintu masuk ruang dengan nyawa penuh");
+        public static string PremioDobro(int n) => F("+{0} moedas (bônus dobrado)", "+{0} coins (double bonus)", "+{0} monedas (bono doble)", "+{0} koin (bonus ganda)", n);
+        public static string PremioRota => L("a porta mais segura desta sala", "the safest door in this room", "la puerta más segura de esta sala", "pintu paling aman di ruang ini");
+        public static string PremioBau(int moedas, Gear g) => g == Gear.None
+            ? F("{0} moedas", "{0} coins", "{0} monedas", "{0} koin", moedas)
+            : F("{0} moedas + 1 projeto: {1}", "{0} coins + 1 blueprint: {1}", "{0} monedas + 1 plano: {1}", "{0} koin + 1 cetak biru: {1}", moedas, GearNome(g));
+        public static string OfertaRetomar => L("RETOMAR DA SALA\nver anúncio de teste", "RESUME THE ROOM\nwatch a test ad", "RETOMAR LA SALA\nver anuncio de prueba",
+            "LANJUTKAN RUANG\ntonton iklan uji");
+        public static string OfertaDobro(int n) => F("DOBRAR BÔNUS +{0}\nver anúncio de teste", "DOUBLE BONUS +{0}\nwatch a test ad",
+            "DOBLAR BONO +{0}\nver anuncio de prueba", "GANDAKAN BONUS +{0}\ntonton iklan uji", n);
+        public static string OfertaRota => L("ROTA SEGURA\nver anúncio de teste", "SAFE ROUTE\nwatch a test ad", "RUTA SEGURA\nver anuncio de prueba",
+            "RUTE AMAN\ntonton iklan uji");
+        public static string ProtejaRetome => L("Proteja a carga e retome: volte à entrada da sala com vida cheia.",
+            "Protect the cargo and resume: go back to the room entrance with full health.",
+            "Protege la carga y retoma: vuelve a la entrada de la sala con vida llena.",
+            "Lindungi paket dan lanjutkan: kembali ke pintu masuk ruang dengan nyawa penuh.");
+        public static string BauDia => L("Baú do dia", "Daily chest", "Cofre del día", "Peti harian");
+        public static string VerAnuncio => L("VER ANÚNCIO", "WATCH AD", "VER ANUNCIO", "TONTON IKLAN");
+        public static string Aberto => L("ABERTO", "OPENED", "ABIERTO", "DIBUKA");
+        public static string BauVolte => L("aberto hoje: volte amanhã", "opened today: come back tomorrow", "abierto hoy: vuelve mañana", "sudah dibuka: kembali besok");
+
+        /// <summary>Dica da HUD com a rota segura revelada (rewarded): a porta pela posicao no topo da sala (9 m). So literais.</summary>
+        public static string RotaSegura(float x) => x < 3f
+            ? L("rota segura: a porta da esquerda", "safe route: the left door", "ruta segura: la puerta de la izquierda", "rute aman: pintu kiri")
+            : x > 6f ? L("rota segura: a porta da direita", "safe route: the right door", "ruta segura: la puerta de la derecha", "rute aman: pintu kanan")
+            : L("rota segura: a porta do meio", "safe route: the middle door", "ruta segura: la puerta del medio", "rute aman: pintu tengah");
 
         public static string Num(int v) => v.ToString(Inv);
         /// <summary>Relogio da HUD: "s" (simbolo SI) em todas as linguas, cabe no espaco curto da faixa; o texto corrido do ID usa "dtk".</summary>

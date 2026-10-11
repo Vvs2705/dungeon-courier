@@ -8,5 +8,6 @@
   "rare_hours": 8,
   "reroll_base": 60,
   "reroll_step": 60,
-  "starter_after": 3
+  "starter_after": 3,
+  "config_url": ""
 }

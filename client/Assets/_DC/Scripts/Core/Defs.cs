@@ -203,8 +203,11 @@ namespace DC.Core
         SeasonProgress, SeasonClaim, RareOffer, RareStart, Reroll, EndlessStart, EndlessEnd, RewardedOffer, RewardedGrant, RewardedResume,
         InterstitialShow, IapPurchase, DeviceFps, OutfitEquip,
         // regiao 2 (raia R2: insira abaixo desta linha)
+        CageScream, CageCalm, Burrow, Summon, RockFall,   // A/B no topo de Run.Regiao2.cs
         // regiao 3 (raia R3: insira abaixo desta linha)
+        EnemyRevive, BonesScatter, Webbed, Raise, Blink, LanternOut, LanternLit, Reflect, WebTorn,   // A/B no topo de Run.Regiao3.cs
         // regiao 4 (raia R4: insira abaixo desta linha)
+        BossPhase, TakeOff, Land, PlantBite, LavaBurn, VentFire, EggHatch, ForemanCall,   // A/B no topo de Run.Regiao4.cs
     }
 
     public struct SimEvent
@@ -394,14 +397,14 @@ namespace DC.Core
             new CargoDef(CargoType.Heavy, "Caixa pesada", 1.6f, 0f, "-25% de velocidade; pousar e pegar mais lentos"),
             new CargoDef(CargoType.Barrel, "Barril de pólvora", 1.5f, 0f, "no chão por 3 s explode"),
             // ---- lancamento (CONTRATO_LANCAMENTO §3): PROVISORIAS (pagamento chutado; verbo ainda nao implementado = carga normal)
-            new CargoDef(CargoType.ArcaneHeart, "Coração arcano", 1.4f, 0f, "ímã de moedas e de inimigos num raio visível") { Provisional = true },
-            new CargoDef(CargoType.IceCrystal, "Cristal de gelo", 1.5f, 0f, "derrete com o tempo; lava acelera, água recongela") { Provisional = true },
-            new CargoDef(CargoType.GriffinCage, "Gaiola do grifinho", 1.4f, 0f, "grita a cada ~6 s e atrai inimigos; dash acalma") { Provisional = true },
-            new CargoDef(CargoType.Lantern, "Lanterna", 1.3f, 0f, "ilumina a sala escura; derrubada apaga") { Provisional = true },
-            new CargoDef(CargoType.Mirror, "Espelho encantado", 1.5f, 0f, "reflete flechas de frente; 3 reflexos quebram") { Provisional = true },
-            new CargoDef(CargoType.Balloon, "Balão de gás", 1.3f, 0f, "+15% de velocidade; no chão escapa em 4 s") { Provisional = true },
-            new CargoDef(CargoType.Flytrap, "Planta carnívora", 1.4f, 0f, "no chão morde inimigos perto; morde o courier sem carregá-la") { Provisional = true },
-            new CargoDef(CargoType.TreasureMap, "Mapa do tesouro", 1.3f, 0f, "revela baús e paredes rachadas; ladrões o preferem") { Provisional = true },
+            new CargoDef(CargoType.ArcaneHeart, "Coração arcano", 1.35f, 0f, "ímã de moedas e de inimigos num raio de 4 m"),   // regiao 2 (Run.Regiao2.cs)
+            new CargoDef(CargoType.IceCrystal, "Cristal de gelo", 1.45f, 0f, "derrete com o tempo; a água recongela, a lava acelera"),
+            new CargoDef(CargoType.GriffinCage, "Gaiola do grifinho", 1.30f, 0f, "grita a cada 6 s e atrai inimigos; o dash acalma"),
+            new CargoDef(CargoType.Lantern, "Lanterna", 1.20f, 0f, "ilumina a sala escura; derrubada apaga e só reacende numa tocha"),   // regiao 3 (Run.Regiao3.cs)
+            new CargoDef(CargoType.Mirror, "Espelho encantado", 1.45f, 0f, "reflete flecha, teia e raio de frente; cada reflexo racha (3 = quebra)"),
+            new CargoDef(CargoType.Balloon, "Balão de gás", 1.35f, 0f, "+15% de velocidade; no chão escapa em 4 s; ladrão não alcança"),
+            new CargoDef(CargoType.Flytrap, "Planta carnívora", 1.3f, 0f, "no chão morde inimigos perto; morde o courier parado ao lado dela"),   // regiao 4 (Run.Regiao4.cs)
+            new CargoDef(CargoType.TreasureMap, "Mapa do tesouro", 1.2f, 0f, "revela baús e paredes rachadas; ladrões o preferem"),
         };
     }
 
@@ -441,28 +444,34 @@ namespace DC.Core
             new EnemyDef(EnemyType.Captain, "Capitão Ladrão", 24, 2.6f, 0.50f, 1, 1.0f, 0.9f, 0.5f, 1.2f, true, B),
             // ---- lancamento (CONTRATO_LANCAMENTO §4): PROVISORIOS. Numeros chutados; sem comportamento = Melee (persegue e golpeia).
             //      O vagonete fica parado e sem dano ate a raia R2 o por nos trilhos. hp, vel, raio, dano, alcance, gatilho, telegraph, recarga, tranca
-            new EnemyDef(EnemyType.GoblinMiner,    "Goblin mineiro",     4,  1.4f, 0.35f, 1, 1.0f, 0.9f, 0.6f, 1.4f, false, false, Ar) { Provisional = true, Region = 2 },
-            new EnemyDef(EnemyType.Mole,           "Toupeira",           3,  1.8f, 0.35f, 1, 0.9f, 0.8f, 0.5f, 1.4f, false, false, Sm) { Provisional = true, Region = 2 },
-            new EnemyDef(EnemyType.BogFrog,        "Sapo do lodo",       4,  1.0f, 0.40f, 1, 1.0f, 0.9f, 0.6f, 1.6f, false, false, Th) { Provisional = true, Region = 2 },
-            new EnemyDef(EnemyType.BombBeetle,     "Besouro-bomba",      2,  2.6f, 0.30f, 2, 0.8f, 0.6f, 1.0f, 1.5f, false, false, Sm) { Provisional = true, Region = 2 },
-            new EnemyDef(EnemyType.Minecart,       "Vagonete",           99, 0f,   0.50f, 0, 0f,   0f,   0f,   1.0f, false, false, Sm) { Provisional = true, Region = 2 },
+            // regiao 2 (CONTEUDO_REGIOES §5; comportamento em Run.Regiao2.cs). Mineiro: alcance/gatilho do arremesso; toupeira: velocidade por
+            // baixo, alcance do monte, recarga = tempo fora; sapo: lingua; besouro: alcance = raio da explosao, telegraph = pavio; vagonete:
+            // velocidade no trilho, dano no courier (6 em inimigo), telegraph = sino, recarga = tunel (invulneravel, nao e alvo)
+            new EnemyDef(EnemyType.GoblinMiner,    "Goblin mineiro",     4,  1.5f, 0.35f, 1, 6.0f, 6.0f, 0.9f, 2.6f, false, false, Ar) { Region = 2 },
+            new EnemyDef(EnemyType.Mole,           "Toupeira",           3,  2.2f, 0.35f, 1, 0.9f, 0f,   0.8f, 2.0f, false, false, Sm) { Region = 2 },
+            new EnemyDef(EnemyType.BogFrog,        "Sapo do lodo",       5,  0f,   0.45f, 1, 3.0f, 3.0f, 0.7f, 2.5f, false, false, Th) { Region = 2 },
+            new EnemyDef(EnemyType.BombBeetle,     "Besouro-bomba",      2,  3.0f, 0.30f, 2, 1.5f, 0.8f, 1.0f, 0f,   false, false, Sm) { Region = 2 },
+            new EnemyDef(EnemyType.Minecart,       "Vagonete",           99, 6.0f, 0.60f, 2, 0.6f, 0f,   1.2f, 2.0f, false, false, Sm) { Region = 2 },
             new EnemyDef(EnemyType.Ghost,          "Fantasma",           3,  1.2f, 0.35f, 1, 0.9f, 0.8f, 0.5f, 1.4f, false, false, Th) { Provisional = true, Region = 3 },
             new EnemyDef(EnemyType.Skeleton,       "Esqueleto",          4,  1.4f, 0.40f, 1, 1.0f, 0.9f, 0.5f, 1.2f, false, false, No) { Provisional = true, Region = 3 },
             new EnemyDef(EnemyType.Spider,         "Aranha",             3,  1.8f, 0.35f, 1, 0.9f, 0.8f, 0.5f, 1.4f, false, false, No) { Provisional = true, Region = 3 },
             new EnemyDef(EnemyType.Mummy,          "Múmia",              8,  0.9f, 0.45f, 1, 1.0f, 0.9f, 0.7f, 1.6f, false, false, No) { Provisional = true, Region = 3 },
             new EnemyDef(EnemyType.Gargoyle,       "Gárgula",            6,  2.0f, 0.45f, 2, 1.0f, 0.9f, 0.8f, 2.0f, false, false, Sm) { Provisional = true, Region = 3 },
-            new EnemyDef(EnemyType.Salamander,     "Salamandra",         3,  2.0f, 0.35f, 1, 0.9f, 0.8f, 0.5f, 1.4f, false, false, No) { Provisional = true, Region = 4 },
-            new EnemyDef(EnemyType.Imp,            "Diabrete",           3,  2.2f, 0.30f, 1, 0.8f, 0.7f, 0.5f, 1.4f, false, false, Th) { Provisional = true, Region = 4 },
-            new EnemyDef(EnemyType.KoboldBomber,   "Kobold incendiário", 3,  1.4f, 0.35f, 1, 1.0f, 0.9f, 0.6f, 1.6f, false, false, Ar) { Provisional = true, Region = 4 },
-            new EnemyDef(EnemyType.MagmaElemental, "Elemental de magma", 6,  1.2f, 0.50f, 2, 1.1f, 1.0f, 0.7f, 1.6f, false, false, Sm) { Provisional = true, Region = 4 },
-            new EnemyDef(EnemyType.MoleQueen,      "Rainha Toupeira",    26, 1.8f, 0.60f, 1, 1.1f, 1.0f, 0.6f, 1.4f, L, B, Th) { Provisional = true, Region = 2 },
-            new EnemyDef(EnemyType.StoneGolem,     "Golem de Pedra",     50, 1.0f, 0.90f, 3, 2.0f, 1.6f, 1.0f, 2.2f, L, B, Sm) { Provisional = true, Region = 2 },
+            // regiao 4 (CONTEUDO_REGIOES §5; comportamento em Run.Regiao4.cs)
+            new EnemyDef(EnemyType.Salamander,     "Salamandra",         4,  2.4f, 0.35f, 1, 0f,   0f,   0f,   1.2f, false, false, Sm) { Region = 4 },
+            new EnemyDef(EnemyType.Imp,            "Diabrete",           3,  2.0f, 0.30f, 1, 0.8f, 0.7f, 1.0f, 5.0f, false, false, Th) { Region = 4 },
+            new EnemyDef(EnemyType.KoboldBomber,   "Kobold incendiário", 4,  1.6f, 0.35f, 1, 6.0f, 6.0f, 0.9f, 3.0f, false, false, Ar) { Region = 4 },
+            new EnemyDef(EnemyType.MagmaElemental, "Elemental de magma", 10, 1.2f, 0.60f, 2, 1.2f, 1.0f, 0.8f, 1.6f, false, false, Sm) { Region = 4 },
+            // Rainha: velocidade por baixo, alcance da patada (monte 1,4 m em Run.Regiao2), telegraph do monte (patada 0,6), recarga = tempo fora.
+            // Golem: vida em MEIOS pontos (80 = 40 de vida): de frente o tiro tira metade, pelas costas x2 (ponto fraco).
+            new EnemyDef(EnemyType.MoleQueen,      "Rainha Toupeira",    22, 2.4f, 0.70f, 2, 1.2f, 1.2f, 1.0f, 3.5f, L, B, Th) { Region = 2 },
+            new EnemyDef(EnemyType.StoneGolem,     "Golem de Pedra",     80, 1.0f, 1.00f, 3, 2.2f, 1.8f, 1.1f, 2.2f, L, B, Sm) { Region = 2 },
             new EnemyDef(EnemyType.SpiderWidow,    "Viúva Aranha",       28, 1.6f, 0.60f, 1, 1.1f, 1.0f, 0.6f, 1.4f, L, B, Th) { Provisional = true, Region = 3 },
             new EnemyDef(EnemyType.Necromancer,    "Necromante",         48, 1.2f, 0.60f, 2, 1.5f, 1.3f, 0.9f, 2.0f, L, B, No) { Provisional = true, Region = 3 },
-            new EnemyDef(EnemyType.KoboldForeman,  "Capataz Kobold",     30, 1.8f, 0.60f, 2, 3.0f, 2.5f, 0.7f, 1.6f, L, B, Ar) { Provisional = true, Region = 4 },
-            new EnemyDef(EnemyType.ElderDragon,    "Dragão Ancião",      70, 1.2f, 1.00f, 3, 2.5f, 2.0f, 1.2f, 2.4f, L, B, Sm) { Provisional = true, Region = 4 },
-            new EnemyDef(EnemyType.MagmaShard,     "Brasa de magma",     4,  1.8f, 0.40f, 1, 0.8f, 0.7f, 0.5f, 1.2f, false, false, No) { Provisional = true, Region = 4 },
-            new EnemyDef(EnemyType.SalamanderEgg,  "Ovo de salamandra",  2,  0f,   0.30f, 0, 0f,   0f,   6.0f, 0f,   false, false, No) { Provisional = true, Region = 4 },
+            new EnemyDef(EnemyType.KoboldForeman,  "Capataz Kobold",     18, 1.8f, 0.55f, 2, 3.0f, 2.6f, 0.7f, 1.8f, L, B, Ar | Th) { Region = 4 },
+            new EnemyDef(EnemyType.ElderDragon,    "Dragão Ancião",      48, 0.8f, 1.30f, 3, 6.0f, 6.0f, 1.4f, 3.0f, L, B, Sm) { Region = 4 },
+            new EnemyDef(EnemyType.MagmaShard,     "Brasa de magma",     4,  1.8f, 0.40f, 1, 0.8f, 0.7f, 0.5f, 1.2f, false, false, No) { Region = 4 },
+            new EnemyDef(EnemyType.SalamanderEgg,  "Ovo de salamandra",  2,  0f,   0.30f, 0, 0f,   0f,   6.0f, 0f,   false, false, No) { Region = 4 },
         };
     }
 

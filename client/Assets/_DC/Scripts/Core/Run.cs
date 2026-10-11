@@ -32,6 +32,8 @@ namespace DC.Core
         public float Fuse, PickT, Wobble;
         /// <summary>Lanterna apagada (derrubada por golpe; a raia R3 liga e reacende numa tocha): no chao nao ilumina.</summary>
         public bool Out;
+        /// <summary>Tempo a mais para pegar (s): teia 1,0, casulo da Viuva 1,5 (raia R3 atualiza a cada passo). Progresso em PickT.</summary>
+        public float PickExtra;
         /// <summary>O barril so arma depois de ter estado nas maos neste contrato (o barril do resgate no chao nao explode sozinho).</summary>
         internal bool Armed;
     }
@@ -534,6 +536,7 @@ namespace DC.Core
             g.State = CargoState.Ground; g.Pos = pos; g.AloneT = 0f; g.PickT = 0f;
             Emit(Ev.CargoDrop, g.Id, reason, g.Pos);
             if (g.Type == CargoType.Barrel && g.Armed) Emit(Ev.FuseLit, g.Id, 0, g.Pos);
+            DropR3(g, reason);   // regiao 3: queda apaga a lanterna e racha o espelho
         }
 
         void Plant()
@@ -566,7 +569,8 @@ namespace DC.Core
             {
                 if (g.State != CargoState.Ground) continue;
                 if (V2.Dist(g.Pos, Courier.Pos) > range) { g.PickT = 0f; continue; }
-                if (g.Type == CargoType.Heavy) { g.PickT += Balance.Step; if (g.PickT < Balance.HeavyPick - 1e-4f) continue; }   // caixa pesada: +0,2 s
+                float need = (g.Type == CargoType.Heavy ? Balance.HeavyPick : 0f) + g.PickExtra;   // caixa pesada: +0,2 s; teia/casulo (R3)
+                if (need > 0f) { g.PickT += Balance.Step; if (g.PickT < need - 1e-4f) continue; }
                 g.State = CargoState.Held; g.AloneT = 0f; g.PickT = 0f; g.Fuse = 0f; g.Armed = true;
                 Emit(Ev.CargoPickup, g.Id, 0, g.Pos);
             }
@@ -634,7 +638,7 @@ namespace DC.Core
         /// <summary>A arma equipada alcanca este inimigo daqui? Estilingue (teleguiado) e bombinha (arco) passam por cima de obstaculo;
         /// o bumerangue precisa de linha livre (o pilar o faz voltar). A mira automatica so escolhe alvo atingivel.</summary>
         public bool CanHit(Enemy e) => e.Alive && !e.Def.Hazard && V2.Dist(e.Pos, Courier.Pos) <= WeaponDef.All[(int)Weapon].Range + 1e-4f
-                                       && (Weapon != Weapon.Boomerang || nav.ShotClear(Courier.Pos, e.Pos, 0.1f)) && (!Lit || InLight(e.Pos));
+                                       && (Weapon != Weapon.Boomerang || nav.ShotClear(Courier.Pos, e.Pos, 0.1f)) && (!Lit || InLight(e.Pos)) && HitMul(e) > 0;
 
         void UpdateShots()
         {
@@ -682,6 +686,7 @@ namespace DC.Core
         void Hit(Enemy e, int dmg)
         {
             if (!e.Alive) return;
+            int mul = HitMul(e); if (mul <= 0) return; dmg *= mul;   // regioes: intocavel (0) ou janela de dano (2)
             if (e.Asleep) { dmg *= Balance.SleepHitMul; Wake(e); }   // 1o golpe num dormindo: dano x2
             e.Hp -= dmg;
             Emit(Ev.EnemyHit, e.Id, Math.Max(0, e.Hp), e.Pos);
@@ -822,8 +827,7 @@ namespace DC.Core
 
         void Bat(Enemy e)
         {
-            var c = Courier;
-            V2 to = c.Pos - e.Pos; float d = to.Len;
+            V2 to = ChaseTarget(e) - e.Pos; float d = to.Len;
             e.State = EnemyState.Chase;
             if (d > 0.05f)
             {
@@ -854,7 +858,7 @@ namespace DC.Core
         {
             var c = Courier;
             e.State = EnemyState.Chase;
-            if (c.State != CourierState.Dead && V2.Dist(e.Pos, c.Pos) > e.Def.Radius + Balance.CourierR - 0.05f) MoveWalker(e, c.Pos, e.Def.Speed);
+            if (c.State != CourierState.Dead && V2.Dist(e.Pos, c.Pos) > e.Def.Radius + Balance.CourierR - 0.05f) MoveWalker(e, ChaseTarget(e), e.Def.Speed);
             Touch(e);
         }
 
@@ -934,7 +938,7 @@ namespace DC.Core
             Cargo t = null; float best = float.MaxValue;
             foreach (Cargo g in Cargos)
             {
-                if (g.State != CargoState.Ground) continue;
+                if (g.State != CargoState.Ground || g.Type == CargoType.Balloon) continue;   // o balao (R3) flutua: ladrao e Capitao nao alcancam
                 float d = V2.Dist(e.Pos, g.Pos);
                 if (d < best) { best = d; t = g; }
             }
@@ -1006,7 +1010,7 @@ namespace DC.Core
                 Emit(Ev.Telegraph, e.Id, (int)e.Type, e.Pos);
                 return;
             }
-            if (d.Speed > 0f && edge > d.Trigger * 0.7f) { e.State = EnemyState.Chase; MoveWalker(e, c.Pos, d.Speed); }
+            if (d.Speed > 0f && edge > d.Trigger * 0.7f) { e.State = EnemyState.Chase; MoveWalker(e, ChaseTarget(e), d.Speed); }
             else e.State = e.Cd > 0f ? EnemyState.Recover : EnemyState.Idle;
         }
 
@@ -1301,8 +1305,9 @@ namespace DC.Core
             return true;
         }
 
-        /// <summary>Quebra: reliquia com BreakAt rachaduras; com o Fragil, qualquer carga com 2.</summary>
-        internal bool Breaks(Cargo g) => (g.Type == CargoType.Relic && g.Cracks >= BreakAt) || (Has(Modifier.Fragile) && g.Cracks >= Balance.FragileBreak);
+        /// <summary>Quebra: reliquia, espelho e balao (R3) com BreakAt rachaduras; com o Fragil, qualquer carga com 2.</summary>
+        internal bool Breaks(Cargo g) => ((g.Type == CargoType.Relic || g.Type == CargoType.Mirror || g.Type == CargoType.Balloon) && g.Cracks >= BreakAt)
+                                         || (Has(Modifier.Fragile) && g.Cracks >= Balance.FragileBreak);
 
         /// <summary>Ponto dentro de agua da sala.</summary>
         public bool InWater(V2 p) { foreach (Rect w in Room.Water) { V2 q = w.Closest(p); if (q.X == p.X && q.Y == p.Y) return true; } return false; }
@@ -1310,9 +1315,10 @@ namespace DC.Core
         /// <summary>Ponto iluminado: luz do courier (3,5 m; lanterna nas maos 5,5; x Olhos de gato), tocha (2,5 m) ou lanterna acesa no chao (4 m).</summary>
         public bool InLight(V2 p)
         {
-            float own = (Holds(CargoType.Lantern) ? Balance.LightLantern : Balance.LightCourier) * LightMul;
+            bool lamp = false; foreach (Cargo g in Cargos) if (g.Type == CargoType.Lantern && g.State == CargoState.Held && !g.Out) lamp = true;   // apagada nas maos nao ilumina
+            float own = (lamp ? Balance.LightLantern : Balance.LightCourier) * LightMul - LightCut;   // LightCut/TorchCut: Necromante fase 3, Neblina na cripta (R3)
             if (V2.Dist(p, Courier.Pos) <= own) return true;
-            foreach (V2 t in Torches) if (V2.Dist(p, t) <= Balance.LightTorch) return true;
+            foreach (V2 t in Torches) if (V2.Dist(p, t) <= Balance.LightTorch - TorchCut) return true;
             foreach (Cargo g in Cargos) if (g.Type == CargoType.Lantern && g.State == CargoState.Ground && !g.Out && V2.Dist(p, g.Pos) <= Balance.LightLanternGround) return true;
             return false;
         }
@@ -1345,6 +1351,18 @@ namespace DC.Core
         partial void SpeedR2(ref float mul); partial void SpeedR3(ref float mul); partial void SpeedR4(ref float mul);
         partial void EnemyDiedR2(Enemy e); partial void EnemyDiedR3(Enemy e); partial void EnemyDiedR4(Enemy e);
         partial void HintR2(ref Hint h); partial void HintR3(ref Hint h); partial void HintR4(ref Hint h);
+        /// <summary>Multiplicador do dano que o inimigo leva (tiro, explosao, lava...): 0 = intocavel (nao e alvo da mira nem leva dano: Dragao no
+        /// ar, toupeira por baixo...), 2 = janela de dano (Dragao de cabeca baixa). Cada regiao muda `mul` no seu HitMulRn.</summary>
+        int HitMul(Enemy e) { int m = 1; HitMulR2(e, ref m); HitMulR3(e, ref m); HitMulR4(e, ref m); return m; }
+        /// <summary>Intocavel agora (HitMul 0): nao e alvo da mira nem leva dano (a View e o bot leem).</summary>
+        public bool Untouchable(Enemy e) => HitMul(e) <= 0;
+        /// <summary>Carga foi ao chao (ToGround): reason 0 pousou, 1 dash, 2 ladrao atingido, 3 fumaca (raia R3: lanterna apaga, espelho racha).</summary>
+        partial void DropR3(Cargo g, int reason);
+        partial void HitMulR2(Enemy e, ref int mul); partial void HitMulR3(Enemy e, ref int mul); partial void HitMulR4(Enemy e, ref int mul);
+        /// <summary>Para onde quem persegue anda (morcego, limo, Bruto...): o courier, ou o que a regiao manda no TargetRn (coracao arcano no chao,
+        /// grito da gaiola: R2). Sem regiao = o courier (regiao 1 igual).</summary>
+        internal V2 ChaseTarget(Enemy e) { V2 t = Courier.Pos; TargetR2(e, ref t); TargetR3(e, ref t); TargetR4(e, ref t); return t; }
+        partial void TargetR2(Enemy e, ref V2 t); partial void TargetR3(Enemy e, ref V2 t); partial void TargetR4(Enemy e, ref V2 t);
 
         // ------------------------------------------------------------------ geometria e navegacao
 

@@ -39,7 +39,7 @@ from mathutils import Euler, Matrix, Quaternion, Vector
 DIRS = {1: ["S"], 4: ["S", "W", "N", "E"], 8: ["S", "SW", "W", "NW", "N", "NE", "E", "SE"]}
 LIGHT = {"flat": ("FLAT", None), "matcap": ("MATCAP", "toon_light.exr"), "studio": ("STUDIO", "Default")}
 BONE_RE = re.compile(r'pose\.bones\["([^"]+)"\]')
-LOOP_RE = re.compile(r"idle|walk|run|lurk|look|sleep|stun|charge", re.I)  # ponytail: laco por nome; o Unity pode sobrescrever
+LOOP_RE = re.compile(r"idle|walk|run|lurk|look|sleep|stun|charge|perch|hold", re.I)  # ponytail: laco por nome; o Unity pode sobrescrever
 ARM_RE = re.compile(r"(Left|Right)(Shoulder|\w*Arm|Hand)")  # ombro, braco, antebraco, mao, dedos (Mixamo e placeholder COE)
 HAND_RE = re.compile(r"(Left|Right)Hand$")
 ALIGN_SEEN = set()  # clipes alinhados sozinhos (rig em pose A sem --align-arms); vai para o meta
@@ -50,14 +50,16 @@ INK = (0x1B / 255.0, 0x17 / 255.0, 0x24 / 255.0)  # tinta do contorno, ART_BIBLE
 # Padroes genericos e tabela de atores do DC. Um argumento na linha vence o preset, que vence BASE.
 # ponytail: escala por ator numa tabela so; mudar aqui = re-render daquele ator, nada muda no Core
 BASE = dict(elev=60.0, dirs=4, fps=12.0, size=128, scale=0.0, yaw=0.0, light="flat", aa="8", max_frames=32,
-            height=0.0, width=0.0, mirror=False, outline=0, clips={}, align_arms=False, ground_cut=())
+            height=0.0, width=0.0, mirror=False, outline=0, clips={}, align_arms=False, ground_cut=(), footprint=(),
+            tilt=0.0)
 DC = dict(scale=120.0, outline=3, max_frames=12)  # 120 px/m na textura; a View mostra ~112 px/m (9,6 m em 1080 px)
 # Por clipe (preset "clips"): frames = quadros fixos (vence fps e teto); range = (ini, fim) quadros do clipe de origem.
 # BREATH: janela de laco do Breathing Idle (Forge, 1-299 = 9,9 s; tocado inteiro em 12 quadros dava 1,2 fps). 199-289 =
 # 3,0 s com a menor costura entre as janelas de 2-3 s: 2,2 cm na mao direita (X Bot de 1,8 m; ~1,6 cm no courier)
 BREATH = dict(range=(199, 289))
 EMERGE = dict(frames=6)  # sobe/mergulha em 0,3 s: 6 quadros de 1,5 em 1,5 (o padrao daria 4)
-RUN8 = dict(frames=8)  # Sprint do ARKANA: ciclo de 16 quadros de 2 em 2, sem subquadro (6 quadros pulavam 2,67)
+RUN8 = dict(frames=8)
+SIX = dict(frames=6)  # clipes de 0,3 s com o ultimo quadro amostrado ja na pose final  # Sprint do ARKANA: ciclo de 16 quadros de 2 em 2, sem subquadro (6 quadros pulavam 2,67)
 PRESETS = {
     "courier": dict(DC, height=1.30, dirs=8, mirror=True, size=224,
                     clips={"Idle": BREATH, "CarryIdle": BREATH, "Run": RUN8, "CarryRun": RUN8, "Throw": dict(frames=10)}),
@@ -101,6 +103,31 @@ PRESETS = {
     "gaiola": dict(DC, height=0.50, dirs=1, size=96),
     "lanterna_mina": dict(DC, height=0.50, dirs=1, size=96),
     "escora": dict(DC, width=1.20, dirs=1, size=176),
+    # Lote 5 (regiao 3, 2026-10-11): clava e cajado presos a RightHand pelo --attach na linha
+    "esqueleto": dict(DC, height=1.35, dirs=4, mirror=True, size=224, clips=dict(Idle=BREATH, Collapse=SIX, Rise=SIX)),
+    "mumia": dict(DC, height=1.50, dirs=4, mirror=True, size=224, clips=dict(Idle=BREATH, Hold=dict(frames=8))),
+    "gargula": dict(DC, height=1.40, dirs=4, mirror=True, size=256, clips=dict(Statue=dict(frames=1))),
+    "necromante": dict(DC, height=1.60, dirs=4, mirror=True, size=320),
+    "necromante_fim": dict(DC, height=1.60, dirs=1, size=320),
+    "clava": dict(DC, width=0.49, dirs=1, size=96),
+    "cajado": dict(DC, height=1.40, dirs=1, size=144),
+    "fantasma": dict(DC, height=0.90, dirs=1, size=128),
+    "aranha": dict(DC, width=0.80, dirs=1, size=128),
+    "aranha_empinada": dict(DC, width=0.80, dirs=1, size=144, tilt=35.0),
+    "viuva": dict(DC, width=2.00, dirs=1, size=320),
+    "viuva_empinada": dict(DC, width=2.00, dirs=1, size=352, tilt=30.0),
+    "lanterna": dict(DC, height=0.45, dirs=1, size=96),
+    "lanterna_apagada": dict(DC, height=0.45, dirs=1, size=96),  # o mesmo FBX com o basecolor da chama apagada
+    "espelho": dict(DC, height=0.50, dirs=1, size=96),
+    "balao": dict(DC, width=0.60, dirs=1, size=128),
+    "lapide": dict(DC, width=1.20, dirs=1, size=176),
+    "vela": dict(DC, height=0.70, dirs=1, size=112),
+    # sarcofago: planta 0,8 x 1,8 (o modelo e 1,4:1); 4 direcoes porque a sala R3-5 tem o obstaculo em pe e deitado
+    "sarcofago": dict(DC, footprint=(0.80, 1.80), dirs=4, mirror=True, size=288),
+    # icone da loja (loja_assets.py): 3/4 de frente (SW), camera mais baixa (35 graus), escala de icone; caixa a parte
+    "courier_icone": dict(DC, height=1.30, dirs=1, size=512, scale=320.0, elev=35.0, yaw=-45.0, outline=6,
+                          clips=dict(CarryIdle=dict(range=(199, 289), frames=1))),
+    "caixa_icone": dict(DC, width=0.50, dirs=1, size=256, scale=320.0, elev=35.0, yaw=-45.0, outline=6),
     "morcego": dict(DC, width=0.70, dirs=1, size=112),
     "filhote": dict(DC, height=0.50, dirs=1, size=96),
     "caixa": dict(DC, width=0.50, dirs=1, size=112),
@@ -191,23 +218,46 @@ def bone_order(arm):
     return out
 
 
-def normalize(model, meshes, a):
-    """Escala uniforme (em volta da origem = pe) para --height (altura) ou --width (maior medida horizontal)."""
-    if not (a.height or a.width):
-        return 1.0
+def model_points(meshes):
     bpy.context.view_layer.update()
     dg = bpy.context.evaluated_depsgraph_get()
-    pts = [ev.matrix_world @ v.co for ev in (m.evaluated_get(dg) for m in meshes) for v in ev.data.vertices]
-    span = lambda axis: max(p[axis] for p in pts) - min(p[axis] for p in pts)
-    now = span(2) if a.height else max(span(0), span(1))
-    if now < 1e-6:
-        die("modelo sem medida para normalizar")
-    k = (a.height or a.width) / now
+    return [ev.matrix_world @ v.co for ev in (m.evaluated_get(dg) for m in meshes) for v in ev.data.vertices]
+
+
+def transform_roots(model, M):
     for o in model:
         if o.parent is None:
-            o.matrix_world = Matrix.Scale(k, 4) @ o.matrix_world
+            o.matrix_world = M @ o.matrix_world
     bpy.context.view_layer.update()
-    print("ESCALA x%.4f (%s %.3f m -> %.3f m)" % (k, "altura" if a.height else "largura", now, a.height or a.width))
+
+
+def normalize(model, meshes, a):
+    """Escala uniforme (em volta da origem = pe) para --height (altura) ou --width (maior medida horizontal).
+    Preset footprint=(largura, comprimento): escala NAO uniforme da planta (o comprimento vai para o eixo Y, a altura
+    acompanha a largura), para o prop vestir um obstaculo de medida dada (sarcofago 0,8 x 1,8 com o modelo 1,4:1).
+    Preset tilt=graus: depois da escala, gira a frente (-Y) para cima e apoia o mais baixo no chao (aranha empinada)."""
+    if not (a.height or a.width or a.footprint):
+        return 1.0
+    pts = model_points(meshes)
+    span = lambda axis: max(p[axis] for p in pts) - min(p[axis] for p in pts)
+    if a.footprint:
+        w, l = a.footprint
+        ex, ey = span(0), span(1)
+        turn = Matrix.Rotation(math.pi / 2, 4, "Z") if ex > ey else Matrix()
+        k = w / min(ex, ey)
+        transform_roots(model, Matrix.Diagonal((k, l / max(ex, ey), k, 1.0)) @ turn)
+        print("PLANTA %.3f x %.3f m -> %.2f x %.2f m (comprimento em Y; altura x%.4f)" % (min(ex, ey), max(ex, ey), w, l, k))
+    else:
+        now = span(2) if a.height else max(span(0), span(1))
+        if now < 1e-6:
+            die("modelo sem medida para normalizar")
+        k = (a.height or a.width) / now
+        transform_roots(model, Matrix.Scale(k, 4))
+        print("ESCALA x%.4f (%s %.3f m -> %.3f m)" % (k, "altura" if a.height else "largura", now, a.height or a.width))
+    if a.tilt:
+        transform_roots(model, Matrix.Rotation(math.radians(-a.tilt), 4, "X"))
+        transform_roots(model, Matrix.Translation((0, 0, -min(p.z for p in model_points(meshes)))))
+        print("EMPINA %.0f graus (frente para cima, apoiado no chao)" % a.tilt)
     return k
 
 
