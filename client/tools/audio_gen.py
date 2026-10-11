@@ -513,6 +513,554 @@ SFX = {
 }
 
 
+# ------------------------------------------------------------------ SFX das regioes 2-4 e do lancamento (CONTEUDO_REGIOES §1, §5, §6;
+# CONTRATO_LANCAMENTO §6-§7). Variacao: 2-3 arquivos so nos sons que repetem na mesma sala; os raros tem 1 e variam pelo pitch do Play.
+
+def unit(x):
+    """Pico 1: deixa explicita a proporcao entre ruidos filtrados (svf/bp mudam muito o nivel)."""
+    return x / (np.max(np.abs(x)) + 1e-12)
+
+
+def brass(f, d, sr=SR):
+    """Metal: serra filtrada com saturacao (fanfarras e musica)."""
+    e = adsr(d * 0.88, 0.02, 0.15, 0.7, 0.06, sr)
+    return np.tanh(1.5 * lp(osc(np.full(len(e), f), "saw", sr, hmax=16), 2400, sr) * e)
+
+
+def s_picareta(rng, v):
+    """Picareta do goblin mineiro caindo no circulo: aco no chao e terra."""
+    p, n = (1.0, 0.92)[v], n_of(0.32)
+    x = 0.6 * modes(n, [1250 * p, 2930 * p, 4410 * p, 6020 * p], [0.08, 0.05, 0.03, 0.02], [1, 0.7, 0.4, 0.25])
+    x += 0.8 * unit(lp(rng.standard_normal(n), 900)) * ad(n, 0.0005, 0.025)
+    return x + 0.5 * np.sin(ph(sweep(180 * p, 80 * p, n))) * ad(n, 0.001, 0.04)
+
+
+def s_toupeira_cava(rng, v):
+    """Toupeira andando por baixo (o rastro de terra): cascalho raspando e ronco abafado."""
+    p, n = (1.0, 0.9)[v], n_of(0.55)
+    u = np.linspace(0, 1, n)
+    grit = unit(bp(ticks(160 + 120 * np.sin(np.pi * u), n, rng), 700 * p, 3200 * p))
+    rumble = unit(lp(rng.standard_normal(n), 450 * p)) * (0.6 + 0.4 * np.sin(ph(np.full(n, 9.0))))
+    return (0.5 * grit + 0.8 * rumble) * np.sin(np.pi * u) ** 0.5
+
+
+def s_toupeira_sai(rng, v):
+    """Toupeira emergindo (Rainha: pitch 0,75): estouro de terra, baque e torroes caindo."""
+    p, n = (1.0, 0.88)[v], n_of(0.5)
+    x = np.sin(ph(sweep(150 * p, 60 * p, n))) * ad(n, 0.003, 0.07)
+    x += unit(lp(rng.standard_normal(n), 1600 * p)) * ad(n, 0.004, 0.08)
+    m = n_of(0.03)
+    for _ in range(12):
+        place(x, unit(lp(rng.standard_normal(m), 2500)) * ad(m, 0.0005, 0.006) * rng.uniform(0.1, 0.3), rng.uniform(0.08, 0.4) * SR)
+    return x
+
+
+def s_lingua(rng, v):
+    """Lingua do sapo: estalo molhado que sai e volta arrastando a carga."""
+    p, n, m = (1.0, 1.1)[v], n_of(0.35), n_of(0.09)
+    u = np.linspace(0, 1, n)
+    x = 0.6 * unit(svf(rng.standard_normal(n), (1800 - 1300 * u) * p, q=8)) * ad(n, 0.03, 0.09)
+    place(x, np.sin(ph(sweep(350 * p, 1500 * p, m))) * ad(m, 0.001, 0.03), 0)
+    return x
+
+
+def s_besouro_chia(rng, v):
+    """Pavio do besouro-bomba (1,0 s): chiado subindo e estalos acelerando."""
+    n = n_of(1.0)
+    u = np.linspace(0, 1, n)
+    hiss = unit(svf(rng.standard_normal(n), 2500 + 3500 * u, q=1.5)) * (0.4 + 0.6 * u)
+    return (0.6 * hiss + 0.5 * unit(hp(ticks(40 + 120 * u, n, rng), 2500))) * np.minimum(1, u / 0.01)
+
+
+def s_besouro_explode(rng, v):
+    """Besouro explodindo: estouro menor e mais agudo que a bombinha, com cascas."""
+    p, n = (1.0, 1.12)[v], n_of(0.55)
+    body = unit(lp(rng.standard_normal(n), 2000 * p)) * ad(n, 0.001, 0.08)
+    thump = np.sin(ph(sweep(240 * p, 80 * p, n))) * ad(n, 0.002, 0.06)
+    x = np.tanh(1.5 * (body + 0.6 * thump + 0.7 * unit(hp(rng.standard_normal(n), 2500)) * ad(n, 0.0003, 0.008)))
+    for _ in range(8):
+        f = rng.uniform(1500, 4000)
+        place(x, modes(n_of(0.04), [f], [0.008]) * rng.uniform(0.05, 0.15), rng.uniform(0.05, 0.35) * SR)
+    return x
+
+
+def s_sino(rng, v):
+    """Sino do trilho, 1,2 s antes do vagonete: tres toques de sino de mina."""
+    x = np.zeros(n_of(1.15))
+    for k in range(3):
+        place(x, bell(1175.0, 0.45) * (1 - 0.15 * k), k * 0.3 * SR)
+    return x
+
+
+def s_vagonete(rng, v):
+    """Vagonete cruzando a sala (1,5 s): ronco das rodas, emendas do trilho (dois eixos) e chiado de metal; chega e vai."""
+    n = n_of(1.6)
+    u = np.linspace(0, 1, n)
+    swell = (0.3 + 0.7 * np.sin(np.pi * u) ** 1.5) * np.minimum(1, (1 - u) / 0.15)
+    x = 0.6 * unit(bp(rng.standard_normal(n), 120, 800)) * (1 + 0.3 * np.sin(ph(np.full(n, 14.0)))) * swell
+    clack = modes(n_of(0.06), [900, 1650, 2700], [0.012, 0.008, 0.005])
+    for k in range(14):
+        for off in (0.0, 0.035):
+            at = 0.11 * k + off
+            place(x, 0.5 * clack * swell[int(at * SR)], at * SR)
+    t = np.arange(n) / SR
+    return x + 0.06 * np.sin(ph(2300 * (1 + 0.01 * np.sin(2 * np.pi * 7 * t)))) * swell
+
+
+def s_fantasma(rng, v):
+    """Fantasma: lamento "uuu" com vibrato e sopro (possuir a carga: pitch 1,3)."""
+    p, n = (1.0, 1.15)[v], n_of(0.85)
+    t = np.arange(n) / SR
+    u = t / t[-1]
+    f = (520 + 260 * np.sin(np.pi * u * 1.2)) * p * (1 + 0.02 * np.sin(2 * np.pi * 6 * t))
+    wail = np.sin(ph(f)) + 0.3 * np.sin(ph(2 * f)) + 0.12 * np.sin(ph(3 * f))
+    breath = unit(svf(rng.standard_normal(n), 900 + 700 * np.sin(np.pi * u), q=3))
+    return (0.7 * wail + 0.35 * breath) * np.minimum(1, u / 0.12) * np.minimum(1, (1 - u) / 0.4)
+
+
+def s_ossos_cai(rng, v):
+    """Esqueleto desmontando em pilha de ossos: batidas de osso em cascata."""
+    p, n = (1.0, 0.9)[v], n_of(0.65)
+    x, at = np.zeros(n), 0.0
+    for k in range(14):
+        f = rng.uniform(700, 1900) * p
+        place(x, modes(n_of(0.08), [f, 2.3 * f, 3.9 * f], [0.02, 0.012, 0.007], [1, 0.5, 0.3]) * rng.uniform(0.4, 1.0) * (1 - k / 18), at * SR)
+        at += rng.exponential(0.03)
+    return x + 0.4 * unit(lp(rng.standard_normal(n), 900)) * ad(n, 0.001, 0.03)
+
+
+def s_ossos_monta(rng, v):
+    """Esqueleto se remontando: ossos acelerando e subindo, e o estalo de encaixe."""
+    x = np.zeros(n_of(0.95))
+    for k in range(12):
+        f = (750 + 90 * k) * rng.uniform(0.95, 1.05)
+        place(x, modes(n_of(0.06), [f, 2.3 * f], [0.015, 0.008]) * (0.35 + 0.05 * k), 0.7 * np.sqrt(k / 12) * SR)
+    m = n_of(0.25)
+    place(x, modes(m, [1400, 3100, 4700], [0.04, 0.02, 0.01]) + 0.4 * np.sin(ph(sweep(600, 1200, m))) * ad(m, 0.005, 0.06), 0.72 * SR)
+    return x
+
+
+def s_teia(rng, v):
+    """Aranha cuspindo teia (fio da Viuva: pitch 0,8): jato molhado e fio esticando."""
+    p, n = (1.0, 1.12)[v], n_of(0.35)
+    u = np.linspace(0, 1, n)
+    spit = unit(bp(rng.standard_normal(n), 1500 * p, 5000 * p)) * ad(n, 0.001, 0.03)
+    stretch = unit(svf(rng.standard_normal(n), (2500 - 1800 * u) * p, q=10)) * ad(n, 0.02, 0.1)
+    return spit + 0.6 * stretch + 0.3 * np.sin(ph(sweep(900 * p, 500 * p, n))) * ad(n, 0.002, 0.05)
+
+
+def s_mumia(rng, v):
+    """Mumia agarrando: tapa de pano, faixas rocando e gemido grave."""
+    n = n_of(0.75)
+    u = np.linspace(0, 1, n)
+    whump = unit(lp(rng.standard_normal(n), 600)) * ad(n, 0.002, 0.04) + 0.6 * np.sin(ph(sweep(170, 85, n))) * ad(n, 0.002, 0.05)
+    rustle = unit(bp(ticks(220, n, rng), 1500, 5000)) * ad(n, 0.01, 0.15)
+    src = osc((100 + 18 * np.sin(np.pi * u)) * (1 + 0.4 * lp(rng.standard_normal(n), 15)), "saw", hmax=40)
+    groan = unit(bp(src, 300, 700) + 0.5 * bp(src, 900, 1300)) * np.minimum(1, u / 0.12) * np.minimum(1, (1 - u) / 0.4)
+    return whump + 0.35 * rustle + 0.7 * groan
+
+
+def s_gargula_acorda(rng, v):
+    """Gargula acordando: pedra rangendo e os olhos acendendo (tritono)."""
+    n = n_of(0.85)
+    u = np.linspace(0, 1, n)
+    grind = unit(bp(ticks(90 + 60 * np.sin(np.pi * u), n, rng), 300, 1800)) + 0.6 * unit(lp(rng.standard_normal(n), 500))
+    x = 0.6 * grind * np.minimum(1, u / 0.04) * np.minimum(1, (1 - u) / 0.3)
+    m = n_of(0.5)
+    place(x, 0.25 * (np.sin(ph(np.full(m, 880.0))) + np.sin(ph(np.full(m, 1244.5)))) * ad(m, 0.01, 0.15), 0.3 * SR)
+    return x
+
+
+def s_mergulho(rng, v):
+    """Mergulho da gargula pela faixa: rajada de vento e baque de pedra no fim."""
+    n = n_of(0.6)
+    w = np.minimum(np.linspace(0, 1, n) / 0.7, 1)
+    x = unit(svf(rng.standard_normal(n), 300 + 1800 * np.sin(np.pi * w), q=1.2)) * np.sin(np.pi * w) ** 0.7
+    m = n_of(0.18)
+    place(x, np.sin(ph(sweep(160, 60, m))) * ad(m, 0.002, 0.04) + 0.5 * unit(lp(rng.standard_normal(m), 900)) * ad(m, 0.001, 0.02), 0.4 * SR)
+    return x
+
+
+def s_salamandra(rng, v):
+    """Salamandra: lambida de chama com estalos e um chiado de lagarto."""
+    p, n, m = (1.0, 1.1)[v], n_of(0.45), n_of(0.08)
+    u = np.linspace(0, 1, n)
+    x = 0.8 * unit(svf(rng.standard_normal(n), (700 + 1500 * np.sin(np.pi * u)) * p, q=0.9)) * ad(n, 0.015, 0.14)
+    x += 0.3 * unit(hp(ticks(70, n, rng), 3000)) * ad(n, 0.005, 0.2)
+    place(x, 0.4 * np.sin(ph(sweep(1800 * p, 2600 * p, m))) * ad(m, 0.003, 0.025), 0)
+    return x
+
+
+def s_diabrete(rng, v):
+    """Diabrete trocando de lugar com a carga (ou surgindo atras do courier): cai e sobe com trinado e faiscas."""
+    p, n = (1.0, 1.12)[v], n_of(0.42)
+    u = np.linspace(0, 1, n)
+    f = (1800 * np.exp(-u * 6) + 300 + 900 * u ** 2) * p
+    x = osc(f, "tri", hmax=9) * ad(n, 0.003, 0.15) * (0.6 + 0.4 * np.sin(ph(np.full(n, 30.0))))
+    return x + 0.4 * unit(hp(ticks(120, n, rng), 5000)) * ad(n, 0.05, 0.12)
+
+
+def s_frasco(rng, v):
+    """Frasco do kobold: vidro estilhacando e a poca de fogo acendendo ("fuum")."""
+    p, n = (1.0, 0.93)[v], n_of(0.75)
+    x = 0.5 * unit(bp(rng.standard_normal(n), 2000, 7000)) * ad(n, 0.0003, 0.015)
+    for _ in range(10):
+        f = rng.uniform(3000, 7000)
+        place(x, modes(n_of(0.08), [f, 1.53 * f], [0.025, 0.015]) * rng.uniform(0.1, 0.3), rng.uniform(0, 0.25) ** 1.5 * SR)
+    u = np.linspace(0, 1, n)
+    return x + 0.9 * unit(svf(rng.standard_normal(n), (400 + 1200 * np.exp(-u * 4)) * p, q=0.8, mode="lp")) * ad(n, 0.03, 0.22)
+
+
+def s_magma_divide(rng, v):
+    """Elemental de magma se dividindo em 2 brasas: rasgo grosso, dois "blop" e chiado."""
+    n, m = n_of(0.7), n_of(0.2)
+    x = 0.8 * unit(lp(rng.standard_normal(n), 700)) * ad(n, 0.003, 0.08)
+    for k in range(2):
+        place(x, osc(sweep(160 + 50 * k, 420 + 90 * k, m), "tri", hmax=7) * ad(m, 0.003, 0.05), (0.03 + 0.13 * k) * SR)
+    return x + 0.25 * unit(hp(rng.standard_normal(n), 4000)) * ad(n, 0.05, 0.25) * (0.6 + 0.4 * np.sin(ph(np.full(n, 11.0))))
+
+
+def s_golem(rng, v):
+    """Golem de Pedra: pancada (e batida da investida, pitch 0,8) de rocha com cascalho caindo."""
+    p, n = (1.0, 0.88)[v], n_of(1.0)
+    noise = rng.standard_normal(n)
+    sub = np.sin(ph(sweep(110 * p, 38 * p, n))) * ad(n, 0.002, 0.16)
+    x = np.tanh(1.8 * (0.7 * sub + 0.9 * unit(lp(noise, 700)) * ad(n, 0.001, 0.1) + unit(bp(noise, 400 * p, 1600 * p)) * ad(n, 0.001, 0.05)))
+    for _ in range(16):
+        f = rng.uniform(500, 2200)
+        place(x, modes(n_of(0.05), [f, 1.7 * f], [0.012, 0.008]) * rng.uniform(0.05, 0.2), rng.uniform(0.08, 0.9) ** 1.3 * SR)
+    return x
+
+
+def s_rainha(rng, v):
+    """Rainha Toupeira (entrada, chamado das toupeiras): guincho aspero de roedor gigante."""
+    n = n_of(0.85)
+    u = np.linspace(0, 1, n)
+    f0 = (600 + 500 * np.sin(np.pi * np.minimum(u * 1.4, 1))) * (1 + 0.05 * np.sin(ph(np.full(n, 28.0))))
+    src = osc(f0, "saw", hmax=30) + 0.3 * rng.standard_normal(n)
+    env = np.minimum(1, u / 0.05) * np.minimum(1, (1 - u) / 0.4)
+    return np.tanh(1.4 * unit(bp(src, 800, 2500) + 0.5 * bp(src, 3000, 5000)) * env)
+
+
+def s_viuva(rng, v):
+    """Viuva Aranha (entrada, despencar do teto): chiado com matraca de quelicera."""
+    n = n_of(0.85)
+    u = np.linspace(0, 1, n)
+    hiss = unit(svf(rng.standard_normal(n), 2500 + 1500 * np.sin(np.pi * u), q=2))
+    chatter = unit(bp(ticks(40 + 30 * np.sin(np.pi * u), n, rng), 1500, 4500))
+    low = unit(bp(osc(np.full(n, 140.0), "saw", hmax=40), 300, 900))
+    return (0.6 * hiss + 0.7 * chatter + 0.35 * low) * np.minimum(1, u / 0.06) * np.minimum(1, (1 - u) / 0.35)
+
+
+def s_necro_raio(rng, v):
+    """Raio do Necromante (disparo): zumbido sombrio com zap caindo e crepitar."""
+    n = n_of(0.6)
+    t = np.arange(n) / SR
+    buzz = unit(bp(osc(np.full(n, 110.0), "saw", hmax=60), 200, 2000)) * (1 + 0.5 * np.sin(2 * np.pi * 35 * t))
+    x = (0.6 * buzz + 0.5 * np.sin(ph(sweep(2400, 300, n)))) * ad(n, 0.003, 0.17)
+    return np.tanh(1.5 * (x + 0.3 * unit(hp(ticks(300, n, rng), 3000)) * ad(n, 0.001, 0.12)))
+
+
+def s_necro_ergue(rng, v):
+    """Necromante erguendo esqueletos (runa verde): coro grave em acorde diminuto e terra tremendo."""
+    n = n_of(1.1)
+    u = np.linspace(0, 1, n)
+    ch = sum(osc(np.full(n, midi(m) * (1 + 0.004 * k)), "saw", hmax=20) for k, m in enumerate((45, 48, 51, 54)))
+    return (0.6 * unit(bp(ch, 250, 1100)) + 0.4 * unit(lp(rng.standard_normal(n), 300))) * np.minimum(1, u / 0.1) * np.minimum(1, (1 - u) / 0.5)
+
+
+def s_chicote(rng, v):
+    """Chicote do Capataz: assobio de 50 ms e o estalo (o golpe sai no evento, sem atraso)."""
+    p, n, m, k = (1.0, 1.08)[v], n_of(0.4), n_of(0.05), n_of(0.3)
+    x = np.zeros(n)
+    place(x, 0.5 * unit(svf(rng.standard_normal(m), (1500 + 3000 * np.linspace(0, 1, m)) * p, q=1.5)) * np.linspace(0.5, 1, m), 0)
+    crack = unit(hp(rng.standard_normal(k), 1500)) * ad(k, 0.0002, 0.005) + 0.3 * unit(bp(rng.standard_normal(k), 2000 * p, 6000)) * ad(k, 0.0005, 0.04)
+    place(x, crack, m)
+    return x
+
+
+def s_apito(rng, v):
+    """Apito do Capataz chamando kobolds: dois tons com o trinado da bolinha."""
+    n = n_of(0.6)
+    t = np.arange(n) / SR
+    f = np.where(t < 0.25, 2600.0, 2100.0) * (1 + 0.03 * np.sin(2 * np.pi * 28 * t))
+    env = np.minimum(1, t / 0.01) * np.minimum(1, (0.6 - t) / 0.08) * (1 - 0.8 * np.exp(-((t - 0.25) / 0.012) ** 2))
+    return (np.sin(ph(f)) + 0.15 * unit(bp(rng.standard_normal(n), 1800, 3400))) * env
+
+
+def s_sopro(rng, v):
+    """Sopro do Dragao (0,8 s): rugido de chama largo, com estalos."""
+    n = n_of(1.2)
+    u = np.linspace(0, 1, n)
+    roar = unit(svf(rng.standard_normal(n), 500 + 900 * np.sin(np.pi * np.minimum(u * 1.5, 1)), q=0.7, mode="lp"))
+    body = unit(bp(rng.standard_normal(n), 150, 900)) * (1 + 0.4 * np.sin(ph(np.full(n, 17.0))))
+    env = np.minimum(1, u / 0.05) * np.minimum(1, (1 - u) / 0.45)
+    return np.tanh(1.6 * (roar + 0.8 * body + 0.35 * unit(hp(ticks(90, n, rng), 2500))) * env)
+
+
+def s_voo(rng, v):
+    """Dragao decolando: tres batidas de asa pesadas e vento subindo."""
+    n, m = n_of(1.3), n_of(0.35)
+    x, um = np.zeros(n), np.linspace(0, 1, m)
+    for k in range(3):
+        flap = unit(svf(rng.standard_normal(m), 250 + 600 * np.sin(np.pi * um), q=1.0, mode="lp")) * np.sin(np.pi * um) ** 0.6
+        place(x, (flap + 0.5 * np.sin(ph(sweep(120, 60, m))) * ad(m, 0.01, 0.07)) * (1 - 0.2 * k), k * 0.36 * SR)
+    u = np.linspace(0, 1, n)
+    return x + 0.25 * unit(svf(rng.standard_normal(n), 600 + 900 * u, q=2)) * u * np.minimum(1, (1 - u) / 0.2)
+
+
+def s_pouso(rng, v):
+    """Pouso do Dragao: impacto enorme, tremor e poeira."""
+    n = n_of(1.2)
+    noise = rng.standard_normal(n)
+    sub = np.sin(ph(sweep(95, 32, n))) * ad(n, 0.002, 0.22)
+    x = np.tanh(2.0 * (0.7 * sub + 0.8 * unit(lp(noise, 900)) * ad(n, 0.001, 0.14) + 0.8 * unit(bp(noise, 200, 1000)) * ad(n, 0.002, 0.1)))
+    return x + 0.12 * unit(hp(rng.standard_normal(n), 2500)) * ad(n, 0.08, 0.3)
+
+
+def s_dragao(rng, v):
+    """Rugido do Dragao Anciao (entrada, troca de fase): mais grave e longo que o do Ogro."""
+    n = n_of(1.7)
+    u = np.linspace(0, 1, n)
+    f0 = (70 + 25 * np.sin(np.pi * np.minimum(u * 1.3, 1))) * (1 + 0.5 * lp(rng.standard_normal(n), 20))
+    src = osc(f0, "saw", hmax=80) + 0.5 * rng.standard_normal(n)
+    am = 1 + 0.4 * np.sin(ph(np.full(n, 19.0)))
+    env = np.minimum(1, u / 0.08) * np.minimum(1, (1 - u) / 0.5)
+    return np.tanh(1.8 * (unit(bp(src, 200, 600)) + 0.7 * unit(bp(src, 800, 1800)) + 0.4 * unit(lp(src, 180))) * am * env)
+
+
+def s_coracao(rng, v):
+    """Coracao arcano pulsando: "tum-tum" com brilho arcano."""
+    x, m = np.zeros(n_of(0.7)), n_of(0.22)
+    for at, g in ((0.0, 1.0), (0.19, 0.7)):
+        beat = np.tanh(2 * osc(sweep(120, 60, m), "tri", hmax=9) * ad(m, 0.004, 0.05)) + 0.3 * unit(lp(rng.standard_normal(m), 400)) * ad(m, 0.002, 0.03)
+        place(x, beat * g, at * SR)
+    place(x, 0.12 * bell(midi(81), 0.6), 0)
+    place(x, 0.08 * bell(midi(88), 0.5), 0)
+    return x
+
+
+def s_gelo_derrete(rng, v):
+    """Cristal de gelo derretendo depressa (perto de fogo, lava, respiro): gotas e estalinhos."""
+    n, m = n_of(0.75), n_of(0.1)
+    x = np.zeros(n)
+    for k in range(4):
+        f0 = rng.uniform(900, 1500)
+        place(x, np.sin(ph(sweep(f0, 2.2 * f0, m))) * ad(m, 0.001, 0.02) * rng.uniform(0.5, 1.0), (0.17 * k + rng.uniform(0, 0.04)) * SR)
+    return x + 0.25 * unit(bp(ticks(50, n, rng), 3000, 8000)) * ad(n, 0.01, 0.35)
+
+
+def s_gelo_congela(rng, v):
+    """Gelo recongelando na agua: cristal se formando (ruido subindo, estalos finos) e um brilho de vidro."""
+    n = n_of(0.7)
+    u = np.linspace(0, 1, n)
+    x = 0.5 * unit(svf(rng.standard_normal(n), 2000 + 6000 * u, q=6)) * np.minimum(1, u / 0.05) * np.minimum(1, (1 - u) / 0.3)
+    x += 0.3 * unit(hp(ticks(60 + 200 * u, n, rng), 4000)) * u
+    place(x, 0.5 * modes(n_of(0.45), [2637, 3951, 5588], [0.15, 0.09, 0.05], [1, 0.5, 0.3]), 0.3 * SR)
+    return x
+
+
+def s_grifinho(rng, v):
+    """Grito do grifinho (onda de 5 m): guincho de filhote de aguia."""
+    p, n = (1.0, 1.1)[v], n_of(0.55)
+    t = np.arange(n) / SR
+    u = t / t[-1]
+    f = (1800 + 900 * np.sin(np.pi * np.minimum(u * 1.6, 1)) - 600 * u) * p * (1 + 0.04 * np.sin(2 * np.pi * 24 * t))
+    src = osc(f, "saw", hmax=12)
+    return (unit(bp(src, 1500, 4500)) + 0.25 * unit(src)) * np.minimum(1, u / 0.04) * np.minimum(1, (1 - u) / 0.35)
+
+
+def s_lanterna_apaga(rng, v):
+    """Lanterna apagando: sopro descendo, tom caindo e chiado do pavio."""
+    n = n_of(0.5)
+    u = np.linspace(0, 1, n)
+    puff = unit(svf(rng.standard_normal(n), 1500 * np.exp(-u * 3) + 200, q=1.2)) * ad(n, 0.005, 0.11)
+    return puff + 0.4 * np.sin(ph(sweep(700, 250, n))) * ad(n, 0.005, 0.1) + 0.15 * unit(hp(rng.standard_normal(n), 5000)) * ad(n, 0.02, 0.18)
+
+
+def s_lanterna_acende(rng, v):
+    """Lanterna reacendendo na tocha: "fuum" quente e um tom subindo."""
+    n = n_of(0.55)
+    u = np.linspace(0, 1, n)
+    whoomp = unit(svf(rng.standard_normal(n), 300 + 1500 * (1 - np.exp(-u * 5)), q=1.0)) * ad(n, 0.01, 0.14)
+    tone = (np.sin(ph(sweep(330, 660, n))) + 0.3 * np.sin(ph(sweep(495, 990, n)))) * ad(n, 0.03, 0.17)
+    return whoomp + 0.4 * unit(hp(rng.standard_normal(n), 3000)) * ad(n, 0.0005, 0.01) + 0.35 * tone
+
+
+def s_espelho_reflete(rng, v):
+    """Espelho refletindo flecha, teia ou raio: "zing" brilhante com cintilar."""
+    n, m = n_of(0.5), n_of(0.12)
+    t = np.arange(n) / SR
+    x = 0.6 * modes(n, [2100, 3300, 5200, 7100], [0.18, 0.11, 0.06, 0.04], [1, 0.6, 0.4, 0.2]) * (1 + 0.3 * np.sin(2 * np.pi * 14 * t))
+    place(x, 0.5 * np.sin(ph(sweep(1200, 4800, m))) * ad(m, 0.002, 0.04), 0)
+    return x
+
+
+def s_espelho_racha(rng, v):
+    """Espelho rachando (reflexo, queda, golpe): estalo de vidro e anel dissonante."""
+    p, n, m = (1.0, 0.9)[v], n_of(0.45), n_of(0.004)
+    x = np.zeros(n)
+    for _ in range(int(rng.integers(8, 12))):
+        place(x, hp(rng.standard_normal(m), 4000) * np.exp(-np.arange(m) / (0.0008 * SR)) * rng.uniform(0.15, 0.4), rng.uniform(0, 0.06) * SR)
+    return x + 0.35 * modes(n, [3100 * p, 4470 * p, 6230 * p, 7900 * p], [0.14, 0.09, 0.06, 0.04], [1, 0.8, 0.5, 0.3])
+
+
+def s_balao_sobe(rng, v):
+    """Balao pousado comecando a subir (contador de 4 s): rangido de borracha e assobio subindo."""
+    n = n_of(0.6)
+    t = np.arange(n) / SR
+    u = t / t[-1]
+    squeak = unit(bp(osc(520 * (1 + 0.06 * np.sin(2 * np.pi * 35 * t)), "saw", hmax=20), 800, 2500)) * ad(n, 0.005, 0.07)
+    return squeak + 0.4 * np.sin(ph(700 * 2 ** u)) * np.minimum(1, u / 0.1) * np.minimum(1, (1 - u) / 0.3)
+
+
+def s_balao_escapa(rng, v):
+    """Balao escapando pelo teto: glissando subindo e sumindo, com vento."""
+    n = n_of(1.1)
+    t = np.arange(n) / SR
+    u = t / t[-1]
+    f = 500 * 2 ** (2 * u) * (1 + 0.01 * np.sin(2 * np.pi * 5 * t))
+    x = (np.sin(ph(f)) + 0.25 * np.sin(ph(2 * f))) * np.minimum(1, u / 0.05) * (1 - u) ** 1.5
+    return x + 0.3 * unit(svf(rng.standard_normal(n), 800 + 2500 * u, q=3)) * (1 - u)
+
+
+def s_balao_estoura(rng, v):
+    """Balao estourando (3 furos, sopro do Dragao)."""
+    n = n_of(0.3)
+    pop = unit(bp(rng.standard_normal(n), 600, 6000)) * ad(n, 0.0002, 0.012)
+    thump = np.sin(ph(sweep(300, 120, n))) * ad(n, 0.001, 0.02)
+    return np.tanh(2 * (pop + 0.5 * thump)) + 0.3 * unit(bp(ticks(120, n, rng), 500, 2000)) * ad(n, 0.01, 0.07)
+
+
+def s_planta(rng, v):
+    """Planta carnivora mordendo (inimigo ou courier): estalo de mandibula verde, molhado."""
+    p, n = P3[v], n_of(0.3)
+    u = np.linspace(0, 1, n)
+    wet = unit(svf(rng.standard_normal(n), (1200 * np.exp(-u * 4) + 300) * p, q=4)) * ad(n, 0.002, 0.06)
+    return modes(n, [520 * p, 1150 * p], [0.02, 0.01]) + 0.7 * wet + 0.6 * np.sin(ph(sweep(220 * p, 90 * p, n))) * ad(n, 0.001, 0.04)
+
+
+def s_mapa(rng, v):
+    """Mapa revelando baus enterrados e paredes disfarcadas: papel abrindo e brilho em quinta aberta."""
+    n = n_of(1.0)
+    u = np.linspace(0, 1, n)
+    w = np.minimum(u / 0.35, 1)
+    x = 0.5 * unit(bp(ticks(200 + 150 * np.sin(np.pi * w), n, rng), 2000, 7000)) * np.sin(np.pi * w) ** 0.5
+    for k, m in enumerate((74, 81, 86)):
+        place(x, 0.35 * bell(midi(m), 0.6), (0.3 + 0.08 * k) * SR)
+    return x + 0.08 * unit(hp(rng.standard_normal(n), 6000)) * np.clip((u - 0.3) / 0.1, 0, 1) * np.exp(-np.maximum(u - 0.4, 0) / 0.2)
+
+
+def s_agua(rng, v):
+    """Pe na agua (e carga caindo na poca: pitch 0,8): respingo e "bloop"."""
+    p, n = P3[v], n_of(0.22)
+    u = np.linspace(0, 1, n)
+    splash = unit(svf(rng.standard_normal(n), (2500 * np.exp(-u * 6) + 500) * p, q=2)) * ad(n, 0.002, 0.045)
+    return splash + 0.35 * np.sin(ph(sweep(400 * p, 900 * p, n))) * ad(n, 0.003, 0.03)
+
+
+def s_lava(rng, v):
+    """Empurrado na lava (inimigo, courier, carga parando na borda): borbulho grosso e chiado."""
+    p, n, m = (1.0, 0.9)[v], n_of(0.65), n_of(0.12)
+    x = np.zeros(n)
+    for k in range(3):
+        f0 = rng.uniform(90, 160) * p
+        place(x, osc(sweep(f0, 2.5 * f0, m), "tri", hmax=9) * ad(m, 0.004, 0.03) * (1 - 0.25 * k), (0.09 * k + rng.uniform(0, 0.02)) * SR)
+    return x + 0.5 * unit(hp(rng.standard_normal(n), 3500)) * ad(n, 0.005, 0.22) * (0.6 + 0.4 * np.sin(ph(np.full(n, 13.0))))
+
+
+def s_respiro(rng, v):
+    """Respiro da forja em erupcao (1,0 s de fogo): grade batendo e jato de chama."""
+    p, n = (1.0, 0.92)[v], n_of(1.1)
+    u = np.linspace(0, 1, n)
+    jet = unit(svf(rng.standard_normal(n), (900 + 1500 * np.exp(-u * 3)) * p, q=0.8))
+    roar = unit(bp(rng.standard_normal(n), 150 * p, 700 * p)) * (1 + 0.3 * np.sin(ph(np.full(n, 23.0))))
+    env = np.minimum(1, u / 0.03) * np.minimum(1, (1 - u) / 0.35)
+    x = np.tanh(1.4 * (jet + 0.7 * roar + 0.3 * unit(hp(ticks(70, n, rng), 2500))) * env)
+    place(x, 0.4 * modes(n_of(0.1), [700 * p, 1600 * p], [0.02, 0.012]), 0)
+    return x
+
+
+def s_evento(rng, v):
+    """Evento da semana (abriu no quadro, comecou um contrato de evento): fanfarra curta de metais com rufar."""
+    x = mix(notes([(0.0, 67, 0.1), (0.11, 67, 0.1), (0.22, 72, 0.12), (0.36, 76, 0.55)], SR, brass, 0.6),
+            notes([(0.36, 72, 0.55), (0.36, 79, 0.55)], SR, brass, 0.3), notes([(0.36, 48, 0.55)], SR, tri_bass, 0.5))
+    m = n_of(0.12)
+    for k in range(4):
+        place(x, 0.15 * unit(bp(rng.standard_normal(m), 1500, 6000)) * ad(m, 0.001, 0.03) * (0.6 + 0.15 * k), (0.25 + 0.028 * k) * SR)
+    return x
+
+
+def s_temporada(rng, v):
+    """Quadro de temporada: objetivo cumprido / nivel subiu: tres blips subindo e brilho."""
+    x, m = np.zeros(n_of(0.55)), n_of(0.1)
+    for k, nota in enumerate((76, 81, 88)):
+        place(x, osc(np.full(m, midi(nota)), "pulse", duty=0.25, hmax=10) * ad(m, 0.002, 0.04), k * 0.07 * SR)
+    place(x, 0.3 * bell(midi(93), 0.4), 0.21 * SR)
+    return x
+
+
+def s_recompensa(rng, v):
+    """Recompensa resgatada (evento, temporada, marco): "ta-daa" de metais e brilho."""
+    x = mix(notes([(0.0, 72, 0.1), (0.12, 79, 0.5)], SR, brass, 0.55), notes([(0.12, 76, 0.5), (0.12, 84, 0.5)], SR, brass, 0.25))
+    for k, nota in enumerate((91, 96)):
+        place(x, 0.3 * bell(midi(nota), 0.5), (0.14 + 0.06 * k) * SR)
+    return x + 0.05 * unit(hp(rng.standard_normal(len(x)), 6000)) * ad(len(x), 0.12, 0.2)
+
+
+def s_blueprint(rng, v):
+    """Projeto de equipamento encontrado: papel desenrolando, engrenagem encaixando e "plim"."""
+    x, m, k = np.zeros(n_of(0.8)), n_of(0.25), n_of(0.08)
+    place(x, 0.5 * unit(bp(ticks(260, m, rng), 2000, 7000)) * np.sin(np.pi * np.linspace(0, 1, m)) ** 0.5, 0)
+    place(x, modes(k, [1900, 4100], [0.012, 0.006]) + 0.3 * unit(lp(rng.standard_normal(k), 2000)) * ad(k, 0.0005, 0.01), 0.22 * SR)
+    place(x, 0.45 * bell(midi(88), 0.5), 0.28 * SR)
+    place(x, 0.35 * bell(midi(95), 0.45), 0.34 * SR)
+    return x
+
+
+def s_compra_loja(rng, v):
+    """Compra na loja (IAP; loja falsa no PC): gaveta de caixa, "plim-plim" e moedas."""
+    x, m = np.zeros(n_of(0.85)), n_of(0.12)
+    place(x, modes(m, [600, 1500], [0.02, 0.01]) + 0.4 * unit(lp(ticks(400, m, rng), 3000)) * ad(m, 0.002, 0.04), 0)
+    place(x, 0.6 * bell(midi(96), 0.55) + 0.45 * bell(midi(100), 0.55), 0.1 * SR)
+    place(x, 0.4 * s_moedas(rng, 1)[:n_of(0.4)], 0.16 * SR)
+    return x
+
+
+def s_anuncio(rng, v):
+    """Anuncio de teste (simulador no PC/Editor): "ding-dong" neutro no inicio e no fim."""
+    x = np.zeros(n_of(1.0))
+    place(x, bell(midi(81), 0.75), 0)
+    place(x, 0.85 * bell(midi(76), 0.85), 0.25 * SR)
+    return x
+
+
+SFX.update({
+    # inimigos das regioes 2-4
+    "picareta": (s_picareta, 2, -18), "toupeira_cava": (s_toupeira_cava, 2, -21), "toupeira_sai": (s_toupeira_sai, 2, -17),
+    "lingua": (s_lingua, 2, -18), "besouro_chia": (s_besouro_chia, 1, -19), "besouro_explode": (s_besouro_explode, 2, -15),
+    "sino": (s_sino, 1, -17), "vagonete": (s_vagonete, 1, -16), "fantasma": (s_fantasma, 2, -19), "ossos_cai": (s_ossos_cai, 2, -17),
+    "ossos_monta": (s_ossos_monta, 1, -18), "teia": (s_teia, 2, -19), "mumia": (s_mumia, 1, -17),
+    "gargula_acorda": (s_gargula_acorda, 1, -17), "mergulho": (s_mergulho, 1, -16), "salamandra": (s_salamandra, 2, -19),
+    "diabrete": (s_diabrete, 2, -18), "frasco": (s_frasco, 2, -17), "magma_divide": (s_magma_divide, 1, -17),
+    # chefes
+    "golem": (s_golem, 2, -14), "rainha": (s_rainha, 1, -15), "viuva": (s_viuva, 1, -15), "necro_raio": (s_necro_raio, 1, -15),
+    "necro_ergue": (s_necro_ergue, 1, -16), "chicote": (s_chicote, 2, -16), "apito": (s_apito, 1, -18), "sopro": (s_sopro, 1, -14),
+    "voo": (s_voo, 1, -15), "pouso": (s_pouso, 1, -14), "dragao": (s_dragao, 1, -14),
+    # cargas
+    "coracao": (s_coracao, 1, -18), "gelo_derrete": (s_gelo_derrete, 1, -20), "gelo_congela": (s_gelo_congela, 1, -19),
+    "grifinho": (s_grifinho, 2, -16), "lanterna_apaga": (s_lanterna_apaga, 1, -18), "lanterna_acende": (s_lanterna_acende, 1, -18),
+    "espelho_reflete": (s_espelho_reflete, 1, -17), "espelho_racha": (s_espelho_racha, 2, -16), "balao_sobe": (s_balao_sobe, 1, -19),
+    "balao_escapa": (s_balao_escapa, 1, -18), "balao_estoura": (s_balao_estoura, 1, -16), "planta": (s_planta, 3, -18),
+    "mapa": (s_mapa, 1, -17),
+    # terreno
+    "agua": (s_agua, 3, -24), "lava": (s_lava, 2, -17), "respiro": (s_respiro, 2, -17),
+    # meta e loja
+    "evento": (s_evento, 1, -16), "temporada": (s_temporada, 1, -18), "recompensa": (s_recompensa, 1, -16),
+    "blueprint": (s_blueprint, 1, -17), "compra_loja": (s_compra_loja, 1, -16), "anuncio": (s_anuncio, 1, -19),
+})
+
+
 # ------------------------------------------------------------------ musica
 
 NOTE = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
@@ -606,8 +1154,7 @@ def v_lead(f, d):
 
 
 def v_brass(f, d):
-    e = adsr(d * 0.88, 0.02, 0.15, 0.7, 0.06, MSR)
-    return np.tanh(1.5 * lp(osc(np.full(len(e), f), "saw", MSR, hmax=16), 2400, MSR) * e)
+    return brass(f, d, MSR)
 
 
 def v_tri_bass(f, d):
@@ -773,7 +1320,383 @@ def song_chefe():
     return room(x)
 
 
-MUSIC = {"menu": song_menu, "masmorra": song_masmorra, "chefe": song_chefe}
+# ------------------------------------------------------------------ musica das regioes 2-4, dos chefes e do evento (CONTRATO_LANCAMENTO §9.1)
+# Identidade: Minas = la dorico 100 bpm, marimba e baixo dedilhado; Cripta = do menor harmonico 80 bpm, orgao e teremim; Forja = sol
+# frigio dominante 120 bpm, bigorna e alaude. O chefe de cada regiao fica no mesmo centro tonal da masmorra dela (a regiao se reconhece).
+
+def near(pc, center):
+    """Classe de altura -> nota midi mais perto de `center` (de -5 a +6 semitons)."""
+    return center + (pc - center) % 12 - (12 if (pc - center) % 12 > 6 else 0)
+
+
+def v_marimba(f, d=0):
+    """Marimba: barra de madeira, parciais 1 / 3,93 / 9,2 (os acima de Nyquist saem)."""
+    n = n_of(0.8, MSR)
+    fs, taus, amps = (list(c) for c in zip(*[(r * f, tau, a) for r, tau, a in ((1, 0.35, 1), (3.93, 0.07, 0.3), (9.2, 0.025, 0.1))
+                                             if r * f < 0.45 * MSR]))
+    return modes(n, fs, taus, amps, MSR) * np.minimum(1, np.arange(n) / (0.002 * MSR))
+
+
+def v_organ(f, d):
+    """Orgao de tubos: registros 8' 4' 2 2/3' 2' 1 1/3' com tremolo."""
+    e = adsr(d * 0.95, 0.03, 0.2, 0.85, 0.08, MSR)
+    t = np.arange(len(e)) / MSR
+    x = sum(a * np.sin(2 * np.pi * f * h * t) for h, a in ((1, 1), (2, 0.6), (3, 0.35), (4, 0.25), (6, 0.12)) if f * h < 0.45 * MSR)
+    return x * e * (1 + 0.12 * np.sin(2 * np.pi * 5.8 * t))
+
+
+def v_choir(f, d):
+    """Coro "aah": duas serras desafinadas pelos formantes do "a"."""
+    e = adsr(d * 0.95, 0.18, 0.3, 0.8, 0.25, MSR)
+    vib = 1 + 0.005 * np.sin(2 * np.pi * 5 * np.arange(len(e)) / MSR)
+    src = osc(f * vib, "saw", MSR, hmax=30) + osc(f * 1.006 * vib, "saw", MSR, hmax=30)
+    return 0.5 * (bp(src, 550, 1100, MSR) + 0.5 * bp(src, 2300, 3000, MSR)) * e
+
+
+def v_theremin(f, d):
+    """Teremim: seno com vibrato largo que entra devagar."""
+    e = adsr(d * 0.95, 0.09, 0.3, 0.85, 0.15, MSR)
+    t = np.arange(len(e)) / MSR
+    p = ph(f * (1 + 0.012 * np.sin(2 * np.pi * 5.5 * t) * np.clip(t / 0.3, 0, 1)), MSR)
+    return (np.sin(p) + 0.15 * np.sin(2 * p)) * e
+
+
+def v_saz(f, d=0):
+    """Alaude dedilhado: harmonicos que caem mais rapido no agudo e uma curva de afinacao no ataque (afinado, ao contrario do
+    Karplus-Strong a 22 kHz, que desafina nas notas agudas)."""
+    n = n_of(0.7, MSR)
+    t = np.arange(n) / MSR
+    p = ph(f * (1 + 0.01 * np.exp(-t / 0.03)), MSR)
+    x = sum(np.sin(h * p) * np.exp(-t * h ** 0.7 / 0.5) / h ** 0.8 for h in range(1, 13) if h * f < 0.45 * MSR)
+    return x * np.minimum(1, t / 0.002)
+
+
+def v_strings(f, d):
+    """Cordas em spiccato: duas serras desafinadas, filtradas."""
+    e = adsr(d * 0.8, 0.01, 0.1, 0.5, 0.05, MSR)
+    return 0.5 * lp(osc(np.full(len(e), f), "saw", MSR, hmax=20) + osc(np.full(len(e), f * 1.004), "saw", MSR, hmax=20), 2800, MSR) * e
+
+
+def v_grit_bass(f, d):
+    """Baixo saturado (harmonicos no medio: o alto-falante do celular nao toca o fundamental)."""
+    e = adsr(d * 0.85, 0.005, 0.15, 0.6, 0.04, MSR)
+    return np.tanh(2.5 * lp(osc(np.full(len(e), f), "saw", MSR, hmax=30), 700, MSR) * e)
+
+
+def v_timp(f, d=0):
+    """Timpano: membrana (parciais 1 / 1,5 / 1,99 / 2,44) e baqueta."""
+    n = n_of(1.0, MSR)
+    t = np.arange(n) / MSR
+    x = sum(a * np.sin(2 * np.pi * f * r * t) * np.exp(-t / tau) for r, tau, a in ((1, 0.5, 1), (1.5, 0.3, 0.5), (1.99, 0.25, 0.35), (2.44, 0.15, 0.2)))
+    return x * np.minimum(1, t / 0.002) + 0.3 * modes(n, [1500], [0.008], sr=MSR)
+
+
+def v_drip(f, d=0):
+    """Gota pingando na agua."""
+    n = n_of(0.12, MSR)
+    return np.sin(ph(sweep(f, 2.4 * f, n), MSR)) * ad(n, 0.001, 0.025, MSR)
+
+
+def drums2(rng):
+    """Percussao das regioes novas: taiko, prato, bigorna, picareta na rocha, pedra."""
+    n, m, k = n_of(0.8, MSR), n_of(1.5, MSR), n_of(0.25, MSR)
+    return {
+        "taiko": np.sin(ph(sweep(110, 60, n), MSR)) * ad(n, 0.002, 0.2, MSR) + 0.4 * lp(rng.standard_normal(n), 900, MSR) * ad(n, 0.001, 0.04, MSR),
+        "crash": hp(rng.standard_normal(m), 4000, MSR) * ad(m, 0.002, 0.5, MSR),
+        "anvil": modes(n_of(0.7, MSR), [1180, 3257, 6372], [0.25, 0.12, 0.05], [1, 0.5, 0.3], MSR),
+        "clink": modes(k, [2350, 3800, 5600], [0.05, 0.03, 0.015], [1, 0.5, 0.3], MSR),
+        "knock": modes(k, [380, 870, 1500], [0.04, 0.02, 0.01], [1, 0.5, 0.2], MSR) + 0.3 * lp(rng.standard_normal(k), 1200, MSR) * ad(k, 0.001, 0.01, MSR),
+    }
+
+
+def song_minas():
+    """Minas Alagadas: la dorico saltitante (cantiga de mina), 100 bpm, 4/4, 20 compassos = 48,0 s. Marimba (A), flauta com marimba
+    em arpejo (B), ponte so de arpejo e gotas (T); baixo dedilhado, picareta na rocha no 2 e no 4, eco de caverna."""
+    s = Song(100, 80, 404)
+    dr, d2 = drums(s.rng), drums2(s.rng)
+    a = ("A4:0.5 C5:0.5 E5:0.5 A5:0.5 G5:0.5 E5:0.5 D5:1 F#5:0.5 E5:0.5 D5:0.5 F#5:0.5 A5:1 F#5:1 "
+         "E5:0.5 D5:0.5 C5:0.5 D5:0.5 E5:1 A4:1 B4:0.5 D5:0.5 G5:1 F#5:0.5 E5:0.5 D5:1 "
+         "A4:0.5 C5:0.5 E5:0.5 A5:0.5 B5:0.5 A5:0.5 G5:1 F#5:1 A5:0.5 F#5:0.5 D5:1 E5:1 "
+         "G5:0.5 F#5:0.5 E5:0.5 D5:0.5 B4:1 G4:1 A4:2 r:1 E4:1")
+    b = ("E5:2 G5:1 E5:1 D5:3 B4:1 A4:1 D5:1 F#5:1 A5:1 G5:2 E5:2 "
+         "C6:1.5 B5:0.5 A5:1 G5:1 B5:2 D5:2 F#5:1 A5:1 G5:1 F#5:1 E5:2 G#5:1 B5:1")
+    pluck_bass = lambda f: pluck(f, 0.5, s.rng, 0.993, MSR) * ad(n_of(0.5, MSR), 0.002, 0.25, MSR)
+    for si, (name, text, chords) in enumerate((("A", a, "Am D Am G Am D Em Am"), ("B", b, "C G D Am C G D E7"), ("T", None, "Am D Am E7"))):
+        b0 = si * 32
+        if name == "A":
+            for bb, m, _ in melody(text, b0)[0]:
+                s.add("lead", bb, v_marimba(midi(m)), 0.5)
+        elif name == "B":
+            s.line("lead", melody(text, b0)[0], v_flute, 0.5)
+        for bar, c in enumerate(chords.split()):
+            root, iv = chord(c)
+            bb = b0 + bar * 4
+            r = near(root, 45)   # perto de A2
+            for at, off in ((0, 0), (1.5, 7), (2, 12), (3, 7)):
+                s.add("bass", bb + at, pluck_bass(midi(r + off)), 0.6)
+            if name != "A":
+                tones = [near(root, 69) + i for i in iv[:3]]
+                for k in range(8):
+                    s.add("arp", bb + 0.5 * k, v_marimba(midi((tones + [tones[1]])[k % 4])), 0.18 if name == "B" else 0.3)
+            for k in (1, 3):
+                s.add("drums", bb + k, d2["clink"], 0.3)
+            s.add("drums", bb, dr["kick"], 0.45)
+            if name != "T":
+                s.add("drums", bb + 2, dr["kick"], 0.38)
+            for k in range(8):
+                s.add("drums", bb + 0.5 * k, dr["shaker"], 0.10 if k % 2 else 0.06)
+            for _ in range(2 if name == "T" else 1):
+                s.add("fx", bb + 0.5 * int(s.rng.integers(0, 8)) + 0.25, v_drip(s.rng.uniform(900, 1600)), 0.25)
+    x = roll_echo(s.loop("lead"), n_n(s, 0.75), (0.3, 0.12, 0.05)) + s.loop("bass") + s.loop("arp") + s.loop("drums")
+    return room(x + roll_echo(s.loop("fx"), n_n(s, 0.5), (0.4, 0.2)))
+
+
+def song_cripta():
+    """Cripta Assombrada: do menor harmonico lento, 80 bpm, 4/4, 16 compassos = 48,0 s. Teremim sobre orgao (A), celesta com coro
+    (B), pedal grave, sino de capela a cada 4 compassos e um coracao batendo (tom grave); sem chimbal."""
+    s = Song(80, 64, 505)
+    dr = drums(s.rng)
+    a = ("G4:2 C5:1 Eb5:1 Eb5:1.5 D5:0.5 C5:2 F4:1 Ab4:1 C5:1 F5:1 B4:3 D5:1 "
+         "Eb5:2 G5:1 F5:1 Eb5:1.5 D5:0.5 C5:1 Ab4:1 Db5:2 F5:1 Ab5:1 G5:1 F5:1 D5:1 B4:1")
+    b = ("Ab5:1 C6:1 Eb6:1 C6:1 Bb5:1 G5:1 Eb5:2 F5:1 Ab5:1 C6:1 Ab5:1 G5:3 Eb5:1 "
+         "C6:1 Eb6:1 D6:1 C6:1 Ab5:2 F5:1 Ab5:1 G5:1 B5:1 D6:1 F6:1 F6:1 D6:1 B5:1 G5:1")
+    for si, (text, chords) in enumerate(((a, "Cm Ab Fm G Cm Ab Db G7"), (b, "Ab Eb Fm Cm Ab Fm G G7"))):
+        b0 = si * 32
+        mel, _ = melody(text, b0)
+        if si == 0:
+            s.line("lead", mel, v_theremin, 0.45)
+        else:
+            for bb, m, _ in mel:
+                s.add("cel", bb, bell(midi(m), 1.0, MSR), 0.3)
+        for bar, c in enumerate(chords.split()):
+            root, iv = chord(c)
+            bb = b0 + bar * 4
+            for i in iv[:3]:
+                s.add("pad", bb, v_organ(midi(near(root, 60) + i), 4 * s.spb), 0.09)
+                if si == 1:
+                    s.add("pad", bb, v_choir(midi(near(root, 57) + i), 4 * s.spb), 0.22)
+            s.add("pad", bb, v_organ(midi(near(root, 36)), 4 * s.spb), 0.12)   # pedal
+            s.add("drums", bb, dr["tom_lo"], 0.32)                             # coracao: tum-tum
+            s.add("drums", bb + 0.4, dr["tom_lo"], 0.22)
+            if bar % 4 == 0:
+                s.add("bell", bb, bell(midi(48), 3.0, MSR), 0.35)
+    x = roll_echo(s.loop("lead") + s.loop("cel"), n_n(s, 1), (0.3, 0.15, 0.07)) + s.loop("pad") + s.loop("drums") + s.loop("bell")
+    return room(x)
+
+
+def song_forja():
+    """Forja do Dragao: sol frigio dominante (hijaz), 120 bpm, 4/4, 24 compassos = 48,0 s. Metais (A), alaude dedilhado (B), metais
+    + alaude + pulso uma oitava acima (C); bigorna no tempo, taiko, baixo saturado em colcheias com a 2a menor."""
+    s = Song(120, 96, 606)
+    dr, d2 = drums(s.rng), drums2(s.rng)
+    a = ("G4:1 Ab4:0.5 B4:0.5 C5:1 B4:1 Ab4:1.5 G4:0.5 Ab4:1 C5:1 B4:0.5 C5:0.5 D5:1 Eb5:1 D5:1 C5:1 Ab4:1 F4:2 "
+         "G4:1 Ab4:0.5 B4:0.5 D5:1 G5:1 F5:1 Eb5:0.5 D5:0.5 C5:1 Ab4:1 C5:1 B4:0.5 Ab4:0.5 F4:1 Ab4:1 G4:3 r:1")
+    b = ("G5:0.5 Ab5:0.5 G5:0.5 F5:0.5 Eb5:1 C5:1 Eb5:0.5 F5:0.5 Eb5:0.5 D5:0.5 C5:2 B4:0.5 C5:0.5 D5:0.5 Eb5:0.5 D5:1 B4:1 "
+         "G4:2 Ab4:1 B4:1 C5:0.5 D5:0.5 Eb5:0.5 F5:0.5 G5:1 Ab5:1 Ab5:0.5 G5:0.5 F5:0.5 Eb5:0.5 F5:2 Eb5:1 C5:0.5 Eb5:0.5 Ab5:1 G5:1 "
+         "B4:1 D5:1 G5:2")
+    ca = "G Ab G Fm G Ab Fm G"
+    for si, (name, text, chords) in enumerate((("A", a, ca), ("B", b, "Cm Ab G G Cm Fm Ab G"), ("C", a, ca))):
+        b0 = si * 32
+        mel, _ = melody(text, b0)
+        if name == "B":
+            s.line("lead", mel, v_saz, 0.5)
+        else:
+            s.line("lead", mel, v_brass, 0.4)
+            if name == "C":
+                s.line("lead", mel, v_lead, 0.16, oct_shift=1)
+                s.line("lead", mel, v_saz, 0.2)
+        for bar, c in enumerate(chords.split()):
+            root, _ = chord(c)
+            bb = b0 + bar * 4
+            r = near(root, 43)   # perto de G2
+            for k, off in enumerate((0, 0, 1, 0, 0, 12, 1, 0) if c == "G" else (0, 0, 12, 0, 0, 12, 7, 12)):
+                s.add("bass", bb + 0.5 * k, v_grit_bass(midi(r + off), 0.5 * s.spb), 0.3)
+            for at in ((0, 1.5, 3) if name == "A" else (0, 1, 2, 3)):
+                s.add("drums", bb + at, d2["anvil"], 0.16 if at else 0.2)
+            s.add("drums", bb, d2["taiko"], 0.5)
+            s.add("drums", bb + 2, d2["taiko"], 0.4)
+            if name != "A":
+                s.add("drums", bb + 2.75, d2["taiko"], 0.3)
+                for k in (1, 3):
+                    s.add("drums", bb + k, dr["snare"], 0.22)
+            if name == "C" and bar == 0:
+                s.add("drums", bb, d2["crash"], 0.2)
+            if bar == 7 and name != "A":   # virada
+                for k, tom in enumerate(("tom_hi", "tom_hi", "tom_lo", "tom_lo")):
+                    s.add("drums", bb + 2 + 0.5 * k, dr[tom], 0.3)
+    x = roll_echo(s.loop("lead"), n_n(s, 0.5), (0.2, 0.06)) + s.loop("bass") + s.loop("drums")
+    return room(x)
+
+
+def song_chefe_golem():
+    """Golem de Pedra (salas M2 e B2): la eolio pesado, 100 bpm, 4/4, 20 compassos = 48,0 s. Pisada em meio-tempo (taiko + bumbo no
+    1, caixa no 3), trompas graves (A), trompas com coro (B), ponte de percussao com pedras rolando (T)."""
+    s = Song(100, 80, 707)
+    dr, d2 = drums(s.rng), drums2(s.rng)
+    a = ("A3:2 C4:1 E4:1 D4:1.5 C4:0.5 B3:1 A3:1 C4:2 A3:1 F3:1 G3:2 B3:1 D4:1 "
+         "E4:2 A4:1 G4:1 E4:1.5 D4:0.5 C4:1 B3:1 A3:1 D4:1 F4:1 E4:1 E4:3 G#3:1")
+    b = ("A4:2 C5:1 A4:1 B4:2 D5:1 B4:1 C5:2 B4:1 A4:1 E4:4 "
+         "F4:1 A4:1 C5:1 F5:1 E5:1 D5:1 B4:1 G4:1 G#4:2 B4:2 E5:3 r:1")
+    for si, (name, text, chords) in enumerate((("A", a, "Am Am F G Am Am Dm E"), ("B", b, "F G Am Am F G E E"), ("T", None, "Am F G E"))):
+        b0 = si * 32
+        if text:
+            mel, _ = melody(text, b0)
+            s.line("lead", mel, v_brass, 0.45)
+            if name == "B":
+                s.line("lead", mel, v_choir, 0.5, oct_shift=-1)
+        for bar, c in enumerate(chords.split()):
+            root, _ = chord(c)
+            bb = b0 + bar * 4
+            r = near(root, 40)   # perto de E2
+            for k, off in enumerate((0, 0, 12, 7)):
+                s.add("bass", bb + k, v_grit_bass(midi(r + off), 0.9 * s.spb), 0.32)
+            s.add("drums", bb, d2["taiko"], 0.55)
+            s.add("drums", bb, dr["kick"], 0.5)
+            s.add("drums", bb + 2, d2["taiko"], 0.35)
+            s.add("drums", bb + 2, dr["snare"], 0.3)
+            for at in (1.5, 3.5):
+                s.add("drums", bb + at, d2["knock"], 0.25)
+            if name != "A":
+                for k in range(8):
+                    s.add("drums", bb + 0.5 * k, dr["hats"][k % 4], 0.07 if k % 2 else 0.04)
+            if name == "T" and bar == 3:   # pedras rolando de volta ao comeco
+                for k in range(8):
+                    s.add("drums", bb + 2 + 0.25 * k, d2["knock"], 0.2 + 0.03 * k)
+    x = roll_echo(s.loop("lead"), n_n(s, 0.5), (0.18, 0.05)) + s.loop("bass") + s.loop("drums")
+    return room(x)
+
+
+def song_chefe_necromante():
+    """Necromante (salas M3 e B3): do menor harmonico gotico, 126 bpm, 4/4, 24 compassos = 45,7 s. Orgao em tercinas, coro cantando
+    (A), metais (B), metais uma oitava acima com o coro (C); pedal de orgao, sino de capela a cada 4 compassos."""
+    s = Song(126, 96, 808)
+    dr = drums(s.rng)
+    a = ("C5:1 C5:1 Eb5:1 D5:1 C5:1 B4:1 C5:2 Eb5:1 Eb5:1 F5:1 Eb5:1 C5:2 Ab4:2 "
+         "F5:1 Ab5:1 G5:1 F5:1 D5:1 F5:1 Eb5:1 D5:1 Eb5:1 D5:1 C5:2 B4:3 r:1")
+    b = ("Ab5:1 G5:0.5 F5:0.5 Eb5:1 C5:1 D5:1 F5:1 Bb5:2 G5:1 F5:0.5 Eb5:0.5 Bb4:1 Eb5:1 C5:3 G4:1 "
+         "F5:1 Ab5:1 C6:1 Ab5:1 Db6:1 C6:0.5 Bb5:0.5 Ab5:1 F5:1 G5:1 B5:1 D6:1 B5:1 F6:1 D6:1 B5:1 G5:1")
+    ca = "Cm Cm Ab Ab Fm G Cm G"
+    for si, (name, text, chords) in enumerate((("A", a, ca), ("B", b, "Ab Bb Eb Cm Fm Db G G7"), ("C", a, ca))):
+        b0 = si * 32
+        mel, _ = melody(text, b0)
+        if name == "A":
+            s.line("lead", mel, v_choir, 0.7)
+        elif name == "B":
+            s.line("lead", mel, v_brass, 0.4)
+        else:
+            s.line("lead", mel, v_brass, 0.38, oct_shift=1)
+            s.line("lead", mel, v_choir, 0.55)
+        for bar, c in enumerate(chords.split()):
+            root, iv = chord(c)
+            bb = b0 + bar * 4
+            tones = [near(root, 60) + i for i in iv[:3]]
+            seq = tones + [tones[0] + 12] + tones[2:0:-1]   # sobe e desce: 6 tercinas = 2 tempos
+            for k in range(12):
+                s.add("org", bb + k / 3, v_organ(midi(seq[k % 6]), s.spb / 3), 0.15)
+            for at, g in ((0, 0.2), (2, 0.17)):
+                s.add("bass", bb + at, v_organ(midi(near(root, 36)), 2 * s.spb), g)
+            for k in ((0, 2) if name == "A" else (0, 1, 2, 3)):
+                s.add("drums", bb + k, dr["kick"], 0.5)
+            for k in (1, 3):
+                s.add("drums", bb + k, dr["snare"], 0.24)
+            if name != "A":
+                for k in range(4):
+                    s.add("drums", bb + k + 0.5, dr["hats"][k], 0.08)
+            if bar % 4 == 0:
+                s.add("bell", bb, bell(midi(48), 2.5, MSR), 0.3)
+            if bar == 7 and name == "C":
+                for k, tom in enumerate(("tom_hi", "tom_hi", "tom_lo", "tom_lo")):
+                    s.add("drums", bb + 2 + 0.5 * k, dr[tom], 0.3)
+    x = roll_echo(s.loop("lead"), n_n(s, 0.5), (0.2, 0.06)) + s.loop("org") + s.loop("bass") + s.loop("drums") + s.loop("bell")
+    return room(x)
+
+
+def song_chefe_dragao():
+    """Dragao Anciao (salas M4 e B4, chefe final, o mais epico): sol menor, 144 bpm, 4/4, 28 compassos = 46,7 s. Cordas em colcheias o
+    tempo todo, metais heroicos (A), coro com metais graves (B), metais + pulso uma oitava acima + coro + taiko (C), ponte com rufar
+    crescendo e metais nos acordes (D); timpanos, prato em cada secao."""
+    s = Song(144, 112, 909)
+    dr, d2 = drums(s.rng), drums2(s.rng)
+    a = ("G4:1.5 D5:0.5 D5:1 C5:0.5 Bb4:0.5 A4:0.5 Bb4:0.5 G4:1 D4:2 Eb5:1.5 D5:0.5 C5:1 Bb4:1 G4:2 Bb4:1 Eb5:1 "
+         "G5:1.5 F5:0.5 Eb5:1 D5:0.5 C5:0.5 D5:1 F#5:1 A5:2 G5:1 F5:0.5 Eb5:0.5 D5:1 Bb4:1 A4:2 F#4:1 D4:1")
+    b = "Bb4:2 Eb5:2 C5:2 F5:2 D5:2 F5:1 Bb5:1 G5:4 Eb5:2 G5:2 Ab5:2 C6:1 Ab5:1 F#5:2 A5:2 D6:3 C6:0.5 A5:0.5"
+    ca = "Gm Gm Eb Eb Cm D Gm D"
+    for si, (name, text, chords) in enumerate((("A", a, ca), ("B", b, "Eb F Bb Gm Cm Ab D D"), ("C", a, ca), ("D", None, "Eb F D D"))):
+        b0 = si * 32
+        if text:
+            mel, _ = melody(text, b0)
+            if name == "B":
+                s.line("lead", mel, v_choir, 0.75)
+                s.line("lead", mel, v_brass, 0.2, oct_shift=-1)
+            else:
+                s.line("lead", mel, v_brass, 0.42)
+                if name == "C":
+                    s.line("lead", mel, v_lead, 0.15, oct_shift=1)
+        for bar, c in enumerate(chords.split()):
+            root, iv = chord(c)
+            bb = b0 + bar * 4
+            for k, off in enumerate((0, 0, 7, 0, 12, 0, 7, 0)):
+                s.add("str", bb + 0.5 * k, v_strings(midi(near(root, 50) + off), 0.5 * s.spb), 0.35 if name != "D" else 0.2 + 0.05 * bar)
+            for at, g in ((0, 0.3), (2, 0.26)):
+                s.add("bass", bb + at, v_grit_bass(midi(near(root, 38)), 1.8 * s.spb), g)
+                s.add("drums", bb + at, v_timp(midi(near(root, 43))), g + 0.15)
+            if name in ("B", "C"):
+                for i in iv[:3]:
+                    s.add("pad", bb, v_choir(midi(near(root, 57) + i), 4 * s.spb), 0.25)
+            if name == "C":
+                for at, g in ((0, 0.45), (1.5, 0.3), (2.5, 0.3)):
+                    s.add("drums", bb + at, d2["taiko"], g)
+                for k in (1, 3):
+                    s.add("drums", bb + k, dr["snare"], 0.25)
+            elif name != "D":
+                s.add("drums", bb + 3, dr["snare"], 0.2)
+            if bar == 0 and name != "D":
+                s.add("drums", bb, d2["crash"], 0.22)
+            if name == "D":   # ponte: rufar crescendo e metais nos acordes, de volta ao A
+                for k in range(16):
+                    s.add("drums", bb + 0.25 * k, dr["snare"], 0.05 + 0.003 * (bar * 16 + k))
+                for i in iv[:3]:
+                    s.add("stab", bb, v_brass(midi(near(root, 62) + i), 1.5 * s.spb), 0.12)
+                if bar == 3:
+                    for k, tom in enumerate(("tom_hi", "tom_hi", "tom_lo", "tom_lo")):
+                        s.add("drums", bb + 2 + 0.5 * k, dr[tom], 0.32)
+    x = roll_echo(s.loop("lead"), n_n(s, 0.5), (0.18, 0.05)) + s.loop("str") + s.loop("bass") + s.loop("pad") + s.loop("stab") + s.loop("drums")
+    return room(x)
+
+
+def song_evento():
+    """Evento da semana e temporada (quadro de eventos): fanfarra festiva em fa maior, 120 bpm, 4/4, 8 compassos = 16,0 s (tema curto)."""
+    s = Song(120, 32, 1010)
+    dr = drums(s.rng)
+    mel, _ = melody("C5:0.5 C5:0.5 F5:1 A5:1 F5:1 D5:0.5 F5:0.5 Bb5:1 A5:0.5 G5:0.5 F5:1 E5:1 G5:1 C6:1.5 Bb5:0.5 A5:2 F5:1 C5:1 "
+                    "F5:0.5 G5:0.5 A5:1 C6:1 A5:1 Bb5:1 D6:1 C6:0.5 Bb5:0.5 A5:1 G5:1 E5:1 C5:1 E5:1 F5:3 r:1")
+    s.line("lead", mel, v_lead, 0.45)
+    for b0, m, d in mel:
+        s.add("box", b0, v_box(midi(m + 12), d), 0.08)
+    for bar, c in enumerate("F Bb C F F Bb C7 F".split()):
+        root, iv = chord(c)
+        bb = bar * 4
+        for k, off in enumerate((0, 7, 12, 7)):
+            s.add("bass", bb + k, v_tri_bass(midi(near(root, 41) + off), s.spb), 0.4)
+        for k in (0.5, 1.5, 2.5, 3.5):   # "pa" nos contratempos
+            for i in iv[:3]:
+                s.add("stab", bb + k, v_stab(midi(near(root, 62) + i)), 0.12)
+        s.add("drums", bb, dr["kick"], 0.45)
+        s.add("drums", bb + 2, dr["kick"], 0.4)
+        for k in (1, 3):
+            s.add("drums", bb + k, dr["snare"], 0.22)
+        for k in range(8):
+            s.add("drums", bb + 0.5 * k, dr["shaker"], 0.10 if k % 2 else 0.06)
+    for k in range(8):   # rufar de volta ao comeco
+        s.add("drums", 30 + 0.25 * k, dr["snare"], 0.06 + 0.02 * k)
+    x = roll_echo(s.loop("lead"), n_n(s, 0.75), (0.2, 0.06)) + s.loop("box") + s.loop("bass") + s.loop("stab") + s.loop("drums")
+    return room(x)
+
+
+MUSIC = {"menu": song_menu, "masmorra": song_masmorra, "chefe": song_chefe,
+         "minas": song_minas, "cripta": song_cripta, "forja": song_forja,
+         "chefe_golem": song_chefe_golem, "chefe_necromante": song_chefe_necromante, "chefe_dragao": song_chefe_dragao,
+         "evento": song_evento}
 
 
 # ------------------------------------------------------------------ medida, normalizacao, escrita
@@ -894,8 +1817,8 @@ def main():
         y = write_wav(OUT / rel, x, MSR)
         write_meta(OUT / rel, rel, True)
         rows.append(check(rel, y, MSR, True, problems))
-    total = sum((OUT / r).stat().st_size for r, *_ in rows)
-    print(f"{len(rows)} arquivos, {total / 1e6:.2f} MB")
+    size = {d: sum((OUT / r).stat().st_size for r, *_ in rows if r.startswith(d)) / 1e6 for d in ("sfx", "musica")}
+    print(f"{len(rows)} arquivos, {sum(size.values()):.2f} MB (sfx {size['sfx']:.2f} MB, musica {size['musica']:.2f} MB)")
     if problems:
         sys.exit("FALHOU:\n" + "\n".join(problems))
     print("OK: pico < -1 dBTP, sem DC, sem silencio inicial, lacos sem emenda")
@@ -917,7 +1840,8 @@ def check(rel, y, sr, music, problems):
     if music:
         jump = abs(y[0] - y[-1])
         typical = np.percentile(np.abs(np.diff(y)), 99.9)
-        if not 45 <= dur <= 90 or jump > typical:
+        lo = 12 if rel == "musica/evento.wav" else 45   # o tema do quadro de eventos e curto de proposito (16 s)
+        if not lo <= dur <= 90 or jump > typical:
             problems.append(f"{rel}: dur {dur:.1f} s, emenda {jump:.4f} > p99,9 {typical:.4f}")
     elif abs(y[0]) > 0.01 or np.max(np.abs(y[:n_of(0.01)])) < 0.01:
         problems.append(f"{rel}: comeco com silencio ou estalo")

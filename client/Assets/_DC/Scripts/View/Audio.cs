@@ -84,7 +84,8 @@ namespace DC
             Inicio[v] = agora;
         }
 
-        /// <summary>Troca a musica com crossfade ("menu", "masmorra", "chefe"). A mesma faixa nao reinicia; null/"" faz fade para o silencio.</summary>
+        /// <summary>Troca a musica com crossfade ("menu", "evento", ou as de sala via MusicaRegiao). A mesma faixa nao reinicia; null/"" faz
+        /// fade para o silencio.</summary>
         public static void Music(string faixa)
         {
             if (_mAtual == null || faixa == _faixa || (string.IsNullOrEmpty(faixa) && string.IsNullOrEmpty(_faixa))) return;
@@ -98,6 +99,17 @@ namespace DC
             if (c != null) _mAtual.Play();
             _fader.T = 0f;
             _fader.enabled = true;
+        }
+
+        static readonly string[] Masmorras = { "masmorra", "minas", "cripta", "forja" };
+        static readonly string[] Chefes = { "chefe", "chefe_golem", "chefe_necromante", "chefe_dragao" };
+
+        /// <summary>Musica da sala pela regiao (1-4; fora disso, a 1): a masmorra da regiao ou, com `chefe`, a do chefe dela (mini-chefe
+        /// e chefe dividem a faixa, como na regiao 1). Mesmo comportamento do Music (crossfade, faixa ausente fica como esta).</summary>
+        public static void MusicaRegiao(int regiao, bool chefe)
+        {
+            int i = regiao >= 1 && regiao <= Masmorras.Length ? regiao - 1 : 0;
+            Music(chefe ? Chefes[i] : Masmorras[i]);
         }
 
         /// <summary>Volumes 0..1 (Configuracoes). Sem PlayerPrefs.Save aqui: o slider chama a cada quadro; o Game grava no Save/pausa/saida.</summary>
