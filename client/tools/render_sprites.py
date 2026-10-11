@@ -104,7 +104,7 @@ PRESETS = {
     "lanterna_mina": dict(DC, height=0.50, dirs=1, size=96),
     "escora": dict(DC, width=1.20, dirs=1, size=176),
     # Lote 5 (regiao 3, 2026-10-11): clava e cajado presos a RightHand pelo --attach na linha
-    "esqueleto": dict(DC, height=1.35, dirs=4, mirror=True, size=224, clips=dict(Idle=BREATH, Collapse=SIX, Rise=SIX)),
+    "esqueleto": dict(DC, height=1.35, dirs=4, mirror=True, size=256, clips=dict(Idle=BREATH, Collapse=SIX, Rise=SIX)),
     "mumia": dict(DC, height=1.50, dirs=4, mirror=True, size=224, clips=dict(Idle=BREATH, Hold=dict(frames=8))),
     "gargula": dict(DC, height=1.40, dirs=4, mirror=True, size=256, clips=dict(Statue=dict(frames=1))),
     "necromante": dict(DC, height=1.60, dirs=4, mirror=True, size=320),
@@ -532,6 +532,9 @@ def render(cols, rows, cell, size, path, keep, outline):
 
 
 def main():
+    sys.stdout.reconfigure(line_buffering=True)  # o log fica legivel mesmo se o .ps1 cortar no timeout
+    t_ini = time.time()
+    etapa = lambda s: print("ETAPA %-8s %5.0f s" % (s, time.time() - t_ini))  # onde vai o tempo (PC sem memoria)
     a = parse_args()
     out = os.path.abspath(a.out)
     os.makedirs(out, exist_ok=True)
@@ -545,6 +548,7 @@ def main():
     if len(arms) > 1 or not meshes:
         die("modelo precisa de malha(s) e no maximo 1 armature; achei %d armature(s) e %d malha(s)" % (len(arms), len(meshes)))
     arm = arms[0] if arms else None
+    etapa("modelo")
     k_model = normalize(model, meshes, a)
     for spec in a.attach:  # depois de normalizar: o prop tem tamanho proprio e nao entra na altura do ator
         objs, extra = attach(spec, arm)
@@ -553,6 +557,7 @@ def main():
     hold =hold_pose(os.path.abspath(a.hold), a.hold_frame) if (a.hold and arm and not a.self_) else None
     # sem armature = prop estatico: 1 quadro "Static", mesma camera e escala dos personagens
     clips = [(n, act, sample_frames(act, a, n)) for n, act in load_clips(a, arm, hold)] if arm else [("Static", None, [0.0])]
+    etapa("clipes")
     rows = DIRS[a.dirs][: a.dirs // 2 + 1] if (a.mirror and a.dirs > 1) else DIRS[a.dirs]
     hands = [b for b in arm.pose.bones if HAND_RE.search(b.name)] if arm else []
     root = arm.pose.bones[bone_order(arm)[0]] if arm else None
@@ -563,6 +568,7 @@ def main():
     fwd, up, right = Vector((0, math.cos(e), -math.sin(e))), Vector((0, math.sin(e), math.cos(e))), Vector((1, 0, 0))
     half, vmin, vmax = bounds(arm, meshes, clips, e, [math.radians(a.yaw - d * 360.0 / a.dirs) for d in range(len(rows))],
                               a.ground_cut)
+    etapa("limites")
     extent = max(2 * half, vmax - vmin) * 1.1
     ppu = a.scale or a.size / extent
     cell = a.size / ppu  # metros por celula

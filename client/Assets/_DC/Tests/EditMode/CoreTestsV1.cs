@@ -608,7 +608,7 @@ namespace DC.Tests
             Assert.GreaterOrEqual(none, 3, "salas sem risco para a carga"); Assert.GreaterOrEqual(thief, 4); Assert.LessOrEqual(thief, 10, "icone de ladrao em quase toda sala nao diz nada");
             for (int c = 0; c < Sim.Contracts.Length; c++)
             {
-                var sim = NewSim(); Run r = Start(sim, c);
+                var sim = NewSim(); sim.DevStars(999); Run r = Start(sim, c);   // estrelas: regioes 2-4 abertas
                 foreach (Door d in r.Doors) Assert.AreEqual(Content.Rooms[d.Room].Risk, d.Risk, Sim.Contracts[c].Code);
                 sim.Abandon();
             }

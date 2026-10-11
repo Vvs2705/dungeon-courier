@@ -788,6 +788,7 @@ namespace DC.Tests
         static string Fingerprint(int seed, int contract)
         {
             var sim = new Sim(seed) { Reputation = Sim.Contracts.Length };
+            sim.DevStars(999);   // regioes 2-4 abertas (estrelas)
             ContractResult res = Bot.Play(sim, contract, false, new Bot(seed, 0.6f, 0.25f));
             return res.Outcome + "|" + res.Time.ToString("R") + "|" + res.Total + "|" + res.RoomsFought + "|" + sim.Run.Courier.Pos + "|" + sim.Save();
         }
@@ -853,7 +854,7 @@ namespace DC.Tests
                 for (int l = 1; l < layers.Length; l++) paths *= layers[l].Length;
                 for (int p = 0; p < paths; p++)
                 {
-                    var sim = NewSim(); Run r = Start(sim, c);
+                    var sim = NewSim(); sim.DevStars(999); Run r = Start(sim, c);   // estrelas: regioes 2-4 abertas
                     int code = p;
                     while (sim.InContract)
                     {

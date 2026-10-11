@@ -96,9 +96,9 @@ namespace DC
             public int Type = -1, Id = -1; public Color BodyC = Color.white;
             public SpriteAnim Anim;   // null = procedural
             public Vector2 Last, Hand; public bool HasHand, HandFront = true, FlipX; public float StrikeT, RoarT, SpawnT;
-            /// <summary>TeleAt = alvo gravado no inicio do telegraph (onde o courier/a carga estava); HitT = clipe Hit; WakeT = clipe Wake;
-            /// WasAsleep = para tocar o Wake; Lit = visivel na luz (sala escura); StepT = ritmo das ondas na agua.</summary>
-            public Vector2 TeleAt; public bool HasTeleAt, WasAsleep, Lit = true; public float HitT, WakeT, StepT;
+            /// <summary>HitT = clipe Hit; WakeT = clipe Wake (WasAsleep = para tocar); Shown = corpo visivel (escuro, por baixo da terra, no
+            /// teto, no ar); StepT = ritmo das ondas/rastro; TeleT0/TeleDur = relogio proprio do aviso (TeleK) quando o Core nao desconta Tele.</summary>
+            public bool WasAsleep, WasTele, Shown = true; public float HitT, WakeT, StepT, TeleT0, TeleDur;
         }
         sealed class CargoV
         {
@@ -106,8 +106,8 @@ namespace DC
             public SpriteRenderer Range, Outline, Body, Deco, Cracks, Seal, Star, Count, Spr;
             // v1: alcance e enchimento da explosao do barril, faisca do pavio, brilho da carga acolchoada, contagem 3-2-1
             public SpriteRenderer Blast, BlastFill, Spark, Pad; public Text Num; public int NumShown = -1; public float NumPop;
-            // regioes 2-4: anel do coracao (4 m), luz da lanterna, fio do balao
-            public SpriteRenderer Aura, Lamp, Str;
+            // regioes 2-4: anel do coracao (4 m), luz da lanterna, fio do balao, barra do gelo
+            public SpriteRenderer Aura, Lamp, Str, IceBg, IceFill;
             public CargoType Type; public bool Rescue, Painted; public float HitT, PulseT; public SpriteSheet Sheet;
         }
         sealed class DoorV { public SpriteRenderer Frame, Bars, Glow, Lock, Env; public Door D; public bool Was; public Vector2 LockAt; }
@@ -381,7 +381,7 @@ namespace DC
                 float left = Balance.AloneTime + (run.Has(Perk.Lookout) ? Balance.PerkLookout : 0f) - g.AloneT;
                 bool pick = ground && g.PickT > 0f, count = ground && alone && left < 3f;
                 v.Count.enabled = pick || count;
-                if (pick) { v.Count.sprite = Art.Arc(g.PickT / Balance.HeavyPick); v.Count.color = Art.Cargo; }
+                if (pick) { v.Count.sprite = Art.Arc(g.PickT / Mathf.Max(0.05f, (g.Type == CargoType.Heavy ? Balance.HeavyPick : 0f) + g.PickExtra)); v.Count.color = Art.Cargo; }   // + teia/casulo
                 else if (count)
                 {
                     float k = 1f - left / 3f;
@@ -499,6 +499,7 @@ namespace DC
                     v.Up.localScale = UpScale(sc, sc);
                 }
                 v.G.sortingOrder = Depth(e.Pos.Y);
+                TeleClock(run, v, e);   // relogio proprio do aviso (regioes 2-4)
                 EnemyDef d = e.Def;
                 float hit = _enemyHit.TryGetValue(e.Id, out float h) ? h : 0f;
                 if (hit > 0f) _enemyHit[e.Id] = Mathf.Max(0f, hit - dt);
@@ -958,6 +959,9 @@ namespace DC
             v.Eyes.color = Color.white;
             v.Extra.enabled = false;
             v.Extra.transform.localRotation = Quaternion.identity;
+            v.Extra.sortingOrder = v.Body.sortingOrder + 4;   // o Ent e reaproveitado entre papeis: desfaz o que outro papel mudou
+            v.Body.transform.localRotation = v.Spr.transform.localRotation = Quaternion.identity;
+            v.Dir.localPosition = Vector3.zero;
             switch (t)
             {
                 case EnemyType.Bat:
@@ -1047,6 +1051,7 @@ namespace DC
         static void PaintCargo(CargoV v, CargoType t, bool rescue)
         {
             v.Painted = true; v.Type = t; v.Rescue = rescue;
+            v.Body.transform.localScale = Vector3.one; v.Deco.transform.localRotation = Quaternion.identity;   // a lanterna/o mapa mudam
             v.Sheet = SheetAt(CargoSheet, (int)t);
             bool spr = v.Sheet != null;
             v.Body.sprite = Art.CargoSprite(t);

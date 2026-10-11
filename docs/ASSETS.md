@@ -405,3 +405,36 @@ Aval: a mesma autonomia do Vinicius de 2026-10-10 ("sem pausas, sem solicitaçõ
 Na clava e no cajado, o assunto já trazia "one single ... single object" antes do "only one object in the image". Teia, véu do escuro, runa, raio, fio, casulo, bancos e estantes ficam procedurais (0 crédito).
 
 > **Lote 5: 4 × 65 + 11 × 45 = 755 créditos** (teto 850). Saldo 18 770 → 18 015 (`PROVENIENCIA.md` §1). Sem refação e sem duplicata.
+
+## 11. Lote 6 da v1.0 (2026-10-11) — região 4 "Forja do Dragão" (`CONTEUDO_REGIOES.md` §12.3)
+
+Aval: a mesma autonomia do Vinicius de 2026-10-10 ("sem pausas, sem solicitações ... seja na arte") e o pedido do jogo completo pelo GDD; teto do lote **900 créditos**, repassado pelo coordenador (margem para o dragão). Cores (`CONTEUDO_REGIOES.md` §12): **laranja-fogo** = queima (frasco, salamandra, magma, braseiro, respiro); **lilás** = mexe na carga (olhos do diabrete); kobolds em **verde-azulado** com barriga laranja. Itens separados do corpo (regra do Vinicius): o frasco do kobold e o chicote do capataz saem como props e são presos à `RightHand` no Blender. Magma e brasa usam o mesmo modelo (2º render em escala, 0 crédito).
+
+**Texto exato enviado ao gerador** (Nano Banana 2, 1:1, 4 imagens, grátis): os trechos abaixo foram unidos por ", ", nesta ordem, igual às §9–§10.
+- Personagem: assunto + `[S]` + `[T]` + `[I]`.
+- Prop (e o dragão): assunto + "only one object in the image" + `[P]` + `[IP]`.
+- Modelo: HD H3.1 - Máx. qualidade, Ultra, 2K, PBR, remover iluminação, triângulos, 8 000 polígonos, 8K off, Gerar em Partes off, Privado ("Gerar 45" conferido em cada peça). Sem Multi-View.
+
+| # | Asset | Tipo | Assunto do prompt (texto exato, antes dos sufixos) | Imagem | Cr |
+|---|---|---|---|---|---|
+| 59 | `diabrete` | personagem rigado | small mischievous imp, charcoal-red skin, tiny horns, bat ears, long thin tail, big toothy grin, lilac glowing eyes, leather loincloth, empty hands | #3 | 65 |
+| 60 | `kobold` | personagem rigado | small kobold lizard creature, teal-green scales, orange belly, short snout, small horns, leather apron with flask holders, goggles on the forehead, empty hands, no flask | #2 | 65 |
+| 61 | `frasco` | prop (item da mão direita do kobold; projétil) | one single round glass flask with bubbling orange liquid and a cork with a burning rag, single object | #1 | 45 |
+| 62 | `magma` / `brasa` | personagem rigado | magma elemental, body of black cooled basalt chunks with glowing orange lava cracks between them, huge rocky fists, small head with fiery eyes | #3 | 65 |
+| 63 | `capataz` | personagem rigado (mini-chefe) | kobold foreman, bigger and bulkier kobold, teal scales with scars, thick leather apron and shoulder pad, brass goggles, hard hat with a horn, empty hands, no whip | #3 | 65 |
+| 64 | `chicote` | prop (item da mão direita do capataz) | one single long braided leather whip coiled, iron handle, single object | #1 | 45 |
+| 65 | `salamandra` | prop (animado por código) | fire salamander, sleek charcoal-black body with bright orange ember stripes, glowing yellow eyes, flat head, long tail, four short legs, walking pose | #3 | 45 |
+| 66 | `dragao` | modelo + **Auto Rig "Outro" (criatura)** (chefe final) | ancient dragon, dark emerald scales, bronze horns and belly plates, glowing fiery throat, folded large wings, long tail, four legs, crouching, chunky stylized proportions | #4 | 45 + 20 |
+| 67 | `planta` | prop (carga) | carnivorous plant in a clay pot with handles, big green venus-flytrap head with pink inside and sharp teeth, leafy vines | #1 | 45 |
+| 68 | `mapa` | prop (carga) | rolled old treasure map tied with a red cord, partly unrolled showing a dotted path and an X, parchment | #2 | 45 |
+| 69 | `bigorna` | prop (decoração) | heavy blacksmith anvil on a wooden stump | #1 | 45 |
+| 70 | `braseiro` | prop (decoração) | iron brazier bowl on three legs filled with glowing coals | #4 | 45 |
+| 71 | `corrente` | prop (decoração) | heavy iron chain hanging down with a big hook at the end | #3 | 45 (export pendente: geração travada em 99% no servidor) |
+| 72 | `respiro` | prop (terreno) | round iron floor grate over a glowing fire vent, soot around | #2 | 45 |
+| — | texturas `piso_forja`, `parede_forja` | imagem grátis (gerador do Tripo) | texto exato em `PROVENIENCIA.md` §4 (basalto escuro com fuligem e fissuras finas de lava / tijolo escuro com placas de ferro rebitadas e rejunte laranja) | #2 / #4 | 0 |
+
+No frasco e no chicote, o assunto já trazia "one single ... single object" antes do "only one object in the image". O ovo de salamandra é o `ovo` do Lote 2 com troca de material; lava, fogo no chão e fumaça ficam procedurais (0 crédito).
+
+**Dragão:** o Tripo oferece Auto Rig do tipo "Outro" (ícone de quadrúpede) além do humanoide. Gastei os 20 porque o esqueleto saiu útil: 43 ossos genéricos (`bone_0`…`bone_42`) cobrindo coluna, cauda, pescoço e cabeça, as 4 pernas e as 2 asas. Exportado em FBX com predefinição Blender 2K, com esqueleto. Não há predefinição Mixamo para esse tipo; a raia G renomeia os ossos e completa a mandíbula no Blender. O plano B de 4 poses à parte (+180) não foi usado.
+
+> **Lote 6: 4 × 65 + 10 × 45 + 20 (rig de criatura do dragão) = 730 créditos** (teto 900; previsto 710). Saldo 18 015 → 17 285 (`PROVENIENCIA.md` §1). Sem refação e sem duplicata; a corrente está paga e com o export pendente.

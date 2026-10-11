@@ -62,6 +62,7 @@ namespace DC.Core
         readonly Dictionary<int, float> fireCd4 = new Dictionary<int, float>();
         readonly Dictionary<int, Plant4> plant4 = new Dictionary<int, Plant4>();
         readonly List<int> called4 = new List<int>();
+        readonly List<Enemy> split4 = new List<Enemy>();
         float flaskT4, callT4, eggT4, flyT4, airT4; int flyStage4;
 
         /// <summary>Gelo do cristal (raia R2): o fogo da regiao 4 tira `points` (0-100) do gelo da carga no chao.</summary>
@@ -75,7 +76,7 @@ namespace DC.Core
             ventLast4 = new int[Room.Vents.Length];
             for (int i = 0; i < ventLast4.Length; i++) ventLast4[i] = -1;
             ventHit4.Clear(); for (int i = 0; i < Room.Vents.Length; i++) ventHit4.Add(new List<int>());
-            pushSeen4.Clear(); fireCd4.Clear(); plant4.Clear(); called4.Clear();
+            pushSeen4.Clear(); fireCd4.Clear(); plant4.Clear(); called4.Clear(); split4.Clear();
             flaskT4 = 0f; callT4 = 0f; eggT4 = Balance.DragonEggs1 * 0.5f; flyT4 = 0f; airT4 = 0f; flyStage4 = 0;
             foreach (Enemy e in Enemies) if (e.Type == EnemyType.KoboldForeman || e.Type == EnemyType.ElderDragon) Forge.Phase = 1;
         }
@@ -122,12 +123,17 @@ namespace DC.Core
             Forge.Fires.Add(new FirePatch { Pos = p, Radius = r, Left = time, Source = source });
         }
 
-        /// <summary>Golpe de fogo/pancada na carga no chao: barril detona (fogo), lanterna apaga, gelo perde pontos, balao fura (fogo: 1 no
-        /// minimo), o resto racha `cracks` vezes.</summary>
-        void Burn4(Cargo g, int cracks, float ice, bool fire)
+        /// <summary>Golpe de fogo/pancada na carga no chao: barril detona (fogo direto: respiro, frasco, sopro) ou fica com 1 s de pavio (fogo no
+        /// chao: "acende o pavio", M4-11), lanterna apaga, gelo perde pontos, balao fura (fogo: 1 no minimo), o resto racha `cracks` vezes.</summary>
+        void Burn4(Cargo g, int cracks, float ice, bool fire, bool ground = false)
         {
             if (g.State != CargoState.Ground) return;
-            if (fire && g.Type == CargoType.Barrel) { Detonate(g); return; }
+            if (fire && g.Type == CargoType.Barrel)
+            {
+                if (!ground) { Detonate(g); return; }
+                if (g.Fuse < Balance.BarrelFuse - Balance.FireFuse) { g.Fuse = Balance.BarrelFuse - Balance.FireFuse; g.Armed = true; Emit(Ev.FuseLit, g.Id, 1, g.Pos); }
+                return;
+            }
             if (g.Type == CargoType.Lantern) g.Out = true;
             if (g.Type == CargoType.IceCrystal) { if (ice > 0f) ForgeIce(g, ice); return; }
             int k = g.Type == CargoType.Balloon && fire ? Math.Max(1, cracks) : cracks;
@@ -166,7 +172,7 @@ namespace DC.Core
                 int cycle = (int)((ventClock4 + v.Phase) / Balance.VentCycle);
                 List<int> hit = ventHit4[i];
                 if (ventLast4[i] != cycle) { ventLast4[i] = cycle; hit.Clear(); Emit(Ev.VentFire, i, 0, v.Pos); }
-                if (c.State != CourierState.Dead && !hit.Contains(0) && V2.Dist(c.Pos, v.Pos) <= v.Radius) { hit.Add(0); DamageCourier(Balance.VentCourierDamage); if (!Running) return; }
+                if (c.State != CourierState.Dead && !hit.Contains(0) && V2.Dist(c.Pos, v.Pos) <= v.Radius) { hit.Add(0); DamageCourier(Balance.VentCourierDamage, true); if (!Running) return; }   // fogo no pe: nao racha a reliquia nas maos
                 for (int k = 0; k < Enemies.Count; k++)
                 {
                     Enemy e = Enemies[k];
@@ -192,7 +198,7 @@ namespace DC.Core
             if (c.State != CourierState.Dead && InFire4(c.Pos, 0.2f) && Ready4(0))
             {
                 fireCd4[0] = BootsLevel >= Balance.GearMaxLevel ? 2f * Balance.FireTick : Balance.FireTick;   // Botas nivel 5: 1 a cada 2 s
-                DamageCourier(1);
+                DamageCourier(1, true);   // fogo no pe: nao racha a reliquia nas maos
                 if (!Running) return;
             }
             for (int k = 0; k < Enemies.Count; k++)
@@ -205,7 +211,7 @@ namespace DC.Core
             {
                 Cargo g = Cargos[k]; int key = -g.Id - 1;
                 if (g.State != CargoState.Ground || !InFire4(g.Pos, 0f) || !Ready4(key)) continue;
-                fireCd4[key] = Balance.FireTick; Burn4(g, 0, Balance.FireIce, true);
+                fireCd4[key] = Balance.FireTick; Burn4(g, 0, Balance.FireIce, true, true);
             }
         }
 
@@ -289,7 +295,7 @@ namespace DC.Core
             {
                 case ForgeMarkKind.Flask:
                     Emit(Ev.Strike, m.Owner, (int)EnemyType.KoboldBomber, m.Pos);
-                    if (c.State != CourierState.Dead && V2.Dist(c.Pos, m.Pos) <= m.Radius + 0.2f) { DamageCourier(m.Damage); if (!Running) return; }
+                    if (c.State != CourierState.Dead && V2.Dist(c.Pos, m.Pos) <= m.Radius + 0.2f) { DamageCourier(m.Damage); if (!Running) return; fireCd4[0] = Balance.FireTick; }   // a poca so queima 1 s depois
                     if (Pet != null && V2.Dist(Pet.Pos, m.Pos) <= m.Radius + Balance.PetR) { DamagePet(); if (!Running) return; }
                     for (int k = 0; k < Cargos.Count && Running; k++) if (Cargos[k].State == CargoState.Ground && V2.Dist(Cargos[k].Pos, m.Pos) <= m.Radius + Balance.CargoR) Burn4(Cargos[k], 1, Balance.FlaskIce, true);
                     AddFire4(m.Pos, m.Pool, Balance.FlaskPool, 1);
@@ -422,12 +428,18 @@ namespace DC.Core
 
         partial void EnemyDiedR4(Enemy e)
         {
-            if (e.Type != EnemyType.MagmaElemental) return;
-            for (int k = -1; k <= 1; k += 2)   // divide em 2 brasas, se o teto de vivos deixar
-            {
-                if (!CanSpawn(EnemyType.MagmaShard)) break;
-                Enemy s = Spawn(EnemyType.MagmaShard, e.Pos + new V2(k * Balance.ShardSpread, 0f)); s.Wave = e.Wave;
-            }
+            if (e.Type == EnemyType.MagmaElemental) split4.Add(e);   // divide no StepR4: aqui o nucleo pode estar percorrendo a lista de inimigos
+        }
+
+        void Split4()
+        {
+            foreach (Enemy e in split4)
+                for (int k = -1; k <= 1; k += 2)   // 2 brasas a +-0,8 m, se o teto de vivos deixar
+                {
+                    if (!CanSpawn(EnemyType.MagmaShard)) break;
+                    Enemy s = Spawn(EnemyType.MagmaShard, e.Pos + new V2(k * Balance.ShardSpread, 0f)); s.Wave = e.Wave;
+                }
+            split4.Clear();
         }
 
         partial void HitMulR4(Enemy e, ref int mul)
@@ -547,6 +559,7 @@ namespace DC.Core
         {
             if (phase <= Forge.Phase) return;
             Forge.Phase = phase;
+            if (e.Type == EnemyType.ElderDragon) flyT4 = Math.Max(flyT4, (phase >= 3 ? Balance.DragonFly3 : Balance.DragonFly2) - Balance.DragonFirstFly);   // 1o voo logo
             Emit(Ev.BossPhase, e.Id, phase, e.Pos);
         }
 
@@ -766,6 +779,7 @@ namespace DC.Core
 
         partial void StepR4()
         {
+            if (split4.Count > 0) Split4();
             if (Room.Vents.Length > 0) StepVents4();
             if (!Running) return;
             StepPushes4();
@@ -810,6 +824,8 @@ namespace DC.Core
         /// <summary>Fogo no chao: 1 de dano por segundo dentro (Botas nivel 5: a cada 2 s); gelo x3 a 1,5 m de fogo ou lava. Gelo perdido por golpe
         /// (pontos de 0-100): respiro 25, frasco 20, sopro 40, pancada/pouso/chicote 20, fogo no chao 10 por segundo.</summary>
         public const float FireTick = 1f, FireNear = 1.5f, VentIce = 25f, FlaskIce = 20f, BreathIce = 40f, SmashIce = 20f, FireIce = 10f;
+        /// <summary>Barril no fogo do chao: o pavio fica com 1 s (respiro, frasco e sopro detonam na hora).</summary>
+        public const float FireFuse = 1f;
         /// <summary>Salamandra: circula a 2,5 m por 3 s, corta por ate 1,5 s; rastro de fogo de 0,45 m por 3 s a cada 0,5 s andando.</summary>
         public const float SalamanderOrbit = 2.5f, SalamanderCircle = 3f, SalamanderCut = 1.5f, SalamanderTrail = 0.5f, TrailR = 0.45f, TrailTime = 3f;
         /// <summary>Diabrete: 4-7 m do courier; some e surge 1 m atras dele (aviso 0,5 s, recarga 3 s); golpe no redemoinho atordoa 0,5 s.</summary>
@@ -822,10 +838,11 @@ namespace DC.Core
         public const int ForemanCalls = 2;
         /// <summary>Dragao: cone de 60 graus (cos 30 = 0,866) e 6 m; sopro 0,8 s (varredura 1,5 s girando 2 graus por passo); brasa de 0,7 m por
         /// 2 s. Voo: decola 0,6 s, 2,5 s no ar, sombra a 2 m/s, pouso em 2,2 m com aviso de 1,2 s, carga empurrada 2 m, cabeca baixa 3 s.
-        /// Fases em 60% e 30% da vida; 2 ovos a cada 20 s (12 na fase 3), voo a cada 18 s (14 na fase 3); anda em y >= 9; ovo a 3 m+ do courier.</summary>
+        /// Fases em 60% e 30% da vida; 2 ovos a cada 20 s (o 1o aos 10 s; 12 na fase 3), voo a cada 18 s (14 na fase 3; o 1o 4 s depois de entrar
+        /// na fase 2); anda em y >= 9; ovo a 3 m+ do courier.</summary>
         public const float BreathCos = 0.8660254f, BreathTime = 0.8f, SweepTime = 1.5f, Cos2 = 0.99939083f, Sin2 = 0.0348995f, EmberR = 0.7f, EmberTime = 2f;
         public const float FlyTakeOff = 0.6f, FlyAir = 2.5f, FlyShadowSpeed = 2f, LandTele = 1.2f, LandR = 2.2f, LandPush = 2f, HeadDown = 3f;
-        public const float DragonEggs1 = 20f, DragonEggs3 = 12f, DragonFly2 = 18f, DragonFly3 = 14f, DragonMinY = 9f, EggMinDist = 3f;
+        public const float DragonEggs1 = 20f, DragonEggs3 = 12f, DragonFly2 = 18f, DragonFly3 = 14f, DragonMinY = 9f, EggMinDist = 3f, DragonFirstFly = 4f;
         public const int DragonEggs = 2, DragonPhase2 = 60, DragonPhase3 = 30;
         /// <summary>Planta: morde a 1,2 m (aviso 0,3 s, 2 de dano, recarga 1 s); courier parado ao lado por 0,8 s leva 1 (recarga 1,5 s); ladrao
         /// carregando leva 1 por segundo. Mapa: ladroes +30% de velocidade atras dele; ladrao da carga sozinha em 6 s.</summary>

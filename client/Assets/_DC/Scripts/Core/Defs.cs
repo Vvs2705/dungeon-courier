@@ -452,11 +452,13 @@ namespace DC.Core
             new EnemyDef(EnemyType.BogFrog,        "Sapo do lodo",       5,  0f,   0.45f, 1, 3.0f, 3.0f, 0.7f, 2.5f, false, false, Th) { Region = 2 },
             new EnemyDef(EnemyType.BombBeetle,     "Besouro-bomba",      2,  3.0f, 0.30f, 2, 1.5f, 0.8f, 1.0f, 0f,   false, false, Sm) { Region = 2 },
             new EnemyDef(EnemyType.Minecart,       "Vagonete",           99, 6.0f, 0.60f, 2, 0.6f, 0f,   1.2f, 2.0f, false, false, Sm) { Region = 2 },
-            new EnemyDef(EnemyType.Ghost,          "Fantasma",           3,  1.2f, 0.35f, 1, 0.9f, 0.8f, 0.5f, 1.4f, false, false, Th) { Provisional = true, Region = 3 },
-            new EnemyDef(EnemyType.Skeleton,       "Esqueleto",          4,  1.4f, 0.40f, 1, 1.0f, 0.9f, 0.5f, 1.2f, false, false, No) { Provisional = true, Region = 3 },
-            new EnemyDef(EnemyType.Spider,         "Aranha",             3,  1.8f, 0.35f, 1, 0.9f, 0.8f, 0.5f, 1.4f, false, false, No) { Provisional = true, Region = 3 },
-            new EnemyDef(EnemyType.Mummy,          "Múmia",              8,  0.9f, 0.45f, 1, 1.0f, 0.9f, 0.7f, 1.6f, false, false, No) { Provisional = true, Region = 3 },
-            new EnemyDef(EnemyType.Gargoyle,       "Gárgula",            6,  2.0f, 0.45f, 2, 1.0f, 0.9f, 0.8f, 2.0f, false, false, Sm) { Provisional = true, Region = 3 },
+            // regiao 3 (CONTEUDO_REGIOES §5; comportamento em Run.Regiao3.cs). Fantasma: alcance = possuir; aranha: alcance/telegraph/recarga
+            // da mordida (cuspe em Balance.Spit*); gargula: velocidade 0 (mergulho Balance.GargSpeed), alcance = faixa, gatilho com a carga
+            new EnemyDef(EnemyType.Ghost,          "Fantasma",           3,  1.8f, 0.35f, 1, 0.5f, 0f,   0.6f, 1.5f, false, false, Th) { Region = 3 },
+            new EnemyDef(EnemyType.Skeleton,       "Esqueleto",          5,  1.5f, 0.40f, 1, 1.0f, 0.9f, 0.5f, 1.2f, false, false, No) { Region = 3 },
+            new EnemyDef(EnemyType.Spider,         "Aranha",             3,  2.0f, 0.35f, 1, 0.8f, 0.7f, 0.4f, 1.4f, false, false, No) { Region = 3 },
+            new EnemyDef(EnemyType.Mummy,          "Múmia",              9,  1.0f, 0.45f, 1, 0.9f, 0.8f, 0.6f, 2.0f, false, false, No) { Region = 3 },
+            new EnemyDef(EnemyType.Gargoyle,       "Gárgula",            8,  0f,   0.50f, 2, 6.0f, 3.0f, 0.9f, 4.0f, false, false, Sm) { Region = 3 },
             // regiao 4 (CONTEUDO_REGIOES §5; comportamento em Run.Regiao4.cs)
             new EnemyDef(EnemyType.Salamander,     "Salamandra",         4,  2.4f, 0.35f, 1, 0f,   0f,   0f,   1.2f, false, false, Sm) { Region = 4 },
             new EnemyDef(EnemyType.Imp,            "Diabrete",           3,  2.0f, 0.30f, 1, 0.8f, 0.7f, 1.0f, 5.0f, false, false, Th) { Region = 4 },
@@ -466,8 +468,9 @@ namespace DC.Core
             // Golem: vida em MEIOS pontos (80 = 40 de vida): de frente o tiro tira metade, pelas costas x2 (ponto fraco).
             new EnemyDef(EnemyType.MoleQueen,      "Rainha Toupeira",    22, 2.4f, 0.70f, 2, 1.2f, 1.2f, 1.0f, 3.5f, L, B, Th) { Region = 2 },
             new EnemyDef(EnemyType.StoneGolem,     "Golem de Pedra",     80, 1.0f, 1.00f, 3, 2.2f, 1.8f, 1.1f, 2.2f, L, B, Sm) { Region = 2 },
-            new EnemyDef(EnemyType.SpiderWidow,    "Viúva Aranha",       28, 1.6f, 0.60f, 1, 1.1f, 1.0f, 0.6f, 1.4f, L, B, Th) { Provisional = true, Region = 3 },
-            new EnemyDef(EnemyType.Necromancer,    "Necromante",         48, 1.2f, 0.60f, 2, 1.5f, 1.3f, 0.9f, 2.0f, L, B, No) { Provisional = true, Region = 3 },
+            // Viuva: mordida (fio, leque e teto em Balance.Widow*); Necromante: nao anda (salta), alcance/gatilho/telegraph/recarga do raio
+            new EnemyDef(EnemyType.SpiderWidow,    "Viúva Aranha",       20, 1.8f, 0.70f, 2, 1.1f, 1.0f, 0.6f, 1.5f, L, B, Th) { Region = 3 },
+            new EnemyDef(EnemyType.Necromancer,    "Necromante",         36, 0f,   0.50f, 2, 9.0f, 9.0f, 1.2f, 3.0f, L, B, Ar) { Region = 3 },
             new EnemyDef(EnemyType.KoboldForeman,  "Capataz Kobold",     18, 1.8f, 0.55f, 2, 3.0f, 2.6f, 0.7f, 1.8f, L, B, Ar | Th) { Region = 4 },
             new EnemyDef(EnemyType.ElderDragon,    "Dragão Ancião",      48, 0.8f, 1.30f, 3, 6.0f, 6.0f, 1.4f, 3.0f, L, B, Sm) { Region = 4 },
             new EnemyDef(EnemyType.MagmaShard,     "Brasa de magma",     4,  1.8f, 0.40f, 1, 0.8f, 0.7f, 0.5f, 1.2f, false, false, No) { Region = 4 },

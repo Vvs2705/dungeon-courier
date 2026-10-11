@@ -37,12 +37,13 @@ namespace DC.Core
             bool dash = false;
             if (--wait <= 0)
             {
-                dash = Plan(r);
-                wait = Math.Max(1, (int)Math.Round((Reaction + rng.Range(-0.08f, 0.08f)) / Balance.Step));
+                dash = Plan(r); AfterR2(r, ref dash);
+                wait =Math.Max(1, (int)Math.Round((Reaction + rng.Range(-0.08f, 0.08f)) / Balance.Step));
             }
             // ao entrar, o Core so conta o pouso depois do 1o movimento (FTUE): quem quer parar ja na entrada da um passo curto antes
             V2 move = stop ? (r.AwaitingMove ? V2.Up * 0.3f : V2.Zero) : r.PathDir(r.Courier.Pos, goal);
             if (dash) move = (goal - r.Courier.Pos).Norm;
+            else SteerR4(r, ref move);   // regiao 4: contorna fogo no chao, respiro prestes a soltar fogo e aviso no chao
             sim.Tick(Balance.Step, move, dash);
         }
 
@@ -128,6 +129,9 @@ namespace DC.Core
         // ganchos das regioes (Bot.RegiaoN.cs); sem implementacao custam zero. PlanRn: act -1 = nao decidiu, 0 = plano feito, 1 = dash.
         partial void OnRoomR4(Run r);
         partial void PlanR4(Run r, ref int act);
+        partial void SteerR4(Run r, ref V2 move);   // a cada passo: desvia o movimento de perigos visiveis (Bot.Regiao4.cs)
+        partial void PlanR2(Run r, ref int act); partial void AfterR2(Run r, ref bool dash);   // AfterRn: ajusta o plano geral (Bot.Regiao2.cs)
+        partial void PlanR3(Run r, ref int act);
 
         // ------------------------------------------------------------------ plano
 
@@ -136,7 +140,7 @@ namespace DC.Core
             Enemy best = null; float bd = float.MaxValue;
             foreach (Enemy e in r.Enemies)
             {
-                if (!e.Alive || (thievesOnly && e.Type != EnemyType.Thief && e.Type != EnemyType.Captain)) continue;
+                if (!e.Alive || e.Def.Hazard || r.Underground(e) || r.Untouchable(e) || (thievesOnly && e.Type != EnemyType.Thief && e.Type != EnemyType.Captain)) continue;   // vagonete e toupeira por baixo nao sao alvo
                 float d = V2.Dist(e.Pos, p);
                 if (d < bd) { bd = d; best = e; }
             }
@@ -168,6 +172,8 @@ namespace DC.Core
             Courier c = r.Courier;
             if (c.State == CourierState.Dashing) return false;
             int r4 = -1; PlanR4(r, ref r4); if (r4 >= 0) return r4 == 1;   // regiao 4 (Bot.Regiao4.cs): avisos no chao, respiros, fogo, lava, planta, mapa
+            int r2 = -1; PlanR2(r, ref r2); if (r2 >= 0) return r2 == 1;   // regiao 2 (Bot.Regiao2.cs): avisos no chao, trilhos, Rainha, gaiola, gelo
+            int r3 = -1; PlanR3(r, ref r3); if (r3 >= 0) return r3 == 1;   // regiao 3 (Bot.Regiao3.cs): avisos no chao, escuro, lanterna, espelho, balao, ossos, mumia
             Enemy near = Nearest(r, c.Pos);
             float nearD = near != null ? V2.Dist(near.Pos, c.Pos) : float.MaxValue;
             // alvo atras de pilar (bumerangue): parado nao adianta; andar ate ter linha
@@ -188,7 +194,7 @@ namespace DC.Core
             // 1) golpe telegrafado que pega o courier: sair (dash se esta em cima da hora)
             foreach (Enemy e in r.Enemies)
             {
-                if (!e.Alive || e.State != EnemyState.Telegraph || e.Type == EnemyType.Archer || V2.Dist(e.Pos, c.Pos) - Balance.CourierR > e.Def.Reach + 0.4f) continue;
+                if (!e.Alive || e.State != EnemyState.Telegraph || e.Type == EnemyType.Archer || e.Def.Region == 2 || MarkedR4(e) || V2.Dist(e.Pos, c.Pos) - Balance.CourierR > e.Def.Reach + 0.4f) continue;   // regiao 2: avisos no chao no PlanR2; regiao 4: no PlanR4
                 Go(Escape(r, c.Pos, e.Pos));
                 return e.Tele < 0.3f && c.DashReady && !HoldsFragile(r) && !r.Holds(CargoType.Cake);   // o dash larga a reliquia (racha) e o bolo nao deixa: so anda
             }

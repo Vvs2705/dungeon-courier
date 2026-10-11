@@ -48,7 +48,7 @@ namespace DC
                 {
                     bool own = S.OwnsOutfit(o);
                     Pinta(l, RoupaIcone(o, out Color oc), oc, Textos.RoupaNome(o), Textos.RoupaOrigem(o), null, false, own ? Textos.Comprado : "",
-                        own ? Art.Gold : Art.Off, !own, own, own ? (Action)(() => Abre(_pRoupas)) : null);
+                        own ? Art.Gold : Art.Off, !own, own, own ? (Action)(() => { Fecha(p); Abre(_pRoupas); }) : null);   // as roupas ficam abaixo da loja
                     continue;
                 }
                 var prod = (Product)Vitrine[i];

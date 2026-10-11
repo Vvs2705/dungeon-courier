@@ -26,8 +26,13 @@ namespace DC
     ///   -bot          o Bot dirige a partida com render (e avanca quadro -> resultado -> proximo contrato sozinho; escolhe o perk).
     ///   -speed N      multiplica o dt (0,1..20).
     ///   -shot f.png [-shotdelay s]   foto da tela depois de s segundos reais (padrao 1) e sai 0.
-    ///   -contract K   K 1-based (C1..C24): libera ate K NA MEMORIA e comeca direto (aceita o resgate se houver). Use com -testsession.
-    ///   -tela X       abre uma tela direto para a foto: titulo|menu|quadro|codigo|guilda|armas|config|creditos.
+    ///   -contract K   K 1-based (C1..C24; 25.. = regioes 2-4 na ordem do Content, com as estrelas da regiao so na memoria): libera ate K
+    ///                 NA MEMORIA e comeca direto (aceita o resgate se houver). Use com -testsession.
+    ///   -tela X       abre uma tela direto para a foto: titulo|menu|quadro|codigo|guilda|armas|config|creditos; do lancamento (Menus.Dev,
+    ///                 docs/UI_V1.md §6): mapa|raro|modificadores|eventos|temporada|equipamento|marcos|maestria|semfim|roupas|loja|compra|
+    ///                 anuncio|intersticial|oferta|bonus|bau.
+    ///   -dev-desbloqueia  (com -testsession) campanha toda aberta, estrelas cheias, +5000 moedas, 2a sessao e contrato raro oferecido, so
+    ///                 na memoria (fotos das telas de meta).
     ///   -pausa        (com -testsession -contract) abre a pausa logo no inicio (foto).   -tela perk: escolha de perk de exemplo.
     ///   -weapon W     (com -testsession -contract) arma 0 estilingue, 1 bumerangue, 2 bombinha: destrava so na memoria e equipa.
     ///   -reset        apaga o save antes de carregar.   -testsession  nao le nem grava save nem diario (semente fixa 1).
@@ -53,7 +58,11 @@ namespace DC
         public bool BotDrive => _botDrive;
         /// <summary>Data local AAAAMMDD do contrato do dia (o Core nao le relogio; voltar o relogio nao repete: sim.SeeDate).</summary>
         public int Hoje { get { DateTime d = DateTime.Now; return d.Year * 10000 + d.Month * 100 + d.Day; } }
+        /// <summary>Instante em segundos Unix (sessao, contrato raro, interstitial: o Core nao le relogio).</summary>
+        public long Agora => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
+        string _cfg = "";   // Resources/config.json (remote config local)
+        float _fpsT; int _fpsN;   // device_fps_bucket a cada 60 s
         Bot _bot;
         WorldView _view;
         Hud _hud;
@@ -100,6 +109,8 @@ namespace DC
             string saved = _test ? "" : PlayerPrefs.GetString(SaveKey, "");
             // jogador novo: semente aleatoria (variedade entre jogadores); -testsession: semente 1 (fotos repetiveis)
             Sim = string.IsNullOrEmpty(saved) ? new Sim(_test ? 1 : UnityEngine.Random.Range(1, int.MaxValue)) : Sim.Load(saved);
+            _cfg = ConfigLocal.Texto();
+            Sim.Config = Config.Parse(_cfg);   // padroes do build; a URL opcional (config_url) sobrescreve no Start
             _bot = new Bot(Sim.Seed);
 
             _cam = new GameObject("Camera", typeof(Camera), typeof(AudioListener)).GetComponent<Camera>();
@@ -139,9 +150,11 @@ namespace DC
                 {
                     int k = Mathf.Clamp(k1 - 1, 0, Sim.Contracts.Length - 1);
                     Sim.Reputation = Math.Max(Sim.Reputation, k);   // dev: libera ate K so na memoria (com -testsession nada e gravado)
+                    if (_test && RegionDef.Of(Sim.Contracts[k].Region) is RegionDef rg && rg.Id > 1 && Sim.Stars < rg.Stars)
+                        Sim.DevStars(rg.Stars);   // dev: regioes 2-4 pedem estrelas (so na memoria), para fotografar -contract 25..72
                     if (_test && int.TryParse(Arg("-weapon"), NumberStyles.Integer, Inv, out int w) && w >= 0 && w < WeaponDef.All.Length)
                     {
-                        Sim.DevStars(WeaponDef.All[w].Stars);   // dev: so na memoria, para fotografar bumerangue/bombinha
+                        Sim.DevStars(Math.Max(Sim.Stars, WeaponDef.All[w].Stars));   // dev: so na memoria, para fotografar bumerangue/bombinha
                         Sim.Equip((Weapon)w);
                     }
                     StartContract(k, Sim.Pending != null);
@@ -150,6 +163,11 @@ namespace DC
                 else if (!string.IsNullOrEmpty(Arg("-tela"))) _hud.Dev(Arg("-tela"));
             }
             _started = true;
+            // sessao: o Core conta e, depois de Config.RareHours h fora, oferece o contrato raro; remote config so com config_url (https)
+            Sim.OpenSession(Agora, Hoje);
+            HandleEvents();   // rare_offer
+            _hud.RefreshMeta();
+            if (!_test && ConfigLocal.Url(_cfg) is string url) StartCoroutine(ConfigLocal.Baixar(url, _cfg, t => Sim.Config = Config.Parse(t)));
             string shot = Arg("-shot");
             if (!string.IsNullOrEmpty(shot)) StartCoroutine(Shot(shot));
             if (_recFps > 0) StartCoroutine(Record(Arg("-record")));
@@ -179,6 +197,7 @@ namespace DC
                 if (_endT <= 0f) { _mode = Mode.After; _hud.ShowEnd(Sim.LastResult); _hud.RefreshMeta(); }
             }
             if (_botDrive) BotFlow();
+            FpsBalde();
 
             _view.Refresh(_mode == Mode.Board ? null : Sim.Run, dt);
             _hud.Refresh(dt);
@@ -221,18 +240,32 @@ namespace DC
 
         // ------------------------------------------------------------------ acoes chamadas pelas telas
 
-        /// <summary>Contrato i da campanha (toque no quadro): com carga pendente abre a oferta de resgate; senao comeca.</summary>
-        public void Play(int i) => _hud.ShowOffer(rescue => Begin(Sim.StartContract(i, rescue)));
+        /// <summary>Contrato i da campanha (toque no quadro, com 0-2 modificadores): com carga pendente abre a oferta de resgate; senao comeca.</summary>
+        public void Play(int i, Modifier mods = Modifier.None) => _hud.ShowOffer(rescue => Begin(Sim.StartContract(i, rescue, mods)), Sim.Contracts[i].Region);
+
+        /// <summary>Contrato raro (x2, 1x; aparece depois de Config.RareHours h fora).</summary>
+        public void PlayRare() => _hud.ShowOffer(rescue => Begin(Sim.StartRare(rescue)), Sim.RareContract != null ? Sim.RareContract.Region : 0);
+
+        /// <summary>Vaga k do quadro de eventos da semana (sem resgate em evento).</summary>
+        public void PlayEvent(int k) => Begin(Sim.StartEvent(Hoje, k, false));
+
+        /// <summary>Desafio sem fim da semana (sem resgate).</summary>
+        public void PlayEndless() => Begin(Sim.StartEndless(Hoje));
 
         /// <summary>Contrato do dia (data local de hoje).</summary>
         public void PlayDaily()
         {
             int d = Hoje;
-            _hud.ShowOffer(rescue => Begin(Sim.StartDaily(d, rescue)));
+            ContractDef def = Sim.DailyFor(d);   // o do jogador (regiao sorteada entre as abertas, muda com o reroll)
+            _hud.ShowOffer(rescue => Begin(Sim.StartDaily(d, rescue)), def != null ? def.Region : 0);
         }
 
-        /// <summary>Contrato por codigo (ja normalizado e validado pela tela).</summary>
-        public void PlayCode(string code) => _hud.ShowOffer(rescue => Begin(Sim.StartCode(code, rescue)));
+        /// <summary>Contrato por codigo (ja normalizado e validado pela tela; 0-2 modificadores).</summary>
+        public void PlayCode(string code, Modifier mods = Modifier.None)
+        {
+            ContractDef def = Sim.CodeContract(code);
+            _hud.ShowOffer(rescue => Begin(Sim.StartCode(code, rescue, mods)), def != null ? def.Region : 0);
+        }
 
         /// <summary>-contract e -bot: comeca direto.</summary>
         public void StartContract(int i, bool rescue) => Begin(Sim.StartContract(i, rescue));
@@ -249,7 +282,7 @@ namespace DC
         void EnterPlay() { _mode = Mode.Play; _botAcc = 0f; _hud.ShowPlay(); Musica(Sim.Run.Room); }
 
         /// <summary>Faixa do contrato (docs/AUDIO.md §2): chefe no M1/B1, masmorra no resto. Fora do contrato as telas tocam "menu".</summary>
-        static void Musica(RoomDef room) => Audio.Music(room != null && (room.Boss || room.Mini) ? "chefe" : "masmorra");
+        static void Musica(RoomDef room) => Audio.MusicaRegiao(room != null ? room.Region : 1, room != null && (room.Boss || room.Mini));   // masmorra/chefe da regiao
 
         public void Buy(Upgrade u)
         {
@@ -271,11 +304,26 @@ namespace DC
             AfterMeta();   // weapon_equip
         }
 
-        void AfterMeta()
+        /// <summary>Depois de mexer na meta fora do Tick (compra, resgate, rewarded, IAP, reroll, oferta mostrada): diario/som, save e telas.
+        /// O rewarded "retomar" deixa um contrato em curso: volta para ele.</summary>
+        public void AfterMeta()
         {
+            if (Sim.InContract && _mode != Mode.Play) EnterPlay();
             HandleEvents();
             Save();
             _hud.RefreshMeta();
+        }
+
+        /// <summary>device_fps_bucket a cada 60 s reais (balde do Sim.FpsBucket) + Touch (fim de sessao para as 8 h do contrato raro).</summary>
+        void FpsBalde()
+        {
+            _fpsN++;
+            _fpsT += Time.unscaledDeltaTime;
+            if (_fpsT < 60f) return;
+            Sim.Log(Ev.DeviceFps, Sim.FpsBucket(_fpsN / _fpsT));
+            Sim.Touch(Agora);
+            _fpsT = 0f; _fpsN = 0;
+            HandleEvents();
         }
 
         /// <summary>Escolha de perk (1 de 3): o Core volta a rodar o Tick.</summary>
@@ -329,6 +377,8 @@ namespace DC
                 string name = SimEvent.DiaryName(e.Kind);
                 if (name != null) Diary(name, e);
                 _view.OnEvent(e, run);
+                Hud.SomMeta(e);   // meta e loja (AUDIO.md): evento, temporada, recompensa, projeto, compra na loja
+                if (WorldView.Som(e, run)) continue;   // regioes 2-4 (AUDIO §1.1): som proprio no lugar do generico
                 // som e haptica: tabela do docs/AUDIO.md §1 (banco do Audio.cs; nome sem clipe nao toca nada)
                 switch (e.Kind)
                 {
@@ -366,7 +416,7 @@ namespace DC
                         {
                             RoomDef room = Content.Rooms[e.A];
                             Musica(room);
-                            if (room.Boss || room.Mini) Audio.Play("rugido", room.Mini ? 1.3f : 1f);
+                            WorldView.SomEntrada(room, run);   // rugido/rainha/viuva/necro/apito/dragao; mapa com algo revelado
                         }
                         break;
                     case Ev.RoomEvent: Audio.Play("aviso", 0.8f); break;
@@ -449,19 +499,25 @@ namespace DC
 
         void OnApplicationPause(bool paused) => Away(paused);
         void OnApplicationFocus(bool focus) => Away(!focus);
-        void OnApplicationQuit() { Log("session_end", Time.realtimeSinceStartup.ToString("0", Inv)); Save(); }
+        void OnApplicationQuit() { Log("session_end", Time.realtimeSinceStartup.ToString("0", Inv)); if (Sim != null) Sim.Touch(Agora); Save(); }
 
-        /// <summary>App saiu da frente: grava e abre a pausa (o contrato fica sem Tick ate CONTINUAR). Voltou: descarta o dt do quadro.</summary>
+        /// <summary>App saiu da frente: Touch (fim de sessao), grava e abre a pausa (o contrato fica sem Tick ate CONTINUAR). Voltou: descarta
+        /// o dt do quadro e abre sessao nova no Core (OpenSession: depois de 8 h fora, o contrato raro).</summary>
         void Away(bool away)
         {
             if (_headless || Sim == null || !_started || _recFps > 0) return;   // -record: segue gravando sem foco (runInBackground)
             if (away)
             {
                 if (!_paused) Log("app_background", Time.realtimeSinceStartup.ToString("0", Inv));   // fim de sessao no Android (o quit raramente chega)
+                Sim.Touch(Agora);
                 Save();
                 if (_mode == Mode.Play && !_botDrive) _hud.ShowPause(false);
             }
-            else _skipDt = true;
+            else
+            {
+                _skipDt = true;
+                if (_paused) { Sim.OpenSession(Agora, Hoje); AfterMeta(); }   // o pausar e o foco chegam juntos: so 1 sessao por volta
+            }
             _paused = away;
         }
 

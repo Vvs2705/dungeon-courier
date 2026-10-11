@@ -100,21 +100,30 @@ namespace DC.Tests
             Assert.AreEqual("R7", Content.Rooms[8].Code); Assert.AreEqual("M1", Content.Rooms[20].Code);
             int[] cargos = { 7, 10, 13, 15 }, stars = { 0, 30, 60, 95 };
             for (int r = 1; r <= 4; r++) { Assert.AreEqual(cargos[r - 1], RegionDef.Of(r).CargoCount); Assert.AreEqual(stars[r - 1], RegionDef.Of(r).Stars); }
-            for (int r = 2; r <= 4; r++) Assert.IsFalse(RegionDef.Of(r).HasContent, "esqueleto da Leva A");
+            var open = new List<int> { 1 };
+            for (int r = 2; r <= 4; r++)   // Leva B: regiao com conteudo = 14 salas (M, B, D) e 16 contratos; sem conteudo fica fechada
+            {
+                RegionDef g = RegionDef.Of(r);
+                if (!g.HasContent) continue;
+                open.Add(r);
+                Assert.AreEqual(14, g.Rooms.Length, g.Name); Assert.AreEqual(16, g.Contracts.Length, g.Name);
+                Assert.GreaterOrEqual(g.Mini, 0); Assert.GreaterOrEqual(g.Boss, 0); Assert.GreaterOrEqual(g.Delivery, 0);
+            }
             Assert.IsNull(RegionDef.Of(0)); Assert.IsNull(RegionDef.Of(5));
 
             var sim = new Sim(1) { Reputation = Sim.Contracts.Length };
             sim.DevStars(999);
             Assert.IsTrue(sim.RegionOpen(1));
-            for (int r = 2; r <= 4; r++) Assert.IsFalse(sim.RegionOpen(r), "regiao sem conteudo fica fechada mesmo com estrelas e chefe");
+            for (int r = 2; r <= 4; r++) Assert.AreEqual(RegionDef.Of(r).HasContent, sim.RegionOpen(r), "regiao sem conteudo fica fechada mesmo com estrelas e chefe");
             Assert.IsFalse(sim.RegionOpen(0)); Assert.IsFalse(sim.RegionOpen(5));
-            CollectionAssert.AreEqual(new[] { 1 }, sim.OpenRegions());
+            CollectionAssert.AreEqual(open.ToArray(), sim.OpenRegions());
 
             // enums so cresceram no fim (salvos por indice)
             Assert.AreEqual(6, (int)CargoType.Barrel); Assert.AreEqual(7, (int)EnemyType.Captain); Assert.AreEqual(9, (int)Perk.ChestLuck); Assert.AreEqual(8, (int)Outcome.Exploded);
             Assert.AreEqual(15, CargoDef.All.Length); Assert.AreEqual(30, EnemyDef.All.Length); Assert.AreEqual(25, PerkDef.All.Length);
-            for (int i = 0; i < CargoDef.All.Length; i++) { Assert.AreEqual((CargoType)i, CargoDef.All[i].Type); Assert.AreEqual(i >= 7, CargoDef.All[i].Provisional); }
-            for (int i = 0; i < EnemyDef.All.Length; i++) { Assert.AreEqual((EnemyType)i, EnemyDef.All[i].Type); Assert.AreEqual(i >= 8, EnemyDef.All[i].Provisional); }
+            // provisorio = regiao 2-4 ainda sem conteudo (a raia da regiao mede e desliga)
+            for (int i = 0; i < CargoDef.All.Length; i++) { Assert.AreEqual((CargoType)i, CargoDef.All[i].Type); Assert.AreEqual(CargoDef.All[i].Region > 1 && !RegionDef.Of(CargoDef.All[i].Region).HasContent, CargoDef.All[i].Provisional, CargoDef.All[i].Name); }
+            for (int i = 0; i < EnemyDef.All.Length; i++) { Assert.AreEqual((EnemyType)i, EnemyDef.All[i].Type); Assert.AreEqual(EnemyDef.All[i].Region > 1 && !RegionDef.Of(EnemyDef.All[i].Region).HasContent, EnemyDef.All[i].Provisional, EnemyDef.All[i].Name); }
             for (int i = 0; i < PerkDef.All.Length; i++) Assert.AreEqual((Perk)i, PerkDef.All[i].Type);
             int bosses = 0;
             for (int i = (int)EnemyType.MoleQueen; i <= (int)EnemyType.ElderDragon; i++) if (EnemyDef.All[i].Boss && EnemyDef.All[i].Locks) bosses++;
@@ -127,6 +136,7 @@ namespace DC.Tests
         {
             for (int t = (int)EnemyType.GoblinMiner; t < EnemyDef.All.Length; t++)
             {
+                if (!EnemyDef.All[t].Provisional) continue;   // com comportamento proprio: testes da raia da regiao (CoreTestsRegiaoN)
                 var sim = NewSim(); Run r = Start(sim, 0); r.Courier.Hp = 99;
                 Steps(sim, 1, Up);
                 Enemy e = r.Spawn((EnemyType)t, new V2(4.5f, 6f)); e.Hp = 999;
@@ -165,7 +175,7 @@ namespace DC.Tests
                 for (int r = 1; r <= 4; r++) Assert.AreEqual(r, Content.RegionOf(Content.WithRegion(p, r)));
             string c2 = ContractCode.Encode(Content.WithRegion(4242, 2));
             Assert.IsTrue(ContractCode.IsValid(c2));
-            Assert.IsNull(Sim.CodeContract(c2), "codigo da regiao 2 sem conteudo");
+            Assert.AreEqual(RegionDef.Of(2).HasContent, Sim.CodeContract(c2) != null, "codigo da regiao 2: contrato so com conteudo");
             var sim = new Sim(1) { Reputation = 24 };
             Assert.IsNull(sim.StartCode(c2, false));
             for (uint e = 0; e < 50; e++)
@@ -593,7 +603,7 @@ namespace DC.Tests
 
             // Boss Courier Run: os chefes vencidos em fila; cura 2 por sala
             int br = WeeksOf(LiveEvent.BossRun, 1)[0];
-            var b = new Sim(4) { Reputation = Sim.Contracts.Length };
+            var b = new Sim(4) { Reputation = RegionDef.Of(1).Contracts.Length };   // so os chefes da regiao 1 vencidos
             ContractDef bd = b.EventContract(br, 0);
             Assert.AreEqual(3, bd.Layers.Length); Assert.AreEqual(Content.M1, bd.Layers[0][0]); Assert.AreEqual(Content.B1, bd.Layers[1][0]);
             Run rb = b.StartEvent(br, 0, false); rb.Courier.Hp = 1; Cross(b);
@@ -826,7 +836,7 @@ namespace DC.Tests
             Assert.IsFalse(new Sim(1) { Reputation = Sim.Contracts.Length - 1 }.EndlessOpen);
             var sim = new Sim(8) { Reputation = Sim.Contracts.Length };
             int d = Monday(20261012); sim.SeeDate(d);
-            ContractDef a = sim.EndlessContract(d), b = new Sim(99) { Reputation = 24 }.EndlessContract(AddDays(d, 3)), c = sim.EndlessContract(AddDays(d, 7));
+            ContractDef a = sim.EndlessContract(d), b = new Sim(99) { Reputation = Sim.Contracts.Length }.EndlessContract(AddDays(d, 3)), c = sim.EndlessContract(AddDays(d, 7));
             Assert.AreEqual(Fp(a), Fp(b), "mesma semana, mesmo desafio para todos"); Assert.AreNotEqual(a.ShareCode, c.ShareCode);
             Assert.AreEqual(Balance.EndlessLayers + 1, a.Layers.Length); Assert.AreEqual(ContractKind.Endless, a.Kind);
             Assert.AreEqual(Content.M1, a.Layers[4][0], "mini-chefe a cada 5 camadas"); Assert.AreEqual(Content.B1, a.Layers[9][0], "chefe a cada 10");

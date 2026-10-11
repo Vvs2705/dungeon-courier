@@ -133,10 +133,20 @@ namespace DC
             Rect(r, "Base", o.C.X, o.C.Y, sx, sy, Art.Hex(0x2C303C), OBlock);
             Transform pu = Upright(r, "Lapide", new Vector2(o.C.X, o.C.Y + o.H.Y * 0.4f), out SortingGroup _);
             float w = sx * 0.85f, h = 0.95f;
-            Art.NewSprite(pu, "Pedra", Tomb(), Art.Hex(0x6E7385), 0, new Vector2(0f, h / 2f), new Vector2(w, h));
-            Art.NewSprite(pu, "Luz", Tomb(), Art.Hex(0x858AA0), 1, new Vector2(-0.04f, h / 2f + 0.04f), new Vector2(w * 0.82f, h * 0.88f));
-            Art.NewSprite(pu, "Caveira", Art.Skull(), Art.Hex(0x3A3F4F), 2, new Vector2(0f, h * 0.55f), Vector2.one * 0.3f);
-            Art.NewSprite(pu, "Musgo", Art.Disc(), Art.Hex(0x4E6A4A), 2, new Vector2(w * 0.3f, 0.12f), new Vector2(0.22f, 0.12f));
+            SpriteRenderer stone = Art.NewSprite(pu, "Pedra", Tomb(), Art.Hex(0x6E7385), 0, new Vector2(0f, h / 2f), new Vector2(w, h));
+            var pv = new PillarV
+            {
+                R = stone, Base = stone.color, X = o.C.X, HalfW = o.H.X, Back = o.C.Y + o.H.Y, Reach = o.C.Y + h / Tilt,
+                More = new[]
+                {
+                    Art.NewSprite(pu, "Luz", Tomb(), Art.Hex(0x858AA0), 1, new Vector2(-0.04f, h / 2f + 0.04f), new Vector2(w * 0.82f, h * 0.88f)),
+                    Art.NewSprite(pu, "Caveira", Art.Skull(), Art.Hex(0x3A3F4F), 2, new Vector2(0f, h * 0.55f), Vector2.one * 0.3f),
+                    Art.NewSprite(pu, "Musgo", Art.Disc(), Art.Hex(0x4E6A4A), 2, new Vector2(w * 0.3f, 0.12f), new Vector2(0.22f, 0.12f)),
+                },
+            };
+            pv.MoreBase = new Color[pv.More.Length];
+            for (int i = 0; i < pv.More.Length; i++) pv.MoreBase[i] = pv.More[i].color;
+            _pillars.Add(pv);
             return true;
         }
 
@@ -484,7 +494,17 @@ namespace DC
                 if (dig) bv.Arc.sprite = Art.Arc(b.Progress / (run.Has(Perk.ChestSense) ? Balance.BuriedSenseTime : Balance.BuriedTime));
                 if (show && !open) bv.Glow.color = Art.A(Art.Coin, 0.22f + 0.15f * Mathf.Sin(_time * 4f + i));
             }
+            // props em pe (pilar, lapide...) ficam acima do veu (SortingGroup): no escuro, fora da luz, escurecem a ~35%
+            foreach (PillarV pv in _pillars) Dim(pv, run.Lit && !run.InLight(new V2(pv.X, pv.Back)));
             DrawVeil(run);
+        }
+
+        static void Dim(PillarV pv, bool dark)
+        {
+            float k = dark ? 0.35f : 1f;
+            pv.R.color = new Color(pv.Base.r * k, pv.Base.g * k, pv.Base.b * k, pv.A);
+            if (pv.More == null) return;
+            for (int i = 0; i < pv.More.Length; i++) { Color b = pv.MoreBase[i]; pv.More[i].color = new Color(b.r * k, b.g * k, b.b * k, pv.A); }
         }
 
         // ------------------------------------------------------------------ escuro: veu com buracos de luz (as luzes do Core)

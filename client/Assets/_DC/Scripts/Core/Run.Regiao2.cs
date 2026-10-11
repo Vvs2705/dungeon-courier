@@ -82,7 +82,12 @@ namespace DC.Core
         /// <summary>Segundos ate o proximo grito da gaiola (-1 = sem gaiola em jogo).</summary>
         public float CageLeft => Live(CargoType.GriffinCage) != null ? Math.Max(0f, Balance.CageEvery - cageT) : -1f;
         /// <summary>Debaixo da terra (toupeira/Rainha): so o rastro aparece; nao e alvo.</summary>
-        public bool Underground(Enemy e) { R2Foe f = R2Of(e); return f != null && (f.Act == R2Act.Under || f.Act == R2Act.Mound); }
+        public bool Underground(Enemy e)
+        {
+            if (e.Type != EnemyType.Mole && e.Type != EnemyType.MoleQueen) return false;
+            R2Foe f = R2Of(e);
+            return f == null || f.Act == R2Act.Under || f.Act == R2Act.Mound;   // nasce por baixo
+        }
 
         R2Foe Foe(Enemy e)
         {
@@ -139,7 +144,7 @@ namespace DC.Core
         partial void HitMulR2(Enemy e, ref int mul)
         {
             if (e.Type == EnemyType.Minecart) { mul = 0; return; }
-            if ((e.Type == EnemyType.Mole || e.Type == EnemyType.MoleQueen) && Underground(e)) { mul = 0; return; }
+            if (Underground(e)) { mul = 0; return; }
             if (e.Type != EnemyType.StoneGolem) return;
             if (fullHit) { mul *= 2; return; }
             R2Foe f = R2Of(e);

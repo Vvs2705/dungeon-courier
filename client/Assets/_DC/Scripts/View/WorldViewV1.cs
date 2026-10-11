@@ -46,7 +46,8 @@ namespace DC
         sealed class PuddleV { public Transform Root; public SpriteRenderer Fill, Rim, Clock; }
         sealed class TorchV { public SpriteRenderer Halo, Pool; public Transform Flame; public float Seed; public Color C; }
         /// <summary>Back = borda de tras (y da sala); Reach = ate onde (y da sala) o pilar em pe cobre quem esta atras dele.</summary>
-        sealed class PillarV { public SpriteRenderer R; public float X, HalfW, Back, Reach; }
+        /// <summary>A = alfa (esmaece com o courier/carga atras); Base/MoreBase = cores sem escuro (Dim, WorldViewRegioes).</summary>
+        sealed class PillarV { public SpriteRenderer R; public SpriteRenderer[] More; public Color Base = Color.white; public Color[] MoreBase; public float X, HalfW, Back, Reach, A = 1f; }
 
 
         readonly HashSet<int> _seen = new HashSet<int>();
@@ -65,7 +66,7 @@ namespace DC
         bool _padWas;
 
         /// <summary>Cor do papel no mundo: Lote 3 pelo ASSETS §8 (arqueiro ciano-petroleo, limo rosa-chiclete); o resto pelo Art.Role.</summary>
-        static Color Papel(EnemyType t) => t == EnemyType.Archer ? ArcherTeal : t == EnemyType.Slime ? SlimePink : Art.Role(t);
+        static Color Papel(EnemyType t) => t >= EnemyType.GoblinMiner ? PapelRegiao(t) : t == EnemyType.Archer ? ArcherTeal : t == EnemyType.Slime ? SlimePink : Art.Role(t);
         /// <summary>1o clipe da lista que a folha tem, ou -1 (sem alocar: foreach em array).</summary>
         static int First(SpriteSheet s, string[] names) { foreach (string n in names) { int k = s.Clip(n); if (k >= 0) return k; } return -1; }
         /// <summary>Angulo de tela (graus, desenho apontando para +Y) da direcao d da Sim: o y encolhe pela projecao.</summary>
@@ -168,8 +169,7 @@ namespace DC
             v.Blast.enabled = v.BlastFill.enabled = v.Spark.enabled = lit;
             if (!lit)
             {
-                if (v.Num != null && v.Num.enabled) v.Num.enabled = false;
-                v.NumShown = -1;
+                if (g.Type != CargoType.Balloon && v.Num != null && v.Num.enabled) { v.Num.enabled = false; v.NumShown = -1; }   // o balao conta no DrawCargoRegiao
                 return;
             }
             float k = Mathf.Clamp01(f / Balance.BarrelFuse);
@@ -583,7 +583,7 @@ namespace DC
             {
                 bool behind = Behind(p, run.Courier.Pos);
                 foreach (Cargo g in run.Cargos) if (g.State == CargoState.Ground && Behind(p, g.Pos)) behind = true;
-                p.R.color = Art.A(Color.white, Mathf.MoveTowards(p.R.color.a, behind ? 0.45f : 1f, dt * 4f));
+                p.A = Mathf.MoveTowards(p.A, behind ? 0.45f : 1f, dt * 4f);   // a cor sai no Dim (DrawRegiao), com o escuro
             }
             DrawBoss(run, dt);
         }
