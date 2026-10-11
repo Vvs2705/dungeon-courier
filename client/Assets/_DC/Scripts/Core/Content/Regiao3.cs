@@ -38,7 +38,7 @@ namespace DC.Core
         {
             new RoomDef(R1, "R3-1", "Corredor das Tochas", "no escuro a mira só pega o que está na luz (sua luz 3,5 m, tocha 2,5 m, lanterna 5,5 m): ande de tocha em tocha", 1,
                 new[] { O(2.5f, 5.0f, 0.6f, 0.6f), O(6.5f, 5.0f, 0.6f, 0.6f), O(2.5f, 9.0f, 0.6f, 0.6f), O(6.5f, 9.0f, 0.6f, 0.6f) },
-                new[] { S(Skeleton, 4.5f, 10.5f), S(Bat, 7.5f, 11.5f) }, P(1.5f, 2.5f),
+                new[] { S(Skeleton, 4.5f, 10.5f) }, P(1.5f, 2.5f),
                 wave: new[] { S(Bat, 8.2f, 3.6f) }, trigger: Half)
             { Dark = true, Torches = new[] { P(0.3f, 4.0f), P(8.7f, 7.0f), P(0.3f, 10.5f) } },
             new RoomDef(R2, "R3-2", "Ossário", "esqueleto derrubado se remonta em 4 s, a menos que a carga esteja a 3 m dele ou que o dash espalhe os ossos: lute perto da carga", 2,

@@ -47,8 +47,8 @@ namespace DC.Core
         }
 
         static Enemy ByIdR3(Run r, int id) { foreach (Enemy e in r.Enemies) if (e.Id == id && e.Alive) return e; return null; }
-        /// <summary>Espelho nas maos com ate 1 rachadura: vale encarar (cada reflexo racha 1).</summary>
-        static bool MirrorOk(Run r) { foreach (Cargo g in r.Cargos) if (g.State == CargoState.Held && g.Type == CargoType.Mirror && g.Cracks <= 1) return true; return false; }
+        /// <summary>Espelho nas maos ainda inteiro: vale encarar uma vez (cada reflexo racha 1; 3 quebram).</summary>
+        static bool MirrorOk(Run r) { foreach (Cargo g in r.Cargos) if (g.State == CargoState.Held && g.Type == CargoType.Mirror && g.Cracks == 0) return true; return false; }
 
         partial void PlanR3(Run r, ref int act)
         {
@@ -59,6 +59,8 @@ namespace DC.Core
                 if (c.Hp <= 2 && c.DashReady && !r.Holds(CargoType.Cake)) { Go(c.Pos + (c.Pos - r.GrabbedBy.Pos).Norm * 3f); act = 1; return; }
                 stop = true; act = 0; return;
             }
+            // a2) fantasma levando a nossa carga: andar ate ela (pegar de volta nao racha; tiro e dash derrubam e racham reliquia/espelho)
+            foreach (Enemy e in r.Enemies) if (e.Alive && e.Type == EnemyType.Ghost && e.Carry != null) { Go(e.Carry.Pos); act = 0; return; }
             // b) balao no chao: pegar antes de escapar
             foreach (Cargo g in r.Cargos) if (g.State == CargoState.Ground && g.Type == CargoType.Balloon && g.Fuse >= BalloonGrab) { Go(g.Pos); act = 0; return; }
             // c) avisos no chao: sair da faixa (gargula, cuspe, leque, raio) e do circulo da Viuva; com o espelho, encarar o cuspe e o raio

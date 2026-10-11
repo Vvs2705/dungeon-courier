@@ -29,7 +29,7 @@ namespace DC.Core
     public sealed class R3Foe
     {
         public R3Act Act; public V2 Home; public int Phase = 1, Revives;
-        internal float T, T2, T3, RuneT, BeamT; internal int Hits, LastHp, MaxHp, Mask, Beams; internal bool Called25;
+        internal float T, T2, T3, RuneT, BeamT; internal int Hits, LastHp, MaxHp, Mask, Beams; internal bool Called25, Raised;
         internal Cargo Pull; internal V2 A, B, Beam0, Beam1;
         internal readonly List<V2> Runes = new List<V2>();
         internal readonly List<int> HitIds = new List<int>();
@@ -38,7 +38,7 @@ namespace DC.Core
     /// <summary>Teia no chao: da sala (Left &lt; 0, fica ate o dash rasgar) ou cuspida (Left = s).</summary>
     public sealed class Cobweb { public V2 Pos; public float Radius, Left = -1f; internal float Immune; }
     /// <summary>Pilha de ossos do esqueleto derrubado: remonta em Left s (no maximo Balance.BonesRevives vezes).</summary>
-    public sealed class BonePile { public V2 Pos; public float Left; public int Revives; internal bool Wave; }
+    public sealed class BonePile { public V2 Pos; public float Left; public int Revives; internal bool Wave, Raised; }
     public enum WarnKind { Strip, Circle, Rune, Thread, Beam }
     /// <summary>Aviso no chao: faixa/fio/raio de From a To com largura Width, ou circulo/runa em From com raio Radius. Owner = id do inimigo.</summary>
     public sealed class Warn { public WarnKind Kind; public int Owner; public V2 From, To; public float Width, Radius; }
@@ -52,8 +52,9 @@ namespace DC.Core
         /// <summary>Cuspe da aranha: courier a 2-5 m, aviso 0,6 s, projetil 6 m/s raio 0,25 m ate 6 m; sem acertar vira teia de 0,6 m por 6 s;
         /// recarga 4 s.</summary>
         public const float SpitSpeed = 6f, SpitR = 0.25f, SpitMin = 2f, SpitMax = 5f, SpitTele = 0.6f, SpitCd = 4f, SpitRange = 6f, SpitWeb = 0.6f, SpitWebTime = 6f;
-        /// <summary>Fantasma: a carga possuida flutua a 0,8 m/s ate a parede lateral e some 2 s depois.</summary>
-        public const float GhostFloat = 0.8f, GhostVanish = 2f;
+        /// <summary>Fantasma: a carga possuida flutua a 0,8 m/s ate a parede lateral e some 2 s depois; pegar de volta repele o fantasma 1,5 m
+        /// (e o toque dele recarrega: sem isso o toque logo depois racharia a reliquia que acabou de voltar para as maos).</summary>
+        public const float GhostFloat = 0.8f, GhostVanish = 2f, GhostRecoil = 1.5f;
         /// <summary>Esqueleto: pilha remonta em 4 s se a carga do contrato nao estiver a 3 m; dash a 0,6 m espalha; no maximo 2 remontes.</summary>
         public const float BonesRise = 4f, BonesNear = 3f, BonesDash = 0.6f; public const int BonesRevives = 2;
         /// <summary>Mumia: agarrado leva 1 a cada 1,2 s; solta com dash ou 2 golpes nela.</summary>
@@ -188,7 +189,7 @@ namespace DC.Core
             {
                 R3Foe f = R3Of(e); int rev = f != null ? f.Revives : 0;
                 if (rev >= Balance.BonesRevives || CargoNear3(e.Pos)) Emit(Ev.BonesScatter, e.Id, 0, e.Pos);   // morre de vez
-                else Bones.Add(new BonePile { Pos = e.Pos, Left = Balance.BonesRise, Revives = rev, Wave = e.Wave });
+                else Bones.Add(new BonePile { Pos = e.Pos, Left = Balance.BonesRise, Revives = rev, Wave = e.Wave, Raised = f != null && f.Raised });
             }
             else if (e.Type == EnemyType.Necromancer)   // morto: todos os esqueletos caem de vez e a luz volta
             {
@@ -353,7 +354,8 @@ namespace DC.Core
                 if (!CanSpawn(EnemyType.Skeleton)) { b.Left = 0.5f; continue; }   // teto de vivos: espera
                 Bones.RemoveAt(i);
                 Enemy s = Spawn(EnemyType.Skeleton, b.Pos);
-                s.Wave = b.Wave; F3(s).Revives = b.Revives + 1;
+                R3Foe sf = F3(s); sf.Revives = b.Revives + 1; s.Wave = b.Wave;
+                if (b.Raised) { s.Hp = s.Def.Hp; sf.Raised = true; sf.LastHp = sf.MaxHp = s.Hp; }   // erguido pelo Necromante: vida sem nivel
                 Emit(Ev.EnemyRevive, s.Id, b.Revives + 1, s.Pos);
             }
         }
@@ -410,7 +412,9 @@ namespace DC.Core
             {
                 if (!e.Alive || e.Type != EnemyType.Ghost || e.Carry == null || V2.Dist(e.Carry.Pos, c.Pos) > Sim.PickupRange + 1e-4f) continue;
                 Cargo g = e.Carry;
-                e.Carry = null; e.State = EnemyState.Chase; e.ExitT = 0f;
+                e.Carry = null; e.State = EnemyState.Chase; e.ExitT = 0f; e.Cd = e.Def.Cooldown;   // a possessao quebrada repele o fantasma
+                V2 away = (e.Pos - c.Pos).Norm; if (away.Len < 0.5f) away = V2.Up;
+                e.Pos = e.Pos + away * Balance.GhostRecoil; ClampRoom(ref e.Pos, e.Def.Radius);
                 g.State = CargoState.Held; g.Pos = c.Pos; g.AloneT = 0f; g.PickT = 0f; g.Fuse = 0f; g.Armed = true;
                 c.State = CourierState.Carrying;
                 Emit(Ev.CargoPickup, g.Id, 0, g.Pos);
@@ -686,7 +690,12 @@ namespace DC.Core
                 f.RuneT -= dt;
                 if (f.RuneT <= 1e-4f)
                 {
-                    foreach (V2 p in f.Runes) if (CanSpawn(EnemyType.Skeleton)) F3(Spawn(EnemyType.Skeleton, p));
+                    foreach (V2 p in f.Runes)
+                        if (CanSpawn(EnemyType.Skeleton))
+                        {
+                            Enemy s = Spawn(EnemyType.Skeleton, p); s.Hp = s.Def.Hp;   // erguidos em onda: vida sem nivel (BALANCE_REGIAO3.md)
+                            R3Foe sf = F3(s); sf.Raised = true; sf.LastHp = sf.MaxHp = s.Hp;
+                        }
                     f.Runes.Clear();
                 }
             }

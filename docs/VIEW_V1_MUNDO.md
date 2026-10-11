@@ -61,3 +61,49 @@ Tempos medidos com `Sim(1)`/`Bot(1)` (a mesma partida do `-bot`) no Core de 2026
 | 12 | 46,8 | Capitão com a carga chamando ladrões: anel roxo e "!!" |
 
 **Não sai com o bot de teste:** explosão do barril e bolo balançando (o bot nunca larga o barril de propósito nem toca com o bolo), bumerangue/bombinha (destravam com 12/24 estrelas; não há flag de arma no `-testsession`), cronômetro ≤ 30 s (o bot entrega a mensagem antes) e o Ogro (o bot sem guilda perde no C24). Para esses: jogar no PC ou um save com estrelas.
+
+## 6. Regiões 2–4
+
+Código: `WorldViewRegioes.cs` (tema, terreno, listas da visita, escuro, eventos, som) e `WorldViewElenco.cs` (inimigos, chefes e cargas novas). A View só lê o Core: o estado das raias R2–R4 (`run.R2Of`, `R3Of`, `Forge`, `Warns`, `Webs`, `Rocks`, `Bones`, `Spits`, `VentState`, `LightCut`, `TorchCut`, `Webbed`, `GrabbedBy`) e os eventos novos, ligados **pelo nome** (`Enum.TryParse`): renomear um evento no Core não quebra a View, só some o efeito.
+
+- **Tema por região** (`RoomDef.Region`): piso/parede próprios (`piso_mina`/`parede_mina`; cripta e forja usam a textura da região 1 tingida até a raia G copiar `piso_cripta`/`parede_cripta`/`piso_forja`/`parede_forja`), decoração do fundo (`tocha`, `lanterna_mina`, `vela`, `braseiro`), props nos obstáculos (`pilar`, `escora`, `lapide`, `sarcofago`, `bigorna`; lápide procedural se faltar) e música por `Audio.MusicaRegiao(região, chefe)`.
+- **Terreno:** água (brilho andando, respingo e som `agua` no passo), trilho (dormentes; vermelho e sino balançando com o vagonete em `R2Act.Bell`), lava (crosta, miolo pulsando, onda e bolhas), respiro (`run.VentState`: brilho que cresce no aviso, fogo e faíscas), baú enterrado (X com brilho só com `run.Revealed`, arco de cavar, buraco aberto).
+- **Listas da visita, todas acima do véu:** teia (70%, 35% fora da luz), avisos da cripta (`Warn`: faixa e círculo em vermelho, fio lilás, raio e runa em verde), avisos da forja (`ForgeMark`: o enchimento cresce até `Total`, a borda fica branca no fim; chicote em faixa, sopro em cone e em fogo quando `Active`; troca e surgir em lilás), fogo no chão, pedra do Golem (sombra crescendo enquanto cai e depois o bloco), pilha de ossos (com anel verde até remontar) e cuspe de teia.
+- **Escuro** (`run.Lit`): véu `#0B0D16` a 70% (nunca preto), com as mesmas luzes de `run.InLight` (courier ou lanterna acesa × Olhos de gato − `LightCut`; tochas − `TorchCut`; lanterna acesa no chão). Fora da luz, o inimigo mostra só os olhos e a sombra; telegraph e projéteis continuam visíveis.
+- **Courier preso:** com a teia (`run.Webbed`) aparece uma teia por cima e o corpo treme; agarrado pela múmia (`run.GrabbedBy`), treme e mostra a faixa de atadura.
+- **Barras dos chefes novos:** Rainha, Golem e Capataz têm marca em 50%; Viúva em 50% e 25%; Necromante em 50% e 20%; Dragão em 60% e 30%.
+
+### Fotos (`-testsession -contract K -bot -shot f.png -shotdelay s`)
+
+Contratos 25–40 = região 2, 41–56 = região 3, 57–72 = região 4. O `-testsession` libera as estrelas da região só na memória. Os segundos são de contrato, com o mesmo bot (`Sim(1)`, `Bot(Seed)`), medidos no Core em 2026-10-11. Se a raia mexer no conteúdo, os segundos mudam.
+
+| K | s | o que mostra |
+|---|---|---|
+| 26 | 3,0 | minas: piso/parede da mina, lanterna, água; toupeira saindo (s 2,8) e cavando (4,8) |
+| 32 | 2,2 | goblin mineiro: círculo da picareta e golpe (2,0) |
+| 32 | 3,4 | vagonete no trilho (3,2) |
+| 33 | 2,3 | sapo: língua até o ponto (2,1) |
+| 33 | 6,8 | trilho vermelho e sino (R2-2) |
+| 38 | 3,0 | besouro-bomba explodindo (2,9) |
+| 29 | 1,0 | coração arcano: anel do ímã |
+| 27 | 1,0 | cristal de gelo: barra de derretimento |
+| 34 | 5,0 | gaiola do grifinho: anel de aviso e calma (5,0); grito na 54 (6,0) |
+| 41 | 1,0 | cripta escura: véu, luz do courier e lanterna, vela/lápide |
+| 41 | 2,1 | esqueleto atacando (2,0) |
+| 45 | 20,5 | ossos espalhados (S3-1) e pilha remontando |
+| 47 | 2,3 | aranha: faixa vermelha, cuspe (2,9), courier preso na teia (2,2), teia rasgada (5,4) |
+| 50 | 2,4 | múmia agarrando o courier |
+| 51 | 2,5 | teias da sala (R3-7) |
+| 54 | 3,3 | gárgula mergulhando (3,2) |
+| 55 | 2,3 | espelho refletindo; fantasma (3,9) |
+| 56 | 6,2 | lanterna apagando (6,1) e reacendendo (8,1) |
+| 57 | 3,1 | forja: piso tingido, braseiro; salamandra (3,0) |
+| 59 | 2,0 | baú enterrado revelado pelo mapa (R4-9) |
+| 59 | 7,1 | aviso de troca em lilás (S4-1) |
+| 62 | 5,1 | respiro soltando fogo (5,0) |
+| 64 | 6,6 | lava com crosta e onda |
+| 68 | 7,4 | kobold: círculo do frasco enchendo (7,3) |
+| 70 | 2,1 | planta mordendo (2,0); magma (3,8); fogo no chão (6,2) |
+| 71 | 2,6 | diabrete surgindo (lilás); queimadura de lava (4,5) |
+
+**Não sai com o bot de teste:** os chefes e mini-chefes das regiões 2–4 (M2 Rainha, B2 Golem, M3 Viúva, B3 Necromante, M4 Capataz, B4 Dragão). O bot perde ou acaba antes da sala do chefe em todos os contratos 25–72, então ficam sem foto as barras com fases, o ponto fraco do Golem, as pedras caindo, o voo e o pouso do Dragão, os ovos e o raio/runa do Necromante. Para esses: jogar no PC ou criar uma flag de dev que comece na sala do chefe (precisa do Core).

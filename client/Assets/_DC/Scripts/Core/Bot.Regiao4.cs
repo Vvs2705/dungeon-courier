@@ -105,7 +105,8 @@ namespace DC.Core
         }
 
         /// <summary>A cada passo (como quem ve o chao): se o proximo meio metro entra em fogo, respiro prestes a soltar fogo ou aviso, desvia para a
-        /// direcao livre mais parecida; sem nenhuma, espera parado. Indo pegar a carga que esta no fogo, entra.</summary>
+        /// direcao livre mais parecida; sem nenhuma, recua devagar segurando a carga. Indo pegar a carga que esta no fogo, entra. Parando (pouso)
+        /// em cima de fogo, respiro ou aviso, anda ate um lugar seguro antes.</summary>
         partial void SteerR4(Run r, ref V2 move)
         {
             float l = move.Len;
@@ -131,7 +132,8 @@ namespace DC.Core
                 if (sc <= bs || Run.Blocked(r.Room, c + d * 0.5f, Balance.CourierR) || Hot4(r, c + d * 0.45f) || Hot4(r, c + d * 0.9f)) continue;
                 bs = sc; best = d;
             }
-            move = best * l;
+            // sem saida: segura a carga e recua devagar (parar pousaria a carga no caminho do perigo)
+            move = best.Len > 0.5f ? best * l : (Run.Blocked(r.Room, c - dir * 0.5f, Balance.CourierR) ? V2.Zero : dir * -0.08f);
         }
 
         partial void PlanR4(Run r, ref int act)

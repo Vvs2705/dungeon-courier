@@ -63,7 +63,7 @@ namespace DC.Core
         readonly Dictionary<int, Plant4> plant4 = new Dictionary<int, Plant4>();
         readonly List<int> called4 = new List<int>();
         readonly List<Enemy> split4 = new List<Enemy>();
-        float flaskT4, callT4, eggT4, flyT4, airT4; int flyStage4;
+        float flaskT4, callT4, eggT4, flyT4, airT4, fireStay4; int flyStage4;
 
         /// <summary>Gelo do cristal (raia R2): o fogo da regiao 4 tira `points` (0-100) do gelo da carga no chao.</summary>
         partial void ForgeIce(Cargo g, float points);
@@ -77,7 +77,7 @@ namespace DC.Core
             for (int i = 0; i < ventLast4.Length; i++) ventLast4[i] = -1;
             ventHit4.Clear(); for (int i = 0; i < Room.Vents.Length; i++) ventHit4.Add(new List<int>());
             pushSeen4.Clear(); fireCd4.Clear(); plant4.Clear(); called4.Clear(); split4.Clear();
-            flaskT4 = 0f; callT4 = 0f; eggT4 = Balance.DragonEggs1 * 0.5f; flyT4 = 0f; airT4 = 0f; flyStage4 = 0;
+            flaskT4 = 0f; callT4 = 0f; fireStay4 = 0f; eggT4 = Balance.DragonEggs1 * 0.5f; flyT4 = 0f; airT4 = 0f; flyStage4 = 0;
             foreach (Enemy e in Enemies) if (e.Type == EnemyType.KoboldForeman || e.Type == EnemyType.ElderDragon) Forge.Phase = 1;
         }
 
@@ -177,7 +177,7 @@ namespace DC.Core
                 {
                     Enemy e = Enemies[k];
                     if (!e.Alive || e.Def.Hazard || e.Type == EnemyType.Bat || FireImmune(e.Type) || hit.Contains(e.Id) || V2.Dist(e.Pos, v.Pos) > v.Radius) continue;
-                    hit.Add(e.Id); Hit(e, Balance.VentEnemyDamage);
+                    hit.Add(e.Id); HitEnv4(e, Balance.VentEnemyDamage);
                 }
                 for (int k = 0; k < Cargos.Count && Running; k++)
                 {
@@ -195,7 +195,9 @@ namespace DC.Core
             if (fireCd4.Count > 0) foreach (int k in new List<int>(fireCd4.Keys)) fireCd4[k] = Math.Max(0f, fireCd4[k] - dt);
             if (Forge.Fires.Count == 0) return;
             var c = Courier;
-            if (c.State != CourierState.Dead && InFire4(c.Pos, 0.2f) && Ready4(0))
+            bool inside = c.State != CourierState.Dead && InFire4(c.Pos, 0.2f);
+            fireStay4 = inside ? fireStay4 + dt : 0f;
+            if (inside && fireStay4 >= Balance.FireGrace - 1e-4f && Ready4(0))   // passar rapido nao queima; ficar queima 1 por segundo
             {
                 fireCd4[0] = BootsLevel >= Balance.GearMaxLevel ? 2f * Balance.FireTick : Balance.FireTick;   // Botas nivel 5: 1 a cada 2 s
                 DamageCourier(1, true);   // fogo no pe: nao racha a reliquia nas maos
@@ -205,7 +207,7 @@ namespace DC.Core
             {
                 Enemy e = Enemies[k];
                 if (!e.Alive || e.Def.Hazard || e.Type == EnemyType.Bat || FireImmune(e.Type) || !InFire4(e.Pos, 0f) || !Ready4(e.Id)) continue;
-                fireCd4[e.Id] = Balance.FireTick; Hit(e, 1);
+                fireCd4[e.Id] = Balance.FireTick; HitEnv4(e, 1);
             }
             for (int k = 0; k < Cargos.Count && Running; k++)
             {
@@ -214,6 +216,9 @@ namespace DC.Core
                 fireCd4[key] = Balance.FireTick; Burn4(g, 0, Balance.FireIce, true, true);
             }
         }
+
+        /// <summary>Dano do ambiente (respiro, fogo no chao) ou da planta: nao conta como "lutou nesta sala" (H1 mede a luta escolhida).</summary>
+        void HitEnv4(Enemy e, int dmg) { bool f = FoughtHere; Hit(e, dmg); FoughtHere = f; }
 
         bool Ready4(int key) => !fireCd4.TryGetValue(key, out float t) || t <= 1e-4f;
         bool InFire4(V2 p, float extra) { foreach (FirePatch f in Forge.Fires) if (V2.Dist(p, f.Pos) <= f.Radius + extra) return true; return false; }
@@ -722,7 +727,7 @@ namespace DC.Core
                     s.CarryT += dt;
                     if (s.CarryT < Balance.PlantCarry - 1e-4f) continue;
                     s.CarryT = 0f;
-                    foreach (Enemy e in Enemies) if (e.Alive && e.Carry == g) { Emit(Ev.PlantBite, e.Id, g.Id, e.Pos); Hit(e, 1); break; }
+                    foreach (Enemy e in Enemies) if (e.Alive && e.Carry == g) { Emit(Ev.PlantBite, e.Id, g.Id, e.Pos); HitEnv4(e, 1); break; }
                     continue;
                 }
                 s.CarryT = 0f;
@@ -734,7 +739,7 @@ namespace DC.Core
                     {
                         s.Warn = 0f; s.Cd = Balance.PlantCd;
                         Enemy t = Find4(s.Target);
-                        if (t != null && V2.Dist(t.Pos, g.Pos) - t.Def.Radius <= Balance.PlantReach + 0.3f) { Emit(Ev.PlantBite, t.Id, g.Id, g.Pos); Hit(t, Balance.PlantDamage); }
+                        if (t != null && V2.Dist(t.Pos, g.Pos) - t.Def.Radius <= Balance.PlantReach + 0.3f) { Emit(Ev.PlantBite, t.Id, g.Id, g.Pos); HitEnv4(t, Balance.PlantDamage); }
                     }
                 }
                 else
@@ -826,6 +831,8 @@ namespace DC.Core
         public const float FireTick = 1f, FireNear = 1.5f, VentIce = 25f, FlaskIce = 20f, BreathIce = 40f, SmashIce = 20f, FireIce = 10f;
         /// <summary>Barril no fogo do chao: o pavio fica com 1 s (respiro, frasco e sopro detonam na hora).</summary>
         public const float FireFuse = 1f;
+        /// <summary>Courier no fogo do chao: o 1o dano depois de FireGrace s dentro (atravessar rapido nao queima), depois 1 por segundo.</summary>
+        public const float FireGrace = 0.5f;
         /// <summary>Salamandra: circula a 2,5 m por 3 s, corta por ate 1,5 s; rastro de fogo de 0,45 m por 3 s a cada 0,5 s andando.</summary>
         public const float SalamanderOrbit = 2.5f, SalamanderCircle = 3f, SalamanderCut = 1.5f, SalamanderTrail = 0.5f, TrailR = 0.45f, TrailTime = 3f;
         /// <summary>Diabrete: 4-7 m do courier; some e surge 1 m atras dele (aviso 0,5 s, recarga 3 s); golpe no redemoinho atordoa 0,5 s.</summary>
