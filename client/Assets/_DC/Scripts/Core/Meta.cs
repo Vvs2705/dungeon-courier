@@ -163,7 +163,7 @@ namespace DC.Core
 
         // ------------------------------------------------------------------ eventos (5 templates, 1 por semana)
 
-        int evWeek, evMask, evPackWeek = -1;
+        int evWeek, evMask, evPackWeek = -1, evPackTx;
         /// <summary>Template da semana da data (rodizio dos 5).</summary>
         public static LiveEvent EventOf(int date) => (LiveEvent)(1 + Week(date) % 5);
         public bool EventsOpen => Config.EventsOn && Reputation >= Balance.OpenAfter;
@@ -390,41 +390,60 @@ namespace DC.Core
         static readonly int ProductCount = Enum.GetValues(typeof(Product)).Length;
         /// <summary>Bits gravados em "iap": todos os produtos menos o pacote de evento (vale pela semana em que foi comprado: evPackWeek).</summary>
         static readonly int OwnedMask = ((1 << ProductCount) - 1) & ~(1 << (int)Product.EventPack);
-        /// <summary>Produto nao consumivel comprado (o pacote de evento vale para a semana em que foi comprado).</summary>
-        public bool Owns(Product p) => p == Product.EventPack ? LastDateSeen != 0 && evPackWeek == Week(LastDateSeen) : (owned & 1 << (int)p) != 0;
+        /// <summary>Produto nao consumivel comprado, ou roupa que ja veio de outro jeito (a Explorador vem no Starter: a loja nao vende de novo);
+        /// o pacote de evento vale para a semana em que foi comprado.</summary>
+        public bool Owns(Product p) => p == Product.EventPack ? LastDateSeen != 0 && evPackWeek == Week(LastDateSeen)
+                                     : (owned & 1 << (int)p) != 0 || OutfitOf(p) is Outfit o && OwnsOutfit(o);
+
+        /// <summary>A roupa que o produto vende (null = nao e roupa).</summary>
+        static Outfit? OutfitOf(Product p)
+        {
+            switch (p)
+            {
+                case Product.OutfitNight: return Outfit.Night;
+                case Product.OutfitRoyal: return Outfit.Royal;
+                case Product.OutfitExplorer: return Outfit.Explorer;
+                case Product.OutfitForge: return Outfit.Forge;
+                case Product.OutfitMiner: return Outfit.Miner;
+                case Product.OutfitGravekeeper: return Outfit.Gravekeeper;
+                default: return null;
+            }
+        }
         public bool RemoveAds => Owns(Product.RemoveAds);
         /// <summary>Mostrar a oferta do Starter Pack: depois do 3o contrato e ainda nao comprado.</summary>
         public bool StarterOffered => Reputation >= Config.StarterAfter && !Owns(Product.StarterPack);
 
+        /// <summary>A loja pode confirmar este pedido: o Core tem o produto ou ja concedeu este pedido (tx = id de transacao da loja). O pacote de
+        /// evento e consumivel: o pedido nao confirmado (app fechou entre gravar e confirmar, confirmar falhou sem rede) volta em outra sessao,
+        /// ate na semana seguinte.</summary>
+        public bool PurchaseGranted(Product p, string tx) => Owns(p) || p == Product.EventPack && tx != null && TxHash(tx) == evPackTx;
+
+        /// <summary>ponytail: hash do id (FNV-1a) no save em vez do id cru (qualquer caractere); so o ultimo pacote (a loja nao vende outro antes de consumir).</summary>
+        static int TxHash(string tx) { uint h = 2166136261; foreach (char c in tx) h = (h ^ c) * 16777619; return (int)h; }
+
         /// <summary>"Compra confirmada" pela loja: concede o conteudo fixo. Nao consumivel comprado de novo (restaurar) nao concede de novo;
-        /// o pacote de evento so 1x por semana e com o quadro aberto. Falso = nada concedido.</summary>
-        public bool Purchase(Product p)
+        /// o pacote de evento so 1x por semana, com o quadro aberto e 1x por pedido (tx; null = loja de teste). Falso = nada concedido.</summary>
+        public bool Purchase(Product p, string tx = null)
         {
             if (SaveRefused || (int)p < 0 || (int)p >= ProductCount) return false;
             if (p == Product.EventPack)
             {
-                if (LastDateSeen == 0 || !EventsOpen || Owns(p)) return false;
+                if (LastDateSeen == 0 || !EventsOpen || PurchaseGranted(p, tx)) return false;
                 evPackWeek = Week(LastDateSeen);
+                evPackTx = tx == null ? 0 : TxHash(tx);
             }
             else
             {
                 if (Owns(p)) return false;
                 owned |= 1 << (int)p;
-                switch (p)
+                if (p == Product.StarterPack)
                 {
-                    case Product.StarterPack:
-                        Coins += Balance.StarterCoins;
-                        Emit(Ev.CurrencySource, Balance.StarterCoins, 5, V2.Zero);
-                        GiveOutfit(Outfit.Explorer);
-                        for (int g = 1; g < GearDef.All.Length; g++) AddBlueprint((Gear)g, 1);
-                        break;
-                    case Product.OutfitNight: GiveOutfit(Outfit.Night); break;
-                    case Product.OutfitRoyal: GiveOutfit(Outfit.Royal); break;
-                    case Product.OutfitExplorer: GiveOutfit(Outfit.Explorer); break;
-                    case Product.OutfitForge: GiveOutfit(Outfit.Forge); break;
-                    case Product.OutfitMiner: GiveOutfit(Outfit.Miner); break;
-                    case Product.OutfitGravekeeper: GiveOutfit(Outfit.Gravekeeper); break;
+                    Coins += Balance.StarterCoins;
+                    Emit(Ev.CurrencySource, Balance.StarterCoins, 5, V2.Zero);
+                    GiveOutfit(Outfit.Explorer);
+                    for (int g = 1; g < GearDef.All.Length; g++) AddBlueprint((Gear)g, 1);
                 }
+                else if (OutfitOf(p) is Outfit o) GiveOutfit(o);
             }
             Emit(Ev.IapPurchase, (int)p, 0, V2.Zero);
             Dirty = true;
@@ -526,7 +545,8 @@ namespace DC.Core
                 }
             }
             rewardIds.Add(id);
-            while (rewardIds.Count > Balance.RewardIds) rewardIds.RemoveAt(0);
+            string chest = RewardId(Reward.DailyChest);   // o bau de hoje vale o dia inteiro: nunca sai da lista (os de contrato so valem na tentativa)
+            while (rewardIds.Count > Balance.RewardIds) rewardIds.RemoveAt(rewardIds[0] == chest ? 1 : 0);
             Emit(Ev.RewardedGrant, (int)t, key, V2.Zero);
             Dirty = true;
             return true;
@@ -630,7 +650,7 @@ namespace DC.Core
             sb.Append("ses=").Append(Sessions).Append(',').Append(LastActive).Append('\n');
             sb.Append("rare=").Append(RareDate).Append(',').Append(rarePayload).Append(',').Append(RareDone ? 1 : 0).Append('\n');
             sb.Append("rr=").Append(rrDate).Append(',').Append(rrDaily).Append(',').Append(rrRare).Append('\n');
-            sb.Append("ev=").Append(evWeek).Append(',').Append(evMask).Append(',').Append(evPackWeek).Append('\n');
+            sb.Append("ev=").Append(evWeek).Append(',').Append(evMask).Append(',').Append(evPackWeek).Append(',').Append(evPackTx).Append('\n');
             sb.Append("ssn=").Append(seasonId).Append(',').Append(seasonClaimed).Append(',').Append(string.Join(",", seasonProg)).Append('\n');
             sb.Append("mst=").Append(string.Join(",", mastery)).Append('\n');
             sb.Append("mls=").Append(milestones).Append('\n');
@@ -652,7 +672,7 @@ namespace DC.Core
             a = Get(kv, "rr").Split(',');
             if (a.Length >= 3 && IsDate(I(a[0], 0))) { rrDate = I(a[0], 0); rrDaily = Clamp(I(a[1], 0), 0, 1); rrRare = Clamp(I(a[2], 0), 0, 1); }
             a = Get(kv, "ev").Split(',');
-            if (a.Length >= 3) { evWeek = Math.Max(0, I(a[0], 0)); evMask = Math.Max(0, I(a[1], 0)) & 31; evPackWeek = Math.Max(-1, I(a[2], -1)); }
+            if (a.Length >= 3) { evWeek = Math.Max(0, I(a[0], 0)); evMask = Math.Max(0, I(a[1], 0)) & 31; evPackWeek = Math.Max(-1, I(a[2], -1)); evPackTx = a.Length > 3 ? I(a[3], 0) : 0; }
             a = Get(kv, "ssn").Split(',');
             if (a.Length >= 2 + seasonProg.Length)
             {

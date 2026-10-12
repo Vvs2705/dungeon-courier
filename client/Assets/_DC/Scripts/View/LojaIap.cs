@@ -120,9 +120,10 @@ namespace DC
             void Pendente(Iap.PendingOrder o)
             {
                 if (!(DoPedido(o) is Product p)) { Debug.Log("DC IAP: pedido fora do catalogo, sem confirmar"); return; }
-                if (_fim != null && _pedido == p) Fim(true);   // a compra desta tela: a View concede
-                else _h.Concede(p);                            // pendente de outra sessao ou restaurada
-                if (_h.S.Owns(p)) _store.ConfirmPurchase(o);
+                string tx = o.Info?.TransactionID;
+                _h.Concede(p, tx);                             // com o id do pedido: o pacote de evento reentregue noutra semana nao concede 2x
+                if (_fim != null && _pedido == p) Fim(true);   // a compra desta tela (o Concede da View ja nao tem o que conceder)
+                if (_h.S.PurchaseGranted(p, tx)) _store.ConfirmPurchase(o);
                 else Debug.Log("DC IAP: " + Id(p) + " nao concedido pelo Core; sem confirmar");
             }
 

@@ -99,10 +99,10 @@ namespace DC
         });
 
         /// <summary>Compra confirmada pela loja (agora, pendente de outra sessao ou restaurada): o Core concede o conteudo fixo (falso = nada a
-        /// conceder, ex.: ja tem) e o Game grava o save (iap_purchase, moedas, roupa, projetos) e redesenha a loja aberta.</summary>
-        void Concede(Product p)
+        /// conceder, ex.: ja tem) e o Game grava o save (iap_purchase, moedas, roupa, projetos) e redesenha a loja aberta. tx = id do pedido na loja.</summary>
+        void Concede(Product p, string tx = null)
         {
-            if (S.Purchase(p)) _g.AfterMeta();
+            if (S.Purchase(p, tx)) _g.AfterMeta();
         }
 
         void Restaura() => _loja.Restaurar(ok => AvisoLoja(ok ? Textos.Restaurado : Textos.RestaurarFalhou));
