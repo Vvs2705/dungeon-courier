@@ -46,7 +46,7 @@ Base: `GDD.md` (§2–§17, §20–§21, §27–§28), `CONTRATO_V1.md` (tudo qu
 | §21 | 4 regiões, 15 cargas, eventos, **iOS**, **localização** | parcial | §2–§6, §9.2; iOS = dependência (§11) |
 | §28 | exploits: fechar o app após dano, morrer para resgate, rewarded repetido, reroll até carga fácil, relógio, carga largada na entrada, save futuro | parcial (faltam rewarded e reroll) | §6.5, §7 |
 
-### 1b. Estado em 2026-10-12 (branch `feat/leva-c`, a caminho da 1.2.0-beta)
+### 1b. Estado em 2026-10-12 (1.2.0-beta)
 
 | Área do GDD | Estado | Falta |
 |---|---|---|
@@ -57,7 +57,7 @@ Base: `GDD.md` (§2–§17, §20–§21, §27–§28), `CONTRATO_V1.md` (tudo qu
 | Save v3, telemetria, remote config local | **feito** | envio remoto = dependência (§11) |
 | Áudio por região e chefe | **feito** (sintetizado) | escuta humana |
 | Localização pt-BR/EN/ES/ID | **feito** | revisão de nativo (opcional) |
-| Página da loja e 13 criativos | textos e roteiros **feitos**; gravação `-record` e montagem prontas | gravar e montar os vídeos; fotos da loja; roteiro 13 depende das roupas |
+| Página da loja e 13 criativos | **feito**: 8 capturas × 4 idiomas, ícone e feature graphic; 13 vídeos × 4 idiomas gravados do jogo real pelo bot (anexos da pré-release 1.2.0-beta) | — |
 | Roupas do courier (8: 6 à venda + Clássica + Fantasma) | **feito**: loja, seleção e sprites (troca de cor, 0 crédito) | — |
 | iOS | código sem API só de Android | Mac + conta Apple (§11) |
 

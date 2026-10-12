@@ -94,6 +94,8 @@ namespace DC
 
         void Awake()
         {
+            // vSyncCount 0: senao a qualidade Medium (vSyncCount 1) prende o quadro ao vsync de 120 Hz (POCO F4) e o targetFrameRate nao vale
+            QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = 60;
             _headless = Arg("-autoplay") != null;
             _test = _headless || Arg("-testsession") != null;
@@ -348,6 +350,7 @@ namespace DC
             _fpsT += Time.unscaledDeltaTime;
             if (_fpsT < 60f) return;
             Sim.Log(Ev.DeviceFps, Sim.FpsBucket(_fpsN / _fpsT));
+            Debug.Log(string.Format(Inv, "DC fps={0:0.0} (60 s)", _fpsN / _fpsT));   // logcat: medir no aparelho
             Sim.Touch(Agora);
             _fpsT = 0f; _fpsN = 0;
             HandleEvents();

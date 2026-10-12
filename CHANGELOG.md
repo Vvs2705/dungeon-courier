@@ -3,7 +3,9 @@
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões em [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
-### Adicionado (a caminho da 1.2.0-beta)
+
+## [1.2.0-beta] - 2026-10-12
+### Adicionado
 - **Sprites de todo o elenco:** múmia, gárgula, necromante e toda a região 4 (diabrete, kobold, magma/brasa, Capataz, salamandra, planta, mapa, decoração) e o **Dragão Ancião armado à mão no Blender**; 7 roupas do courier (troca de cor, 0 crédito); ícone da loja.
 - **Economia medida na campanha inteira** (sobra no fim 23,7 mil → 2,6 mil moedas) e **fim de jogo**: níveis 6–8 do equipamento depois do Dragão (10/13/18 mil).
 - **Unity IAP 5.4.3**: loja falsa no PC, compra em 2 passos (o núcleo concede e só então confirma), restaurar compras; 9 produtos de conteúdo fixo.
@@ -39,6 +41,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões e
 - `Setup.BuildAndroidDev` apaga os APKs anteriores antes de gerar (fica só o atual).
 - Repositório criado (2026-10-09) com o GDD revisado (comparativo de mercado no topo), `docs/COMPETITIVO.md` e a estrutura de pastas do projeto Unity.
 
-[Unreleased]: https://github.com/Vvs2705/dungeon-courier/compare/v1.1.0-beta...HEAD
+[Unreleased]: https://github.com/Vvs2705/dungeon-courier/compare/v1.2.0-beta...HEAD
+[1.2.0-beta]: https://github.com/Vvs2705/dungeon-courier/compare/v1.1.0-beta...v1.2.0-beta
 [1.1.0-beta]: https://github.com/Vvs2705/dungeon-courier/compare/v1.0.0-beta...v1.1.0-beta
 [1.0.0-beta]: https://github.com/Vvs2705/dungeon-courier/releases/tag/v1.0.0-beta
