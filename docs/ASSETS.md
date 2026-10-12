@@ -429,7 +429,7 @@ Aval: a mesma autonomia do Vinicius de 2026-10-10 ("sem pausas, sem solicitaçõ
 | 68 | `mapa` | prop (carga) | rolled old treasure map tied with a red cord, partly unrolled showing a dotted path and an X, parchment | #2 | 45 |
 | 69 | `bigorna` | prop (decoração) | heavy blacksmith anvil on a wooden stump | #1 | 45 |
 | 70 | `braseiro` | prop (decoração) | iron brazier bowl on three legs filled with glowing coals | #4 | 45 |
-| 71 | `corrente` | prop (decoração) | heavy iron chain hanging down with a big hook at the end | #3 | 45 (export pendente: geração travada em 99% no servidor) |
+| 71 | `corrente` | prop (decoração) | heavy iron chain hanging down with a big hook at the end | #2 (a 1ª tentativa, com a #3, travou em 99% e foi reembolsada) | 45 |
 | 72 | `respiro` | prop (terreno) | round iron floor grate over a glowing fire vent, soot around | #2 | 45 |
 | — | texturas `piso_forja`, `parede_forja` | imagem grátis (gerador do Tripo) | texto exato em `PROVENIENCIA.md` §4 (basalto escuro com fuligem e fissuras finas de lava / tijolo escuro com placas de ferro rebitadas e rejunte laranja) | #2 / #4 | 0 |
 
@@ -437,4 +437,4 @@ No frasco e no chicote, o assunto já trazia "one single ... single object" ante
 
 **Dragão:** o Tripo oferece Auto Rig do tipo "Outro" (ícone de quadrúpede) além do humanoide. Gastei os 20 porque o esqueleto saiu útil: 43 ossos genéricos (`bone_0`…`bone_42`) cobrindo coluna, cauda, pescoço e cabeça, as 4 pernas e as 2 asas. Exportado em FBX com predefinição Blender 2K, com esqueleto. Não há predefinição Mixamo para esse tipo; a raia G renomeia os ossos e completa a mandíbula no Blender. O plano B de 4 poses à parte (+180) não foi usado.
 
-> **Lote 6: 4 × 65 + 10 × 45 + 20 (rig de criatura do dragão) = 730 créditos** (teto 900; previsto 710). Saldo 18 015 → 17 285 (`PROVENIENCIA.md` §1). Sem refação e sem duplicata; a corrente está paga e com o export pendente.
+> **Lote 6: 4 × 65 + 10 × 45 + 20 (rig de criatura do dragão) = 730 créditos** (teto 900; previsto 710). Saldo 18 015 → 17 285 (`PROVENIENCIA.md` §1). Sem duplicata. A corrente travou em 99% na 1ª tentativa; o Tripo reembolsou os 45 e ela foi refeita em 2026-10-11 com o mesmo prompt (task `b02db918-bbf3-4911-bfc2-7f042b28bbe4`), então o total não mudou.
