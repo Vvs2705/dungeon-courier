@@ -46,6 +46,21 @@ Base: `GDD.md` (§2–§17, §20–§21, §27–§28), `CONTRATO_V1.md` (tudo qu
 | §21 | 4 regiões, 15 cargas, eventos, **iOS**, **localização** | parcial | §2–§6, §9.2; iOS = dependência (§11) |
 | §28 | exploits: fechar o app após dano, morrer para resgate, rewarded repetido, reroll até carga fácil, relógio, carga largada na entrada, save futuro | parcial (faltam rewarded e reroll) | §6.5, §7 |
 
+### 1b. Estado em 2026-10-11 (1.1.0-beta na `main`, PR #5)
+
+| Área do GDD | Estado | Falta |
+|---|---|---|
+| 4 regiões, ~48 salas, 72 contratos | **feito** no núcleo e na View; o bot fecha cada região | — |
+| 15 cargas, 20 inimigos, 8 chefes, 25 perks | **feito** no núcleo e na View | sprites: múmia, gárgula, necromante, região 4 inteira e o dragão (raia G, Leva C); hoje desenho procedural legível |
+| Eventos (5), modificadores, temporada, raro, rerolls, equipamento + projetos, maestria, marcos, sem fim | **feito** (núcleo + telas) | economia: sobra de moedas (raia E, Leva C) |
+| Monetização (rewarded, interstitial, IAP) | lógica no núcleo + telas com **simulador de anúncio e loja falsa** | SDK real (Unity IAP / LevelPlay) e ids das contas do Vinicius (§11) |
+| Save v3, telemetria, remote config local | **feito** | envio remoto = dependência (§11) |
+| Áudio por região e chefe | **feito** (sintetizado) | escuta humana |
+| Localização pt-BR/EN/ES/ID | **feito** | revisão de nativo (opcional) |
+| Página da loja e 13 criativos | textos e roteiros **feitos**; gravação `-record` e montagem prontas | gravar e montar os vídeos; fotos da loja; roteiro 13 depende das roupas |
+| Roupas do courier (6) | loja e seleção **feitas** (tinta de reserva) | sprites das roupas (raia G) |
+| iOS | código sem API só de Android | Mac + conta Apple (§11) |
+
 ## 2. Regiões (4) e salas
 
 Cada região tem tema (piso, parede, decoração, paleta, música), ~10 salas normais, 1 sala secreta, 1 mini-chefe (M), 1 chefe (B) e a entrega (D). Total de salas: 16 + 10 + 10 + 10 normais, 2 + 1 + 1 + 1 secretas, 4 M, 4 B (D é cena) = **~48 salas**, acima do teto de 30–40 do GDD por causa da região 1 que já existe (melhor sobrar que faltar).
