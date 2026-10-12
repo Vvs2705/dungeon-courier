@@ -9,5 +9,9 @@
   "reroll_base": 60,
   "reroll_step": 60,
   "starter_after": 3,
-  "config_url": ""
+  "config_url": "",
+  "iap_google_play": false,
+  "levelplay_app_key": "",
+  "levelplay_rewarded": "",
+  "levelplay_interstitial": ""
 }

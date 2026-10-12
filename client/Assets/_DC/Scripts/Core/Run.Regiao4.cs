@@ -196,7 +196,7 @@ namespace DC.Core
             fireStay4 = inside ? fireStay4 + dt : 0f;
             if (inside && fireStay4 >= Balance.FireGrace - 1e-4f && Ready4(0))   // passar rapido nao queima; ficar queima 1 por segundo
             {
-                fireCd4[0] = BootsLevel >= Balance.GearMaxLevel ? 2f * Balance.FireTick : Balance.FireTick;   // Botas nivel 5: 1 a cada 2 s
+                fireCd4[0] = (BootsLevel > 0 ? GearDef.BootsFire[BootsLevel - 1] : 1f) * Balance.FireTick;   // Botas nivel 5: 1 a cada 2 s (6-8: 2,25 / 2,5 / 3 s)
                 DamageCourier(1, true);   // fogo no pe: nao racha a reliquia nas maos
                 if (!Running) return;
             }

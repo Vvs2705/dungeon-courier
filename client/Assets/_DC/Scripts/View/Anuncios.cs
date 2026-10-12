@@ -8,16 +8,23 @@ namespace DC
 {
     /// <summary>
     /// Anuncios (CONTRATO_LANCAMENTO §7). O Core decide QUANDO (sim.RewardOffer, sim.InterstitialDue) e concede (sim.GrantReward); a View
-    /// so mostra. Hoje so ha o simulador (Hud.AnunciosTeste, PC/Editor, sem SDK); LevelPlay/AdMob entram numa raia propria implementando
-    /// esta interface, sem mexer nas telas.
+    /// so mostra. Implementacoes: Hud.AnunciosLevelPlay (SDK LevelPlay, so no Android e so com app key no config.json) e Hud.AnunciosTeste
+    /// (simulador; PC/Editor e sem app key). docs/MONETIZACAO.md.
     /// </summary>
     public interface IAnuncios
     {
+        /// <summary>Anuncio (ou a espera dele) na tela.</summary>
         bool Aberto { get; }
+        /// <summary>Ha interstitial carregado: sem ele o CONTINUAR segue sem anuncio e o Core nao conta nada.</summary>
+        bool IntersticialPronto { get; }
         /// <summary>Anuncio com recompensa: fim(true) SO quando assistido ate o fim (so entao a View chama sim.GrantReward).</summary>
         void Recompensado(string premio, Action<bool> fim);
         /// <summary>Interstitial entre contratos (so quando sim.InterstitialDue deixar); fim ao fechar.</summary>
         void Intersticial(Action fim);
+        /// <summary>Todo quadro (o Hud chama): contagem do simulador, espera e fim do anuncio real.</summary>
+        void Tick();
+        /// <summary>Voltar do aparelho: true = o anuncio tratou.</summary>
+        bool Voltar();
     }
 
     /// <summary>
@@ -28,10 +35,21 @@ namespace DC
     public sealed partial class Hud
     {
         IAnuncios _ads;
-        AnunciosTeste _adsTeste;
         Reward _resOfferT;
         bool _devOferta;   // -tela oferta/bonus: resultado de exemplo com a oferta forcada (foto)
         string _ofertaLog;
+
+        /// <summary>Anuncio real na tela: o app vai ao fundo, mas nao e o jogador saindo (o Game nao abre sessao nova nem pausa).</summary>
+        public bool AnuncioAberto => _ads.Aberto;
+
+        /// <summary>Anuncios do jogo: LevelPlay so no Android e com "levelplay_app_key" no config.json; sem chave (ou no PC/Editor) o
+        /// simulador, e nada de rede de anuncio e iniciado.</summary>
+        IAnuncios CriaAnuncios()
+        {
+            string key = ConfigValor("levelplay_app_key");
+            if (string.IsNullOrEmpty(key) || Application.platform != RuntimePlatform.Android) return new AnunciosTeste(this);
+            return new AnunciosLevelPlay(this, key, ConfigValor("levelplay_rewarded"), ConfigValor("levelplay_interstitial"));
+        }
 
         /// <summary>Diario: oferta mostrada (1 vez por id de concessao).</summary>
         void LogOferta(Reward t)
@@ -83,7 +101,7 @@ namespace DC
         void Continuar()
         {
             long agora = _g.Agora;
-            if (_g.BotDrive || !S.InterstitialDue(agora)) { _g.ToBoard(); return; }
+            if (_g.BotDrive || !S.InterstitialDue(agora) || !_ads.IntersticialPronto) { _g.ToBoard(); return; }
             _ads.Intersticial(() =>
             {
                 S.InterstitialShown(agora);
@@ -138,6 +156,7 @@ namespace DC
             }
 
             public bool Aberto => _m.gameObject.activeSelf;
+            public bool IntersticialPronto => true;
 
             public void Recompensado(string premio, Action<bool> fim)
             {

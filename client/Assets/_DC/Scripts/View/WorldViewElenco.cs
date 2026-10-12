@@ -371,14 +371,17 @@ namespace DC
                 case EnemyType.ElderDragon:
                     if (run.Forge.Flying && (k = s.Clip("Fly")) >= 0) { clip = k; return true; }
                     if (MarkOf(run, e.Id) is ForgeMark bm && bm.Kind == ForgeMarkKind.Breath && (k = s.Clip("Breath")) >= 0)
-                    {   // pescoco esticando pelo aviso; boca aberta (ultimo quadro) enquanto o sopro sai (Active)
-                        clip = k; frame = bm.Active > 0f ? s.Frames(k) - 1 : Frac(s, k, bm.Total > 0f ? 1f - bm.Left / bm.Total : 1f);
+                    {   // RENDER_SPRITES §10: a boca abre no quadro 4 de 7 (indice 3). O aviso recua e inspira ate ele; o sopro ativo segura nele
+                        int open = Mathf.Min(BreathOpen, s.Frames(k) - 1);
+                        float f = bm.Total > 0f ? Mathf.Clamp01(1f - bm.Left / bm.Total) : 1f;
+                        clip = k; frame = bm.Active > 0f ? open : Mathf.Min(open, (int)(f * (open + 1)));
                         face = V(bm.Dir); return true;
                     }
                     if (run.Forge.HeadDown > 0f && (k = s.Clip("Land")) >= 0) { clip = k; return true; }   // cabeca baixa: a janela de dano
                     break;
                 case EnemyType.Imp:
                     if (tele && MarkOf(run, e.Id) is ForgeMark im && im.Kind == ForgeMarkKind.Swap && (k = s.Clip("Swap")) >= 0) { clip = k; frame = Frac(s, k, tk); return true; }
+                    if (tele && MarkOf(run, e.Id) is ForgeMark ib && ib.Kind == ForgeMarkKind.Blink && (k = s.Clip("Vanish")) >= 0) { clip = k; frame = Frac(s, k, tk); return true; }   // some (o alfa apaga na tinta)
                     break;
                 case EnemyType.KoboldForeman:
                     if (MarkOf(run, e.Id) is ForgeMark fm && fm.Kind == ForgeMarkKind.Spin && (k = s.Clip("Spin")) >= 0) { clip = k; frame = StrikeFrame(s, k, impact, tele, tk, v.StrikeT); return true; }
@@ -403,6 +406,11 @@ namespace DC
                 return SpriteSheet.Get("viuva_empinada");
             return null;
         }
+
+        /// <summary>Dragao: quadro da boca aberta no Breath (o 4o de 7). Golem: ponto fraco das costas na folha (RENDER_SPRITES §7, px da
+        /// celula de 448 a partir do pivo; W = de perfil olhando para a esquerda, E = espelho).</summary>
+        const int BreathOpen = 3;
+        static readonly Vector2 GolemWeakS = new Vector2(0f, 132f), GolemWeakW = new Vector2(42f, 96f), GolemWeakN = new Vector2(0f, 60f);
 
         static readonly string[] MinerThrow = { "Throw" }, KoboldToss = { "Toss", "Throw" }, SummonClip = { "Summon", "Call", "Roar" },
             AtkSkeleton = { "Attack" }, AtkMummy = { "Grab", "Attack" }, AtkGargoyle = { "Dive", "Wake" }, AtkNecro = { "Cast" },
@@ -621,11 +629,22 @@ namespace DC
             v.Weak.enabled = t == EnemyType.StoneGolem || (t == EnemyType.ElderDragon && run.Forge.HeadDown > 0f);
             if (t == EnemyType.StoneGolem)
             {
-                R2Foe f = run.R2Of(e);
-                V2 front = f != null ? f.Dir : new V2(0f, -1f);
-                float h = (v.Anim != null ? Lift * At(EnemyH, (int)t, 2.6f) : e.Def.Radius) * 0.62f;
-                v.Weak.transform.localPosition = new Vector3(-front.X * 0.45f, h - front.Y * 0.25f, 0f);
-                v.Weak.sortingOrder = front.Y < 0f ? OEnemy - 1 : OEnemy + 1;
+                if (v.Anim != null && v.Anim.Sheet.Dirs == 4)
+                {   // RENDER_SPRITES §7: o ponto das costas na folha `golem` (px da celula a partir do pivo) pela direcao desenhada; de frente (S)
+                    // ele fica atras do corpo: por baixo do sprite
+                    int d = v.Anim.D;
+                    Vector2 px = d == 0 ? GolemWeakS : d == 2 ? GolemWeakN : new Vector2(d == 1 ? GolemWeakW.x : -GolemWeakW.x, GolemWeakW.y);
+                    v.Weak.transform.localPosition = px / v.Anim.Sheet.Ppu;
+                    v.Weak.sortingOrder = d == 0 ? OEnemy - 1 : OEnemy + 1;
+                }
+                else
+                {
+                    R2Foe f = run.R2Of(e);
+                    V2 front = f != null ? f.Dir : new V2(0f, -1f);
+                    float h = (v.Anim != null ? Lift * At(EnemyH, (int)t, 2.6f) : e.Def.Radius) * 0.62f;
+                    v.Weak.transform.localPosition = new Vector3(-front.X * 0.45f, h - front.Y * 0.25f, 0f);
+                    v.Weak.sortingOrder = front.Y < 0f ? OEnemy - 1 : OEnemy + 1;
+                }
                 v.Weak.color = Art.A(IceC, 0.55f + 0.35f * Mathf.Sin(_time * 4f));
                 v.Weak.transform.localScale = Vector3.one * (0.7f + 0.1f * Mathf.Sin(_time * 4f));
             }
@@ -689,6 +708,8 @@ namespace DC
                 tint = a3 == R3Act.Fly ? new Color(1f, 1f, 1f, 0.55f) : new Color(0.62f, 0.68f, 0.62f);
             else if (t == EnemyType.Necromancer && a3 == R3Act.Smoke) tint = new Color(1f, 1f, 1f, 0.4f);   // fumaca do salto
             else if (t == EnemyType.Ghost) tint = new Color(1f, 1f, 1f, 0.78f);
+            else if (t == EnemyType.Imp && tele && MarkOf(run, e.Id) is ForgeMark ib && ib.Kind == ForgeMarkKind.Blink)
+                tint = new Color(1f, 1f, 1f, 1f - 0.85f * TeleK(run, v, e));   // Vanish: apaga enquanto some (surge no aviso do chao)
             else if (t == EnemyType.SalamanderEgg && v.Anim != null) tint = new Color(0.3f, 0.24f, 0.24f);   // o `ovo` preto
             if (tint != Color.white)
             {

@@ -289,15 +289,17 @@ Coerente com o jogo de hoje (`Textos.Privacidade`, `UI_V1.md` §4): o progresso 
 
 O SDK de anúncio usa a internet e coleta dados por conta própria. **Antes de publicar o build com anúncios**, a política ganha dois itens (nos 4 idiomas), a frase 3 muda para "o jogo não envia dados para servidores da V-STACK; os anúncios usam a internet" e o formulário de segurança dos dados muda junto:
 
-> 7. **Anúncios.** Os anúncios são exibidos pela `<AdMob | LevelPlay>`, que pode coletar o identificador de publicidade do aparelho, o endereço IP e dados de interação com o anúncio, conforme a política dela (`<link>`). Você pode redefinir ou desativar o identificador de publicidade nas configurações do Android.
+> 7. **Anúncios.** Os anúncios são exibidos pelo Unity LevelPlay e pelas redes que ele usa (Unity Ads e, se ligada, AdMob). Eles podem coletar o identificador de publicidade do aparelho, o endereço IP e dados de interação com o anúncio, conforme a política de cada um (`<links>`). Você pode redefinir ou desativar o identificador de publicidade nas configurações do Android.
 > 8. **Compras.** As compras são processadas pela Google Play. A V-STACK recebe só a confirmação da compra, sem dados de pagamento.
+
+**O que os SDKs já ligados acrescentam ao manifesto** (`docs/MONETIZACAO.md` §1.3, medido no APK): `com.google.android.gms.permission.AD_ID` (SDK do LevelPlay); `ACCESS_NETWORK_STATE`, `ACCESS_ADSERVICES_TOPICS` e `ACCESS_ADSERVICES_ATTRIBUTION` (Unity Ads); `WAKE_LOCK`, `RECEIVE_BOOT_COMPLETED` e `FOREGROUND_SERVICE` (WorkManager, que vem com o Unity Ads); e `com.android.vending.BILLING` (Unity IAP). O `INTERNET` já existia por causa do `config_url`. **As permissões vão no APK mesmo sem a app key do LevelPlay**: sem a chave, nenhuma rede de anúncio é iniciada e nada sai do aparelho, mas o manifesto declara o AD_ID. Por isso a declaração "ID de publicidade" da Play Console é **sim** desde o primeiro build com estes pacotes.
 
 **Segurança dos dados (Play Console):**
 
 | Build | Coleta | Compartilha | Observação |
 |---|---|---|---|
-| Hoje (sem anúncios nem compras) | nenhum dado | nenhum | o diário só sai por ação do jogador (exportação feita pelo usuário, que não conta como coleta) |
-| Com anúncios e compras | identificadores do dispositivo e interações com o app, coletados pelo SDK de anúncio | com a rede de anúncios (publicidade) | criptografia em trânsito: a do SDK; pedido de exclusão: desinstalar + o canal da rede |
+| Hoje (SDKs no APK, sem app key, loja falsa) | nenhum dado | nenhum | o diário só sai por ação do jogador (exportação feita pelo usuário, que não conta como coleta). Declaração de ID de publicidade: sim (permissão AD_ID no manifesto) |
+| Com anúncios (app key) e compras (Google Play) | identificadores do dispositivo (ID de publicidade), interações com o app e localização aproximada (pelo IP), coletados pelo SDK de anúncio, e histórico de compras (Google Play) | com o LevelPlay e as redes de anúncio (publicidade, análise e prevenção de fraude) | criptografia em trânsito: a dos SDKs; pedido de exclusão: desinstalar + o canal da rede. Confira a tabela de segurança dos dados publicada pelo LevelPlay e pelo Unity Ads na versão do SDK do build (`MONETIZACAO.md` §1) |
 
 ## 5. As 8 capturas (1080 × 1920)
 

@@ -294,10 +294,15 @@ namespace DC.Core
         public bool GearOpen => Reputation >= Balance.GearOpenAfter;
         public int Blueprints(Gear g) => g > Gear.None && (int)g < blueprints.Length ? blueprints[(int)g] : 0;
         public bool GearUnlocked(Gear g) => Blueprints(g) >= Balance.GearBlueprints;
-        /// <summary>0 = bloqueado; 1-3.</summary>
+        /// <summary>0 = bloqueado; 1-8 (6-8 so depois do Dragao: GearCap).</summary>
         public int GearLevel(Gear g) => GearUnlocked(g) ? Math.Max(1, gearLv[(int)g]) : 0;
         /// <summary>Preco do proximo nivel (-1 = bloqueado ou no maximo).</summary>
-        public int GearCost(Gear g) { int lv = GearLevel(g); return lv <= 0 || lv >= Balance.GearMaxLevel ? -1 : GearDef.All[(int)g].Cost[lv]; }
+        public int GearCost(Gear g) { int lv = GearLevel(g); return lv <= 0 || lv >= GearCap ? -1 : GearDef.All[(int)g].Cost[lv]; }
+        /// <summary>Venceu o Dragao (o chefe da regiao 4): abre os niveis 6-8 do equipamento (fim de jogo).</summary>
+        public bool DragonBeaten { get { RegionDef r = RegionDef.Of(4); return r != null && r.BossAt >= 0 && Reputation > r.BossAt; } }
+        /// <summary>Nivel maximo do equipamento agora: Balance.GearCampaignLevel (5) ate vencer o Dragao, depois Balance.GearMaxLevel (8). A tela
+        /// mostra os niveis acima do teto travados ("depois do Dragao").</summary>
+        public int GearCap => DragonBeaten ? Balance.GearMaxLevel : Balance.GearCampaignLevel;
         public bool CanUpgradeGear(Gear g) { int c = GearCost(g); return GuildOpen && !InContract && !SaveRefused && c >= 0 && Coins >= c; }
 
         public bool UpgradeGear(Gear g)

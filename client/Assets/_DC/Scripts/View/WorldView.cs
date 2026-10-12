@@ -131,6 +131,9 @@ namespace DC
         readonly Ent _pet; float _petHit;
         SpriteRenderer _chest, _chestLock, _chestArc, _deliverRing; Sprite _chestShut, _chestOpen;
         SpriteAnim _client, _corpse; float _waveT;
+        /// <summary>Clipe tocado uma vez fora de um ator (o Split do magma): some no fim.</summary>
+        sealed class OneShot { public SpriteAnim A; public float Left; }
+        readonly List<OneShot> _oneShots = new List<OneShot>();
         readonly List<DoorV> _doors = new List<DoorV>();
         readonly List<Ent> _enemies = new List<Ent>();
         readonly Dictionary<int, float> _enemyHit = new Dictionary<int, float>();
@@ -740,6 +743,14 @@ namespace DC
                 _client.Show(-1, true);   // aceno e reacao em laco (o meta so poe laco em idle/walk/run/lurk)
             }
             if (_corpse != null) { _corpse.T += dt; _corpse.Show(); }   // ogro_fim/Dying uma vez, para no ultimo quadro
+            for (int i = _oneShots.Count - 1; i >= 0; i--)
+            {
+                OneShot o = _oneShots[i];
+                o.A.T += dt; o.Left -= dt;
+                if (o.Left > 0f) { o.A.Show(); continue; }
+                Object.Destroy(o.A.R.transform.parent.gameObject);
+                _oneShots.RemoveAt(i);
+            }
         }
 
         /// <summary>0 rachaduras Cheering, 1 Thankful, 2+ Shrug; ovo chocado Thankful.</summary>
@@ -754,7 +765,7 @@ namespace DC
             for (int i = _roomRoot.childCount - 1; i >= 0; i--) Object.Destroy(_roomRoot.GetChild(i).gameObject);
             foreach (Text t in _roomLabels) Object.Destroy(t.gameObject);
             _roomLabels.Clear(); _roomLabelPos.Clear(); _doors.Clear(); _enemyHit.Clear();
-            _chest = _chestLock = _chestArc = _deliverRing = null; _chestShut = _chestOpen = null; _client = _corpse = null;
+            _chest = _chestLock = _chestArc = _deliverRing = null; _chestShut = _chestOpen = null; _client = _corpse = null; _oneShots.Clear();
             foreach (CargoV v in _cargos) v.PulseT = 0f;
             ClearRoomV1();
             Transform r = _roomRoot;
@@ -931,7 +942,7 @@ namespace DC
             if (o == _roupa && _sCourier != null) return;
             _roupa = o;
             SpriteSheet s = SpriteSheet.Get(Hud.FolhaRoupa(o));
-            _roupaC = s != null ? Color.white : Hud.TintaRoupa(o);
+            _roupaC = s != null ? Hud.CorComFolha(o) : Hud.TintaRoupa(o);   // a Fantasma fica translucida tambem com a folha propria
             s = s ?? SpriteSheet.Get("courier");
             if (s != _sCourier) { _sCourier = s; UseSprite(_courier, s, Balance.CourierR); }
         }

@@ -1238,7 +1238,7 @@ namespace DC.Core
             if (HookCd > 0f) { HookCd = Math.Max(0f, HookCd - Balance.Step); hookT = 0f; return; }
             Cargo m = Main; var c = Courier;
             bool aim = false;
-            if (moving && !HasHeld && (m.State == CargoState.Ground || (m.State == CargoState.Stolen && GearLevel >= Balance.GearMaxLevel)))
+            if (moving && !HasHeld && (m.State == CargoState.Ground || (m.State == CargoState.Stolen && GearLevel >= Balance.GearCampaignLevel)))
             {
                 V2 to = m.Pos - c.Pos; float d = to.Len;
                 aim = d >= Balance.HookMin && d <= Balance.HookRange && V2.Dot(to * (1f / d), dir) >= Balance.HookCone;
@@ -1264,7 +1264,7 @@ namespace DC.Core
                 foreach (Enemy e in Enemies)
                 {
                     if (!e.Alive || e.Type == EnemyType.Bat || e.Def.Hazard || t.Caught.Contains(e.Id) || V2.Dist(e.Pos, t.Pos) > Balance.TrapReach + e.Def.Radius) continue;
-                    bool mini = e.Def.Mini && GearLevel >= Balance.GearMaxLevel;
+                    bool mini = e.Def.Mini && GearLevel >= Balance.GearCampaignLevel;
                     if (e.Def.Boss && !mini) continue;
                     e.Stun = Math.Max(e.Stun, mini ? Balance.TrapMini : GearDef.TrapTime[GearLevel - 1]);
                     t.Caught.Add(e.Id); t.Catches--;

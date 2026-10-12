@@ -3,5 +3,8 @@
   <PropertyGroup><AssemblyName>DC</AssemblyName></PropertyGroup>
   <ItemGroup>
     <Compile Include="$(ProjClient)\Assets\_DC\Scripts\View\*.cs" />
+    <!-- SDKs de monetizacao (docs/MONETIZACAO.md): pacotes de codigo-fonte (Library/PackageCache), compilados pelo Unity em ScriptAssemblies -->
+    <Reference Include="$(ProjClient)\Library\ScriptAssemblies\Unity.Purchasing.dll" Private="false" />
+    <Reference Include="$(ProjClient)\Library\ScriptAssemblies\Unity.LevelPlay.dll" Private="false" />
   </ItemGroup>
 </Project>

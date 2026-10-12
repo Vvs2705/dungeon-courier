@@ -61,9 +61,36 @@ Teste: `Regiao2_DoQuartoEmDiante_Media90a180s_SemQuebrarAEntrega` (média em 90�
 - **E4. Pagamento e baús das regiões 2–4 não mudaram.** Com E1–E3 a sobra já fica abaixo de 1 nível; as tabelas de pagamento e os tempos das raias R2–R4 continuam valendo. Fica como alavanca se o playtest mostrar sobra (ver Riscos).
 - **E5. Região 2 mais longa com camada, não com vida** (a raia R2 já tinha visto que nível +3/+6 mexe só 2–5 s): M2-5, M2-7 e M2-10 ganham a 6ª camada (R2-9/R2-10, R2-10/R2-8, R2-10/R2-8: emboscada ou Guarda) e o M2-14 troca a 5ª camada R2-8/R2-1 por R2-8/R2-10 (o bot vai para a Eclusa do Guarda, 27 s, em vez da Galeria Alagada, 4 s). Tempo-alvo pela mediana nova (1,6×; gelo 2,2×): M2-7 155 → 190 s e gelo 210 → 265 s, M2-10 140 → 160 s; M2-5 e M2-14 já tinham folga. **M2-4 (relíquia) ficou igual:** com a 6ª camada (R2-8/R2-9) entregava 10% (o Guarda racha a relíquia). Pagamento igual (a raia R3 fez o mesmo ao alongar contratos).
 
+## Fim de jogo: níveis 6–8 do equipamento (raia E2, 2026-10-11)
+
+Decisão do coordenador: o ralo do pós-campanha são os **níveis 6, 7 e 8** do equipamento lateral, abertos ao **vencer o Dragão** (M4-16 entregue; `sim.DragonBeaten`, `sim.GearCap` = 5 antes e 8 depois; `Balance.GearCampaignLevel` = 5 e `Balance.GearMaxLevel` = 8). O efeito extra do nível 5 (gancho tira a carga da mão do ladrão, armadilha prende mini-chefe, botas com fogo a cada 2 s) continua no 5.
+
+**Como medir:** `EconomiaTests.FimDeJogo_Niveis6a8DepoisDoDragao_DuramEntreUmaEDuasTemporadas` pega o fim de 4 das campanhas completas (a mesma medição com 8 dá os mesmos números) e joga **56 dias** como um jogador diário: 1 sessão por dia (com 8 h fora o raro aparece todo dia), resgata marcos e temporada, abre o baú do dia (rewarded), joga o contrato do dia, o raro, as 3 vagas do evento da semana (até 2 tentativas por dia cada) e 1 desafio sem fim, e compra como a campanha (`Bot.BuyAll`). Sem reroll, sem modificador escolhido e sem o rewarded de dobrar o bônus. É o jogador mais assíduo possível: quem pula atividade leva mais dias.
+
+| Moedas por dia (média de 8 jogadores) | dias 1–28 | dias 29–56 |
+|---|---|---|
+| contrato raro (×2) | 1.692 | 1.975 |
+| contrato do dia (com o bônus e o modificador do dia) | 1.369 | 1.255 |
+| sem fim (teto 800 antes da Bolsa) | 767 | 839 |
+| eventos (3 vagas por semana + projeto ou 300) | 539 | 445 |
+| temporada | 166 | 93 |
+| baú do dia | 105 | 101 |
+| marcos (os 2.000 da campanha, resgatados no 1º dia) | 71 | 0 |
+| **total** | **4.709** | **4.708** |
+
+| Custo dos níveis 6 / 7 / 8 | ralo (4 equipamentos) | dia em que o bot fecha os 4 no 8 |
+|---|---|---|
+| 6.000 / 8.000 / 10.000 (a faixa do coordenador) | 96.000 | **21–22** (3 semanas: menos que 1 temporada) |
+| **10.000 / 13.000 / 18.000 (adotado)** | **164.000** | **35–36** (5 semanas: mais que 1 temporada, menos que 2) |
+
+- **E6. Níveis 6–8 a 10.000 / 13.000 / 18.000** (aceito pelo coordenador em 2026-10-12) (41.000 por peça). Com a faixa sugerida (6/8/10 mil) o jogador diário fecha tudo em 3 semanas e volta a ficar sem ralo antes de terminar a 1ª temporada; com 10/13/18 mil ele leva 5 semanas, e o quadro de temporada (28 dias) termina antes do ralo. Até fechar, o saldo nunca passa do preço do nível mais caro (18.000): sempre há o que comprar. O teste exige o fechamento entre o dia 29 e o 56; com 6/8/10 mil ele falha (dia 21).
+- **E7. Ganho pequeno por nível** (cada passo de 6 a 8 é no máximo o maior passo da campanha): fumaça 4,5 / 4,5 / 5 s e 3 / 4 / 4 usos; gancho com recarga de 5,5 / 5 / 4,5 s; armadilha 5,5 / 6 / 6 s e prende 2 / 2 / 3; botas com o fogo no pé a cada 2,25 / 2,5 / 3 s. Nada torna a carga indestrutível: com qualquer peça no 8 a relíquia ainda quebra com 3 golpes (`Equipamento_Niveis6a8_SoDepoisDoDragao_CustoCrescente_SemCargaIndestrutivel`).
+- **E8. Reroll:** já fica mais caro a cada uso no mesmo dia (60 o 1º, 120 o 2º; `reroll_base`/`reroll_step` no `config.json`); só há 2 trocas por dia (o do dia e o raro), então ele é ralo pequeno e fica como está.
+- Depois dos 4 no nível 8 (~5 semanas de jogo diário) **não há ralo de novo**: o bot chega ao dia 56 com ~100 mil moedas. O próximo ralo (cosmético por moeda, novos níveis com conteúdo novo) é decisão de produto quando a coorte mostrar quantos jogadores chegam lá.
+
 ## Riscos e pendências
 
-- **O jogador ganha moedas que o bot não mede:** marcos (2.000 na campanha), temporada (~3.000 a cada 28 dias), eventos (650 por semana + projeto), baú do dia (80–120 por dia), Starter Pack (1.500) e o sem fim (até 800 por dia, só depois da campanha). Os projetos da temporada, do evento, do baú do dia e do Starter Pack também abrem os ralos **mais cedo** que no bot (bom), mas, com os 4 equipamentos no nível 5, **não há ralo nenhum**: o fim de jogo precisa de um (níveis 6+ de equipamento, cosméticos por moeda que não sejam os da loja ou reroll mais caro). Decisão do coordenador.
+- **O jogador ganha moedas que o bot não mede:** marcos (2.000 na campanha), temporada (~3.000 a cada 28 dias), eventos (650 por semana + projeto), baú do dia (80–120 por dia), Starter Pack (1.500) e o sem fim (até 800 por dia, só depois da campanha). Os projetos da temporada, do evento, do baú do dia e do Starter Pack também abrem os ralos **mais cedo** que no bot (bom), mas, com os 4 equipamentos no nível 5, não havia ralo nenhum: **resolvido pelos níveis 6–8 depois do Dragão** (seção "Fim de jogo" acima, E6–E8), que duram ~5 semanas de jogo diário.
 - O bot equipa só o 1º equipamento destravado (as Botas): os níveis das outras peças não mudam o jogo dele. Com os preços novos ele chega à região 3 com as Botas no nível 4 (antes 5): teias neutralizadas (≥ 3) e a múmia com 1 golpe (≥ 4) continuam; o nível 5 (fogo a cada 2 s) chega antes da região 4.
 - As partidas estimadas das raias R3 e R4 (`Bot.Regiao3StartSave`: 3.000 moedas e Botas 5; `Bot.Regiao3EndSave`: 13.900 moedas, Fumaça e Botas 5, Gancho com 2 projetos) ficaram velhas: a campanha completa entra na região 3 com ~2.300 moedas, Botas 4 e o Gancho por abrir, e na região 4 com ~2.400, Fumaça 4–5 e Gancho 4. Trocar pelo `Before` da campanha completa quando as raias refizerem as tabelas.
 
@@ -98,7 +125,7 @@ Tabela realista por contrato: C1–C11 e C13–C15 idênticas; C12 +4 moedas mé
 | Temporada | 28 dias; 20 objetivos com recompensa fixa (100–300 moedas, 4 projetos, roupa Fantasma no último) |
 | Contrato raro | depois de 8 h fora (`rare_hours`); ×2; 1× |
 | Reroll | dia e raro, 1× por dia cada; 60 moedas, depois 120 no mesmo dia (`reroll_base`, `reroll_step`) |
-| Equipamento | 3 projetos destravam; 5 níveis, 600 / 1.200 / 2.000 / 3.000 (**Leva C: 1.000 / 2.500 / 4.000 / 5.000**, ver "Economia da campanha"); dispara sozinho (sem botão): fumaça 2,5 m, 3–4 s, 1–3 usos por contrato; gancho 1,5–5 m, cone de 30°, recarga 10→6 s; armadilha 3–5 s, 1–2 presas; botas passivas |
+| Equipamento | 3 projetos destravam; 5 níveis, 600 / 1.200 / 2.000 / 3.000 (**Leva C: 1.000 / 2.500 / 4.000 / 5.000, e 6–8 depois do Dragão a 10.000 / 13.000 / 18.000**, ver "Economia da campanha"); dispara sozinho (sem botão): fumaça 2,5 m, 3–4 s, 1–3 usos por contrato; gancho 1,5–5 m, cone de 30°, recarga 10→6 s; armadilha 3–5 s, 1–2 presas; botas passivas |
 | Maestria | 3 / 8 / 15 / 25 / 40 entregas da carga; +2% por nível |
 | Marcos | 10 / 30 / 60 / 95 / 150 estrelas: 50 / 150 / 300 / 500 / 1.000 moedas (+ roupa Fantasma no de 95) |
 | Sem fim | abre com o último contrato da campanha; nível 10 + 2 por camada; mini-chefe a cada 5 camadas e chefe a cada 10; 15 moedas por camada, teto de 800 por dia |

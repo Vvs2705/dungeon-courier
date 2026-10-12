@@ -36,6 +36,46 @@ namespace DC.Tests
             Assert.AreEqual(Gear.None, r.Doors.Find(d => d.Room == r25).Blueprint, "a porta nao promete projeto que nao serve");
         }
 
+        /// <summary>Fim de jogo (raia E2): os niveis 6-8 do equipamento so abrem depois do Dragao, custam cada vez mais, dao ganho pequeno (cada
+        /// tabela por nivel anda no maximo o que andou do 4 ao 5) e nenhum deixa a carga indestrutivel (a reliquia quebra com qualquer peca no 8).</summary>
+        [Test]
+        public void Equipamento_Niveis6a8_SoDepoisDoDragao_CustoCrescente_SemCargaIndestrutivel()
+        {
+            int boss = RegionDef.Of(4).BossAt;
+            Sim a = Sim.Load("v=3\nseed=3\nrep=" + boss + "\ncoins=500000\n"); a.DevProjects(Gear.Hook, Balance.GearBlueprints);
+            Assert.IsFalse(a.DragonBeaten); Assert.AreEqual(Balance.GearCampaignLevel, a.GearCap);
+            while (a.UpgradeGear(Gear.Hook)) { }
+            Assert.AreEqual(Balance.GearCampaignLevel, a.GearLevel(Gear.Hook), "antes do Dragao o teto e o 5"); Assert.AreEqual(-1, a.GearCost(Gear.Hook));
+            Sim b = Sim.Load("v=3\nseed=3\nrep=" + (boss + 1) + "\ncoins=500000\n"); b.DevProjects(Gear.Hook, Balance.GearBlueprints);
+            Assert.IsTrue(b.DragonBeaten, "M4-16 entregue"); Assert.AreEqual(Balance.GearMaxLevel, b.GearCap);
+            int prev = 0;
+            for (int lv = 1; lv < Balance.GearMaxLevel; lv++) { int c = b.GearCost(Gear.Hook); Assert.Greater(c, prev, "custo crescente no nivel " + (lv + 1)); prev = c; Assert.IsTrue(b.UpgradeGear(Gear.Hook)); }
+            Assert.AreEqual(Balance.GearMaxLevel, b.GearLevel(Gear.Hook)); Assert.AreEqual(-1, b.GearCost(Gear.Hook));
+            Assert.AreEqual(Balance.GearMaxLevel, Sim.Load(b.Save()).GearLevel(Gear.Hook), "o save guarda o 8");
+
+            float[][] f = { GearDef.SmokeTime, GearDef.TrapTime, GearDef.BootsFire };
+            foreach (float[] t in f)
+            {
+                Assert.AreEqual(Balance.GearMaxLevel, t.Length);
+                float step = 0f; for (int i = 1; i < Balance.GearCampaignLevel; i++) step = System.Math.Max(step, t[i] - t[i - 1]);
+                for (int i = Balance.GearCampaignLevel; i < Balance.GearMaxLevel; i++) Assert.That(t[i] - t[i - 1], Is.InRange(0f, step + 1e-4f), "ganho pequeno: no maximo o maior passo da campanha");
+            }
+            Assert.AreEqual(Balance.GearMaxLevel, GearDef.HookCooldown.Length); for (int i = 5; i < 8; i++) Assert.LessOrEqual(GearDef.HookCooldown[i - 1] - GearDef.HookCooldown[i], 1f + 1e-4f);
+            for (int i = 5; i < 8; i++) { Assert.LessOrEqual(GearDef.SmokeUses[i] - GearDef.SmokeUses[i - 1], 1); Assert.LessOrEqual(GearDef.TrapCatches[i] - GearDef.TrapCatches[i - 1], 1); }
+
+            for (int g = 1; g < GearDef.All.Length; g++)
+            {
+                Sim sim = Sim.Load("v=3\nseed=7\nrep=24\ngear=" + g + ",0,3,3,3,3,0,8,8,8,8\n");
+                Run r = Start(sim, 4);   // C5: reliquia
+                Assert.AreEqual((Gear)g, r.Gear); Assert.AreEqual(Balance.GearMaxLevel, r.GearLevel);
+                r.Courier.Hp = 99;
+                Steps(sim, 3, Up); Steps(sim, 6, V2.Zero);
+                Enemy brute = r.Spawn(EnemyType.Brute, r.Main.Pos + new V2(0f, 1f)); brute.Hp = 999;
+                for (int i = 0; i < StepsFor(30f) && sim.InContract; i++) Steps(sim, 1, V2.Zero);
+                Assert.AreEqual(Outcome.CargoBroken, sim.LastResult?.Outcome, GearDef.All[g].Name + " no 8: a reliquia ainda quebra");
+            }
+        }
+
         /// <summary>RerolledToday separa "ja trocou hoje" (do dia e do raro, cada um) de "falta moeda" quando CanReroll e falso.</summary>
         [Test]
         public void Reroll_RerolledToday_SeparaJaTrocouDeFaltaMoeda()
@@ -265,7 +305,7 @@ namespace DC.Tests
             Bot.Campaign[] cs = Full();
             TestContext.WriteLine(Report(cs));
             for (int s = 0; s < cs.Length; s++) Assert.IsTrue(cs[s].Finished, "o bot fecha os 72 do zero (semente " + (BaseSeed + s) + ")");
-            int level5 = GearDef.All[(int)Gear.Hook].Cost[Balance.GearMaxLevel - 1];
+            int level5 = GearDef.All[(int)Gear.Hook].Cost[Balance.GearCampaignLevel - 1];
             foreach (RegionDef reg in RegionDef.All)
             {
                 Idle(cs, reg, out double end, out double peak, out double stuck, out int endMax);
@@ -294,6 +334,102 @@ namespace DC.Tests
             sb.AppendLine(string.Format(ci, "Media M2-4..M2-16 sem a mensagem: {0:0} s ({1} campanhas x {2} sementes por contrato)", mean, Seeds, R2Seeds));
             TestContext.WriteLine(sb.ToString());
             Assert.That(mean, Is.InRange(90.0, 180.0), "regiao 2: media do 4o contrato em diante (alvo do bot)");
+        }
+
+        // ------------------------------------------------------------------ fim de jogo (depois do Dragao)
+
+        /// <summary>Fontes de moeda do fim de jogo, na ordem do relatorio.</summary>
+        public static readonly string[] Sources = { "marcos", "bau do dia", "dia", "raro", "evento", "sem fim", "temporada" };
+        public const int EndDays = 56, EndSeeds = 4;
+        const long EndT0 = 1800000000;
+
+        /// <summary>Um jogador diario depois da campanha (o bot, partindo do fim de uma campanha completa): 1 sessao por dia (o raro aparece, 8 h
+        /// fora), resgata marcos e temporada, abre o bau do dia (rewarded), joga o contrato do dia, o raro, as 3 vagas do evento da semana (ate 2
+        /// tentativas por dia cada) e 1 desafio sem fim; compra como a campanha (Bot.BuyAll). Sem reroll, sem modificador escolhido, sem o
+        /// rewarded de dobrar bonus. Income[d, s] = moedas do dia d pela fonte s; Levels[d] = soma dos niveis dos 4 equipamentos no fim do dia d.</summary>
+        public sealed class Endgame { public readonly double[,] Income = new double[EndDays, Sources.Length]; public readonly int[] Levels = new int[EndDays], Coins = new int[EndDays]; }
+
+        public static Endgame PlayEndgame(string from, int seed)
+        {
+            var eg = new Endgame(); Sim sim = Sim.Load(from); sim.Seed = seed; var bot = new Bot(seed * 7 + 3);
+            for (int d = 0; d < EndDays; d++)
+            {
+                DateTime day = new DateTime(2026, 10, 12).AddDays(d);
+                int date = day.Year * 10000 + day.Month * 100 + day.Day; long now = EndT0 + d * 86400L;
+                sim.OpenSession(now, date);
+                int c0 = sim.Coins;
+                for (int i = 0; i < Balance.Milestones.Length; i++) sim.ClaimMilestone(i);
+                eg.Income[d, 0] += sim.Coins - c0; c0 = sim.Coins;
+                if (sim.GrantReward(Reward.DailyChest)) eg.Income[d, 1] += sim.Coins - c0;
+                for (int t = 0; t < 3 && sim.DailyAvailable(date); t++) eg.Income[d, 2] += Play(sim, bot, sim.DailyFor(date), () => sim.StartDaily(date, sim.Pending != null));
+                for (int t = 0; t < 3 && sim.RareAvailable; t++) eg.Income[d, 3] += Play(sim, bot, sim.RareContract, () => sim.StartRare(sim.Pending != null));
+                for (int k = 0; k < sim.EventSlots(date); k++)
+                    for (int t = 0; t < 2 && sim.EventAvailable(date, k); t++) eg.Income[d, 4] += Play(sim, bot, sim.EventContract(date, k), () => sim.StartEvent(date, k, false));
+                if (sim.EndlessOpen) eg.Income[d, 5] += Play(sim, bot, sim.EndlessContract(date), () => sim.StartEndless(date));
+                c0 = sim.Coins;
+                for (int i = 0; i < Season.Goals.Length; i++) sim.ClaimSeason(i);
+                eg.Income[d, 6] += sim.Coins - c0;
+                sim.Touch(now + 3600);
+                Bot.BuyAll(sim);
+                for (int g = 1; g < GearDef.All.Length; g++) eg.Levels[d] += sim.GearLevel((Gear)g);
+                eg.Coins[d] = sim.Coins;
+            }
+            return eg;
+        }
+
+        static int Play(Sim sim, Bot bot, ContractDef def, Func<Run> start)
+        {
+            int c0 = sim.Coins;
+            if (def != null) sim.Equip(Bot.WeaponFor(sim, def));
+            if (start() == null) return 0;
+            Bot.Finish(sim, bot);
+            return sim.Coins - c0;
+        }
+
+        static Endgame[] ends;
+        public static Endgame[] Ends()
+        {
+            if (ends != null) return ends;
+            ends = new Endgame[EndSeeds];
+            for (int s = 0; s < EndSeeds; s++) { Sim e = EndOf(Full()[s], 4); ends[s] = PlayEndgame(e.Save(), BaseSeed + s); }
+            return ends;
+        }
+
+        /// <summary>Dia (1-based) em que os 4 equipamentos chegam ao nivel 8, ou 0 se nao chegam nos EndDays dias.</summary>
+        static int DayFull(Endgame e) { for (int d = 0; d < EndDays; d++) if (e.Levels[d] >= 4 * Balance.GearMaxLevel) return d + 1; return 0; }
+
+        /// <summary>Fim de jogo pelo bot: os niveis 6-8 do equipamento so abrem depois do Dragao e sao o ralo do pos-campanha (sem fim, eventos,
+        /// temporada e bau do dia). Alvo (BALANCE.md, "Economia da campanha"): o jogador diario leva mais de 1 temporada (28 dias) e menos de
+        /// 2 (56) para fechar os 4 no nivel 8, e ate la nao fica sem ter o que comprar.</summary>
+        [Test]
+        public void FimDeJogo_Niveis6a8DepoisDoDragao_DuramEntreUmaEDuasTemporadas()
+        {
+            Endgame[] es = Ends();
+            var ci = CultureInfo.InvariantCulture; var sb = new StringBuilder();
+            sb.AppendLine(string.Format(ci, "Fim de jogo ({0} jogadores diarios do fim de campanhas completas, {1} dias): moedas por dia, media dos dias 1-28 / 29-56", es.Length, EndDays));
+            sb.AppendLine("| Fonte | dias 1-28 | dias 29-56 |\n|---|---|---|");
+            double tot1 = 0, tot2 = 0;
+            for (int s = 0; s < Sources.Length; s++)
+            {
+                double a = 0, b = 0;
+                foreach (Endgame e in es) for (int d = 0; d < EndDays; d++) { if (d < 28) a += e.Income[d, s]; else b += e.Income[d, s]; }
+                a /= es.Length * 28.0; b /= es.Length * 28.0; tot1 += a; tot2 += b;
+                sb.AppendLine(string.Format(ci, "| {0} | {1:0} | {2:0} |", Sources[s], a, b));
+            }
+            sb.AppendLine(string.Format(ci, "| **total** | **{0:0}** | **{1:0}** |", tot1, tot2));
+            var full = new StringBuilder("Dia em que os 4 equipamentos chegam ao 8 (0 = nao chegou) · niveis somados nos dias 7/14/28/56 · moedas no dia 56:");
+            foreach (Endgame e in es) full.Append(string.Format(ci, " {0}·{1}/{2}/{3}/{4}·{5}", DayFull(e), e.Levels[6], e.Levels[13], e.Levels[27], e.Levels[EndDays - 1], e.Coins[EndDays - 1]));
+            sb.AppendLine(full.ToString());
+            int sink = 0; for (int lv = Balance.GearCampaignLevel; lv < Balance.GearMaxLevel; lv++) sink += GearDef.All[(int)Gear.Hook].Cost[lv];
+            sb.AppendLine(string.Format(ci, "Ralo do fim de jogo: {0} por equipamento, {1} nos 4", sink, 4 * sink));
+            TestContext.WriteLine(sb.ToString());
+            foreach (Endgame e in es)
+            {
+                int day = DayFull(e);
+                Assert.That(day == 0 ? int.MaxValue : day, Is.GreaterThan(28), "fecha os niveis 6-8 em menos de 1 temporada: ralo curto");
+                Assert.That(day, Is.InRange(1, EndDays), "nao fecha os niveis 6-8 em 2 temporadas: ralo longo demais");
+                for (int d = 0; d < day - 1; d++) Assert.Less(e.Coins[d], GearDef.All[(int)Gear.Hook].Cost[Balance.GearMaxLevel - 1], "dia " + (d + 1) + ": moeda parada acima do nivel mais caro");
+            }
         }
     }
 }

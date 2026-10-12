@@ -805,7 +805,7 @@ namespace DC
             {
                 case Ev.Strike: if (e.B >= (int)EnemyType.GoblinMiner) StrikeFx(run, e.A, (EnemyType)e.B, p); break;
                 case Ev.EnemyHit: if (EntById(e.A) is Ent h) h.HitT = 0.3f; break;
-                case Ev.EnemyDie: DieFx((EnemyType)e.B, p); break;
+                case Ev.EnemyDie: DieFx((EnemyType)e.B, p); if (e.B == (int)EnemyType.MagmaElemental) SplitFx(e.A, p); break;
                 case Ev.Explosion: if (e.A == 2) Burst(p, VentHot, 16, 5f, 0.18f, 0.5f); break;   // besouro-bomba (fonte 2)
                 case Ev.CargoDrop:
                     foreach (Cargo g in run.Cargos)
@@ -874,6 +874,19 @@ namespace DC
                 case EnemyType.Ghost: Puff(Art.Glow(), p + new Vector2(0f, 0.6f), new Vector2(0f, 1.5f), Art.A(Art.Hex(0xBFF3FF), 0.8f), 0.8f, 1.4f, 0.6f); break;
                 case EnemyType.Skeleton: Burst(p, Art.Bone, 8, 3f, 0.1f, 0.4f); break;   // a pilha vem do run.Bones
             }
+        }
+
+        /// <summary>Elemental de magma estourando (clipe Split da folha `magma`, RENDER_SPRITES §9) uma vez onde morreu, virado como estava; as
+        /// brasas do Core nascem em volta. Sem o clipe, fica so o DieFx.</summary>
+        void SplitFx(int id, Vector2 p)
+        {
+            SpriteSheet s = SheetAt(EnemySheet, (int)EnemyType.MagmaElemental); int k;
+            if (s == null || (k = s.Clip("Split")) < 0) return;
+            Transform up = Upright(_roomRoot, "Estouro", p, out SortingGroup _);
+            var a = new SpriteAnim(s, Art.NewSprite(up, "Magma", null, Color.white, 0, Vector2.zero, Vector2.one));
+            if (EntById(id) is Ent x && x.Anim != null) a.D = x.Anim.D;
+            a.Play(s, k); a.Show();
+            _oneShots.Add(new OneShot { A = a, Left = s.Duration(k) });
         }
 
         void RoarOn(int id)

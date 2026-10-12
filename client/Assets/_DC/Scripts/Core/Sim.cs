@@ -143,7 +143,7 @@ using System.Text;
 //   Meta:       temporada: Season.Goals[20], sim.SeasonId, sim.SeasonProgress(i), SeasonReady(i), ClaimSeason(i), SeasonClaimed(i).
 //               Maestria: sim.MasteryCount/MasteryLevel(carga) (+2% no pagamento por nivel). Marcos: Balance.Milestones,
 //               sim.MilestoneReady/ClaimMilestone/MilestoneClaimed(i). Equipamento: GearDef.All (+ SmokeTime, SmokeUses, HookCooldown,
-//               TrapTime, TrapCatches por nivel), sim.GearOpen, sim.Blueprints(g), GearUnlocked, GearLevel (0-5), GearCost, CanUpgradeGear,
+//               TrapTime, TrapCatches por nivel), sim.GearOpen, sim.Blueprints(g), GearUnlocked, GearLevel (0-8), GearCost, CanUpgradeGear,
 //               UpgradeGear, EquipGear (Gear.None = vazio; so fora do contrato), GearEquipped, ProjectTaken(sala). Roupas: OutfitDef.All,
 //               sim.OwnsOutfit, sim.EquipOutfit, sim.OutfitEquipped.
 //   Monetizacao (o Core nao fala com SDK): rewarded = sim.RewardOffer(t) (mostra o botao?), sim.RewardId(t) (rw-<contrato>-<tipo>) e,
@@ -181,6 +181,10 @@ using System.Text;
 //   Dev (so teste/fotos, como o DevStars): sim.DevProjects(gear, n) poe n projetos (Gear.None = nos 4) so na memoria; sim.DevStartAt(contrato,
 //               "B2") comeca o contrato direto na camada da sala (contrato -1 = o 1o que passa por ela). Game.cs: -testsession -room B2.
 //   Bot:        Bot.BuyAll(sim) = a regra de compra da campanha; Campaign.EarnedPer/SpentPer (por contrato) e Campaign.End (save do fim).
+//   Fim de jogo (raia E2, MUDOU): Balance.GearMaxLevel = 8 (era 5) e Balance.GearCampaignLevel = 5. sim.GearCap = 5 ate vencer o Dragao
+//               (sim.DragonBeaten: M4-16 entregue), depois 8; GearCost = -1 no teto. Niveis 6-8 custam 10.000 / 13.000 / 18.000; as tabelas
+//               por nivel (GearDef.SmokeTime/SmokeUses/HookCooldown/TrapTime/TrapCatches e o novo BootsFire) tem 8 entradas. A tela desenha
+//               8 pontos e os acima de sim.GearCap travados ("6-8: DRAGAO"). O efeito extra do nivel 5 (GearCampaignLevel) continua no 5.
 
 namespace DC.Core
 {

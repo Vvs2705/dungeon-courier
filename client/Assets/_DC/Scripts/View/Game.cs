@@ -511,6 +511,7 @@ namespace DC
         void Away(bool away)
         {
             if (_headless || Sim == null || !_started || _recFps > 0) return;   // -record: segue gravando sem foco (runInBackground)
+            if (_hud != null && _hud.AnuncioAberto) return;   // anuncio real em tela cheia: o app vai ao fundo, mas a sessao e a mesma
             if (away)
             {
                 if (!_paused) Log("app_background", Time.realtimeSinceStartup.ToString("0", Inv));   // fim de sessao no Android (o quit raramente chega)

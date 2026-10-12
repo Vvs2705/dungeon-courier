@@ -50,6 +50,8 @@ namespace DC
         public static string Recusar => L("RECUSAR", "DECLINE", "RECHAZAR", "TOLAK");
         public static string Comprar => L("COMPRAR", "BUY", "COMPRAR", "BELI");
         public static string Maximo => L("MÁX", "MAX", "MÁX", "MAKS");
+        /// <summary>Equipamento no 5 antes de vencer o Dragao: os niveis 6-8 (fim de jogo) abrem depois dele.</summary>
+        public static string GearDragao => L("6-8: DRAGÃO", "6-8: DRAGON", "6-8: DRAGÓN", "6-8: NAGA");
         public static string Versao(string v) => F("versão {0}", "version {0}", "versión {0}", "versi {0}", v);
 
         // ------------------------------------------------------------------ titulo e menu
@@ -780,6 +782,8 @@ namespace DC
         public static string VolteAmanha => L("Volte amanhã para o contrato raro.", "Come back tomorrow for the rare contract.",
             "Vuelve mañana por el contrato raro.", "Kembali besok untuk kontrak langka.");
         public static string Trocar => L("TROCAR", "SWAP", "CAMBIAR", "GANTI");
+        /// <summary>No lugar do preco do TROCAR quando ja trocou hoje (sim.RerolledToday); falta de moeda fica com o preco em vermelho.</summary>
+        public static string TrocaAmanha => L("amanhã", "tomorrow", "mañana", "besok");
 
         // modificadores (§6.2)
         public static string Modificadores => L("Modificadores", "Modifiers", "Modificadores", "Pengubah");
@@ -1003,6 +1007,8 @@ namespace DC
                 case Outfit.Explorer: return L(pt, "Explorer", "Explorador", "Penjelajah");
                 case Outfit.Forge: return L(pt, "Forge firefighter", "Bombero de forja", "Pemadam tempaan");
                 case Outfit.Ghost: return L(pt, "Ghost", "Fantasma", "Hantu");
+                case Outfit.Miner: return L(pt, "Miner", "Minero", "Penambang");
+                case Outfit.Gravekeeper: return L(pt, "Gravekeeper", "Sepulturero", "Penjaga makam");
                 default: return pt;
             }
         }
@@ -1036,6 +1042,23 @@ namespace DC
             "Beli {0} seharga {1}?\n\nPembelian uji: tidak ada tagihan.", nome, preco);
         public static string Confirmar => L("CONFIRMAR", "CONFIRM", "CONFIRMAR", "KONFIRMASI");
         public static string Cancelar => L("CANCELAR", "CANCEL", "CANCELAR", "BATAL");
+        // loja real (Unity IAP no Google Play; MONETIZACAO.md)
+        public static string LojaCabecaReal => L("Conteúdo fixo e listado, nada aleatório.", "Fixed, listed content, nothing random.",
+            "Contenido fijo y listado, nada aleatorio.", "Isi tetap dan tertulis, tanpa acak.");
+        public static string LojaCarregando => "…";
+        public static string LojaIndisponivel => L("indisponível", "unavailable", "no disponible", "tidak tersedia");
+        public static string CompraPendente => L("Compra pendente: o conteúdo chega quando o pagamento for aprovado.",
+            "Purchase pending: the content arrives when the payment is approved.", "Compra pendiente: el contenido llega cuando se apruebe el pago.",
+            "Pembelian tertunda: isi masuk setelah pembayaran disetujui.");
+        public static string CompraFalhou => L("A compra não foi concluída.", "The purchase was not completed.", "La compra no se completó.",
+            "Pembelian tidak selesai.");
+        public static string Restaurar => L("Restaurar compras", "Restore purchases", "Restaurar compras", "Pulihkan pembelian");
+        public static string RestaurarSub => L("Devolve o que já foi comprado nesta conta da loja.", "Brings back what this store account already bought.",
+            "Devuelve lo que ya se compró con esta cuenta de la tienda.", "Mengembalikan yang sudah dibeli akun toko ini.");
+        public static string RestaurarBotao => L("RESTAURAR", "RESTORE", "RESTAURAR", "PULIHKAN");
+        public static string Restaurado => L("Compras restauradas.", "Purchases restored.", "Compras restauradas.", "Pembelian dipulihkan.");
+        public static string RestaurarFalhou => L("Não deu para restaurar agora. Tente de novo com internet.", "Could not restore now. Try again online.",
+            "No se pudo restaurar ahora. Inténtalo de nuevo con internet.", "Belum bisa memulihkan. Coba lagi saat online.");
 
         public static string ProdutoNome(Product p)
         {
@@ -1044,9 +1067,21 @@ namespace DC
                 case Product.RemoveAds: return L("Remover anúncios", "Remove ads", "Quitar anuncios", "Hapus iklan");
                 case Product.StarterPack: return L("Pacote inicial", "Starter Pack", "Paquete inicial", "Paket pemula");
                 case Product.EventPack: return L("Pacote de evento", "Event pack", "Paquete de evento", "Paket event");
-                default:
-                    Outfit o = p == Product.OutfitNight ? Outfit.Night : p == Product.OutfitRoyal ? Outfit.Royal : p == Product.OutfitExplorer ? Outfit.Explorer : Outfit.Forge;
-                    return F("Roupa {0}", "{0} outfit", "Traje {0}", "Pakaian {0}", RoupaNome(o));
+                default: return F("Roupa {0}", "{0} outfit", "Traje {0}", "Pakaian {0}", RoupaNome(RoupaDoProduto(p)));
+            }
+        }
+
+        /// <summary>Roupa que o produto da (so os Product.Outfit*).</summary>
+        public static Outfit RoupaDoProduto(Product p)
+        {
+            switch (p)
+            {
+                case Product.OutfitNight: return Outfit.Night;
+                case Product.OutfitRoyal: return Outfit.Royal;
+                case Product.OutfitExplorer: return Outfit.Explorer;
+                case Product.OutfitMiner: return Outfit.Miner;
+                case Product.OutfitGravekeeper: return Outfit.Gravekeeper;
+                default: return Outfit.Forge;
             }
         }
 
@@ -1071,6 +1106,10 @@ namespace DC
 
         // anuncios (simulador de teste) e ofertas de rewarded (§7)
         public static string AnuncioTeste => L("ANÚNCIO DE TESTE", "TEST AD", "ANUNCIO DE PRUEBA", "IKLAN UJI");
+        // anuncio real (LevelPlay): espera do rewarded
+        public static string AnuncioCarregando => L("Carregando o anúncio…", "Loading the ad…", "Cargando el anuncio…", "Memuat iklan…");
+        public static string AnuncioSemAnuncio => L("Nenhum anúncio disponível agora.\nTente de novo mais tarde.", "No ad available right now.\nTry again later.",
+            "No hay anuncios disponibles ahora.\nInténtalo más tarde.", "Belum ada iklan sekarang.\nCoba lagi nanti.");
         public static string AnuncioGanha(string premio) => F("Assista até o fim para ganhar:\n{0}", "Watch to the end to get:\n{0}",
             "Mira hasta el final para ganar:\n{0}", "Tonton sampai habis untuk dapat:\n{0}", premio);
         public static string AnuncioEntre => L("Anúncio entre contratos.\nRemover anúncios tira este.", "Ad between contracts.\nRemove ads turns these off.",

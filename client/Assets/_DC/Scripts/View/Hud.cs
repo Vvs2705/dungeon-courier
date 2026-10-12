@@ -123,9 +123,9 @@ namespace DC
             _pause = BuildPause();
             _settings = BuildSettings();
             _credits = BuildCredits();
-            // por cima de tudo: a loja falsa e o simulador de anuncio (implementacoes de teste de ILoja/IAnuncios; SDK real = raia propria)
-            _lojaTeste = new LojaTeste(this); _loja = _lojaTeste;
-            _adsTeste = new AnunciosTeste(this); _ads = _adsTeste;
+            // por cima de tudo: a janela da loja de teste e o anuncio (ou o simulador dele)
+            _lojaTeste = new LojaTeste(this); _loja = CriaLoja();   // Unity IAP (Loja.cs, LojaIap.cs)
+            _ads = CriaAnuncios();                                   // LevelPlay com app key no Android; senao o simulador (Anuncios.cs)
             _screens = new[] { _top, _title, _menu, _board, _cut, _result };
             var modals = new List<RectTransform> { _guild, _code, _offer, _perk, _pause, _settings, _credits, _semFim };
             foreach (Painel p in _paineis) modals.Add(p.M);
@@ -336,7 +336,7 @@ namespace DC
         /// sai; no contrato sem nada aberto: o Game abre a pausa).</summary>
         public bool Back()
         {
-            if (_adsTeste.Voltar() || _lojaTeste.Voltar()) return true;   // anuncio e loja falsa ficam por cima de tudo
+            if (_ads.Voltar() || _lojaTeste.Voltar()) return true;   // anuncio e loja falsa ficam por cima de tudo
             if (Close(_credits) || Close(_settings) || Close(_code)) return true;
             if (_pLoja.M.gameObject.activeSelf) { Fecha(_pLoja); return true; }
             if (_pMods.M.gameObject.activeSelf) { _modsGo = null; Fecha(_pMods); return true; }
@@ -370,7 +370,7 @@ namespace DC
         public void Refresh(float dt)
         {
             TimeInScreen += dt;
-            _adsTeste.Tick();   // contagem do simulador de anuncio (tempo real)
+            _ads.Tick();   // contagem do simulador / espera do anuncio real (tempo real)
             _vigT = Mathf.Max(0f, _vigT - dt);
             _vignette.color = Art.A(Art.Bad, 0.25f * 2.5f * _vigT);   // vinheta de dano a 25% (ART_BIBLE §9)
             _fadeT = Mathf.Max(0f, _fadeT - dt);

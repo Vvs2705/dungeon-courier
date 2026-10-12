@@ -1,7 +1,7 @@
 {
     "name": "DC",
     "rootNamespace": "DC",
-    "references": ["DC.Core", "Unity.InputSystem", "UnityEngine.UI"],
+    "references": ["DC.Core", "Unity.InputSystem", "UnityEngine.UI", "Unity.Purchasing", "Unity.LevelPlay"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

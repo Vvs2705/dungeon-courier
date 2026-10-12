@@ -235,7 +235,7 @@ namespace DC
 
         // ------------------------------------------------------------------ roupas (cosmetico)
 
-        static readonly string[] RoupaChave = { "classico", "noturno", "real", "explorador", "forja", "fantasma" };
+        static readonly string[] RoupaChave = { "classico", "noturno", "real", "explorador", "forja", "fantasma", "mineiro", "coveiro" };
 
         /// <summary>Nome da folha de sprites da roupa: "courier" (Classica) ou "courier_&lt;roupa&gt;" (render_sprites.py com troca de material,
         /// CONTRATO_LANCAMENTO §8). Enquanto a folha nao existe, vale a do courier com a TintaRoupa. A WorldView deve usar o mesmo par.</summary>
@@ -251,9 +251,15 @@ namespace DC
                 case Outfit.Explorer: return Art.Hex(0xE2CC98);
                 case Outfit.Forge: return Art.Hex(0xF2905C);
                 case Outfit.Ghost: return new Color(0.8f, 1f, 1f, 0.6f);
+                case Outfit.Miner: return Art.Hex(0xE8A848);   // ambar da lanterna de mina (regiao 2)
+                case Outfit.Gravekeeper: return Art.Hex(0x9FB89A);   // verde-cinza de cripta (regiao 3)
                 default: return Color.white;
             }
         }
+
+        /// <summary>Cor do sprite com a folha propria da roupa (courier_&lt;roupa&gt;): branco, menos a Fantasma, que continua translucida
+        /// (alfa 0,6; RENDER_SPRITES §11: a folha dela e cinza-ciano opaca). Sem a folha vale a TintaRoupa sobre a do courier.</summary>
+        public static Color CorComFolha(Outfit o) => o == Outfit.Ghost ? new Color(1f, 1f, 1f, 0.6f) : Color.white;
 
         /// <summary>Retrato da roupa: quadro parado da folha courier_&lt;roupa&gt; ou, sem ela, o do courier com a tinta; sem folha nenhuma, um
         /// disco azul do courier tingido.</summary>
@@ -262,7 +268,7 @@ namespace DC
             SpriteSheet s = SpriteSheet.Get(FolhaRoupa(o));
             bool tinta = s == null;
             if (tinta) s = SpriteSheet.Get("courier");
-            if (s != null) { c = tinta ? TintaRoupa(o) : Color.white; return s.Frame(s.Pick("Idle"), 0, 0); }
+            if (s != null) { c = tinta ? TintaRoupa(o) : CorComFolha(o); return s.Frame(s.Pick("Idle"), 0, 0); }
             c = Art.Courier * TintaRoupa(o);
             return Art.Disc();
         }
@@ -293,6 +299,8 @@ namespace DC
                 case Outfit.Royal: return Product.OutfitRoyal;
                 case Outfit.Explorer: return Product.OutfitExplorer;
                 case Outfit.Forge: return Product.OutfitForge;
+                case Outfit.Miner: return Product.OutfitMiner;
+                case Outfit.Gravekeeper: return Product.OutfitGravekeeper;
                 default: return null;
             }
         }
@@ -389,17 +397,9 @@ namespace DC
             }
             Mostra(p, n);
             bool all = open && S.EventDone(hoje, 0) && S.EventDone(hoje, 1) && S.EventDone(hoje, 2);
-            Gear g = ProjetoDaSemana(hoje);
+            Gear g = S.WeekProject(hoje);   // o mesmo premio que o Core da (None = moedas)
             p.Foot.text = !open ? "" : all ? Textos.ProjetoGanho : g == Gear.None ? Textos.ProjetoSemanaMoedas(Balance.EventProjectCoins) : Textos.ProjetoSemana(Textos.GearNome(g));
             p.Main.gameObject.SetActive(open && !S.Owns(Product.EventPack));
-        }
-
-        /// <summary>O projeto que as 3 vagas da semana dao (a mesma conta do Core: equipamento da semana ou o proximo que falta; None = moedas).</summary>
-        Gear ProjetoDaSemana(int date)
-        {
-            int w = Sim.Week(date);
-            for (int i = 0; i < 4; i++) { var g = (Gear)(1 + (w + i) % 4); if (S.Blueprints(g) < Balance.GearBlueprints) return g; }
-            return Gear.None;
         }
 
         // ------------------------------------------------------------------ quadro de temporada (28 dias, 20 objetivos)

@@ -728,7 +728,7 @@ namespace DC.Tests
             Assert.IsFalse(g.EquipGear(Gear.Smoke), "bloqueado"); Assert.IsTrue(g.EquipGear(Gear.Hook)); Assert.AreEqual(Gear.Hook, g.GearEquipped);
             int[] cost = { 1000, 2500, 4000, 5000 };   // raia E (BALANCE.md "Economia da campanha"): 12.500 por equipamento
             int coins = g.Coins;
-            for (int lv = 1; lv < Balance.GearMaxLevel; lv++)
+            for (int lv = 1; lv < Balance.GearCampaignLevel; lv++)
             {
                 Assert.AreEqual(cost[lv - 1], g.GearCost(Gear.Hook));
                 Assert.IsTrue(g.UpgradeGear(Gear.Hook)); coins -= cost[lv - 1];

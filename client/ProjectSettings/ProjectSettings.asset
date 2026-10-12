@@ -681,7 +681,9 @@ PlayerSettings:
   webGLCloseOnQuit: 0
   webWasm2023: 0
   webEnableSubmoduleStrippingCompatibility: 0
-  scriptingDefineSymbols: {}
+  scriptingDefineSymbols:
+    Android: IAP_FAKE_STORE_DEFAULT
+    Standalone: IAP_FAKE_STORE_DEFAULT
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:

@@ -22,6 +22,7 @@ namespace DC.EditorTools
         public const string AppId = "br.com.vstack.dungeoncourier";
         const string Scene = "Assets/_DC/Scenes/Main.unity";
         const string ApkDir = "Builds/android";
+        const string FakeStoreDefine = "IAP_FAKE_STORE_DEFAULT";
         /// <summary>Versao mostrada ao jogador (Application.version) e no diario.</summary>
         public const string Version = "1.1.0-beta";
 
@@ -63,6 +64,13 @@ namespace DC.EditorTools
 
             // 2 = Input System + Input Manager legado (sem API publica; vale na proxima abertura do editor). O legado e' so para o voltar
             // do Android: com o GameActivity o Input System nao recebe a tecla (Forge Street, emulador API 35; forum Unity 1555368)
+            // Unity IAP: loja falsa sem a janela propria do pacote (a confirmacao e a da LojaTeste; docs/MONETIZACAO.md)
+            foreach (NamedBuildTarget t in new[] { NamedBuildTarget.Android, NamedBuildTarget.Standalone })
+            {
+                string defs = PlayerSettings.GetScriptingDefineSymbols(t);
+                if (!defs.Contains(FakeStoreDefine)) PlayerSettings.SetScriptingDefineSymbols(t, string.IsNullOrEmpty(defs) ? FakeStoreDefine : defs + ";" + FakeStoreDefine);
+            }
+
             var ps = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset")[0]);
             SerializedProperty handler = ps.FindProperty("activeInputHandler");
             if (handler != null && handler.intValue != 2) { handler.intValue = 2; ps.ApplyModifiedPropertiesWithoutUndo(); }
@@ -83,6 +91,16 @@ namespace DC.EditorTools
         public static void BuildAndroidRelease() => Build(BuildTarget.Android, ApkDir + "/DungeonCourier-" + Version + ".apk", true);
         public static void BuildWindowsRelease() => Build(BuildTarget.StandaloneWindows64, "Builds/win-release/DungeonCourier.exe", true);
 
+        /// <summary>Dependencias nativas do LevelPlay (Assets/LevelPlay/Editor/*Dependencies.xml, instaladas pelo Network Manager) entram no
+        /// Gradle pelo Mobile Dependency Resolver (Assets/MobileDependencyResolver), que remenda os templates em Assets/Plugins/Android. Em batch
+        /// a resolucao automatica pode nao rodar antes do build: forcamos o ResolveSync. O Unity IAP poe o billing sozinho.</summary>
+        static void ResolveAndroid()
+        {
+            System.Type r = System.Type.GetType("GooglePlayServices.PlayServicesResolver, Google.JarResolver");
+            object ok = r?.GetMethod("ResolveSync", new[] { typeof(bool) })?.Invoke(null, new object[] { true });
+            Debug.Log("DC Setup: Mobile Dependency Resolver " + (ok is bool b ? (b ? "ok" : "FALHOU") : "ausente"));
+        }
+
         static void Build(BuildTarget target, string path, bool release)
         {
             Apply();
@@ -96,6 +114,7 @@ namespace DC.EditorTools
                     // o empacotamento incremental do Gradle reaproveita o APK anterior e ja' deixou buracos/sem libunity no Forge Street
                     const string gradleOut = "Library/Bee/Android/Prj/IL2CPP/Gradle/launcher/build";
                     if (Directory.Exists(gradleOut)) Directory.Delete(gradleOut, true);
+                    ResolveAndroid();
                     EditorUserBuildSettings.buildAppBundle = false;            // APK para instalar direto no aparelho do testador
                     PlayerSettings.Android.useCustomKeystore = false;          // chave de debug do Unity (a da Play vem depois)
                     if (release) PlayerSettings.SetIl2CppCompilerConfiguration(NamedBuildTarget.Android, Il2CppCompilerConfiguration.Release);

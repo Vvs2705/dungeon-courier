@@ -73,7 +73,7 @@ namespace DC.Core
     }
 
     /// <summary>Equipamento lateral (CONTEUDO_REGIOES §8): destrava com Balance.GearBlueprints projetos e sobe ate o nivel 5 com Coins (Cost[n] =
-    /// preco do nivel n+1). Sem botao (controle de um dedo): dispara sozinho. Fumaca: quando um inimigo pega a carga (usos por contrato por
+    /// preco do nivel n+1); os niveis 6-8 (fim de jogo) abrem depois do Dragao (sim.GearCap). Sem botao (controle de um dedo): dispara sozinho. Fumaca: quando um inimigo pega a carga (usos por contrato por
     /// nivel). Gancho: andando sem carga na direcao da carga do contrato no chao (+-30 graus, 1,5-5 m) por 0,25 s; recarga por nivel.
     /// Armadilha: no 1o pouso da carga em cada sala, 0,6 m do outro lado da carga. Botas: passivas.</summary>
     public sealed class GearDef
@@ -81,14 +81,17 @@ namespace DC.Core
         public readonly Gear Type; public readonly string Name, Text; public readonly int[] Cost;
         GearDef(Gear t, string name, string text, int[] cost) { Type = t; Name = name; Text = text; Cost = cost; }
         /// <summary>Indice = (int)Gear (0 = None). Preco dos niveis 2-5 (12.500 por equipamento): o ralo da campanha das regioes 2-4 (BALANCE.md,
-        /// "Economia da campanha"; era 600 / 1.200 / 2.000 / 3.000 e sobravam ~24 mil moedas no fim).</summary>
-        static readonly int[] Costs = { 0, 1000, 2500, 4000, 5000 };
-        /// <summary>Por nivel (indice 0 = nivel 1): fumaca = segundos e usos por contrato; gancho = recarga (s); armadilha = segundos e quantos prende.</summary>
-        public static readonly float[] SmokeTime = { 3f, 3.5f, 3.5f, 4f, 4f }, HookCooldown = { 10f, 9f, 8f, 7f, 6f }, TrapTime = { 3f, 4f, 4f, 5f, 5f };
-        public static readonly int[] SmokeUses = { 1, 1, 2, 2, 3 }, TrapCatches = { 1, 1, 2, 2, 2 };
+        /// "Economia da campanha"; era 600 / 1.200 / 2.000 / 3.000 e sobravam ~24 mil moedas no fim). Niveis 6-8 (fim de jogo, depois do Dragao):
+        /// o ralo do pos-campanha (sem fim, eventos, temporada, bau do dia).</summary>
+        static readonly int[] Costs = { 0, 1000, 2500, 4000, 5000, 10000, 13000, 18000 };
+        /// <summary>Por nivel (indice 0 = nivel 1): fumaca = segundos e usos por contrato; gancho = recarga (s); armadilha = segundos e quantos prende;
+        /// botas = intervalo do fogo no pe (x Balance.FireTick; regiao 4). Niveis 6-8: ganho pequeno, nada torna a carga indestrutivel.</summary>
+        public static readonly float[] SmokeTime = { 3f, 3.5f, 3.5f, 4f, 4f, 4.5f, 4.5f, 5f }, HookCooldown = { 10f, 9f, 8f, 7f, 6f, 5.5f, 5f, 4.5f },
+                                       TrapTime = { 3f, 4f, 4f, 5f, 5f, 5.5f, 6f, 6f }, BootsFire = { 1f, 1f, 1f, 1f, 2f, 2.25f, 2.5f, 3f };
+        public static readonly int[] SmokeUses = { 1, 1, 2, 2, 3, 3, 4, 4 }, TrapCatches = { 1, 1, 2, 2, 2, 2, 2, 3 };
         public static readonly GearDef[] All =
         {
-            new GearDef(Gear.None, "", "", new[] { 0, 0, 0, 0, 0 }),
+            new GearDef(Gear.None, "", "", new[] { 0, 0, 0, 0, 0, 0, 0, 0 }),
             new GearDef(Gear.Smoke, "Bomba de fumaça", "quem pega a carga a solta e a perde de vista por 3 s", Costs),
             new GearDef(Gear.Hook, "Gancho", "andando para a carga no chão (1,5-5 m), ela vem para as mãos", Costs),
             new GearDef(Gear.Trap, "Armadilha de urso", "no 1º pouso da sala: prende o 1º inimigo que passar por 3 s", Costs),
@@ -163,8 +166,9 @@ namespace DC.Core
         public const int SeasonDays = 28;
         /// <summary>Contrato raro: pagamento x2 (o intervalo de 8 h esta no Config).</summary>
         public const int RarePct = 200;
-        /// <summary>Equipamento lateral: 3 blueprints destravam; nivel 1-3; abre depois do C6. Efeito +0,5 s/m por nivel.</summary>
-        public const int GearBlueprints = 3, GearMaxLevel = 5, GearOpenAfter = 6;
+        /// <summary>Equipamento lateral: 3 blueprints destravam; nivel 1-5 na campanha (GearCampaignLevel: o nivel 5 tem o efeito extra de cada
+        /// peca) e 6-8 (GearMaxLevel) depois do Dragao; abre depois do C6.</summary>
+        public const int GearBlueprints = 3, GearMaxLevel = 8, GearCampaignLevel = 5, GearOpenAfter = 6;
         /// <summary>Fumaca: nuvem de 2,5 m. Gancho: 1,5-5 m, cone de 30 graus (cos 0,866), 0,25 s andando. Armadilha: 0,6 m alem da carga, pega a
         /// 0,5 m; no nivel 5 prende tambem mini-chefe por 1,5 s. Projeto da semana (3 vagas do evento): sem projeto faltando = 300 moedas.</summary>
         public const float SmokeRadius = 2.5f, HookMin = 1.5f, HookRange = 5f, HookCone = 0.866f, HookAim = 0.25f, TrapOffset = 0.6f, TrapReach = 0.5f, TrapMini = 1.5f;
