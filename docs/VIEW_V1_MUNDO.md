@@ -133,7 +133,7 @@ Contratos 25–40 = região 2, 41–56 = região 3, 57–72 = região 4. O `-tes
 
 ### Fotos dos chefes (`-testsession -room X -bot -shot f.png -shotdelay s`)
 
-A flag `-room` é da raia E e ainda não estava no `Game.cs` quando esta tabela foi feita. Os segundos são de sala (`Run.Time` num contrato montado só com a sala do chefe e a entrega, `Sim.StartDef`, `Sim(1)`, `Bot(Seed)`), medidos no Core em 2026-10-11. Se a flag montar a sala de outro jeito (nível, perks, ponto de partida), meça de novo.
+Rodada de 2026-10-12 (`client/Builds/validation_v3/shots`): `-contract K -room X -bot -weapon 1 -guilda -record <pasta> -recordfps 10`, com K = 32 (M2), 40 (B2), 48 (M3), 56 (B3), 64 (M4) e 72 (B4). Sem `-guilda` o bot começa sem melhorias e perde no B2 aos 22 s. Com ela as lutas duram mais que esta tabela (o Golem passa dos 40 s): use a tabela só como ordem dos eventos. A flag `-room` é da raia E e ainda não estava no `Game.cs` quando esta tabela foi feita. Os segundos são de sala (`Run.Time` num contrato montado só com a sala do chefe e a entrega, `Sim.StartDef`, `Sim(1)`, `Bot(Seed)`), medidos no Core em 2026-10-11. Se a flag montar a sala de outro jeito (nível, perks, ponto de partida), meça de novo.
 
 | sala | s | o que mostra |
 |---|---|---|

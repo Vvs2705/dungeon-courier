@@ -53,9 +53,9 @@ client/Builds/win-release/DungeonCourier.exe -screen-width 540 -screen-height 96
 | `c24_ogro` | `-contract 24 -bot -weapon 1` | 112.0 | 7.0 | B1: pancada do Ogro 113,0/114,0; ladrão 114,8; dash 115,0 |
 | `c24_fim` | `-contract 24 -bot -weapon 1` | 185.5 | 17.0 | ladrão e dash 186,1–188,8; o Ogro cai ~192; entrega 197,0; cena 198,1–201,7 |
 | `quadro` | `-tela quadro` | 0.0 | 2.0 | quadro de contratos parado |
-| `h03_ovo` | `-contract 3 -weapon 1` (**humano**) | 44.0 | 30.0 | jogar com WASD + Espaço: segurar o ovo até chocar (55 s), lutar perto dos 50 s e entregar com o filhote antes dos 74 s |
-| `m2_5_coracao` | `-contract 29 -bot` (**pendente**) | 0.0 | 14.0 | região 2, M2-5 (coração arcano): medir quando a região e a View existirem |
-| `c02_roupa` | `-contract 2 -bot -roupa 1` (**pendente**) | 0.5 | 17.0 | igual ao `c02`, com a roupa Noturno. Falta a flag `-roupa` (como a `-weapon`) e os sprites das roupas |
+| `cod_ovo` | `-codigo JAAKNB -bot` | 120.5 | 21.5 | região 2 por código (ovo, 5 camadas): choca 125,0; entrega 137,0; cena 138,1–141,7 |
+| `c29_coracao` | `-contract 29 -bot` | 0.0 | 14.0 | M2-5 (coração arcano): reforço 1,8; dano 2,2/3,4; baú 4,1 |
+| `c02_roupa` | `-contract 2 -bot -roupa noturno` | 0.5 | 17.0 | igual ao `c02`, com a roupa Noturno |
 
 No C24 o bot só vence o Ogro com o bumerangue (`-weapon 1`). Com o estilingue, perde a carga no R16 aos 16,6 s.
 
@@ -100,12 +100,12 @@ O jogo não tem espinhos. O perigo da relíquia vem dos arqueiros e dos ladrões
 | 4,4–9 | 1 coração. Só falta a porta. | 1 heart left. Just the door to go. | 1 corazón. Solo falta la puerta. | Sisa 1 nyawa. Tinggal pintunya. |
 | 9–13,7 | ENTREGUE com 1 de vida! | DELIVERED on 1 health! | ¡ENTREGADO con 1 de vida! | TERKIRIM dengan 1 nyawa! |
 
-### 4. Carga que atrai monstros (coração arcano) · 15 s · **pendente**
+### 4. Carga que atrai monstros (coração arcano) · 15 s · bot
 
-Depende da região 2 no Core e na View (contrato M2-5, `-contract 29`). Os tempos são do desenho. Meça com `-shot` e ajuste `G`/`R` antes de gravar.
+Contrato M2-5 (`-contract 29`), medido em 2026-10-12: R2-3 com reforço aos 1,8 s, dano 2,2/3,4, baú 4,1; R2-1 5,2; R2-10 8,5; R2-8 13,2.
 
 - **Gancho:** o coração nas mãos, o raio visível puxando moedas e inimigos ao mesmo tempo.
-- **Cenas:** 0–13,5 `m2_5_coracao [0–13,5]`.
+- **Cenas:** 0–13,5 `c29_coracao [0–13,5]`.
 
 | t (s) | pt | en | es | id |
 |---|---|---|---|---|
@@ -202,26 +202,23 @@ O gancho mostra o caos primeiro e depois volta ao começo, porque abrir no quadr
 | 8,6–11,4 | Pegue de volta e corra | Grab it back and run | Recupérala y corre | Ambil lagi dan lari |
 | 11,4–15 | Entregue! | Delivered! | ¡Entregado! | Terkirim! |
 
-### 12. "Não deixe o ovo chocar" · 17,5 s · **humano**
+### 12. "Não deixe o ovo chocar" · 21,1 s · bot
 
-O bot nunca espera o ovo chocar: ele entrega antes ou cai. Uma pessoa grava a cena jogando (é jogo real).
+O bot do 1º contrato do ovo entrega antes de chocar. O contrato por código `JAAKNB` (região 2, ovo em 5 camadas) é longo o bastante para o ovo chocar com o bot jogando: `-codigo JAAKNB -bot` (`cod_ovo`, §2.1). Medido em 2026-10-12: R2-6 121,2; explosões 123,7; choca 125,0; baú 132,6; D2 134,8; entrega 137,0; cena 138,1–141,7 (chocou e o filhote chegou).
 
-- **Como gravar:** `h03_ovo` (§2.1). Segure o ovo, abra baús e lute até os 55 s, com luta por volta dos 50 s para o gancho. Depois que chocar, leve o filhote até o cliente antes dos 74 s. Ajuste os cortes em `R[12]` depois de ver a gravação (o `RECORD fim` diz o `t=`).
 - **Gancho:** o ovo nas mãos, o cronômetro do ovo e a luta.
-- **Cenas:** 0–16 `h03_ovo [6–22]` (choca aos 5 s do vídeo).
+- **Cenas:** 0–16 `cod_ovo [0,5–16,5]` + 16–19,6 `cod_ovo [17,6–21,2]`.
 
 | t (s) | pt | en | es | id |
 |---|---|---|---|---|
-| 0–5 | O ovo choca se você demorar... | The egg hatches if you take too long... | El huevo eclosiona si tardas... | Telurnya menetas kalau kamu lama... |
-| 5–10 | Chocou! O filhote agora te segue | It hatched! Now the chick follows you | ¡Eclosionó! Ahora la cría te sigue | Menetas! Anak naga mengikutimu |
-| 10–16 | Leve o filhote até o cliente | Get the chick to the client | Lleva la cría al cliente | Antar anak naga ke pelanggan |
+| 0–4 | O ovo choca se você demorar... | The egg hatches if you take too long... | El huevo eclosiona si tardas... | Telurnya menetas kalau kamu lama... |
+| 4–9 | Chocou! O filhote agora te segue | It hatched! Now the chick follows you | ¡Eclosionó! Ahora la cría te sigue | Menetas! Anak naga mengikutimu |
+| 9–16 | Leve o filhote até o cliente | Get the chick to the client | Lleva la cría al cliente | Antar anak naga ke pelanggan |
+| 16–19,6 | Entregue com o filhote! | Delivered with the chick! | ¡Entregado con la cría! | Terkirim bersama anak naga! |
 
-### 13. O mesmo vídeo com outra roupa do courier · 16,5 s · **pendente**
+### 13. O mesmo vídeo com outra roupa do courier · 16,5 s · bot
 
-Cópia exata do 11 (mesmos cortes e legendas), gravada com a roupa Noturno (`c02_roupa`). O resultado do A/B entre o 11 e o 13 mede a roupa sozinha. Depende de:
-
-1. uma flag de dev `-roupa O` no `Game.cs`, no molde da `-weapon` (equipa só na memória com `-testsession`), e
-2. a View desenhando as roupas (sprites da raia G).
+Cópia exata do 11 (mesmos cortes e legendas), gravada com a roupa Noturno: `c02_roupa` = `-contract 2 -bot -roupa noturno` (a roupa não muda a partida). O resultado do A/B entre o 11 e o 13 mede a roupa sozinha.
 
 ## 4. Montagem
 
