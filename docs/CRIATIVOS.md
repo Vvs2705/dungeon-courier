@@ -39,12 +39,12 @@ client/Builds/win-release/DungeonCourier.exe -screen-width 540 -screen-height 96
 | `c02` | `-contract 2 -bot` | 0.5 | 17.0 | R3 3,2; pousa 5,4; ladrão 7,0; dash 7,1; entrega 12,4; cena 13,5–17,1 |
 | `c03` | `-contract 3 -bot` | 7.5 | 10.0 | portas do R1; entra no R4 (3 caveiras) 11,0; cai 13,9; resultado 15,0 |
 | `c04_inicio` | `-contract 4 -bot` | 0.0 | 13.0 | R5 com Bruto; baú 5,4; R3 7,3; baú 11,7 |
-| `c04_fim` | `-contract 4 -bot` | 49.5 | 17.5 | vida 2; S1 52,7; vida 1 54,4; D1 56,4; entrega 59,0; cena 60,1–63,7; resultado 63,7 |
+| `c04_fim` | `-contract 4 -bot` | 49.5 | 17.5 | vida 2; vida 1 50,2; S1 52,7 (+1); vida 1 54,4; D1 56,4 (+1, sala nova cura); entrega 59,0 com 2; cena 60,1–63,7 |
 | `c05_bumerangue` | `-contract 5 -bot -weapon 1` | 20.5 | 9.0 | relíquia: rachaduras 22,5 / 24,3 / 25,5 (quebra); resultado 26,6 |
 | `c06_bomba` | `-contract 6 -bot -weapon 2` | 0.5 | 10.5 | as explosões da bombinha racham o ovo: 3,2 / 4,3 / 9,8 |
 | `c06_bumerangue` | `-contract 6 -bot -weapon 1` | 0.5 | 6.5 | R6: ladrão 4,2; dash 4,9 |
 | `c06_bumerangue_fim` | `-contract 6 -bot -weapon 1` | 56.5 | 4.5 | entrega 55,7; cena 56,8–60,4 (ovo intacto) |
-| `c07` | `-contract 7 -bot` | 32.5 | 15.5 | bolo, vida 2; baú 38,0; R2 40,1; vida 1 41,8; cai 42,8; resultado 43,9 |
+| `c07` | `-contract 7 -bot` | 32.5 | 15.5 | bolo, vida 1; baú 38,0; R2 40,1 (vida 3); vida 1 41,8; cai 42,8; resultado 43,9 |
 | `c08` | `-contract 8 -bot` | 0.0 | 9.5 | R7 com arqueiros; reforço 3,4; 2 rachaduras 7,5 / 7,6 |
 | `c08_fim` | `-contract 8 -bot` | 76.0 | 5.0 | entrega 75,5; cena 76,6–80,2 ("Hmm... 2 rachaduras") |
 | `c12_r4` | `-contract 12 -bot` | 0.0 | 5.0 | R4: baú 2,0; dano 3,2; reforço 4,1 |
@@ -89,16 +89,17 @@ O jogo não tem espinhos. O perigo da relíquia vem dos arqueiros e dos ladrões
 | 7,3–12,5 | ...depois, a porta com outro baú | ...then the door with another chest | ...luego, la puerta con otro cofre | ...lalu pintu dengan peti lain |
 | 12,5–15,5 | Baús pagam. Mas cada porta cobra. | Chests pay. But every door has a price. | Los cofres pagan. Pero cada puerta cobra. | Peti memberi koin. Tapi tiap pintu ada harganya. |
 
-### 3. Entrega com 1 de vida (GDD: "entrega com 1% de vida") · 15,2 s · bot
+### 3. Entrega por um triz (GDD: "entrega com 1% de vida") · 15,2 s · bot
 
 - **Gancho:** 2 corações, a caixa nas mãos e a luta na sala.
-- **Cenas:** 0–13,7 `c04_fim [0,5–14,2]` cai para 1 coração na sala secreta, porta da entrega e a cena do cliente (perfeita).
+- **Cenas:** 0–13,7 `c04_fim [0,5–14,2]` cai para 1 coração na sala secreta (vídeo 4,4 s), a porta da entrega cura 1 (sala nova, `Balance.RoomHeal`, vídeo 6,4 s) e a cena do cliente (perfeita). Até 2026-10-11 a legenda dizia "entregue com 1 de vida", mas a entrega acontece com 2 corações: a legenda segue a tela.
 
 | t (s) | pt | en | es | id |
 |---|---|---|---|---|
 | 0–4,4 | Quase sem vida, com a caixa nas mãos | Almost out of health, crate in hand | Casi sin vida, con la caja en las manos | Nyawa hampir habis, kotak di tangan |
-| 4,4–9 | 1 coração. Só falta a porta. | 1 heart left. Just the door to go. | 1 corazón. Solo falta la puerta. | Sisa 1 nyawa. Tinggal pintunya. |
-| 9–13,7 | ENTREGUE com 1 de vida! | DELIVERED on 1 health! | ¡ENTREGADO con 1 de vida! | TERKIRIM dengan 1 nyawa! |
+| 4,4–6,4 | Sobrou 1 coração... | Down to 1 heart... | Queda 1 corazón... | Tinggal 1 nyawa... |
+| 6,4–9 | Porta nova: +1 coração. Corre! | New room: +1 heart. Run! | Sala nueva: +1 corazón. ¡Corre! | Ruang baru: +1 nyawa. Lari! |
+| 9–13,7 | ENTREGUE por um triz! | DELIVERED by a hair! | ¡ENTREGADO por un pelo! | TERKIRIM nyaris saja! |
 
 ### 4. Carga que atrai monstros (coração arcano) · 15 s · bot
 
@@ -120,7 +121,7 @@ Contrato M2-5 (`-contract 29`), medido em 2026-10-12: R2-3 com reforço aos 1,8 
 
 | t (s) | pt | en | es | id |
 |---|---|---|---|---|
-| 0–3 | 2 corações e um bolo de casamento... | 2 hearts and a wedding cake... | 2 corazones y un pastel de bodas... | 2 nyawa dan kue pengantin... |
+| 0–3 | 1 coração e um bolo de casamento... | 1 heart and a wedding cake... | 1 corazón y un pastel de bodas... | 1 nyawa dan kue pengantin... |
 | 3–7,1 | ...mas olha aquele baú! | ...but look at that chest! | ...¡pero mira ese cofre! | ...tapi lihat peti itu! |
 | 7,1–10,9 | A ganância custa caro | Greed costs a lot | La codicia sale cara | Serakah itu mahal |
 | 10,9–14,5 | A carga fica na masmorra: volte para resgatar | The cargo stays in the dungeon: come back for it | La carga se queda en la mazmorra: vuelve por ella | Paket tertinggal di dungeon: kembali selamatkan |
