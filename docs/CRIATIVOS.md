@@ -40,18 +40,16 @@ client/Builds/win-release/DungeonCourier.exe -screen-width 540 -screen-height 96
 | `c03` | `-contract 3 -bot` | 7.5 | 10.0 | portas do R1; entra no R4 (3 caveiras) 11,0; cai 13,9; resultado 15,0 |
 | `c04_inicio` | `-contract 4 -bot` | 0.0 | 13.0 | R5 com Bruto; baú 5,4; R3 7,3; baú 11,7 |
 | `c04_fim` | `-contract 4 -bot` | 49.5 | 17.5 | vida 2; vida 1 50,2; S1 52,7 (+1); vida 1 54,4; D1 56,4 (+1, sala nova cura); entrega 59,0 com 2; cena 60,1–63,7 |
-| `c05_bumerangue` | `-contract 5 -bot -weapon 1` | 20.5 | 9.0 | relíquia: rachaduras 22,5 / 24,3 / 25,5 (quebra); resultado 26,6 |
+| `c05_bumerangue` | `-contract 5 -bot -weapon 1` | 14.0 | 15.5 | guardas e limo 14–20; R3 ~20; relíquia: rachaduras 22,5 / 24,3 / 25,5 (quebra); resultado 26,6 |
 | `c06_bomba` | `-contract 6 -bot -weapon 2` | 0.5 | 10.5 | as explosões da bombinha racham o ovo: 3,2 / 4,3 / 9,8 |
 | `c06_bumerangue` | `-contract 6 -bot -weapon 1` | 0.5 | 6.5 | R6: ladrão 4,2; dash 4,9 |
 | `c06_bumerangue_fim` | `-contract 6 -bot -weapon 1` | 56.5 | 4.5 | entrega 55,7; cena 56,8–60,4 (ovo intacto) |
 | `c07` | `-contract 7 -bot` | 32.5 | 15.5 | bolo, vida 1; baú 38,0; R2 40,1 (vida 3); vida 1 41,8; cai 42,8; resultado 43,9 |
-| `c08` | `-contract 8 -bot` | 0.0 | 9.5 | R7 com arqueiros; reforço 3,4; 2 rachaduras 7,5 / 7,6 |
-| `c08_fim` | `-contract 8 -bot` | 76.0 | 5.0 | entrega 75,5; cena 76,6–80,2 ("Hmm... 2 rachaduras") |
 | `c12_r4` | `-contract 12 -bot` | 0.0 | 5.0 | R4: baú 2,0; dano 3,2; reforço 4,1 |
 | `c12_r14` | `-contract 12 -bot` | 24.3 | 5.0 | R14 24,6; dano 28,5; baú 28,8 |
 | `c12_m1` | `-contract 12 -bot` | 43.0 | 10.5 | M1 43,5; o Capitão chama ladrões 46,5–50,1; foge com a carga 51,1; resultado 52,2 |
 | `c24_ogro` | `-contract 24 -bot -weapon 1` | 112.0 | 7.0 | B1: pancada do Ogro 113,0/114,0; ladrão 114,8; dash 115,0 |
-| `c24_fim` | `-contract 24 -bot -weapon 1` | 185.5 | 17.0 | ladrão e dash 186,1–188,8; o Ogro cai ~192; entrega 197,0; cena 198,1–201,7 |
+| `c24_fim` | `-contract 24 -bot -weapon 1` | 165.5 | 16.5 | ladrão 166–167; o Ogro cai ~172,5; entrega 176,5; cena 177,6–181,2 ("Bom! Só 1 rachadura") |
 | `quadro` | `-tela quadro` | 0.0 | 2.0 | quadro de contratos parado |
 | `cod_ovo` | `-codigo JAAKNB -bot` | 120.5 | 21.5 | região 2 por código (ovo, 5 camadas): choca 125,0; entrega 137,0; cena 138,1–141,7 |
 | `c29_coracao` | `-contract 29 -bot` | 0.0 | 14.0 | M2-5 (coração arcano): reforço 1,8; dano 2,2/3,4; baú 4,1 |
@@ -63,19 +61,19 @@ No C24 o bot só vence o Ogro com o bumerangue (`-weapon 1`). Com o estilingue, 
 
 Formato das cenas: `gravação [de–até]`, em segundos da gravação (0 = o quadro `00000.png`). As legendas estão no tempo do vídeo, sem o CTA.
 
-### 1. Carga frágil (GDD: "pacote frágil em dungeon cheia de espinhos") · 17,5 s · bot
+### 1. Carga frágil (GDD: "pacote frágil em dungeon cheia de espinhos") · 16 s · bot
 
 O jogo não tem espinhos. O perigo da relíquia vem dos arqueiros e dos ladrões.
 
-- **Gancho (0–3 s):** a relíquia nas mãos e o arqueiro mirando no courier (linha no chão).
-- **Cenas:** 0–8 `c08 [0,5–8,5]` arqueiros, reforço e 2 rachaduras · 8–16 `c05_bumerangue [0,5–8,5]` 3ª rachadura, a relíquia quebra e o resultado de falha.
+- **Gancho (0–4 s):** a relíquia, os guardas e a luta na sala.
+- **Cenas:** 0–14,5 `c05_bumerangue [0,5–15,0]`: luta com os guardas e o limo, 2 rachaduras (vídeo 8,0 e 9,8), a 3ª quebra a relíquia (11,0) e o resultado de falha. Até 2026-10-11 começava no C8, mas no build atual a relíquia do C8 chega intacta.
 
 | t (s) | pt | en | es | id |
 |---|---|---|---|---|
-| 0–3 | Relíquia frágil. Arqueiros na sala. | Fragile relic. Archers in the room. | Reliquia frágil. Arqueros en la sala. | Relik rapuh. Ada pemanah di ruangan. |
-| 3–8 | Cada golpe deixa uma rachadura | Every hit leaves a crack | Cada golpe deja una grieta | Tiap pukulan bikin retakan |
-| 8–12,5 | 3 rachaduras... | 3 cracks... | 3 grietas... | 3 retakan... |
-| 12,5–16 | ...quebrou! Você entregaria inteira? | ...broken! Could you deliver it whole? | ...¡se rompió! ¿Tú la entregarías entera? | ...pecah! Kamu bisa antar utuh? |
+| 0–4 | Relíquia frágil. Guardas na sala. | Fragile relic. Guards in the room. | Reliquia frágil. Guardias en la sala. | Relik rapuh. Ada penjaga di ruangan. |
+| 4–8 | Pousa para lutar, pega e segue | Set it down to fight, grab it, go | Déjala para luchar, tómala y sigue | Taruh untuk bertarung, ambil, lanjut |
+| 8–11 | Cada golpe deixa uma rachadura | Every hit leaves a crack | Cada golpe deja una grieta | Tiap pukulan bikin retakan |
+| 11–14,5 | ...quebrou! Você entregaria inteira? | ...broken! Could you deliver it whole? | ...¡se rompió! ¿Tú la entregarías entera? | ...pecah! Kamu bisa antar utuh? |
 
 ### 2. Duas portas: segura × tesouro · 17 s · bot · legenda embaixo (as portas ficam livres)
 
@@ -155,24 +153,24 @@ No jogo, toda rota tem o mesmo número de camadas. A escolha real é entre salas
 ### 8. Dash salvando a carga (com o Ogro) · 18,6 s · bot
 
 - **Gancho:** o Ogro telegrafa a pancada, o ladrão agarra a caixa e o courier dá dash nele.
-- **Cenas:** 0–6 `c24_ogro [0,5–6,5]` · 6–13,5 `c24_fim [0–7,5]` mais dois dashes de resgate e o Ogro caindo · 13,5–17,1 `c24_fim [12,6–16,2]` cena da entrega perfeita.
+- **Cenas:** 0–6 `c24_ogro [0,5–6,5]` · 6–13,5 `c24_fim [0–7,5]` a luta com o Ogro até ele cair · 13,5–17,1 `c24_fim [12,1–15,7]` cena da entrega ("Bom! Só 1 rachadura").
 
 | t (s) | pt | en | es | id |
 |---|---|---|---|---|
 | 0–3 | O Ogro bate. O ladrão rouba. | The Ogre smashes. The thief steals. | El Ogro golpea. El ladrón roba. | Ogre menghantam. Pencuri mencuri. |
 | 3–6 | Dash! A carga volta para as mãos | Dash! The cargo is back in your hands | ¡Dash! La carga vuelve a tus manos | Dash! Paket kembali ke tangan |
 | 6–13,5 | Pouse, lute, pegue de novo | Set it down, fight, grab it again | Déjala, lucha, tómala otra vez | Taruh, lawan, ambil lagi |
-| 13,5–17,1 | Chefe vencido. Carga perfeita. | Boss down. Perfect cargo. | Jefe vencido. Carga perfecta. | Bos kalah. Paket sempurna. |
+| 13,5–17,1 | Chefe vencido. Carga entregue. | Boss down. Cargo delivered. | Jefe vencido. Carga entregada. | Bos kalah. Paket terkirim. |
 
 ### 9. O cliente reage: rachada × perfeita · 15,7 s · bot
 
-- **Gancho:** a relíquia levando golpe dos arqueiros (2 rachaduras aos 2,5 s).
-- **Cenas:** 0–4 `c08 [5,0–9,0]` · 4–7,6 `c08_fim [0,6–4,2]` o cliente abre e dá de ombros · 7,6–10,6 `c01 [3,0–6,0]` luta com o ladrão protegendo a caixa · 10,6–14,2 `c01 [11,9–15,5]` o cliente comemora ("Perfeito!").
+- **Gancho:** a relíquia levando golpe (2 rachaduras aos 1,1 s e 2,9 s).
+- **Cenas:** 0–4 `c05_bumerangue [6,9–10,9]` · 4–7,6 `c24_fim [12,1–15,7]` o cliente abre a caixa do Ogro: "Bom! Só 1 rachadura" · 7,6–10,6 `c01 [3,0–6,0]` luta com o ladrão protegendo a caixa · 10,6–14,2 `c01 [11,9–15,5]` o cliente comemora ("Perfeito!").
 
 | t (s) | pt | en | es | id |
 |---|---|---|---|---|
 | 0–4 | Relíquia levando golpe... | The relic is taking hits... | La reliquia recibe golpes... | Relik kena pukulan... |
-| 4–7,6 | O cliente abre a caixa: 2 rachaduras | The client opens the box: 2 cracks | El cliente abre la caja: 2 grietas | Pelanggan buka kotak: 2 retakan |
+| 4–7,6 | O cliente abre a caixa: 1 rachadura | The client opens the box: 1 crack | El cliente abre la caja: 1 grieta | Pelanggan buka kotak: 1 retakan |
 | 7,6–10,6 | Agora, protegendo a caixa... | Now, guarding the crate... | Ahora, cuidando la caja... | Sekarang, jaga kotaknya... |
 | 10,6–14,2 | Perfeito! O cliente comemora | Perfect! The client cheers | ¡Perfecto! El cliente celebra | Sempurna! Pelanggan bersorak |
 
