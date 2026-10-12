@@ -37,6 +37,8 @@ namespace DC
     ///   -weapon W     (com -testsession -contract) arma 0 estilingue, 1 bumerangue, 2 bombinha: destrava so na memoria e equipa.
     ///   -room S       (com -testsession) comeca direto na sala de codigo S (ex.: B2, M4, R3-5), na camada dela (sim.DevStartAt): com
     ///                 -contract K no contrato K; sem ele, no 1o contrato da campanha que passa por S. Fotos dos chefes sem jogar ate eles.
+    ///   -guilda       (com -testsession -contract) compra tudo o que a guilda, as armas e o equipamento destravado vendem (Bot.BuyAll com
+    ///                 moedas sem fim), so na memoria: o courier forte da campanha para as fotos dos chefes com -room.
     ///   -reset        apaga o save antes de carregar.   -testsession  nao le nem grava save nem diario (semente fixa 1).
     ///   -lang L       (com -testsession) pt|en|es|id: forca o idioma so na memoria (fotos por idioma; a escolha gravada nao muda).
     ///   -codigo C     (com -testsession, sem -contract) comeca direto o contrato por codigo C (6 caracteres), com a campanha toda aberta
@@ -166,6 +168,7 @@ namespace DC
                     Sim.Reputation = Math.Max(Sim.Reputation, k);   // dev: libera ate K so na memoria (com -testsession nada e gravado)
                     if (_test && RegionDef.Of(Sim.Contracts[k].Region) is RegionDef rg && rg.Id > 1 && Sim.Stars < rg.Stars)
                         Sim.DevStars(rg.Stars);   // dev: regioes 2-4 pedem estrelas (so na memoria), para fotografar -contract 25..72
+                    if (_test && Arg("-guilda") != null) { int c0 = Sim.Coins; Sim.Coins = int.MaxValue / 2; Bot.BuyAll(Sim); Sim.Coins = c0; }   // dev: tudo comprado, so na memoria
                     if (_test && int.TryParse(Arg("-weapon"), NumberStyles.Integer, Inv, out int w) && w >= 0 && w < WeaponDef.All.Length)
                     {
                         Sim.DevStars(Math.Max(Sim.Stars, WeaponDef.All[w].Stars));   // dev: so na memoria, para fotografar bumerangue/bombinha

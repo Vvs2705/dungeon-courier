@@ -29,7 +29,7 @@ namespace DC
         // vao escuro OPACO de 1,21 m de largura do chao ate 0,55 (quinas curvas desde 0,45) -> a grade vai por cima do sprite, no vao
         const float ArchTop = 1.78f, ArchOpen = 0.52f, ArchOpenW = 1.2f;
         // arremesso: solta no quadro 3 de 8 do courier/Throw (ASSETS §5); resto do golpe; clipe Hit; largura de projeto do bau
-        const float ThrowRelease = 3f / 8f, StrikeHold = 0.15f, HitTime = 0.3f, BauW = 0.8f;
+        const float ThrowRelease = 3f / 8f, StrikeHold = 0.15f, HitTime = 0.3f, BauW = 0.8f, HitFlashGap = 0.3f;
         // altura de voo do morcego e do projetil e do pulo do filhote (m, altura real: x Lift na tela); contorno limao da carga (m)
         const float BatZ = 1.0f, ShotZ = 0.9f, PetHop = 0.15f, CargoLine = 0.06f, WaveTime = 2.5f;
         // ordens de desenho: decalques do chao (sombra/anel dos atores 7-9) < porta (o pe do arco cobre o chao atras dele) < placa
@@ -513,10 +513,11 @@ namespace DC
                 {
                     v.Root.localPosition = p;
                     AnimEnemy(v, e, p, vel, cp, dt);
-                    // flash branco de 0,06 s no golpe recebido; tinta vermelha a 30% piscando nos ultimos 0,15 s do telegraph
-                    bool flash = hit > 0.06f;
+                    // flash branco de 0,06 s no golpe recebido (no maximo 1 a cada HitFlashGap s; no chefe a 60%: o bumerangue acerta varias vezes
+                    // por segundo e o chefe virava um vulto branco); tinta vermelha a 30% piscando nos ultimos 0,15 s do telegraph
+                    bool flash = hit > HitFlashGap - 0.06f;
                     v.Spr.color = flash && Art.FxMat == null ? Flash : warn ? Color.Lerp(Color.white, Art.Bad, 0.3f) : Color.white;
-                    Art.Fx(v.Spr, flash ? 1f : 0f);
+                    Art.Fx(v.Spr, flash ? d.Boss ? 0.6f : 1f : 0f);
                 }
                 else
                 {
@@ -540,7 +541,7 @@ namespace DC
                         v.Extra.transform.localPosition = Quaternion.Euler(0f, 0f, ang) * new Vector3(0.62f * d.Radius, 0f, 0f);
                     }
                     else if (e.Type >= EnemyType.GoblinMiner) AnimProcRegiao(v, e, vel, tele);   // regioes 2-4: squash, flutuar, asas...
-                    v.Body.color = hit > 0.06f ? Color.white : warn ? Color.Lerp(v.BodyC, Art.Bad, 0.3f) : v.BodyC;
+                    v.Body.color = hit > HitFlashGap - 0.06f ? Color.white : warn ? Color.Lerp(v.BodyC, Art.Bad, 0.3f) : v.BodyC;
                 }
                 // telegraph (ART_BIBLE §7): circulo de raio Reach no chao; enchimento a 25% crescendo com TeleProgress; borda a 90%, branca no
                 // ultimo 0,1 s. Arqueiro: a mesma regra numa LINHA de mira ate a parede/obstaculo (o circulo de 7 m cobriria a sala)
@@ -1225,7 +1226,7 @@ namespace DC
                     Burst(p, CargoCor(bt), 14, 4f, 0.18f, 0.6f); Burst(p, Art.Gold, 8, 3f, 0.12f, 0.5f); Shake(0.2f, 0.3f);
                     break;
                 }
-                case Ev.EnemyHit: _enemyHit[e.A] = 0.12f; Burst(p, Color.white, 3, 2f, 0.1f, 0.2f); break;
+                case Ev.EnemyHit: if (!_enemyHit.TryGetValue(e.A, out float h0) || h0 <= 0f) _enemyHit[e.A] = HitFlashGap; Burst(p, Color.white, 3, 2f, 0.1f, 0.2f); break;
                 case Ev.EnemyDie:
                     Burst(p, Papel((EnemyType)e.B), 12, 3.5f, 0.2f, 0.45f);
                     SpriteSheet fim = e.B == (int)EnemyType.Ogre ? _sOgroFim : FimDe((EnemyType)e.B);   // chefes com folha `<ator>_fim`

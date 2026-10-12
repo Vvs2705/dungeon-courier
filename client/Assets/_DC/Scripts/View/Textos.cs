@@ -377,6 +377,9 @@ namespace DC
 
         /// <summary>Linha da dica quando o Core nao tem dica (Hint.None): o objetivo da sala.</summary>
         public static string Objetivo(Run r) => r.Room.Delivery ? L("leve a carga até o cliente", "bring the cargo to the client", "lleva la carga al cliente", "antar paket ke pelanggan")
+            : r.Doors.Count > 0 && r.Doors[0].Locked
+                ? r.Room.Boss || r.Room.Mini ? L("derrote o chefe para abrir a porta", "defeat the boss to open the door", "vence al jefe para abrir la puerta", "kalahkan bos untuk membuka pintu")
+                    : L("derrote os guardas para abrir a porta", "defeat the guards to open the door", "vence a los guardias para abrir la puerta", "kalahkan para penjaga untuk membuka pintu")
             : L("escolha uma porta no topo", "pick a door at the top", "elige una puerta arriba", "pilih pintu di atas");
 
         // ------------------------------------------------------------------ conteudo do Core (cargas, inimigos, salas)
