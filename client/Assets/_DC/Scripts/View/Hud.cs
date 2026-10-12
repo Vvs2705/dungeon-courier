@@ -57,8 +57,11 @@ namespace DC
         Image[] _hearts;
         readonly Image[] _pips = new Image[3];
         readonly Image[] _layers = new Image[10];
-        Image _cargoIcon, _cargoEdge, _rescueIcon, _clock, _dashFill, _dashIcon;
-        Text _coins, _hint, _egg, _dashN, _floorT;
+        Image _cargoIcon, _cargoEdge, _rescueIcon, _clock, _dashFill, _dashIcon, _iceBg, _iceFill;
+        Text _coins, _hint, _egg, _dashN, _floorT, _stat, _faixa;
+        int _statKey = int.MinValue; float _faixaT;
+        const float FaixaTime = 2.4f;
+        static readonly Color IceHi = Art.Hex(0xE6FAFF), Ice = Art.Hex(0xBFEFFF);
         int _hp = -1, _max = -1, _coinShown = -1, _eggShown = -1, _dashShown = -1, _layerN = -1, _fuseShown = -1, _floorShown = -1; string _hintShown; float _heartPop; int _heartPopI = -1;
 
         // oferta, pausa, cena, resultado
@@ -160,7 +163,7 @@ namespace DC
         public void Relocalizar()
         {
             for (int i = 0; i < _locT.Count; i++) _locT[i].text = _locF[i]();
-            _hintShown = null; _eggShown = -1; _floorShown = -1;
+            _hintShown = null; _eggShown = -1; _floorShown = -1; _statKey = int.MinValue;
             RefreshMenu(); RefreshBoard(); RefreshGuild(); RefreshSettings(); RefreshPaineis();
             if (_perk.gameObject.activeSelf && S.Run != null && S.Run.PerkOffer != null) ShowPerk(S.Run.PerkOffer);
             if (_pause.gameObject.activeSelf && _pauseMain.gameObject.activeSelf) PauseText(false);
@@ -181,7 +184,19 @@ namespace DC
         public void ShowPlay()
         {
             Current = Tela.Play; Only(_top);
-            _hp = _max = _coinShown = _eggShown = _dashShown = _layerN = _floorShown = -1; _hintShown = null;
+            _hp = _max = _coinShown = _eggShown = _dashShown = _layerN = _floorShown = -1; _hintShown = null; _statKey = int.MinValue;
+            _faixaT = 0f; _faixa.gameObject.SetActive(false);
+        }
+
+        /// <summary>Evento do contrato que a HUD mostra (o Game chama para cada evento): faixa da fase do chefe (BossPhase).</summary>
+        public void EventoMundo(SimEvent e, Run run)
+        {
+            if (e.Kind != Ev.BossPhase || run == null) return;
+            string s = null;
+            foreach (Enemy x in run.Enemies) if (x.Id == e.A) s = Textos.FaseChefe(x.Type, e.B);
+            if (s == null) return;
+            _faixa.text = s; _faixaT = FaixaTime;
+            _faixa.gameObject.SetActive(true);
         }
 
         /// <summary>Pausa (botao, voltar, app em segundo plano). resumed = contrato reaberto do save.</summary>
@@ -272,7 +287,7 @@ namespace DC
             ContractResult r = _res;
             if (r == null) return;
             ContractDef c = r.Def;
-            _resTitle.text = Textos.Rotulo(c) + ": " + Textos.Titulo(r.Outcome);
+            _resTitle.text = Textos.Rotulo(c) + ": " + Textos.Titulo(r);
             _resTitle.color = r.Delivered ? Art.Good : Art.Bad;
             _resSub.text = r.Delivered ? Textos.Reacao(r) : Textos.Motivo(r);
             string[][] lines = Textos.Pagamento(r, c);
@@ -434,21 +449,28 @@ namespace DC
             if (_rescueIcon.gameObject.activeSelf != rescue) _rescueIcon.gameObject.SetActive(rescue);
             if (rescue) { _rescueIcon.sprite = Art.CargoSprite(rc.Type); _rescueIcon.color = Art.CargoColor(rc.Type); }
 
-            // relogio: cronometro da mensagem urgente ou tempo-alvo do ovo
-            bool timer = r.HasTimer;
-            bool clock = timer || (r.Contract.EggTarget > 0f && !r.Hatched);
+            // relogio: cronometro da mensagem urgente, tempo-alvo do ovo (no cristal o EggTarget e o MeltTime: sem relogio), grito da
+            // gaiola (vermelho e pulsando no ultimo 1 s) e o balao no chao (0-4 s, tique por segundo)
+            bool timer = r.HasTimer, urgent = false;
+            bool egg = r.Contract.Cargo == CargoType.Egg && r.Contract.EggTarget > 0f && !r.Hatched;
+            float cargoLeft = timer ? -1f : RelogioCarga(r, m, out urgent);
+            bool clock = timer || egg || cargoLeft >= 0f;
             if (_clock.gameObject.activeSelf != clock) { _clock.gameObject.SetActive(clock); _egg.gameObject.SetActive(clock); }
             if (clock)
             {
-                float left = timer ? r.TimeLeft : r.EggLeft;
+                float left = timer ? r.TimeLeft : cargoLeft >= 0f ? cargoLeft : r.EggLeft;
                 int sec = Mathf.CeilToInt(left);
                 if (sec != _eggShown)
                 {
-                    if (timer && sec <= 10 && _eggShown > sec && left > 0f) Audio.Play("tique", 1f, 0f);   // mensagem acabando (AUDIO.md)
+                    bool tick = timer ? sec <= 10 : cargoLeft >= 0f && m.Type == CargoType.Balloon;
+                    if (tick && _eggShown > sec && left > 0f) Audio.Play("tique", 1f, 0f);   // mensagem acabando, balao subindo (AUDIO.md)
                     _eggShown = sec; _egg.text = Textos.Segundos(left);
                 }
-                _egg.color = _clock.color = sec <= 10 ? Art.Bad : Art.Ink;
+                _egg.color = _clock.color = (cargoLeft >= 0f ? urgent : sec <= 10) ? Art.Bad : Art.Ink;
+                _egg.transform.localScale = Vector3.one * (urgent ? 1f + 0.15f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 12f)) : 1f);
             }
+            EstadoCarga(r, m, clock);
+            TickFaixa(dt);
 
             // anel de recarga do dash (azul: so courier, projetil e dash) + cargas do Dash duplo
             bool ready = c.DashReady;
@@ -475,6 +497,59 @@ namespace DC
             // dica do Core > rota segura revelada (rewarded) > objetivo da sala
             string h = r.Hint != Hint.None ? Textos.Dica(r.Hint) : r.SafeDoor >= 0 && r.SafeDoor < r.Doors.Count ? Textos.RotaSegura(r.Doors[r.SafeDoor].Pos.X) : Textos.Objetivo(r);
             if (!ReferenceEquals(h, _hintShown)) { _hintShown = h; _hint.text = h; _hint.color = r.Hint != Hint.None ? Art.Ink : Art.A(Art.Ink, 0.6f); }
+        }
+
+        /// <summary>Segundos do relogio da carga nova: ate o grito da gaiola (run.CageLeft; urgente no ultimo Balance.CageWarn) ou ate o
+        /// balao no chao escapar (Balance.BalloonRise - Fuse; sempre urgente). -1 = sem relogio.</summary>
+        static float RelogioCarga(Run r, Cargo m, out bool urgent)
+        {
+            urgent = false;
+            if (r.Hatched || m == null || m.State == CargoState.Gone) return -1f;
+            if (m.Type == CargoType.GriffinCage) { float l = r.CageLeft; urgent = l >= 0f && l <= Balance.CageWarn; return l; }
+            if (m.Type == CargoType.Balloon && m.State == CargoState.Ground && m.Fuse > 0f) { urgent = true; return Mathf.Max(0f, Balance.BalloonRise - m.Fuse); }
+            return -1f;
+        }
+
+        /// <summary>Estado da carga nova no lugar do relogio (sem relogio): barra do gelo com as marcas de 70 e 40 (run.IceOf), "N/3
+        /// rachaduras" do espelho (run.BreakAt) e "lanterna apagada" piscando (Cargo.Out). Refeito so quando a chave muda.</summary>
+        void EstadoCarga(Run r, Cargo m, bool clock)
+        {
+            int key = -1;
+            float ice = 0f;
+            if (!clock && !r.Hatched && m != null && m.State != CargoState.Gone)
+            {
+                if (m.Type == CargoType.IceCrystal) { ice = r.IceOf(m); key = 1000 + Mathf.CeilToInt(ice); }
+                else if (m.Type == CargoType.Mirror) key = 2000 + m.Cracks * 10 + r.BreakAt;
+                else if (m.Type == CargoType.Lantern && m.Out) key = 3000;
+            }
+            if (key == 3000) _stat.enabled = Mathf.Repeat(Time.unscaledTime * 2f, 1f) < 0.7f;
+            if (key == _statKey) return;
+            _statKey = key;
+            bool bar = key >= 1000 && key < 2000;
+            if (_stat.gameObject.activeSelf != key >= 0) _stat.gameObject.SetActive(key >= 0);
+            if (_iceBg.gameObject.activeSelf != bar) _iceBg.gameObject.SetActive(bar);
+            if (key < 0) return;
+            _stat.enabled = true;
+            RectTransform st = _stat.rectTransform;   // com a barra, o rotulo vai para cima dela
+            st.anchorMin = new Vector2(0.315f, bar ? 0.4f : 0.27f); st.anchorMax = new Vector2(0.525f, bar ? 0.57f : 0.54f);
+            _stat.text = bar ? Textos.Gelo : key == 3000 ? Textos.LanternaApagada : Textos.EspelhoRachaduras(m.Cracks, r.BreakAt);
+            _stat.color = key == 3000 || (!bar && m.Cracks > 0) ? Art.Bad : Art.Ink;
+            if (bar)
+            {
+                _iceFill.fillAmount = Mathf.Clamp01(ice / 100f);
+                _iceFill.color = ice >= Balance.IceIntact ? IceHi : ice >= Balance.IceCracked ? Ice : Art.Bad;
+            }
+        }
+
+        /// <summary>Faixa da fase do chefe: entra crescendo (0,2 s), fica e some nos ultimos 0,4 s.</summary>
+        void TickFaixa(float dt)
+        {
+            if (_faixaT <= 0f) return;
+            _faixaT -= dt;
+            float t = FaixaTime - _faixaT;
+            _faixa.transform.localScale = Vector3.one * (t < 0.2f ? 0.6f + 2f * t : 1f);
+            _faixa.color = Art.A(Art.Cargo, Mathf.Clamp01(_faixaT / 0.4f));
+            if (_faixaT <= 0f) _faixa.gameObject.SetActive(false);
         }
 
         /// <summary>Coracoes em 1 fileira ate 8; acima disso (guilda 8 niveis + perk), 2 fileiras.</summary>
@@ -589,6 +664,20 @@ namespace DC
             _clock = Art.Img(top, "Relogio", Art.Clock(), Art.Ink, new Vector2(0.33f, 0.3f), new Vector2(0.38f, 0.51f));
             _egg = Art.Outlined(Art.NewText(top, "Tempo", 38, new Vector2(0.385f, 0.27f), new Vector2(0.52f, 0.54f), TextAnchor.MiddleLeft));
             _egg.fontStyle = FontStyle.Bold;
+            // carga nova sem relogio: o mesmo lugar mostra o gelo (barra com as marcas de 70 e 40), o espelho ou a lanterna apagada
+            _stat = Shrink(Art.Outlined(Art.NewText(top, "EstadoCarga", 34, new Vector2(0.315f, 0.27f), new Vector2(0.525f, 0.54f))), 18);
+            _stat.fontStyle = FontStyle.Bold;
+            _stat.gameObject.SetActive(false);
+            _iceBg = Art.Img(top, "GeloFundo", Art.Square(), Art.A(Art.Off, 0.9f), new Vector2(0.33f, 0.3f), new Vector2(0.52f, 0.4f));
+            _iceBg.preserveAspect = false;
+            _iceFill = Art.Img(_iceBg.transform, "Gelo", Art.Square(), Ice, new Vector2(0.03f, 0.2f), new Vector2(0.97f, 0.8f));
+            _iceFill.preserveAspect = false; _iceFill.type = Image.Type.Filled; _iceFill.fillMethod = Image.FillMethod.Horizontal;
+            foreach (float mark in new[] { Balance.IceIntact, Balance.IceCracked })   // abaixo de 70 = 1 rachadura; abaixo de 40 = 2
+            {
+                float x = 0.03f + 0.94f * mark / 100f;
+                Art.Img(_iceBg.transform, "Marca", Art.Square(), Art.Ink, new Vector2(x - 0.012f, 0f), new Vector2(x + 0.012f, 1f)).preserveAspect = false;
+            }
+            _iceBg.gameObject.SetActive(false);
             Art.Img(top, "DashFundo", Art.Ring(), Art.A(Art.Off, 0.9f), new Vector2(0.53f, 0.27f), new Vector2(0.61f, 0.54f));
             _dashFill = Art.Img(top, "Dash", Art.Ring(), Art.Shot, new Vector2(0.53f, 0.27f), new Vector2(0.61f, 0.54f));
             _dashFill.type = Image.Type.Filled; _dashFill.fillMethod = Image.FillMethod.Radial360;
@@ -606,6 +695,12 @@ namespace DC
             _hint.fontStyle = FontStyle.Bold;
             _hint.resizeTextForBestFit = true; _hint.resizeTextMinSize = 20; _hint.resizeTextMaxSize = 36;
             _hint.horizontalOverflow = HorizontalWrapMode.Wrap; _hint.verticalOverflow = VerticalWrapMode.Truncate;
+
+            // faixa da fase do chefe, logo abaixo da faixa de cima (sobre o mundo; nao pega toque)
+            _faixa = Art.Outlined(Art.NewText(top, "FaseDoChefe", 56, new Vector2(0.03f, -0.62f), new Vector2(0.97f, -0.12f)), 4f);
+            _faixa.fontStyle = FontStyle.Bold; _faixa.raycastTarget = false;
+            _faixa.resizeTextForBestFit = true; _faixa.resizeTextMinSize = 30; _faixa.resizeTextMaxSize = 56;
+            _faixa.gameObject.SetActive(false);
             return top;
         }
 

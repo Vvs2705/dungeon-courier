@@ -13,7 +13,13 @@ namespace DC
     ///   terra; Emerge no Strike; Swipe com impacto no 6; Call no Summon), `golem` (Slam com impacto no 5, Charge, Walk, Stun; brilho ciano
     ///   do ponto fraco desenhado NAS COSTAS pela frente do Core, porque o modelo tem a gema no peito), props `sapo`, `besouro`, `vagonete`
     ///   animados por codigo (o vagonete some no tunel).
-    /// - Regioes 3-4: desenho procedural de reserva legivel (forma + cor de papel) e as pastas/clipes ja mapeados (EnemySheet, ClipOf).
+    /// - Regiao 3: `esqueleto` (Attack, Rise no EnemyRevive, a pilha de ossos no ultimo quadro do Collapse), `aranha`/`viuva` com a pose
+    ///   `_empinada` no aviso (cuspe, mordida, leque, fio, despencar), `fantasma`; `mumia` (Grab, Hold), `gargula` (Statue, Wake, Dive, Perch;
+    ///   pedra tingida enquanto run.Untouchable), `necromante` (Cast, Summon; fumaca por alfa) pelos nomes do CONTEUDO_REGIOES §12.2.
+    /// - Regiao 4 pelos nomes do §12.3: `diabrete` (Swap, Scratch), `kobold` (Toss, Walk recuando), `magma`/`brasa` (Smash, Punch),
+    ///   `capataz` (Whip, Spin, Toss, Call), `salamandra` (prop), `dragao` (Fly no ar com a sombra em Forge.Shadow, Breath pelo aviso do
+    ///   sopro, Land = cabeca baixa com o brilho e "dano em dobro"), `planta` (`planta_aberta` na mordida), `lanterna_apagada`.
+    /// - Sem a folha, o desenho procedural de reserva legivel (forma + cor de papel) continua.
     /// - Avisos: regiao 2 pelo R2Foe (circulo da picareta e do monte, lingua, faixa da investida, pancada); regioes 3-4 pelas listas do Core
     ///   (DrawMarks); fora da luz, so olhos e sombra.
     /// </summary>
@@ -21,6 +27,8 @@ namespace DC
     {
         const float WakeTime = 0.4f, RiseTime = 0.6f;
         readonly Dictionary<int, float> _rise = new Dictionary<int, float>();   // esqueleto remontando (EnemyRevive): id -> s
+        int _biteId = -1; float _biteT;   // planta que acabou de morder (PlantBite B = carga): boca aberta por BiteTime
+        const float BiteTime = 0.4f;
 
         /// <summary>Cor de papel das regioes 2-4 (ciano-petroleo = ataca de longe; lilas = mexe na carga; laranja-fogo = queima; verde =
         /// morto-vivo; CONTEUDO_REGIOES §12).</summary>
@@ -288,7 +296,7 @@ namespace DC
 
         /// <summary>Estado do Core -> clipe das folhas das regioes 2-4 (chamado no default do AnimEnemy). false = nao e papel das regioes.
         /// Nomes: CONTEUDO_REGIOES §12 / RENDER_SPRITES (clipe que a folha nao tem cai no Pick, nunca em erro).</summary>
-        bool AnimRegiao(Ent v, Enemy e, SpriteSheet s, Vector2 p, Vector2 vel, Vector2 cp, bool tele, float impact, ref Vector2 face, ref float speed,
+        bool AnimRegiao(Ent v, Enemy e, ref SpriteSheet s, Vector2 p, Vector2 vel, Vector2 cp, bool tele, float impact, ref Vector2 face, ref float speed,
                         out int clip, out int frame)
         {
             clip = -1; frame = -1;
@@ -300,8 +308,11 @@ namespace DC
             bool hit = v.HitT > 0f && !tele && v.StrikeT <= 0f;
             if (PropRegiao(t))
             {
+                // aranha e Viuva: a pose `_empinada` no aviso (cuspe, mordida, leque, fio, despencar); sem ela, o corpo estica no PropAnim
+                SpriteSheet rear = Empinada(run, e, tele), b = rear ?? SheetAt(EnemySheet, (int)t);
+                if (b != null) s = b;
                 clip = s.Pick("Static");
-                PropAnim(v, e, vel, tele);
+                PropAnim(v, e, vel, tele && rear == null);
                 return true;
             }
             if (t == EnemyType.Skeleton && _rise.TryGetValue(e.Id, out float rt) && (k = s.Clip("Rise")) >= 0) { clip = k; frame = Frac(s, k, 1f - rt / RiseTime); return true; }
@@ -351,12 +362,19 @@ namespace DC
                     break;
                 case EnemyType.Mummy:
                     if (Act3(run, e) == R3Act.Hold && (k = s.Clip("Hold")) >= 0) { clip = k; return true; }
+                    if (Act3(run, e) == R3Act.Grab && (k = s.Clip("Grab")) >= 0) { clip = k; frame = Frac(s, k, tk); face = cp - p; return true; }
                     break;
                 case EnemyType.Necromancer:
                     if (Act3(run, e) == R3Act.Raise && (k = First(s, SummonClip)) >= 0) { clip = k; return true; }
+                    if (Act3(run, e) == R3Act.Cast && (k = s.Clip("Cast")) >= 0) { clip = k; face = cp - p; return true; }   // o raio e o Warn Beam
                     break;
                 case EnemyType.ElderDragon:
                     if (run.Forge.Flying && (k = s.Clip("Fly")) >= 0) { clip = k; return true; }
+                    if (MarkOf(run, e.Id) is ForgeMark bm && bm.Kind == ForgeMarkKind.Breath && (k = s.Clip("Breath")) >= 0)
+                    {   // pescoco esticando pelo aviso; boca aberta (ultimo quadro) enquanto o sopro sai (Active)
+                        clip = k; frame = bm.Active > 0f ? s.Frames(k) - 1 : Frac(s, k, bm.Total > 0f ? 1f - bm.Left / bm.Total : 1f);
+                        face = V(bm.Dir); return true;
+                    }
                     if (run.Forge.HeadDown > 0f && (k = s.Clip("Land")) >= 0) { clip = k; return true; }   // cabeca baixa: a janela de dano
                     break;
                 case EnemyType.Imp:
@@ -374,6 +392,16 @@ namespace DC
             if (e.State == EnemyState.Chase) { clip = s.Pick("Walk", "Run"); return true; }
             clip = s.Pick("Idle"); face = cp - p;
             return true;
+        }
+
+        /// <summary>Pose empinada da aranha/Viuva no aviso (folha `aranha_empinada` / `viuva_empinada`), ou null.</summary>
+        static SpriteSheet Empinada(Run run, Enemy e, bool tele)
+        {
+            R3Act a = Act3(run, e);
+            if (e.Type == EnemyType.Spider && (tele || a == R3Act.Spit)) return SpriteSheet.Get("aranha_empinada");
+            if (e.Type == EnemyType.SpiderWidow && (tele || a == R3Act.Fan || a == R3Act.Thread || a == R3Act.Pull || a == R3Act.Drop))
+                return SpriteSheet.Get("viuva_empinada");
+            return null;
         }
 
         static readonly string[] MinerThrow = { "Throw" }, KoboldToss = { "Toss", "Throw" }, SummonClip = { "Summon", "Call", "Roar" },
@@ -610,7 +638,13 @@ namespace DC
             }
             // Dragao no ar (intocavel; Enemy.Pos = a sombra): o corpo sobe 2 m e a sombra grande segue o courier
             bool flying = t == EnemyType.ElderDragon && run.Forge.Flying;
-            if (t == EnemyType.ElderDragon) v.Up.localPosition = new Vector3(0f, flying ? Lift * 2f / Tilt : 0f, 0f);
+            if (t == EnemyType.ElderDragon)
+            {
+                v.Up.localPosition = new Vector3(0f, flying ? Lift * 2f / Tilt : 0f, 0f);
+                bool head = run.Forge.HeadDown > 0f;   // pousou: 3 s de dano x2
+                if (head && !v.WasHead) Float(p, Textos.DanoEmDobro, Art.Gold, 48);
+                v.WasHead = head;
+            }
             // sombra extra: Viuva no teto (sombra pulsando onde vai despencar) e Dragao no ar
             bool arco = (t == EnemyType.GoblinMiner && a2 == R2Act.Throw) || ((t == EnemyType.KoboldBomber || t == EnemyType.KoboldForeman) && MarkOf(run, e.Id) is ForgeMark fm && fm.Kind == ForgeMarkKind.Flask);
             float lk = TeleK(run, v, e);
@@ -633,7 +667,7 @@ namespace DC
             else if (ceiling || flying)
             {
                 float s = ceiling ? 1.6f : 3.2f, pulse = 1f + 0.08f * Mathf.Sin(_time * 6f);
-                v.LobShadow.transform.localPosition = Vector3.zero;
+                v.LobShadow.transform.localPosition = flying ? V(run.Forge.Shadow) - p : Vector2.zero;   // no ar, Enemy.Pos = a sombra
                 v.LobShadow.transform.localScale = new Vector3(s * pulse, s * 0.6f * pulse, 1f);
                 v.LobShadow.color = Art.A(Art.Dark, 0.5f);
             }
@@ -651,8 +685,8 @@ namespace DC
             // tinta pelo estado
             Color tint = Color.white;
             if (t == EnemyType.BombBeetle && (tele || a2 == R2Act.Fuse)) tint = Color.Lerp(Color.white, Art.Bad, 0.5f + 0.5f * Mathf.Sin(_time * 30f));   // pavio
-            else if (t == EnemyType.Gargoyle && (a3 == R3Act.Statue || a3 == R3Act.None)) tint = new Color(0.62f, 0.68f, 0.62f);   // estatua de pedra (intocavel)
-            else if (t == EnemyType.Gargoyle && a3 == R3Act.Fly) tint = new Color(1f, 1f, 1f, 0.55f);   // voltando ao pedestal (intocavel)
+            else if (t == EnemyType.Gargoyle && run.Untouchable(e))   // intocavel: de pedra no pedestal, ou translucida voltando a ele
+                tint = a3 == R3Act.Fly ? new Color(1f, 1f, 1f, 0.55f) : new Color(0.62f, 0.68f, 0.62f);
             else if (t == EnemyType.Necromancer && a3 == R3Act.Smoke) tint = new Color(1f, 1f, 1f, 0.4f);   // fumaca do salto
             else if (t == EnemyType.Ghost) tint = new Color(1f, 1f, 1f, 0.78f);
             else if (t == EnemyType.SalamanderEgg && v.Anim != null) tint = new Color(0.3f, 0.24f, 0.24f);   // o `ovo` preto
@@ -751,6 +785,8 @@ namespace DC
                 v.Lamp.transform.localScale = Vector3.one * 0.35f;
                 v.Lamp.color = Art.A(Color.white, 0.7f * Mathf.Sin(u * Mathf.PI));
             }
+            if (spr && t == CargoType.Lantern) v.Spr.sprite = Static(g.Out ? SpriteSheet.Get("lanterna_apagada") ?? v.Sheet : v.Sheet);
+            if (spr && t == CargoType.Flytrap) v.Spr.sprite = Static(_biteT > 0f && g.Id == _biteId ? SpriteSheet.Get("planta_aberta") ?? v.Sheet : v.Sheet);
             if (t == CargoType.Lantern && g.Out && on && (_lampT -= dt) <= 0f)
             {
                 _lampT = 0.5f;
@@ -811,7 +847,7 @@ namespace DC
             // planta: boca abrindo e fechando no chao; mapa: brilho dourado
             if (t == CargoType.Flytrap && ground)
             {
-                float k = 1f + 0.08f * Mathf.Max(0f, Mathf.Sin(_time * 5f));
+                float k = 1f + 0.08f * Mathf.Max(0f, Mathf.Sin(_time * 5f)) + (g.Id == _biteId ? 0.5f * _biteT : 0f);   // mordida: pulo
                 v.Vis.localScale *= k; v.Spr.transform.localScale *= k;
             }
             if (t == CargoType.TreasureMap && on && (_sparkleT -= dt) <= 0f)
@@ -820,6 +856,8 @@ namespace DC
                 Puff(Art.Star(), pos + Random.insideUnitCircle * 0.3f + new Vector2(0f, 0.3f / Tilt), Vector2.zero, Art.Gold, 0.14f, 0.02f, 0.5f);
             }
         }
+
+        static Sprite Static(SpriteSheet s) => s.Frame(s.Pick("Static"), 0, 0);
 
         /// <summary>Numero grande piscando sobre a carga (o 3-2-1 do barril, o 4-3-2-1 do balao).</summary>
         void Countdown(CargoV v, float left, float k, Vector2 pos, float top, float dt)

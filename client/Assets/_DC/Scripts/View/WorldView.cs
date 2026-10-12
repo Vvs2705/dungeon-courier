@@ -98,7 +98,7 @@ namespace DC
             public Vector2 Last, Hand; public bool HasHand, HandFront = true, FlipX; public float StrikeT, RoarT, SpawnT;
             /// <summary>HitT = clipe Hit; WakeT = clipe Wake (WasAsleep = para tocar); Shown = corpo visivel (escuro, por baixo da terra, no
             /// teto, no ar); StepT = ritmo das ondas/rastro; TeleT0/TeleDur = relogio proprio do aviso (TeleK) quando o Core nao desconta Tele.</summary>
-            public bool WasAsleep, WasTele, Shown = true; public float HitT, WakeT, StepT, TeleT0, TeleDur;
+            public bool WasAsleep, WasTele, WasHead, Shown = true; public float HitT, WakeT, StepT, TeleT0, TeleDur;
         }
         sealed class CargoV
         {
@@ -119,7 +119,9 @@ namespace DC
         readonly Transform _root, _roomRoot;
         readonly List<Text> _roomLabels = new List<Text>();
         readonly List<Vector3> _roomLabelPos = new List<Vector3>();
-        readonly SpriteSheet _sCourier, _sCourierFim, _sArco, _sBau, _sBauAberto, _sCliente, _sOgroFim;
+        readonly SpriteSheet _sCourierFim, _sArco, _sBau, _sBauAberto, _sCliente, _sOgroFim;
+        SpriteSheet _sCourier;   // a folha da roupa equipada (Roupa)
+        Outfit _roupa = Outfit.Classic; Color _roupaC = Color.white;
         readonly float _plateS;   // y de tela do centro das placas das portas
         Run _run; int _roomKey = -1;
         Vector3 _camBase; float _shakeT, _shakeDur = 1f, _shakeA, _time;
@@ -238,7 +240,7 @@ namespace DC
                 AnimCourier(run, c, dt);
                 bool flash = _courierHit > 0.52f;   // 0,08 s de branco (shader) ou de tinta (sem ele), depois pisca
                 // na poca do limo: tinta rosada (com a gosma no pe e as gotas do DrawCourierFx)
-                _courier.Spr.color = flash ? Art.FxMat != null ? Color.white : Flash : blink ? Ghost : c.Slowed ? SlowTint : Color.white;
+                _courier.Spr.color = flash ? Art.FxMat != null ? Color.white : Flash : Mul(blink ? Ghost : c.Slowed ? SlowTint : Color.white, _roupaC);
                 Art.Fx(_courier.Spr, flash ? 1f : 0f);
                 return;
             }
@@ -252,7 +254,7 @@ namespace DC
                 s = new Vector2(1f - 0.06f * k, 1f + 0.08f * k);   // squash and stretch andando
             }
             _courier.Body.transform.localScale = new Vector3(d * s.x, d * s.y, 1f);
-            Color body = c.State == CourierState.Dead ? Art.Dim : c.Slowed ? Color.Lerp(Art.Courier, SlimePink, 0.35f) : Art.Courier;
+            Color body = c.State == CourierState.Dead ? Art.Dim : Mul(c.Slowed ? Color.Lerp(Art.Courier, SlimePink, 0.35f) : Art.Courier, _roupaC);
             _courier.Body.color = _courierHit > 0.52f ? Color.white : blink ? Art.A(body, 0.45f) : body;
         }
 
@@ -658,7 +660,7 @@ namespace DC
                     else { clip = s.Pick("Idle"); face = cp - p; }
                     break;
                 default:
-                    if (AnimRegiao(v, e, s, p, vel, cp, tele, impact, ref face, ref speed, out clip, out frame)) break;   // regioes 2-4
+                    if (AnimRegiao(v, e, ref s, p, vel, cp, tele, impact, ref face, ref speed, out clip, out frame)) break;   // regioes 2-4
                     clip = tele || v.StrikeT > 0f ? s.Clip(At(AttackClip, (int)e.Type, null) ?? "Attack") : -1;
                     if (clip >= 0)
                     {
@@ -748,6 +750,7 @@ namespace DC
         void BuildRoom(Run run, int key)
         {
             _run = run; _roomKey = key;
+            Roupa(run);
             for (int i = _roomRoot.childCount - 1; i >= 0; i--) Object.Destroy(_roomRoot.GetChild(i).gameObject);
             foreach (Text t in _roomLabels) Object.Destroy(t.gameObject);
             _roomLabels.Clear(); _roomLabelPos.Clear(); _doors.Clear(); _enemyHit.Clear();
@@ -918,6 +921,19 @@ namespace DC
             e.Up.localPosition = Vector3.zero;
             e.Spr.transform.localScale = Vector3.one;
             e.Spr.flipX = false;
+        }
+
+        /// <summary>Roupa equipada (Sim.OutfitEquipped): a folha `courier_<roupa>` (Hud.FolhaRoupa) quando existe; senao a do courier
+        /// com a Hud.TintaRoupa (o mesmo par do retrato na tela de roupas). Troca so ao montar a sala.</summary>
+        void Roupa(Run run)
+        {
+            Outfit o = run.Sim.OutfitEquipped;
+            if (o == _roupa && _sCourier != null) return;
+            _roupa = o;
+            SpriteSheet s = SpriteSheet.Get(Hud.FolhaRoupa(o));
+            _roupaC = s != null ? Color.white : Hud.TintaRoupa(o);
+            s = s ?? SpriteSheet.Get("courier");
+            if (s != _sCourier) { _sCourier = s; UseSprite(_courier, s, Balance.CourierR); }
         }
 
         /// <summary>Courier (azul, so ele): corpo azul, bolsa de couro atras, nariz creme e olhos para onde anda.</summary>
@@ -1191,7 +1207,13 @@ namespace DC
                     for (int i = 0; i < run.Cargos.Count && i < _cargos.Length; i++) if (run.Cargos[i].Id == e.A) _cargos[i].PulseT = PulseTime;
                     Burst(p, Art.A(Art.Dim, 0.8f), 4, 1.5f, 0.1f, 0.25f);   // 4 graos de poeira
                     break;
-                case Ev.CargoBroken: Float(p, Textos.Quebrou, Art.Bad, 56); Burst(p, Art.CargoColor(CargoType.Relic), 14, 4f, 0.18f, 0.6f); Burst(p, Art.Gold, 8, 3f, 0.12f, 0.5f); Shake(0.2f, 0.3f); break;
+                case Ev.CargoBroken:   // reliquia, espelho, balao (estoura) ou qualquer carga com o Fragil
+                {
+                    CargoType bt = Tipo(run, e.A);
+                    Float(p, bt == CargoType.Balloon ? Textos.Estourou : Textos.Quebrou, Art.Bad, 56);
+                    Burst(p, CargoCor(bt), 14, 4f, 0.18f, 0.6f); Burst(p, Art.Gold, 8, 3f, 0.12f, 0.5f); Shake(0.2f, 0.3f);
+                    break;
+                }
                 case Ev.EnemyHit: _enemyHit[e.A] = 0.12f; Burst(p, Color.white, 3, 2f, 0.1f, 0.2f); break;
                 case Ev.EnemyDie:
                     Burst(p, Papel((EnemyType)e.B), 12, 3.5f, 0.2f, 0.45f);

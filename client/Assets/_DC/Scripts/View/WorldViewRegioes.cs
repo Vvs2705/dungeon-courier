@@ -27,6 +27,7 @@ namespace DC
         const int VeilW = 36, VeilH = 56;   // celulas de 0,25 m na sala de 9 x 14 m
         // balao: 1 m acima das maos
         const float BalloonLift = 1.0f;
+        const float CollapseTime = 0.3f;   // o Collapse do esqueleto desmonta em 0,3 s (CONTEUDO_REGIOES §12.2)
 
         // ------------------------------------------------------------------ tema por regiao
 
@@ -49,10 +50,10 @@ namespace DC
                 WallTop = Art.WallTop, Wall = Art.Wall, Skirt = Art.Skirt, Block = Art.Block, BlockTop = Art.BlockTop, BlockEdge = Art.BlockEdge,
                 Arch = Color.white, Light = Art.Hex(0xFFB45A),
             },
-            new Tema   // 2 Minas Alagadas: terra e madeira; o `piso_mina` tem pocas pintadas: veu de terra a 30% para nao parecerem agua de jogo
-            {
-                Piso = "piso_mina", Parede = "parede_mina", Decor = "lanterna_mina", PisoM = 6f, ParedeM = 3f, EarthA = 0.3f, Earth = Art.Hex(0x4A4540),
-                PisoTint = new Color(0.95f, 0.92f, 0.9f), PisoFall = new Color(1f, 0.9f, 0.79f), ParedeTint = new Color(0.95f, 0.95f, 0.95f), ParedeFall = new Color(1f, 0.85f, 0.75f),
+            new Tema   // 2 Minas Alagadas: terra e madeira; o `piso_mina` tem pocas turquesa pintadas que pareciam a agua de jogo: a tinta
+            {          // quente tira o azul (turquesa vira lama esverdeada) e o veu de terra a 38% apaga o brilho
+                Piso = "piso_mina", Parede = "parede_mina", Decor = "lanterna_mina", PisoM = 6f, ParedeM = 3f, EarthA = 0.38f, Earth = Art.Hex(0x4A4540),
+                PisoTint = new Color(1f, 0.8f, 0.62f), PisoFall = new Color(1f, 0.9f, 0.79f), ParedeTint = new Color(0.95f, 0.95f, 0.95f), ParedeFall = new Color(1f, 0.85f, 0.75f),
                 WallTop = Art.Hex(0x5A5249), Wall = Art.Hex(0x433D37), Skirt = Art.Hex(0x2A2622), Block = Art.Hex(0x433D37), BlockTop = Art.Hex(0x5A5249), BlockEdge = Art.Hex(0x7A6E60),
                 Arch = new Color(1f, 0.88f, 0.75f), Light = Art.Hex(0xFFD27A),
             },
@@ -521,6 +522,10 @@ namespace DC
                 if (show && !open) bv.Glow.color = Art.A(Art.Coin, 0.22f + 0.15f * Mathf.Sin(_time * 4f + i));
             }
             DrawLists(run, dt);
+            _biteT = Mathf.Max(0f, _biteT - dt);
+            // rota segura (rewarded, run.SafeDoor): a porta brilha dourada no chao
+            foreach (DoorV dv in _doors)
+                if (dv.D.Index == run.SafeDoor) { dv.Glow.enabled = true; dv.Glow.color = Art.A(Art.Gold, 0.4f + 0.25f * Mathf.Sin(_time * 5f)); }
             // courier preso na teia (run.Webbed) ou agarrado pela mumia (run.GrabbedBy): teia por cima e tremor
             bool stuck = alive && run.Webbed > 0f, grabbed = alive && run.GrabbedBy != null;
             if (_stuck == null && stuck) _stuck = Art.NewSprite(_courier.Up, "Preso", WebShape(), Art.A(WebC, 0.85f), OCourier + 9, new Vector2(0f, 0.45f), Vector2.one * 1.2f);
@@ -594,8 +599,18 @@ namespace DC
                 PoolV v = PoolAt(_boneV, n++, "Ossos");
                 v.Root.localPosition = V(b.Pos);
                 float k = 1f - Mathf.Clamp01(b.Left / Balance.BonesRise);
-                Set(v.A, Art.Disc(), Art.Bone, OOver + 1, Vector2.zero, new Vector2(0.6f, 0.3f), 20f);
-                Set(v.B, Art.Disc(), Art.Bone, OOver + 1, new Vector2(0.18f, 0.12f), Vector2.one * 0.28f);
+                SpriteSheet sk = SpriteSheet.Get("esqueleto");
+                int col = sk != null ? sk.Clip("Collapse") : -1;
+                if (col >= 0)
+                {
+                    Set(v.A, sk.Frame(col, 0, Frac(sk, col, (Balance.BonesRise - b.Left) / CollapseTime)), Color.white, OOver + 1, Vector2.zero, new Vector2(1f, 1f / Tilt));
+                    v.B.enabled = false;
+                }
+                else
+                {
+                    Set(v.A, Art.Disc(), Art.Bone, OOver + 1, Vector2.zero, new Vector2(0.6f, 0.3f), 20f);
+                    Set(v.B, Art.Disc(), Art.Bone, OOver + 1, new Vector2(0.18f, 0.12f), Vector2.one * 0.28f);
+                }
                 Set(v.C, Art.Arc(k), Art.A(Undead, 0.5f + 0.4f * k), ORing, Vector2.zero, Vector2.one * 1.1f);
             }
             PoolOff(_boneV, n);
@@ -895,7 +910,7 @@ namespace DC
                     Puff(Art.ThinRing(), p, Vector2.zero, Art.A(Art.Bad, 0.9f), 1f, 2f * Balance.LandR, 0.4f, ORing);
                     Burst(p, Art.A(Art.Dim, 0.9f), 16, 5f, 0.22f, 0.5f); Shake(0.3f, 0.35f);
                     break;
-                case Nx.PlantBite: Burst(p, Art.Hex(0x5FA83A), 8, 2.5f, 0.1f, 0.3f); break;
+                case Nx.PlantBite: Burst(p, Art.Hex(0x5FA83A), 8, 2.5f, 0.1f, 0.3f); _biteId = e.B; _biteT = BiteTime; break;
                 case Nx.LavaBurn: Burst(p, VentHot, 12, 3f, 0.14f, 0.45f); Burst(p, LavaCore, 6, 2f, 0.1f, 0.3f); break;
                 case Nx.VentFire: if (e.A >= 0 && e.A < _vents.Count) Burst(V(_vents[e.A].V.Pos), VentHot, 10, 3f, 0.16f, 0.4f); break;
                 case Nx.EggHatch: DieFx(EnemyType.SalamanderEgg, p); break;

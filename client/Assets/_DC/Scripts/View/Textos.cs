@@ -283,6 +283,32 @@ namespace DC
         public static string Reforco => L("reforço!", "reinforcements!", "¡refuerzos!", "bala bantuan!");
         public static string TempoEsgotado => L("tempo esgotado!", "time's up!", "¡sin tiempo!", "waktu habis!");
         public static string Bum => L("BUM!", "BOOM!", "¡BUM!", "DUAR!");
+        public static string Estourou => L("estourou!", "popped!", "¡reventó!", "meletus!");
+        public static string DanoEmDobro => L("dano em dobro!", "double damage!", "¡daño doble!", "pukulan x2!");
+
+        // HUD das cargas novas (regioes 2-4): no lugar do relogio da faixa de cima (cabe em ~200 px: encolhe ate 18)
+        public static string Gelo => L("gelo", "ice", "hielo", "es");
+        public static string LanternaApagada => L("lanterna apagada", "lantern out", "linterna apagada", "lentera padam");
+        public static string EspelhoRachaduras(int n, int max) => F("{0}/{1} rachaduras", "{0}/{1} cracks", "{0}/{1} grietas", "{0}/{1} retakan", n, max);
+
+        /// <summary>Faixa da fase do chefe (BossPhase: A = chefe, B = fase nova), CONTEUDO_REGIOES §5. null = sem faixa.</summary>
+        public static string FaseChefe(EnemyType t, int fase)
+        {
+            switch (t)
+            {
+                case EnemyType.MoleQueen: return L("a Rainha emerge duas vezes!", "the Queen bursts out twice!", "¡la Reina emerge dos veces!", "Ratu muncul dua kali!");
+                case EnemyType.StoneGolem: return L("o Golem vai investir!", "the Golem is about to charge!", "¡el Gólem va a embestir!", "Golem akan menyeruduk!");
+                case EnemyType.SpiderWidow: return L("a Viúva sobe ao teto!", "the Widow climbs to the ceiling!", "¡la Viuda sube al techo!", "Janda naik ke langit-langit!");
+                case EnemyType.Necromancer: return fase >= 3
+                    ? L("o Necromante apaga a luz!", "the Necromancer dims the light!", "¡el Nigromante apaga la luz!", "Nekromanser meredupkan cahaya!")
+                    : L("o Necromante dispara raio duplo!", "the Necromancer fires twin beams!", "¡el Nigromante lanza rayo doble!", "Nekromanser menembak sinar ganda!");
+                case EnemyType.KoboldForeman: return L("o Capataz gira o chicote!", "the Foreman spins his whip!", "¡el Capataz gira el látigo!", "Mandor memutar cambuknya!");
+                case EnemyType.ElderDragon: return fase >= 3
+                    ? L("o Dragão varre o fogo!", "the Dragon sweeps its fire!", "¡el Dragón barre el fuego!", "Naga menyapu api!")
+                    : L("o Dragão levanta voo!", "the Dragon takes flight!", "¡el Dragón alza el vuelo!", "Naga terbang!");
+                default: return null;
+            }
+        }
 
         /// <summary>Dica da HUD pelo enum Hint do Core. pt = Hints.Text (fonte do Core); o resto pela tabela; sem traducao = EN ou Core.
         /// So literais: a HUD chama todo quadro e compara por referencia, nada aloca.</summary>
@@ -337,8 +363,9 @@ namespace DC
                     "balon di lantai terbang dalam 4 dtk: ambil!");
                 case Hint.Lava: return L(pt, "dash enemies into the lava", "empuja enemigos a la lava con el dash", "dorong musuh ke lava dengan dash");
                 case Hint.Vent: return L(pt, "glowing vent: fire incoming", "respiradero brillando: va a salir fuego", "lubang menyala: api akan keluar");
-                case Hint.PlantBite: return L(pt, "the plant bites anyone close: step away", "la planta muerde a quien está cerca: da un paso",
-                    "tanaman menggigit yang dekat: menjauh selangkah");
+                // o pt do Core ("de um passo") nao diz como: o toque rapido (dash) e o jeito de sair do alcance
+                case Hint.PlantBite: return L("a planta morde quem fica perto: toque rápido para se afastar", "the plant bites anyone close: quick tap to dash away",
+                    "la planta muerde a quien está cerca: toque rápido para alejarte", "tanaman menggigit yang dekat: ketuk cepat untuk menjauh");
                 case Hint.MapReveal: return L(pt, "the map shows buried chests", "el mapa muestra cofres enterrados", "peta menunjukkan peti terkubur");
                 case Hint.ImpSwap: return L(pt, "the imp is about to swap places with the cargo", "el diablillo va a cambiar de lugar con la carga",
                     "iblis kecil akan bertukar tempat dengan paket");
@@ -544,6 +571,35 @@ namespace DC
             }
         }
 
+        /// <summary>Titulo do resultado: CargoBroken pelo nome da carga quebrada (reliquia, espelho, balao; com o Fragil, qualquer carga).</summary>
+        public static string Titulo(ContractResult r)
+        {
+            if (r.Outcome != Outcome.CargoBroken) return Titulo(r.Outcome);
+            switch (r.Def != null ? r.Def.Cargo : CargoType.Relic)
+            {
+                case CargoType.Relic: return Titulo(r.Outcome);
+                case CargoType.Mirror: return L("O espelho quebrou", "The mirror broke", "El espejo se rompió", "Cermin pecah");
+                case CargoType.Balloon: return L("O balão estourou", "The balloon popped", "El globo reventó", "Balon meletus");
+                default: return L("A carga quebrou", "The cargo broke", "La carga se rompió", "Paket pecah");
+            }
+        }
+
+        static string Quebra(ContractResult r)
+        {
+            int n = r.Cracks > 0 ? r.Cracks : Balance.RelicBreak;
+            switch (r.Def != null ? r.Def.Cargo : CargoType.Relic)
+            {
+                case CargoType.Relic: return F("A {0}ª rachadura quebrou a relíquia.", "Crack number {0} broke the relic.", "La {0}.ª grieta rompió la reliquia.",
+                    "Retakan ke-{0} memecahkan relik.", n);
+                case CargoType.Mirror: return F("A {0}ª rachadura quebrou o espelho.", "Crack number {0} broke the mirror.", "La {0}.ª grieta rompió el espejo.",
+                    "Retakan ke-{0} memecahkan cermin.", n);
+                case CargoType.Balloon: return F("O balão estourou na {0}ª rachadura.", "The balloon popped at crack number {0}.", "El globo reventó en la {0}.ª grieta.",
+                    "Balon meletus pada retakan ke-{0}.", n);
+                default: return F("A {0}ª rachadura quebrou a carga.", "Crack number {0} broke the cargo.", "La {0}.ª grieta rompió la carga.",
+                    "Retakan ke-{0} memecahkan paket.", n);
+            }
+        }
+
         public static string Motivo(ContractResult r)
         {
             switch (r.Outcome)
@@ -555,7 +611,7 @@ namespace DC
                         : L("O courier caiu.", "The courier fell.", "El courier cayó.", "Kurir tumbang.");
                 case Outcome.CargoStolen: return L("O ladrão escapou pela borda da sala com a carga.", "The thief escaped through the edge of the room with the cargo.",
                     "El ladrón escapó por el borde de la sala con la carga.", "Pencuri kabur lewat tepi ruangan membawa paket.");
-                case Outcome.CargoBroken: return L("A 3ª rachadura quebrou a relíquia.", "The 3rd crack broke the relic.", "La 3.ª grieta rompió la reliquia.", "Retakan ke-3 memecahkan relik.");
+                case Outcome.CargoBroken: return Quebra(r);
                 case Outcome.PetDied: return L("O filhote foi atingido duas vezes.", "The chick was hit twice.", "La cría recibió dos golpes.", "Anak naga terkena dua kali.");
                 case Outcome.Abandoned: return L("Você desistiu do contrato.", "You abandoned the contract.", "Abandonaste el contrato.", "Kamu membatalkan kontrak.");
                 case Outcome.TimeUp: return L("A mensagem urgente chegou tarde demais.", "The urgent message arrived too late.", "El mensaje urgente llegó demasiado tarde.",
