@@ -8,6 +8,12 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões e
 - **Economia medida na campanha inteira** (sobra no fim 23,7 mil → 2,6 mil moedas) e **fim de jogo**: níveis 6–8 do equipamento depois do Dragão (10/13/18 mil).
 - **Unity IAP 5.4.3**: loja falsa no PC, compra em 2 passos (o núcleo concede e só então confirma), restaurar compras; 9 produtos de conteúdo fixo.
 - HUD das cargas novas (gelo, espelho, lanterna, gaiola, balão), faixas de fase dos 6 chefes, elenco pelos estados do núcleo, rota segura na porta, roupa no mundo, texturas da cripta e da forja; flags de teste `-room` e `-roupa`.
+- **Página da loja nos 4 idiomas** (8 capturas, ícone 512, feature graphic com o Dragão) e os **13 criativos** gravados do jogo real em pt, en, es e id; flag de teste `-guilda` (fotos dos chefes).
+### Corrigido (revisão de correção de 2026-10-12)
+- Compra: a roupa Explorador do Pacote inicial não aparece mais à venda; o mesmo pedido do Pacote de evento não concede duas vezes (app fechado antes da confirmação); o Pacote inicial com equipamento já destravado dá 500 moedas por projeto que não cabe; interstitial que não abriu não conta como exibido; o baú do dia não volta depois de 64 rewarded.
+- Save: o gelo do cristal e a lanterna apagada sobrevivem a fechar o app; o contrato do dia vindo da 1.0 (save v2) não some; o save não depende do idioma do aparelho; o raro trocado não volta ao original no mesmo dia; o "hoje" vira à meia-noite com o quadro aberto.
+- Exploit: o perk Caçador tem o teto de 20 moedas por visita de sala (antes, sem teto).
+- Visual: o brilho de dano vem no máximo 1 vez a cada 0,3 s (e a 60% nos chefes, que viravam um vulto branco com o bumerangue); o ícone das cargas novas no HUD (caía num ovo marrom); a dica da sala trancada diz "derrote o chefe/os guardas para abrir a porta".
 ### Mudado
 - **LevelPlay fora do build** até existir a conta (código atrás de `DC_LEVELPLAY`): o APK não pede `AD_ID` (privacidade dos testadores; ECA Digital). Ver `docs/MONETIZACAO.md`.
 
