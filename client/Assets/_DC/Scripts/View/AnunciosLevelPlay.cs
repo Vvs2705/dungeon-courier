@@ -25,7 +25,7 @@ namespace DC
             readonly string _rwId, _itId;
             LevelPlayRewardedAd _rw;
             LevelPlayInterstitialAd _it;
-            Action<bool> _fimR; Action _fimI;
+            Action<bool> _fimR, _fimI;
             bool _mostrando, _ganhou;
             float _esperaT = -1f, _fechouT = -1f, _rwDeNovo = -1f, _itDeNovo = -1f;
 
@@ -58,8 +58,8 @@ namespace DC
                 {
                     _it = new LevelPlayInterstitialAd(_itId);
                     _it.OnAdLoadFailed += e => { Debug.Log("DC LevelPlay interstitial: " + e.ErrorMessage); _itDeNovo = Time.unscaledTime + DeNovo; };
-                    _it.OnAdClosed += i => FimIntersticial();
-                    _it.OnAdDisplayFailed += (i, e) => { Debug.Log("DC LevelPlay interstitial nao abriu: " + e.ErrorMessage); FimIntersticial(); };
+                    _it.OnAdClosed += i => FimIntersticial(true);
+                    _it.OnAdDisplayFailed += (i, e) => { Debug.Log("DC LevelPlay interstitial nao abriu: " + e.ErrorMessage); FimIntersticial(false); };
                     _it.LoadAd();
                 }
             }
@@ -78,9 +78,9 @@ namespace DC
                 _m.SetAsLastSibling();
             }
 
-            public void Intersticial(Action fim)
+            public void Intersticial(Action<bool> fim)
             {
-                if (!IntersticialPronto) { fim(); return; }
+                if (!IntersticialPronto) { fim(false); return; }
                 _fimI = fim; _mostrando = true;
                 _it.ShowAd();
             }
@@ -113,12 +113,12 @@ namespace DC
                 f?.Invoke(ok);
             }
 
-            void FimIntersticial()
+            void FimIntersticial(bool exibido)
             {
                 _mostrando = false;
-                Action f = _fimI; _fimI = null;
+                Action<bool> f = _fimI; _fimI = null;
                 _it.LoadAd();
-                f?.Invoke();
+                f?.Invoke(exibido);
             }
 
             /// <summary>FECHAR (ou voltar) na janela de espera: sem recompensa.</summary>

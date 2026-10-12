@@ -170,7 +170,7 @@ namespace DC
                 case "loja": ShowMenu(); ShowLoja(); break;
                 case "compra": ShowMenu(); ShowLoja(); Compra(Product.StarterPack); break;
                 case "anuncio": ShowMenu(); _ads.Recompensado(Textos.PremioBau(Sim.DailyChestCoins(_g.Hoje), S.DailyChestBlueprint(_g.Hoje)), _ => { }); break;
-                case "intersticial": ShowMenu(); _ads.Intersticial(() => { }); break;
+                case "intersticial": ShowMenu(); _ads.Intersticial(_ => { }); break;
                 case "oferta": DevResultado(false); break;
                 case "bonus": DevResultado(true); break;
             }

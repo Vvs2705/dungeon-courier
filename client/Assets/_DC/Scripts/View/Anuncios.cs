@@ -19,8 +19,9 @@ namespace DC
         bool IntersticialPronto { get; }
         /// <summary>Anuncio com recompensa: fim(true) SO quando assistido ate o fim (so entao a View chama sim.GrantReward).</summary>
         void Recompensado(string premio, Action<bool> fim);
-        /// <summary>Interstitial entre contratos (so quando sim.InterstitialDue deixar); fim ao fechar.</summary>
-        void Intersticial(Action fim);
+        /// <summary>Interstitial entre contratos (so quando sim.InterstitialDue deixar); fim(true) ao fechar um anuncio exibido, fim(false) se
+        /// ele nao abriu (o Core so conta o exibido: sim.InterstitialShown).</summary>
+        void Intersticial(Action<bool> fim);
         /// <summary>Todo quadro (o Hud chama): contagem do simulador, espera e fim do anuncio real.</summary>
         void Tick();
         /// <summary>Voltar do aparelho: true = o anuncio tratou.</summary>
@@ -105,10 +106,9 @@ namespace DC
         {
             long agora = _g.Agora;
             if (_g.BotDrive || !S.InterstitialDue(agora) || !_ads.IntersticialPronto) { _g.ToBoard(); return; }
-            _ads.Intersticial(() =>
+            _ads.Intersticial(exibido =>
             {
-                S.InterstitialShown(agora);
-                _g.AfterMeta();   // interstitial_show
+                if (exibido) { S.InterstitialShown(agora); _g.AfterMeta(); }   // interstitial_show
                 _g.ToBoard();
             });
         }
@@ -135,7 +135,7 @@ namespace DC
             readonly Text _body, _count, _closeT;
             readonly Image _ring;
             readonly Button _close;
-            Action<bool> _fimR; Action _fimI;
+            Action<bool> _fimR, _fimI;
             float _t0; bool _rewarded, _done; int _sec = -1;
 
             public AnunciosTeste(Hud h)
@@ -168,7 +168,7 @@ namespace DC
                 Abre();
             }
 
-            public void Intersticial(Action fim)
+            public void Intersticial(Action<bool> fim)
             {
                 _rewarded = false; _fimI = fim; _fimR = null;
                 _body.text = Textos.AnuncioEntre;
@@ -206,7 +206,7 @@ namespace DC
                 _m.gameObject.SetActive(false);
                 Audio.Play("anuncio", 0.8f);
                 if (_rewarded) { Action<bool> f = _fimR; _fimR = null; f?.Invoke(ok); }
-                else { Action f = _fimI; _fimI = null; f?.Invoke(); }
+                else { Action<bool> f = _fimI; _fimI = null; f?.Invoke(true); }
             }
 
             /// <summary>Voltar do aparelho: fecha como o botao (recompensado antes do fim = sem recompensa; interstitial so depois dos 5 s).</summary>
