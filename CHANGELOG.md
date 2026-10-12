@@ -3,7 +3,13 @@
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões em [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
-- Falta para o GDD completo (`docs/CONTRATO_LANCAMENTO.md`): sprites da múmia, gárgula, necromante e de toda a região 4 (com o dragão armado no Blender), peça `corrente` travada no Tripo, roupas do courier renderizadas, SDKs reais de anúncio e compra (dependem das contas do Vinicius), gravação dos criativos e fotos da loja, balance da economia (sobra de moedas) e da duração.
+### Adicionado (a caminho da 1.2.0-beta)
+- **Sprites de todo o elenco:** múmia, gárgula, necromante e toda a região 4 (diabrete, kobold, magma/brasa, Capataz, salamandra, planta, mapa, decoração) e o **Dragão Ancião armado à mão no Blender**; 7 roupas do courier (troca de cor, 0 crédito); ícone da loja.
+- **Economia medida na campanha inteira** (sobra no fim 23,7 mil → 2,6 mil moedas) e **fim de jogo**: níveis 6–8 do equipamento depois do Dragão (10/13/18 mil).
+- **Unity IAP 5.4.3**: loja falsa no PC, compra em 2 passos (o núcleo concede e só então confirma), restaurar compras; 9 produtos de conteúdo fixo.
+- HUD das cargas novas (gelo, espelho, lanterna, gaiola, balão), faixas de fase dos 6 chefes, elenco pelos estados do núcleo, rota segura na porta, roupa no mundo, texturas da cripta e da forja; flags de teste `-room` e `-roupa`.
+### Mudado
+- **LevelPlay fora do build** até existir a conta (código atrás de `DC_LEVELPLAY`): o APK não pede `AD_ID` (privacidade dos testadores; ECA Digital). Ver `docs/MONETIZACAO.md`.
 
 ## [1.1.0-beta] - 2026-10-11
 ### Adicionado

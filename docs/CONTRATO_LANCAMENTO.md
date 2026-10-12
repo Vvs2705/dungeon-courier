@@ -46,19 +46,19 @@ Base: `GDD.md` (§2–§17, §20–§21, §27–§28), `CONTRATO_V1.md` (tudo qu
 | §21 | 4 regiões, 15 cargas, eventos, **iOS**, **localização** | parcial | §2–§6, §9.2; iOS = dependência (§11) |
 | §28 | exploits: fechar o app após dano, morrer para resgate, rewarded repetido, reroll até carga fácil, relógio, carga largada na entrada, save futuro | parcial (faltam rewarded e reroll) | §6.5, §7 |
 
-### 1b. Estado em 2026-10-11 (1.1.0-beta na `main`, PR #5)
+### 1b. Estado em 2026-10-12 (branch `feat/leva-c`, a caminho da 1.2.0-beta)
 
 | Área do GDD | Estado | Falta |
 |---|---|---|
 | 4 regiões, ~48 salas, 72 contratos | **feito** no núcleo e na View; o bot fecha cada região | — |
-| 15 cargas, 20 inimigos, 8 chefes, 25 perks | **feito** no núcleo e na View | sprites: múmia, gárgula, necromante, região 4 inteira e o dragão (raia G, Leva C); hoje desenho procedural legível |
+| 15 cargas, 20 inimigos, 8 chefes, 25 perks | **feito** no núcleo e na View, **com sprites de todos** (dragão armado à mão no Blender) | aprovação visual do Vinicius |
 | Eventos (5), modificadores, temporada, raro, rerolls, equipamento + projetos, maestria, marcos, sem fim | **feito** (núcleo + telas); **economia medida** pelo bot na campanha inteira e no fim de jogo (raias E e E2, Leva C: equipamento a 12.500 por peça, 4 baús para 3 projetos, níveis 6–8 depois do Dragão; `BALANCE.md`, "Economia da campanha") | validar a sobra e o ritmo do fim de jogo no playtest humano |
-| Monetização (rewarded, interstitial, IAP) | lógica no núcleo + telas com **simulador de anúncio e loja falsa** | SDK real (Unity IAP / LevelPlay) e ids das contas do Vinicius (§11) |
+| Monetização (rewarded, interstitial, IAP) | lógica no núcleo; **Unity IAP 5.4.3 integrado** (loja falsa no PC, compra em 2 passos, restaurar); anúncios no simulador; **LevelPlay pronto atrás de `DC_LEVELPLAY`, fora do build** até haver conta (privacidade dos testadores, ECA Digital) — `docs/MONETIZACAO.md` | produtos na Play Console, conta LevelPlay + decisão jurídica sobre anúncio para menores (§11) |
 | Save v3, telemetria, remote config local | **feito** | envio remoto = dependência (§11) |
 | Áudio por região e chefe | **feito** (sintetizado) | escuta humana |
 | Localização pt-BR/EN/ES/ID | **feito** | revisão de nativo (opcional) |
 | Página da loja e 13 criativos | textos e roteiros **feitos**; gravação `-record` e montagem prontas | gravar e montar os vídeos; fotos da loja; roteiro 13 depende das roupas |
-| Roupas do courier (6) | loja e seleção **feitas** (tinta de reserva) | sprites das roupas (raia G) |
+| Roupas do courier (8: 6 à venda + Clássica + Fantasma) | **feito**: loja, seleção e sprites (troca de cor, 0 crédito) | — |
 | iOS | código sem API só de Android | Mac + conta Apple (§11) |
 
 ## 2. Regiões (4) e salas
