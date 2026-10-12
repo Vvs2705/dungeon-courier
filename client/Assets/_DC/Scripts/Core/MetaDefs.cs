@@ -199,6 +199,8 @@ namespace DC.Core
         // perks novos (§5)
         public const float PerkSpring = 1.4f, PerkInsulatedEgg = 1.2f, PerkInsulatedMelt = 0.6f, PerkWhistle = 1.5f, PerkRunner = 1.2f, PerkCatEyes = 1.6f;
         public const int PerkSecondWindHp = 2, PerkHunterCoins = 2, PerkFirstAid = 1;
+        /// <summary>Cacador: teto por visita de sala, antes da Bolsa (CONTEUDO_REGIOES §7; fecha o farm dos ladroes da carga sozinha e do Ogro).</summary>
+        public const int PerkHunterCap = 20;
         // monetizacao (§7)
         /// <summary>Starter Pack: moedas fixas + roupa Explorador + 1 blueprint de cada equipamento. Bau do dia (rewarded): 80-120 moedas
         /// pela data (+ 1 blueprint se o equipamento estiver aberto). Retomar: a mensagem volta com pelo menos 20 s.</summary>

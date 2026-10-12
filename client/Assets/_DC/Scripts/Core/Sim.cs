@@ -185,6 +185,9 @@ using System.Text;
 //               (sim.DragonBeaten: M4-16 entregue), depois 8; GearCost = -1 no teto. Niveis 6-8 custam 10.000 / 13.000 / 18.000; as tabelas
 //               por nivel (GearDef.SmokeTime/SmokeUses/HookCooldown/TrapTime/TrapCatches e o novo BootsFire) tem 8 entradas. A tela desenha
 //               8 pontos e os acima de sim.GearCap travados ("6-8: DRAGAO"). O efeito extra do nivel 5 (GearCampaignLevel) continua no 5.
+//   Exploits (revisao do GDD §28, MUDOU): a linha cgN do save ganha um 6o campo opcional = gelo exato do cristal ou 1 = lanterna apagada
+//               (reabrir o app nao devolve gelo nem reacende; save sem o campo = topo da faixa, como antes; o rewarded retomar continua assim).
+//               Cacador paga no maximo Balance.PerkHunterCap (20, antes da Bolsa) por visita de sala (CONTEUDO_REGIOES §7).
 
 namespace DC.Core
 {
@@ -613,8 +616,9 @@ namespace DC.Core
             return sb.ToString();
         }
 
-        /// <summary>Linhas do contrato em curso (run, rk, rx, cgN): o save e o ponto de retomada do rewarded (Checkpoint).</summary>
-        static void WriteRun(StringBuilder sb, Run r)
+        /// <summary>Linhas do contrato em curso (run, rk, rx, cgN): o save e o ponto de retomada do rewarded (Checkpoint). cargo = grava o estado
+        /// exato da carga (gelo, lanterna apagada); o Checkpoint nao grava: retomar pelo rewarded volta com o gelo no topo da faixa e a lanterna acesa.</summary>
+        static void WriteRun(StringBuilder sb, Run r, bool cargo = true)
         {
             var ci = CultureInfo.InvariantCulture;
             sb.Append("run=").Append(r.Contract.Index).Append(',').Append(r.Layer).Append(',').Append(r.Room.Id).Append(',').Append(r.Courier.Hp).Append(',')
@@ -642,7 +646,11 @@ namespace DC.Core
                 // ao retomar: 0 = nas maos, 1 = no chao no ponto de resgate (resgate ainda nao pego na 1ª sala), 2 = fora do jogo
                 int st = g.State == CargoState.Gone ? 2 : g.Rescue && r.Layer == 0 && g.State == CargoState.Ground ? 1 : 0;
                 sb.Append("cg").Append(i).Append('=').Append(g.Id).Append(',').Append((int)g.Type).Append(',').Append(g.Cracks).Append(',')
-                  .Append(g.Rescue ? 1 : 0).Append(',').Append(st).Append('\n');
+                  .Append(g.Rescue ? 1 : 0).Append(',').Append(st);
+                // 6o campo (GDD §28: reabrir nao restaura a carga): gelo exato do cristal (0-100) ou 1 = lanterna apagada
+                if (cargo && g.Type == CargoType.IceCrystal) sb.Append(',').Append(r.IceOf(g).ToString("G9", ci));
+                else if (cargo && g.Type == CargoType.Lantern && g.Out) sb.Append(",1");
+                sb.Append('\n');
             }
         }
 
@@ -768,6 +776,8 @@ namespace DC.Core
                 CargoState state = st == 0 ? CargoState.Held : st == 1 && rescue && layer == 0 ? CargoState.Ground : CargoState.Gone;
                 if (i == 0 && state != CargoState.Held && !run.Hatched) return null;   // carga do contrato fora das maos so se chocou
                 Cargo c = run.AddCargo(Math.Max(1, I(g[0], 1)), (CargoType)type, Math.Max(0, I(g[2], 0)), rescue, state);
+                if (g.Length > 5 && c.Type == CargoType.IceCrystal) { float ice = F(g[5], -1f); if (ice >= 0f) run.SetIce(c, ice); }   // sem o campo: topo da faixa
+                if (g.Length > 5 && c.Type == CargoType.Lantern) c.Out = g[5] == "1";
                 if (i == 0 && run.Hatched) c.State = CargoState.Gone;
                 if (run.Breaks(c)) return null;
             }

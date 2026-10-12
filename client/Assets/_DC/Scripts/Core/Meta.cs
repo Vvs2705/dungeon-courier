@@ -460,7 +460,7 @@ namespace DC.Core
         {
             if (Run == null) { checkpoint = null; return; }
             var sb = new StringBuilder();
-            WriteRun(sb, Run);
+            WriteRun(sb, Run, false);
             checkpoint = sb.ToString();
         }
 

@@ -175,7 +175,7 @@ namespace DC.Core
         bool trapSet; float hookT;
         /// <summary>Porta da rota mais segura revelada pelo rewarded (-1 = nao revelada; vale so nesta sala).</summary>
         public int SafeDoor = -1;
-        bool gripUsed, shieldUsed; int roomDamage;
+        bool gripUsed, shieldUsed; int roomDamage, huntRoom;
 
         public Cargo Main => Cargos[0];
         public Cargo RescueCargo => Cargos.Count > 1 ? Cargos[1] : null;
@@ -226,7 +226,7 @@ namespace DC.Core
             nav = new Nav(Room);
             Enemies.Clear(); Shots.Clear(); Doors.Clear(); Arrows.Clear(); Puddles.Clear();
             FoughtHere = false; summonT = 0f; lastBlocked = -1; Waves = 0; downT = 0f; msgDoor = false; pending.Clear(); pendT = 0f;
-            gripUsed = false; shieldUsed = false; roomDamage = 0; SafeDoor = -1; Dark = Room.Dark || Contract.Event == LiveEvent.Midnight;
+            gripUsed = false; shieldUsed = false; roomDamage = 0; huntRoom = 0; SafeDoor = -1; Dark = Room.Dark || Contract.Event == LiveEvent.Midnight;
             Traps.Clear(); trapSet = false; hookT = 0f;
             var c = Courier;
             c.Pos = Balance.Entrance; c.Facing = V2.Up; c.IdleT = 0f; c.DashT = 0f; c.ShotCd = 0f; c.Slowed = false;
@@ -698,7 +698,11 @@ namespace DC.Core
                 Kills++;
                 if (!e.Def.Locks && !(e.Wave && Room.WaveLocks)) FoughtHere = true;   // H1: Guarda/chefe e emboscada sao luta obrigatoria
                 if (e.Type == EnemyType.Slime) { Puddles.Add(new Puddle { Pos = e.Pos, Radius = Balance.PuddleR, Left = Balance.PuddleTime }); Emit(Ev.PuddleSpawn, e.Id, 0, e.Pos); }
-                if (Has(Perk.Hunter)) { int k = Sim.Credit(Balance.PerkHunterCoins); HuntCoins += k; Emit(Ev.CurrencySource, k, 4, e.Pos); }
+                if (Has(Perk.Hunter) && huntRoom < Balance.PerkHunterCap)   // teto por visita de sala
+                {
+                    huntRoom += Balance.PerkHunterCoins;
+                    int k = Sim.Credit(Balance.PerkHunterCoins); HuntCoins += k; Emit(Ev.CurrencySource, k, 4, e.Pos);
+                }
                 EnemyDiedR2(e); EnemyDiedR3(e); EnemyDiedR4(e);
             }
         }
