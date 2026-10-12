@@ -21,6 +21,17 @@ namespace DC.Tests
         }
 
         [Test]
+        public void Iap_StarterComEquipamentoJaDestravado_ProjetoQueNaoCabeViraMoedas()
+        {
+            var sim = new Sim(1) { Reputation = 3 };
+            sim.DevProjects(Gear.None, Balance.GearBlueprints);   // fim de jogo: os 4 equipamentos ja tem os 3 projetos
+            sim.DevProjects((Gear)1, 1);                          // menos o 1o, que ainda cabe 2
+            Assert.IsTrue(sim.Purchase(Product.StarterPack));
+            Assert.AreEqual(2, sim.Blueprints((Gear)1), "o que cabe vira projeto");
+            Assert.AreEqual(Balance.StarterCoins + 3 * Balance.StarterBlueprintCoins, sim.Coins, "os 3 que nao cabem viram moedas");
+        }
+
+        [Test]
         public void Iap_PacoteDeEventoReentregueNaSemanaSeguinte_MesmoPedidoNaoConcedeDeNovo()
         {
             var sim = new Sim(1) { Reputation = Sim.Contracts.Length };

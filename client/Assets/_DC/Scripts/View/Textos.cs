@@ -1096,9 +1096,10 @@ namespace DC
                 case Product.RemoveAds: return L("Tira os anúncios entre contratos. Os anúncios com recompensa continuam opcionais.",
                     "Removes ads between contracts. Reward ads stay optional.", "Quita los anuncios entre contratos. Los anuncios con recompensa siguen siendo opcionales.",
                     "Menghapus iklan antar kontrak. Iklan berhadiah tetap opsional.");
-                case Product.StarterPack: return F("{0} moedas + roupa Explorador + 1 projeto de cada equipamento (4)",
-                    "{0} coins + Explorer outfit + 1 blueprint of each gear (4)", "{0} monedas + traje Explorador + 1 plano de cada equipo (4)",
-                    "{0} koin + pakaian Penjelajah + 1 cetak biru tiap perlengkapan (4)", Balance.StarterCoins);
+                case Product.StarterPack: return F("{0} moedas + roupa Explorador + 1 projeto de cada equipamento (4; já destravado = {1} moedas)",
+                    "{0} coins + Explorer outfit + 1 blueprint of each gear (4; already unlocked = {1} coins)",
+                    "{0} monedas + traje Explorador + 1 plano de cada equipo (4; ya desbloqueado = {1} monedas)",
+                    "{0} koin + pakaian Penjelajah + 1 cetak biru tiap perlengkapan (4; sudah terbuka = {1} koin)", Balance.StarterCoins, Balance.StarterBlueprintCoins);
                 case Product.EventPack: return F("+{0} vagas no evento desta semana (+{1} e +{2} moedas)", "+{0} slots in this week's event (+{1} and +{2} coins)",
                     "+{0} puestos en el evento de esta semana (+{1} y +{2} monedas)", "+{0} slot di event minggu ini (+{1} dan +{2} koin)",
                     Balance.EventPackContracts, Sim.EventReward(3), Sim.EventReward(4));

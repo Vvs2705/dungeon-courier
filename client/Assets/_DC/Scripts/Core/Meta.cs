@@ -443,7 +443,10 @@ namespace DC.Core
                     Coins += Balance.StarterCoins;
                     Emit(Ev.CurrencySource, Balance.StarterCoins, 5, V2.Zero);
                     GiveOutfit(Outfit.Explorer);
-                    for (int g = 1; g < GearDef.All.Length; g++) AddBlueprint((Gear)g, 1);
+                    // projeto que nao cabe (equipamento ja destravado) vira moedas: o pacote nunca entrega menos do que anuncia
+                    for (int g = 1; g < GearDef.All.Length; g++)
+                        if (Blueprints((Gear)g) < Balance.GearBlueprints) AddBlueprint((Gear)g, 1);
+                        else { Coins += Balance.StarterBlueprintCoins; Emit(Ev.CurrencySource, Balance.StarterBlueprintCoins, 5, V2.Zero); }
                 }
                 else if (OutfitOf(p) is Outfit o) GiveOutfit(o);
             }

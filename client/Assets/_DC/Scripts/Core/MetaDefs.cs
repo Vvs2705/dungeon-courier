@@ -204,7 +204,7 @@ namespace DC.Core
         // monetizacao (§7)
         /// <summary>Starter Pack: moedas fixas + roupa Explorador + 1 blueprint de cada equipamento. Bau do dia (rewarded): 80-120 moedas
         /// pela data (+ 1 blueprint se o equipamento estiver aberto). Retomar: a mensagem volta com pelo menos 20 s.</summary>
-        public const int StarterCoins = 1500, DailyChestCoins = 80, ResumeMinTime = 20, RewardIds = 64;
+        public const int StarterCoins = 1500, StarterBlueprintCoins = 500, DailyChestCoins = 80, ResumeMinTime = 20, RewardIds = 64;
     }
 
     /// <summary>Remote config local (CONTRATO_LANCAMENTO §6.9): padroes no build (Resources/config.json) e, opcional, uma URL lida pela
