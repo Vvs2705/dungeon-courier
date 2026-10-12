@@ -428,8 +428,14 @@ namespace DC
             }
             else
             {
-                _cargoIcon.sprite = Art.CargoSprite(m.Type); _cargoIcon.color = Art.CargoColor(m.Type);
-                _cargoEdge.sprite = _cargoIcon.sprite;
+                // as 7 cargas da v1 tem forma procedural; as do lancamento (coracao..mapa) usam o quadro da folha, como as telas de meta (antes
+                // caiam no ovo marrom), sobre o encaixe limao arredondado
+                bool forma = m.Type <= CargoType.Barrel;
+                Color icC = Art.CargoColor(m.Type);
+                Sprite ic = forma ? Art.CargoSprite(m.Type) : CargaIcone(m.Type, out icC);
+                _cargoIcon.sprite = ic; _cargoIcon.color = icC;
+                _cargoIcon.preserveAspect = true;
+                _cargoEdge.sprite = forma ? ic : Art.Rounded();
                 bool far = m.State == CargoState.Ground && V2.Dist(m.Pos, c.Pos) > Balance.AloneDist;
                 bool fuse = m.State == CargoState.Ground && m.Fuse > 0f;   // barril no chao: pisca rapido em vermelho e faz tique 1x/s
                 int fs = fuse ? Mathf.CeilToInt(Balance.BarrelFuse - m.Fuse) : -1;
@@ -447,7 +453,12 @@ namespace DC
             Cargo rc = r.RescueCargo;
             bool rescue = rc != null && rc.State != CargoState.Gone;
             if (_rescueIcon.gameObject.activeSelf != rescue) _rescueIcon.gameObject.SetActive(rescue);
-            if (rescue) { _rescueIcon.sprite = Art.CargoSprite(rc.Type); _rescueIcon.color = Art.CargoColor(rc.Type); }
+            if (rescue)
+            {
+                Color rcC = Art.CargoColor(rc.Type);
+                _rescueIcon.sprite = rc.Type <= CargoType.Barrel ? Art.CargoSprite(rc.Type) : CargaIcone(rc.Type, out rcC);
+                _rescueIcon.color = rcC; _rescueIcon.preserveAspect = true;
+            }
 
             // relogio: cronometro da mensagem urgente, tempo-alvo do ovo (no cristal o EggTarget e o MeltTime: sem relogio), grito da
             // gaiola (vermelho e pulsando no ultimo 1 s) e o balao no chao (0-4 s, tique por segundo)
