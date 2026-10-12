@@ -91,14 +91,15 @@ namespace DC.EditorTools
         public static void BuildAndroidRelease() => Build(BuildTarget.Android, ApkDir + "/DungeonCourier-" + Version + ".apk", true);
         public static void BuildWindowsRelease() => Build(BuildTarget.StandaloneWindows64, "Builds/win-release/DungeonCourier.exe", true);
 
-        /// <summary>Dependencias nativas do LevelPlay (Assets/LevelPlay/Editor/*Dependencies.xml, instaladas pelo Network Manager) entram no
-        /// Gradle pelo Mobile Dependency Resolver (Assets/MobileDependencyResolver), que remenda os templates em Assets/Plugins/Android. Em batch
-        /// a resolucao automatica pode nao rodar antes do build: forcamos o ResolveSync. O Unity IAP poe o billing sozinho.</summary>
+        /// <summary>So com o LevelPlay de volta (DC_LEVELPLAY, docs/MONETIZACAO.md §4): as dependencias nativas dele entram no Gradle pelo
+        /// Mobile Dependency Resolver, que em batch pode nao resolver antes do build; forcamos o ResolveSync. Sem o resolver (hoje), nada.
+        /// O Unity IAP poe o billing sozinho.</summary>
         static void ResolveAndroid()
         {
             System.Type r = System.Type.GetType("GooglePlayServices.PlayServicesResolver, Google.JarResolver");
-            object ok = r?.GetMethod("ResolveSync", new[] { typeof(bool) })?.Invoke(null, new object[] { true });
-            Debug.Log("DC Setup: Mobile Dependency Resolver " + (ok is bool b ? (b ? "ok" : "FALHOU") : "ausente"));
+            if (r == null) return;
+            object ok = r.GetMethod("ResolveSync", new[] { typeof(bool) })?.Invoke(null, new object[] { true });
+            Debug.Log("DC Setup: Mobile Dependency Resolver " + (ok is bool b && b ? "ok" : "FALHOU"));
         }
 
         static void Build(BuildTarget target, string path, bool release)

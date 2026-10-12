@@ -1,3 +1,5 @@
+// Desligado: so compila com o define DC_LEVELPLAY e o pacote com.unity.services.levelplay (docs/MONETIZACAO.md §4, "Religar o LevelPlay").
+#if DC_LEVELPLAY
 using System;
 using Unity.Services.LevelPlay;
 using UnityEngine;
@@ -8,8 +10,8 @@ namespace DC
     public sealed partial class Hud
     {
         /// <summary>
-        /// Anuncios reais pelo LevelPlay (Ads Mediation, CONTRATO_LANCAMENTO §7, docs/MONETIZACAO.md). So nasce no Android com
-        /// "levelplay_app_key" no config.json (Hud.CriaAnuncios); as unidades vem de "levelplay_rewarded" e "levelplay_interstitial" (vazia =
+        /// Anuncios reais pelo LevelPlay (Ads Mediation, CONTRATO_LANCAMENTO §7, docs/MONETIZACAO.md). So existe com DC_LEVELPLAY e so nasce
+        /// no Android com "levelplay_app_key" no config.json (Hud.CriaAnuncios); as unidades vem de "levelplay_rewarded" e "levelplay_interstitial" (vazia =
         /// formato desligado). Quem decide QUANDO e o Core (sim.RewardOffer / sim.InterstitialDue, id rw-*); aqui so carrega e mostra.
         /// Recompensado: anuncio pronto = mostra; senao, janela "carregando" ate 8 s e depois "nenhum anuncio agora" (FECHAR = sem
         /// recompensa). fim(true) so com OnAdRewarded (que pode chegar ate 1 s depois do OnAdClosed). Interstitial: so com anuncio carregado
@@ -137,3 +139,4 @@ namespace DC
         }
     }
 }
+#endif

@@ -8,8 +8,8 @@ namespace DC
 {
     /// <summary>
     /// Anuncios (CONTRATO_LANCAMENTO §7). O Core decide QUANDO (sim.RewardOffer, sim.InterstitialDue) e concede (sim.GrantReward); a View
-    /// so mostra. Implementacoes: Hud.AnunciosLevelPlay (SDK LevelPlay, so no Android e so com app key no config.json) e Hud.AnunciosTeste
-    /// (simulador; PC/Editor e sem app key). docs/MONETIZACAO.md.
+    /// so mostra. Implementacoes: Hud.AnunciosTeste (simulador; o build de hoje) e Hud.AnunciosLevelPlay (SDK LevelPlay; fora do build ate
+    /// haver conta: so com o define DC_LEVELPLAY, no Android e com app key no config.json). docs/MONETIZACAO.md.
     /// </summary>
     public interface IAnuncios
     {
@@ -42,13 +42,16 @@ namespace DC
         /// <summary>Anuncio real na tela: o app vai ao fundo, mas nao e o jogador saindo (o Game nao abre sessao nova nem pausa).</summary>
         public bool AnuncioAberto => _ads.Aberto;
 
-        /// <summary>Anuncios do jogo: LevelPlay so no Android e com "levelplay_app_key" no config.json; sem chave (ou no PC/Editor) o
-        /// simulador, e nada de rede de anuncio e iniciado.</summary>
+        /// <summary>Anuncios do jogo: o simulador. LevelPlay so com o define DC_LEVELPLAY (desligado; o SDK nem vai no build), no Android e com
+        /// "levelplay_app_key" no config.json; sem isso nada de rede de anuncio e iniciado.</summary>
         IAnuncios CriaAnuncios()
         {
+#if DC_LEVELPLAY
             string key = ConfigValor("levelplay_app_key");
-            if (string.IsNullOrEmpty(key) || Application.platform != RuntimePlatform.Android) return new AnunciosTeste(this);
-            return new AnunciosLevelPlay(this, key, ConfigValor("levelplay_rewarded"), ConfigValor("levelplay_interstitial"));
+            if (!string.IsNullOrEmpty(key) && Application.platform == RuntimePlatform.Android)
+                return new AnunciosLevelPlay(this, key, ConfigValor("levelplay_rewarded"), ConfigValor("levelplay_interstitial"));
+#endif
+            return new AnunciosTeste(this);
         }
 
         /// <summary>Diario: oferta mostrada (1 vez por id de concessao).</summary>
