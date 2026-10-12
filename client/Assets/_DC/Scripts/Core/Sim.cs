@@ -586,6 +586,15 @@ namespace DC.Core
         public string Save()
         {
             if (SaveRefused) return null;
+            // Append(int) usa a cultura do aparelho: sv/nb/fi escrevem o menos como U+2212 (ar/fa com marca de direcao) e o Load le invariante
+            CultureInfo cur = CultureInfo.CurrentCulture;
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+            try { return SaveText(); }
+            finally { CultureInfo.CurrentCulture = cur; }
+        }
+
+        string SaveText()
+        {
             var sb = new StringBuilder();
             sb.Append("v=").Append(SaveVersion).Append('\n');
             sb.Append("seed=").Append(Seed).Append('\n');
@@ -636,10 +645,10 @@ namespace DC.Core
             int buried = 0;
             for (int i = 0; i < r.Buried.Count && i < 30; i++) if (r.Buried[i].Opened) buried |= 1 << i;
             // rx (v3) = id da tentativa, modificadores, vaga do evento, segundo folego, fumacas restantes, inimigos, baus, secretas, chefes sem dano,
-            // Cacador, baus enterrados abertos na sala (bits)
+            // Cacador, baus enterrados abertos na sala (bits), regiao do contrato (dia/codigo da v2 migrado: regiao 1 com bits altos no payload)
             sb.Append("rx=").Append(r.Id).Append(',').Append((int)r.Mods).Append(',').Append(r.Contract.Slot).Append(',').Append(r.SecondWindUsed ? 1 : 0).Append(',')
               .Append(r.SmokeLeft).Append(',').Append(r.Kills).Append(',').Append(r.ChestsOpened).Append(',').Append(r.SecretsFound).Append(',')
-              .Append(r.BossesClean).Append(',').Append(r.HuntCoins).Append(',').Append(buried).Append('\n');
+              .Append(r.BossesClean).Append(',').Append(r.HuntCoins).Append(',').Append(buried).Append(',').Append(r.Contract.Region).Append('\n');
             for (int i = 0; i < r.Cargos.Count; i++)
             {
                 Cargo g = r.Cargos[i];
@@ -725,7 +734,8 @@ namespace DC.Core
             if (p.Length < 14 || k.Length < 5 + Balance.PerkOfferSize) return null;
             int ci = I(p[0], -2), layer = I(p[1], -1), room = I(p[2], -1), hp = I(p[3], 0), kind = I(k[0], -1), payload = I(k[1], 0), date = I(k[2], 0);
             if (hp <= 0) return null;
-            int old = v < 3 ? 1 : 0;   // v2: dia/codigo da beta eram sempre da regiao 1
+            // v2: dia/codigo da beta eram sempre da regiao 1; v3 grava a regiao no rx (o migrado continua na 1 depois de regravar)
+            int old = v < 3 ? 1 : x.Length >= 12 ? I(x[11], 0) : 0;
             ContractDef def;
             switch ((ContractKind)kind)
             {

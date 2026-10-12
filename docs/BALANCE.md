@@ -140,7 +140,7 @@ Tabela realista por contrato: C1–C11 e C13–C15 idênticas; C12 +4 moedas mé
 - **L3. Equipamento sem botão** (CONTEUDO_REGIOES §8): o controle continua de um dedo. Substituiu o "usar" manual da primeira versão desta leva.
 - **L4. Marcos e temporada resgatados pelo jogador**, não automáticos: o resgate é um momento de UI e não injeta moedas no bot da campanha.
 - **L5. Projetos de equipamento em salas fixas** (`RoomDef.Blueprint`, 12 baús nas regiões 2–4) em vez de sorteio: conteúdo sempre visível na porta. Até a região 2, os projetos vêm da temporada, do baú do dia e do Starter Pack.
-- **L6. Código carrega a região nos 2 bits altos:** os códigos da beta com esses bits em 0 (e todo contrato da região 1) continuam iguais; os outros passam a apontar para a região 2–4 (fechada até ter conteúdo). Contrato do dia/código em curso de um save v2 é regenerado na região 1, como era.
+- **L6. Código carrega a região nos 2 bits altos:** os códigos da beta com esses bits em 0 (e todo contrato da região 1) continuam iguais; os outros passam a apontar para a região 2–4 (recusados enquanto a região estiver fechada para o jogador). Contrato do dia/código em curso de um save v2 é regenerado na região 1, como era, e o save v3 grava a região no `rx` para ele continuar na 1 depois de regravado.
 - **L7. Evento 1× por vaga e semana** (sem "rejogar pagando 50%" do CONTEUDO_REGIOES §9.1; fica para a decisão do coordenador).
 
 ## O que ainda não dá para medir (depende do conteúdo da Leva B)

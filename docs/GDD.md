@@ -207,7 +207,7 @@ Usos:
 | Rewarded (v0.2) | id de transação por contrato e tipo | — |
 
 - **Retorno decrescente:** nenhum upgrade torna a carga indestrutível ou o courier imune; a meta abre opções (perks, rotas), não poder infinito.
-- **Relógio do aparelho:** a data só libera o contrato do dia; voltar o relógio não libera de novo (o jogo guarda a última data vista).
+- **Relógio do aparelho:** a data local libera o contrato do dia, o baú do dia, os rerolls, o teto do sem fim, a vaga do evento da semana e a temporada; voltar o relógio não libera de novo (o jogo guarda a última data vista). O contrato raro conta as 8 h pelo instante UTC e também ignora o relógio voltando. Custo aceito: relógio adiantado por engano trava esses sistemas até a data real alcançar a gravada.
 - **Offline:** não se aplica (não há renda passiva).
 
 # 7. MONETIZAÇÃO
@@ -595,4 +595,4 @@ Cada hipótese tem métrica, protocolo e critério de refutação. Nenhuma está
 - **Rerolar o contrato até sair a carga fácil** → rerolls limitados e pagos em Coins.
 - **Voltar o relógio** para repetir o contrato do dia → o jogo guarda a última data vista.
 - **Deixar a carga na entrada e limpar a sala longe dela** → é estratégia válida, mas ladrões nascem perto da carga se ela ficar sozinha por mais de 8 s.
-- **Save antigo ou de versão futura** → migração explícita v0→v1; versão futura é recusada sem apagar o save.
+- **Save antigo ou de versão futura** → migração explícita v0/v1/v2→v3; versão futura é recusada sem apagar o save.

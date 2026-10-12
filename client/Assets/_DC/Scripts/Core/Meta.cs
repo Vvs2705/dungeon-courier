@@ -28,7 +28,9 @@ namespace DC.Core
             Sessions++;
             if (now >= LastActive)
             {
-                if (LastActive > 0 && now - LastActive >= Config.RareHours * 3600L && RareOpen && IsDate(date) && date >= LastDateSeen) NewRare(date);
+                // raro da mesma data ainda aberto: "novo" seria o mesmo sorteio da data e desfaria o reroll pago
+                if (LastActive > 0 && now - LastActive >= Config.RareHours * 3600L && RareOpen && IsDate(date) && date >= LastDateSeen
+                    && (RareDone || RareDate != date)) NewRare(date);
                 LastActive = now;
             }
             Dirty = true;

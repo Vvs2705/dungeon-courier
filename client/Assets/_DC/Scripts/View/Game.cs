@@ -205,6 +205,7 @@ namespace DC
             float dt = _recFps > 0 ? 1f / _recFps : Mathf.Min(Time.unscaledDeltaTime, 0.1f);   // -record: passo fixo, repetivel
             if (_skipDt) { dt = 0f; _skipDt = false; }
             if (_screen.x != Screen.width || _screen.y != Screen.height) Fit();
+            SeeDate();   // meia-noite com a tela aberta: reroll, pacote de evento e bau do dia usam LastDateSeen como "hoje" (senao cobra pelo dia de ontem)
             BackKey();
 
             bool playing = _mode == Mode.Play && !_hud.Blocking && !_paused;
