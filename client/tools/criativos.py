@@ -51,8 +51,8 @@ G = {
     "c24_fim": ("-contract 24 -bot -weapon 1", 165.5, 16.5, "B1: ladrao 166-167; o Ogro cai ~172,5; entrega 176,5 (D1); cena 177,6-181,2 "
                 "(1 rachadura)"),
     "quadro": ("-tela quadro", 0.0, 2.0, "quadro de contratos parado"),
-    "cod_ovo": ("-codigo JAAKNB -bot", 120.5, 21.5, "contrato por codigo da regiao 2 (ovo, 5 camadas): R2-6 121,2; explosoes 123,7; "
-                "choca 125,0; bau 132,6; D2 134,8; entrega 137,0; cena 138,1-141,7 (chocou e o filhote chegou)"),
+    "cod_ovo": ("-codigo JLQWHG -bot", 145.5, 23.0, "contrato por codigo da regiao 2 (ovo, 6 camadas): choca 150,0; entrega 163,7; "
+                "cena 164,8-168,4 (chocou e o filhote chegou)"),
     "c29_coracao": ("-contract 29 -bot", 0.0, 14.0, "M2-5, coracao arcano: R2-3 reforco 1,8, dano 2,2/3,4, bau 4,1; R2-1 5,2; R2-10 8,5; "
                     "R2-8 13,2"),
     "c02_roupa": ("-contract 2 -bot -roupa noturno", 0.5, 17.0, "o c02 com a roupa Noturno (a roupa nao muda a partida)"),
@@ -142,14 +142,14 @@ R = {
          "Pencuri ambil paket? Dash dia!"),
         (8.6, 11.4, "Pegue de volta e corra", "Grab it back and run", "Recupérala y corre", "Ambil lagi dan lari"),
         (11.4, 15, "Entregue!", "Delivered!", "¡Entregado!", "Terkirim!")]),
-    12: dict(slug="ovo_choca", pos="topo", cenas=[("cod_ovo", 0.5, 16.5), ("cod_ovo", 17.6, 21.2)], legendas=[
+    12: dict(slug="ovo_choca", pos="topo", cenas=[("cod_ovo", 0.5, 18.2), ("cod_ovo", 19.3, 22.9)], legendas=[
         (0, 4, "O ovo choca se você demorar...", "The egg hatches if you take too long...", "El huevo eclosiona si tardas...",
          "Telurnya menetas kalau kamu lama..."),
         (4, 9, "Chocou! O filhote agora te segue", "It hatched! Now the chick follows you", "¡Eclosionó! Ahora la cría te sigue",
          "Menetas! Anak naga mengikutimu"),
-        (9, 16, "Leve o filhote até o cliente", "Get the chick to the client", "Lleva la cría al cliente",
+        (9, 17.7, "Leve o filhote até o cliente", "Get the chick to the client", "Lleva la cría al cliente",
          "Antar anak naga ke pelanggan"),
-        (16, 19.6, "Entregue com o filhote!", "Delivered with the chick!", "¡Entregado con la cría!", "Terkirim bersama anak naga!")]),
+        (17.7, 21.3, "Entregue com o filhote!", "Delivered with the chick!", "¡Entregado con la cría!", "Terkirim bersama anak naga!")]),
 }
 # 13 = o 11 com outra roupa do courier (o mascote saiu): mesma montagem e legendas, so a gravacao muda (teste A/B de roupa)
 R[13] = dict(R[11], slug="ladrao_e_dash_roupa", cenas=[("c02_roupa", a, b) for _, a, b in R[11]["cenas"]])

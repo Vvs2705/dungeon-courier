@@ -42,7 +42,7 @@ namespace DC
     ///   -reset        apaga o save antes de carregar.   -testsession  nao le nem grava save nem diario (semente fixa 1).
     ///   -lang L       (com -testsession) pt|en|es|id: forca o idioma so na memoria (fotos por idioma; a escolha gravada nao muda).
     ///   -codigo C     (com -testsession, sem -contract) comeca direto o contrato por codigo C (6 caracteres), com a campanha toda aberta
-    ///                 so na memoria. Ex.: -codigo JAAKNB -bot = ovo da regiao 2 que o bot deixa chocar (criativo 12).
+    ///                 so na memoria. Ex.: -codigo JLQWHG -bot = ovo da regiao 2 que o bot deixa chocar (criativo 12).
     ///   -projetos N   (com -testsession) N projetos (0-3) nos 4 equipamentos e a aba aberta, so na memoria (foto do equipamento com os
     ///                 niveis 6-8 travados; nao junte com -dev-desbloqueia, que vence o Dragao).
     ///   -roupa R      (com -testsession) veste a roupa so na memoria (sim.DevOutfit): noturno|real|explorador|forja|fantasma|mineiro|coveiro|
@@ -181,7 +181,7 @@ namespace DC
                 else if (_test && !string.IsNullOrEmpty(Arg("-room"))) Begin(Sim.DevStartAt(-1, Arg("-room")));   // dev: 1o contrato que passa pela sala
                 else if (_test && !string.IsNullOrEmpty(Arg("-codigo")))
                 {
-                    // dev: contrato por codigo direto, com a campanha aberta so na memoria (criativo 12: o bot choca o ovo no JAAKNB)
+                    // dev: contrato por codigo direto, com a campanha aberta so na memoria (criativo 12: o bot choca o ovo no JLQWHG)
                     Sim.Reputation = Math.Max(Sim.Reputation, Sim.Contracts.Length);
                     Sim.DevStars(Sim.Contracts.Length * 3);
                     if (!Begin(Sim.StartCode(Arg("-codigo").Trim().ToUpperInvariant(), false))) Debug.Log("CODIGO recusado: " + Arg("-codigo"));

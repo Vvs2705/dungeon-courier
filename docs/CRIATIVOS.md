@@ -51,7 +51,7 @@ client/Builds/win-release/DungeonCourier.exe -screen-width 540 -screen-height 96
 | `c24_ogro` | `-contract 24 -bot -weapon 1` | 112.0 | 7.0 | B1: pancada do Ogro 113,0/114,0; ladrão 114,8; dash 115,0 |
 | `c24_fim` | `-contract 24 -bot -weapon 1` | 165.5 | 16.5 | ladrão 166–167; o Ogro cai ~172,5; entrega 176,5; cena 177,6–181,2 ("Bom! Só 1 rachadura") |
 | `quadro` | `-tela quadro` | 0.0 | 2.0 | quadro de contratos parado |
-| `cod_ovo` | `-codigo JAAKNB -bot` | 120.5 | 21.5 | região 2 por código (ovo, 5 camadas): choca 125,0; entrega 137,0; cena 138,1–141,7 |
+| `cod_ovo` | `-codigo JLQWHG -bot` | 145.5 | 23.0 | região 2 por código (ovo, 6 camadas): choca 150,0; entrega 163,7; cena 164,8–168,4 |
 | `c29_coracao` | `-contract 29 -bot` | 0.0 | 14.0 | M2-5 (coração arcano): reforço 1,8; dano 2,2/3,4; baú 4,1 |
 | `c02_roupa` | `-contract 2 -bot -roupa noturno` | 0.5 | 17.0 | igual ao `c02`, com a roupa Noturno |
 
@@ -201,19 +201,19 @@ O gancho mostra o caos primeiro e depois volta ao começo, porque abrir no quadr
 | 8,6–11,4 | Pegue de volta e corra | Grab it back and run | Recupérala y corre | Ambil lagi dan lari |
 | 11,4–15 | Entregue! | Delivered! | ¡Entregado! | Terkirim! |
 
-### 12. "Não deixe o ovo chocar" · 21,1 s · bot
+### 12. "Não deixe o ovo chocar" · 22,8 s · bot
 
-O bot do 1º contrato do ovo entrega antes de chocar. O contrato por código `JAAKNB` (região 2, ovo em 5 camadas) é longo o bastante para o ovo chocar com o bot jogando: `-codigo JAAKNB -bot` (`cod_ovo`, §2.1). Medido em 2026-10-12: R2-6 121,2; explosões 123,7; choca 125,0; baú 132,6; D2 134,8; entrega 137,0; cena 138,1–141,7 (chocou e o filhote chegou).
+O bot do 1º contrato do ovo entrega antes de chocar. O contrato por código `JLQWHG` (região 2, ovo em 6 camadas) é longo o bastante para o ovo chocar com o bot jogando: `-codigo JLQWHG -bot` (`cod_ovo`, §2.1). Medido em 2026-10-12 no núcleo (busca por código com `Bot(sim.Seed)`): choca 150,0; entrega 163,7; cena 164,8–168,4 (chocou e o filhote chegou). O `JAAKNB` da 1ª medição passou a entregar antes de chocar.
 
 - **Gancho:** o ovo nas mãos, o cronômetro do ovo e a luta.
-- **Cenas:** 0–16 `cod_ovo [0,5–16,5]` + 16–19,6 `cod_ovo [17,6–21,2]`.
+- **Cenas:** 0–17,7 `cod_ovo [0,5–18,2]` + 17,7–21,3 `cod_ovo [19,3–22,9]`.
 
 | t (s) | pt | en | es | id |
 |---|---|---|---|---|
 | 0–4 | O ovo choca se você demorar... | The egg hatches if you take too long... | El huevo eclosiona si tardas... | Telurnya menetas kalau kamu lama... |
 | 4–9 | Chocou! O filhote agora te segue | It hatched! Now the chick follows you | ¡Eclosionó! Ahora la cría te sigue | Menetas! Anak naga mengikutimu |
-| 9–16 | Leve o filhote até o cliente | Get the chick to the client | Lleva la cría al cliente | Antar anak naga ke pelanggan |
-| 16–19,6 | Entregue com o filhote! | Delivered with the chick! | ¡Entregado con la cría! | Terkirim bersama anak naga! |
+| 9–17,7 | Leve o filhote até o cliente | Get the chick to the client | Lleva la cría al cliente | Antar anak naga ke pelanggan |
+| 17,7–21,3 | Entregue com o filhote! | Delivered with the chick! | ¡Entregado con la cría! | Terkirim bersama anak naga! |
 
 ### 13. O mesmo vídeo com outra roupa do courier · 16,5 s · bot
 
