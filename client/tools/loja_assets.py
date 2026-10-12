@@ -4,7 +4,7 @@ Nada de arte nova: so composicao dos sprites do jogo (client/Assets/_DC/Resource
 build (-shot, docs/LOJA.md sec. 5).
 
 Uso (da raiz do repositorio):
-  python -I client/tools/loja_assets.py [--fotos client/Builds/validation_v1/shots] [--saida client/Builds/loja]
+  python -I client/tools/loja_assets.py [--fotos client/Builds/loja_fotos] [--saida client/Builds/loja]
   python -I client/tools/loja_assets.py --autoteste      (fotos sinteticas numa pasta temporaria; confere tamanhos e formatos)
 
 Saida em client/Builds/loja/ (fora do git):
@@ -20,7 +20,7 @@ from PIL import Image, ImageDraw, ImageFilter
 CLIENT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RES = os.path.join(CLIENT, "Assets", "_DC", "Resources")
 SPRITES = os.path.join(RES, "Sprites")
-FOTOS = os.path.join(CLIENT, "Builds", "validation_v1", "shots")
+FOTOS = os.path.join(CLIENT, "Builds", "loja_fotos")   # docs/LOJA.md sec. 5: quadros das gravacoes -record do build de release
 SAIDA = os.path.join(CLIENT, "Builds", "loja")
 LANGS = ("pt", "en", "es", "id")
 # paleta do jogo (Art.cs = ART_BIBLE sec. 3): fundo, carga (limao: so na carga), sombra
@@ -32,8 +32,8 @@ CAPTURAS = [
     ("02_pousar_para_lutar", ("c1_ambiente",)),
     ("03_cliente_abre_a_caixa", ("c1_fim_24", "c1_fim_23")),
     ("04_reliquia_fragil", ("c8_rachaduras", "c8_flecha")),
-    ("05_barril_de_polvora", ("c13_barril",)),
-    ("06_chefe_ogro", ("c24_ogro_b1", "c24s_45")),
+    ("05_cristal_de_gelo", ("c27_gelo",)),
+    ("06_dragao_anciao", ("b4_dragao",)),
     ("07_quadro_de_contratos", ("tela_quadro",)),
     ("08_guilda_sem_energia", ("tela_guilda",)),
 ]
