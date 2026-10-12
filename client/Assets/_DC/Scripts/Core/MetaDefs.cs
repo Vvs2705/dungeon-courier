@@ -25,11 +25,13 @@ namespace DC.Core
     /// <summary>Equipamento lateral (1 espaco alem da arma).</summary>
     public enum Gear { None, Smoke, Hook, Trap, Boots }
 
-    /// <summary>Roupas do courier (cosmetico). Classic = a de sempre; Ghost so por temporada/marco.</summary>
-    public enum Outfit { Classic, Night, Royal, Explorer, Forge, Ghost }
+    /// <summary>Roupas do courier (cosmetico). Classic = a de sempre; Ghost so por temporada/marco; as outras 6 na loja (novas sempre no fim:
+    /// o save guarda o indice).</summary>
+    public enum Outfit { Classic, Night, Royal, Explorer, Forge, Ghost, Miner, Gravekeeper }
 
-    /// <summary>Produtos de IAP (conteudo fixo e listado; nada aleatorio). O Core so recebe "compra confirmada" (Sim.Purchase).</summary>
-    public enum Product { RemoveAds, StarterPack, OutfitNight, OutfitRoyal, OutfitExplorer, OutfitForge, EventPack }
+    /// <summary>Produtos de IAP (conteudo fixo e listado; nada aleatorio). O Core so recebe "compra confirmada" (Sim.Purchase). Novos sempre
+    /// no fim (o save guarda bits por indice): 6 roupas a venda (Noturno, Real, Explorador, Bombeiro de forja, Mineiro, Coveiro).</summary>
+    public enum Product { RemoveAds, StarterPack, OutfitNight, OutfitRoyal, OutfitExplorer, OutfitForge, EventPack, OutfitMiner, OutfitGravekeeper }
 
     /// <summary>Recompensas de rewarded (id de transacao rw-&lt;contrato&gt;-&lt;tipo&gt;, gravado e nao repetivel).</summary>
     public enum Reward { Resume, DoubleBonus, SafeRoute, DailyChest }
@@ -78,8 +80,9 @@ namespace DC.Core
     {
         public readonly Gear Type; public readonly string Name, Text; public readonly int[] Cost;
         GearDef(Gear t, string name, string text, int[] cost) { Type = t; Name = name; Text = text; Cost = cost; }
-        /// <summary>Indice = (int)Gear (0 = None).</summary>
-        static readonly int[] Costs = { 0, 600, 1200, 2000, 3000 };
+        /// <summary>Indice = (int)Gear (0 = None). Preco dos niveis 2-5 (12.500 por equipamento): o ralo da campanha das regioes 2-4 (BALANCE.md,
+        /// "Economia da campanha"; era 600 / 1.200 / 2.000 / 3.000 e sobravam ~24 mil moedas no fim).</summary>
+        static readonly int[] Costs = { 0, 1000, 2500, 4000, 5000 };
         /// <summary>Por nivel (indice 0 = nivel 1): fumaca = segundos e usos por contrato; gancho = recarga (s); armadilha = segundos e quantos prende.</summary>
         public static readonly float[] SmokeTime = { 3f, 3.5f, 3.5f, 4f, 4f }, HookCooldown = { 10f, 9f, 8f, 7f, 6f }, TrapTime = { 3f, 4f, 4f, 5f, 5f };
         public static readonly int[] SmokeUses = { 1, 1, 2, 2, 3 }, TrapCatches = { 1, 1, 2, 2, 2 };
@@ -105,6 +108,8 @@ namespace DC.Core
             new OutfitDef(Outfit.Explorer, "Explorador", "loja / Starter Pack"),
             new OutfitDef(Outfit.Forge, "Bombeiro de forja", "loja"),
             new OutfitDef(Outfit.Ghost, "Fantasma", "temporada / marco de 95 estrelas"),
+            new OutfitDef(Outfit.Miner, "Mineiro", "loja"),
+            new OutfitDef(Outfit.Gravekeeper, "Coveiro", "loja"),
         };
     }
 

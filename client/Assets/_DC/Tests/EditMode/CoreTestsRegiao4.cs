@@ -43,7 +43,7 @@ namespace DC.Tests
             Assert.IsTrue(Content.Rooms[Room4(Regiao4.R9)].SecretHidden, "R4-9: parede disfarcada");
             var bp = new Dictionary<Gear, int>();
             foreach (int id in reg.Rooms) { Gear g = Content.Rooms[id].Blueprint; if (g != Gear.None) bp[g] = (bp.TryGetValue(g, out int n) ? n : 0) + 1; }
-            Assert.AreEqual(3, bp[Gear.Trap], "armadilha: R4-3, R4-6, S4-1"); Assert.AreEqual(1, bp[Gear.Hook], "3o projeto do gancho na R4-4"); Assert.AreEqual(2, bp.Count);
+            Assert.AreEqual(4, bp[Gear.Trap], "armadilha: R4-3, R4-4, R4-6, S4-1"); Assert.AreEqual(1, bp[Gear.Hook], "gancho de reserva na R4-1 (raia E)"); Assert.AreEqual(2, bp.Count);
 
             foreach (int id in reg.Rooms)
             {

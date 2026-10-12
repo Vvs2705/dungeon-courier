@@ -59,7 +59,7 @@ namespace DC.Core
                 new[] { O(2.0f, 7.5f, 0.6f, 0.6f), O(7.0f, 7.5f, 0.6f, 0.6f) },
                 new[] { S(Mole, 4.5f, 10.0f), S(Mole, 1.5f, 11.5f), S(Bat, 7.5f, 11.5f) }, P(1.5f, 3.0f), P(0.8f, 9.5f), 35,
                 wave: new[] { S(Mole, 8.0f, 12.0f) }, trigger: Down)
-            { Water = new[] { O(6.8f, 4.6f, 1.4f, 1.1f) }, Buried = new[] { Bc(8.2f, 12.0f, 30) } },
+            { Water = new[] { O(6.8f, 4.6f, 1.4f, 1.1f) }, Buried = new[] { Bc(8.2f, 12.0f, 30) }, Blueprint = Gear.Boots },
             new RoomDef(R5, "R2-5", "Lodaçal do Sapo", "o sapo puxa a carga do chão a até 3 m (linha de aviso 0,7 s): pouse fora do anel dele e abata-o de 3 a 5 m", 1,
                 new[] { O(4.5f, 5.0f, 0.6f, 0.6f), O(4.5f, 10.6f, 0.6f, 0.6f) },
                 new[] { S(BogFrog, 2.0f, 9.5f), S(BogFrog, 7.0f, 7.0f), S(Thief, 8.0f, 11.5f) }, P(2.0f, 3.0f), P(0.8f, 6.0f), 35,
@@ -116,22 +116,24 @@ namespace DC.Core
 
         // Nivel (Tier) = base 8 + indice local; os 3 primeiros ensinam (sem reforco). Tempos pela estimativa do desenho (CONTEUDO_REGIOES §10.2)
         // com as regras da decisao 36 (ParTime 1,6x, ovo 2x, gelo 2,2x = MeltTime no campo do ovo, mensagem 2,5x); medicao: BALANCE_REGIAO2.md.
+        // Raia E (duracao, BALANCE.md "Economia da campanha"): M2-5, M2-7 e M2-10 com a 6a camada (R2-9/R2-10 e R2-10/R2-8) e M2-14 com R2-8/R2-10
+        // na 5a; M2-7 e M2-10 com ParTime/gelo pela mediana nova. Projetos: Botas em R2-1, R2-4, R2-5 e S2-1 (4 baus para 3); Fumaca em R2-7.
         public static readonly ContractDef[] Contracts =
         {
             Make("M2-1", Box, 195, "região 2: água e vagonete; mineiros dormindo", 50f, 0f, 0f, 8, false, D, L(R1), L(R2, R3)),
             Make("M2-2", Egg, 200, "toupeira e sapo; o ovo choca no tempo-alvo", 80f, 100f, 0f, 9, false, D, L(R4), L(R3, R5), L(R2, R1)),
             Make("M2-3", Ice, 205, "cristal de gelo: derrete; a água recongela", 85f, 115f, 0f, 10, false, D, L(R1), L(R5, R8), L(R4, R7)),
             Make("M2-4", Relic, 210, "relíquia entre picaretas e trilhos", 145f, 0f, 0f, 11, true, D, L(R6), L(R3, R2), L(R5, R4), L(R9, R7), L(R1, R8)),
-            Make("M2-5", Heart, 214, "coração arcano: ímã de moedas e de inimigos", 140f, 0f, 0f, 12, true, D, L(R3), L(R6, R1), L(R4, R8), L(R7, R5), L(R10, R2)),
+            Make("M2-5", Heart, 214, "coração arcano: ímã de moedas e de inimigos", 140f, 0f, 0f, 12, true, D, L(R3), L(R6, R1), L(R9, R10), L(R4, R8), L(R7, R5), L(R10, R2)),
             Make("M2-6", Barrel, 218, "barril com besouros: a explosão detona o barril", 165f, 0f, 0f, 13, true, D, L(R1), L(R2, R5), L(R8, R3), L(R4, R6), L(R7, R9), L(R5, R1)),
-            Make("M2-7", Ice, 222, "cristal em 5 camadas", 155f, 210f, 0f, 14, true, D, L(R8), L(R1, R7), L(R5, R3, R4), L(R6, R2), L(R10, R9)),
+            Make("M2-7", Ice, 222, "cristal em 6 camadas", 190f, 265f, 0f, 14, true, D, L(R8), L(R1, R7), L(R5, R3, R4), L(R10, R8), L(R6, R2), L(R10, R9)),
             Make("M2-8", Box, 270, "mini-chefe: Rainha Toupeira", 200f, 0f, 0f, 15, true, D, L(R2), L(R4, R6), L(R9, R1), L(R8, R5), L(R3, R7), L(M)),
             Make("M2-9", Msg, 230, "mensagem: trilhos não esperam", 75f, 0f, 120f, 16, true, D, L(R5), L(R8, R3), L(R10, R2), L(R4, R9), L(R1, R6), L(R7, R8)),
-            Make("M2-10", Cage, 234, "gaiola do grifinho: o grito acorda a mina", 140f, 0f, 0f, 17, true, D, L(R3), L(R1, R4), L(R9, R7), L(R2, R5), L(R6, R8)),
+            Make("M2-10", Cage, 234, "gaiola do grifinho: o grito acorda a mina", 160f, 0f, 0f, 17, true, D, L(R3), L(R1, R4), L(R9, R7), L(R10, R8), L(R2, R5), L(R6, R8)),
             Make("M2-11", Heart, 238, "coração em 6 camadas", 175f, 0f, 0f, 18, true, D, L(R7), L(R9, R3), L(R6, R10), L(R5, R2), L(R8, R4), L(R1, R7)),
             Make("M2-12", Cake, 242, "bolo sobre trilhos", 175f, 0f, 0f, 19, true, D, L(R4), L(R6, R1), L(R2, R10), L(R9, R8), L(R3, R5), L(R7, R4)),
             Make("M2-13", Heavy, 246, "caixa pesada na água", 170f, 0f, 0f, 20, true, D, L(R1), L(R5, R7), L(R8, R10, R3), L(R2, R6), L(R9, R4), L(R5, R1)),
-            Make("M2-14", Cage, 250, "gaiola em 6 camadas", 175f, 0f, 0f, 21, true, D, L(R6), L(R3, R10), L(R7, R2), L(R4, R9), L(R8, R1), L(R5, R3)),
+            Make("M2-14", Cage, 250, "gaiola em 6 camadas", 175f, 0f, 0f, 21, true, D, L(R6), L(R3, R10), L(R7, R2), L(R4, R9), L(R8, R10), L(R5, R3)),
             Make("M2-15", Ice, 254, "cristal em 6 camadas", 190f, 260f, 0f, 22, true, D, L(R10), L(R2, R8), L(R6, R5), L(R9, R1, R4), L(R3, R7), L(R10, R6)),
             Make("M2-16", Box, 340, "chefe: Golem de Pedra", 315f, 0f, 0f, 23, true, D, L(R10), L(R8, R7), L(R9, R6, R3), L(R5, R2), L(R4, R1), L(B)),
         };

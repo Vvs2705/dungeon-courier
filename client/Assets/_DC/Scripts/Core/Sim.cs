@@ -167,6 +167,20 @@ using System.Text;
 //               compra nivel de equipamento destravado (regiao 1: nenhum). Regiao 4: Bot.MeasureRegion4; API da View no topo de Run.Regiao4.cs
 //               (run.Forge, VentState/VentFireIn, NearFire, InLava; eventos BossPhase, TakeOff, Land, PlantBite, LavaBurn, VentFire, EggHatch,
 //               ForemanCall). run.Untouchable(e) = intocavel (Dragao no ar; gancho HitMulRn no fim de Run.cs, 2 = dano x2 na cabeca baixa).
+//
+// ---------------------------------------------------------------------------------------------------------------------------------
+// LANCAMENTO, Leva C, raia E (economia; BALANCE.md "Economia da campanha") — ACRESCIMOS. Nada acima foi renomeado nem removido.
+// ---------------------------------------------------------------------------------------------------------------------------------
+//   Reroll:     sim.RerolledToday(raro) = ja trocou hoje (CanReroll falso por isso, e nao por falta de moeda: compare com Coins < RerollCost).
+//   Evento:     sim.WeekProject(data) = projeto que as 3 vagas da semana dao (Gear.None = nenhum faltando: Balance.EventProjectCoins moedas).
+//   Roupas:     Outfit.Miner (Mineiro) e .Gravekeeper (Coveiro) no fim do enum, a venda por Product.OutfitMiner / .OutfitGravekeeper (no fim do
+//               enum, depois do EventPack): 6 roupas na loja; Classica gratis e Fantasma so por marco/temporada.
+//   Equipamento (MUDOU): niveis custam 1.000 / 2.500 / 4.000 / 5.000 (GearDef.Cost); cada equipamento tem 4 baus de projeto para 3
+//               projetos (o Gancho completa na regiao 3) e a porta/bau so mostram o projeto enquanto o equipamento precisa dele
+//               (Door.Blueprint / Chest.Blueprint = None depois de destravado; o bau sobrando paga so as moedas).
+//   Dev (so teste/fotos, como o DevStars): sim.DevProjects(gear, n) poe n projetos (Gear.None = nos 4) so na memoria; sim.DevStartAt(contrato,
+//               "B2") comeca o contrato direto na camada da sala (contrato -1 = o 1o que passa por ela). Game.cs: -testsession -room B2.
+//   Bot:        Bot.BuyAll(sim) = a regra de compra da campanha; Campaign.EarnedPer/SpentPer (por contrato) e Campaign.End (save do fim).
 
 namespace DC.Core
 {
@@ -300,6 +314,29 @@ namespace DC.Core
         public void DevStars(int n)
         {
             for (int i = 0; i < best.Length; i++) { int k = Math.Max(0, Math.Min(3, n)); best[i] = k; n -= k; }
+        }
+
+        /// <summary>SO teste/fotos (-testsession -room B2): comeca o contrato `index` da campanha (index &lt; 0 = o 1o que passa pela sala) direto
+        /// na sala de codigo `room` ("B2", "M4", "R3-5"; sem diferenca de maiuscula), na camada dela, sem resgate e sem pedir o contrato
+        /// destravado. As perks das camadas anteriores nao sao oferecidas. null = sala fora do contrato, contrato em curso ou save recusado.</summary>
+        public Run DevStartAt(int index, string room)
+        {
+            if (InContract || SaveRefused || string.IsNullOrEmpty(room) || index >= Contracts.Length) return null;
+            for (int i = Math.Max(0, index); i < (index < 0 ? Contracts.Length : index + 1); i++)
+            {
+                ContractDef def = Contracts[i];
+                for (int l = 0; l < def.Layers.Length; l++)
+                    foreach (int id in def.Layers[l])
+                    {
+                        if (!string.Equals(Content.Rooms[id].Code, room.Trim(), StringComparison.OrdinalIgnoreCase)) continue;
+                        Run r = Begin(def, false, Modifier.None);
+                        r.Layer = l;
+                        r.EnterRoom(id, false);
+                        Checkpoint();
+                        return r;
+                    }
+            }
+            return null;
         }
 
         public bool WeaponUnlocked(Weapon w) => (int)w >= 0 && (int)w < WeaponDef.All.Length && Stars >= WeaponDef.All[(int)w].Stars;

@@ -193,6 +193,15 @@ namespace DC.Core
             return def;
         }
 
+        /// <summary>Projeto da semana da data (o premio de completar as 3 vagas do evento; mostre antes no quadro): o equipamento da semana ou,
+        /// se ele ja esta completo, outro que ainda falte. Gear.None = nenhum projeto faltando: paga Balance.EventProjectCoins moedas.</summary>
+        public Gear WeekProject(int date)
+        {
+            int w = Week(date);
+            var g = (Gear)(1 + w % 4);
+            return Blueprints(g) >= Balance.GearBlueprints ? NeededBlueprint((uint)w) : g;
+        }
+
         public Run StartEvent(int date, int k, bool rescue)
         {
             if (InContract || !EventAvailable(date, k)) return null;
@@ -252,9 +261,11 @@ namespace DC.Core
         public bool CanReroll(bool rare)
         {
             if (InContract || SaveRefused || LastDateSeen == 0 || Coins < RerollCost) return false;
-            bool today = rrDate == LastDateSeen;
-            return rare ? RareAvailable && !(today && rrRare > 0) : DailyAvailable(LastDateSeen) && !(today && rrDaily > 0);
+            return rare ? RareAvailable && !RerolledToday(true) : DailyAvailable(LastDateSeen) && !RerolledToday(false);
         }
+
+        /// <summary>Ja trocou hoje o do dia (rare = false) ou o raro (true)? Separa "ja trocou hoje" de "falta moeda" quando CanReroll e falso.</summary>
+        public bool RerolledToday(bool rare) => LastDateSeen != 0 && rrDate == LastDateSeen && (rare ? rrRare : rrDaily) > 0;
 
         public bool Reroll(bool rare)
         {
@@ -309,6 +320,19 @@ namespace DC.Core
             return true;
         }
 
+        /// <summary>SO teste/fotos (como o DevStars): poe `n` projetos (0-3) no equipamento `g` (Gear.None = nos 4), so na memoria: sem evento
+        /// e sem Dirty. Com 3 o equipamento destrava (nivel 1, ou o que ja tinha); equipado que perde o projeto sai do espaco. Nao use no jogo normal.</summary>
+        public void DevProjects(Gear g, int n)
+        {
+            for (int i = 1; i < blueprints.Length; i++)
+            {
+                if (g != Gear.None && i != (int)g) continue;
+                blueprints[i] = Math.Max(0, Math.Min(Balance.GearBlueprints, n));
+                gearLv[i] = blueprints[i] >= Balance.GearBlueprints ? Math.Max(1, gearLv[i]) : 0;
+            }
+            if (GearEquipped != Gear.None && !GearUnlocked(GearEquipped)) GearEquipped = Gear.None;
+        }
+
         /// <summary>O equipamento que ainda precisa de blueprint, comecando de h % 4 (None = todos completos).</summary>
         internal Gear NeededBlueprint(uint h)
         {
@@ -349,6 +373,9 @@ namespace DC.Core
         // ------------------------------------------------------------------ IAP (direitos; o SDK fica na View)
 
         int owned;
+        static readonly int ProductCount = Enum.GetValues(typeof(Product)).Length;
+        /// <summary>Bits gravados em "iap": todos os produtos menos o pacote de evento (vale pela semana em que foi comprado: evPackWeek).</summary>
+        static readonly int OwnedMask = ((1 << ProductCount) - 1) & ~(1 << (int)Product.EventPack);
         /// <summary>Produto nao consumivel comprado (o pacote de evento vale para a semana em que foi comprado).</summary>
         public bool Owns(Product p) => p == Product.EventPack ? LastDateSeen != 0 && evPackWeek == Week(LastDateSeen) : (owned & 1 << (int)p) != 0;
         public bool RemoveAds => Owns(Product.RemoveAds);
@@ -359,7 +386,7 @@ namespace DC.Core
         /// o pacote de evento so 1x por semana e com o quadro aberto. Falso = nada concedido.</summary>
         public bool Purchase(Product p)
         {
-            if (SaveRefused || (int)p < 0 || (int)p > (int)Product.EventPack) return false;
+            if (SaveRefused || (int)p < 0 || (int)p >= ProductCount) return false;
             if (p == Product.EventPack)
             {
                 if (LastDateSeen == 0 || !EventsOpen || Owns(p)) return false;
@@ -381,6 +408,8 @@ namespace DC.Core
                     case Product.OutfitRoyal: GiveOutfit(Outfit.Royal); break;
                     case Product.OutfitExplorer: GiveOutfit(Outfit.Explorer); break;
                     case Product.OutfitForge: GiveOutfit(Outfit.Forge); break;
+                    case Product.OutfitMiner: GiveOutfit(Outfit.Miner); break;
+                    case Product.OutfitGravekeeper: GiveOutfit(Outfit.Gravekeeper); break;
                 }
             }
             Emit(Ev.IapPurchase, (int)p, 0, V2.Zero);
@@ -550,8 +579,7 @@ namespace DC.Core
                 res.EventReward = EventReward(def.Slot);
                 if ((evMask & 7) == 7 && (was & 7) != 7)   // as 3 vagas da semana: o projeto da semana (sem projeto faltando = 300 moedas)
                 {
-                    var g = (Gear)(1 + w % 4);
-                    if (Blueprints(g) >= Balance.GearBlueprints) g = NeededBlueprint((uint)w);
+                    Gear g = WeekProject(def.Date);
                     if (g == Gear.None) res.EventReward += Balance.EventProjectCoins; else { AddBlueprint(g, 1); res.EventProject = g; }
                 }
                 Coins += res.EventReward;
@@ -631,7 +659,7 @@ namespace DC.Core
             outfits = (Math.Max(0, I(a[0], 1)) | 1) & ((1 << OutfitDef.All.Length) - 1);
             int fe = a.Length > 1 ? I(a[1], 0) : 0;
             OutfitEquipped = fe >= 0 && fe < OutfitDef.All.Length && OwnsOutfit((Outfit)fe) ? (Outfit)fe : Outfit.Classic;
-            owned = Math.Max(0, I(Get(kv, "iap"), 0)) & ((1 << (int)Product.EventPack) - 1);
+            owned = Math.Max(0, I(Get(kv, "iap"), 0)) & OwnedMask;
             a = Get(kv, "ads").Split(',');
             if (a.Length >= 4) { adLast = Math.Max(0L, L(a[0], 0L)); adSince = Math.Max(0, I(a[1], 0)); adDate = I(a[2], 0); adToday = Math.Max(0, I(a[3], 0)); }
             a = Get(kv, "end").Split(',');

@@ -31,15 +31,15 @@ namespace DC.Core
         const RoomTrigger Half = RoomTrigger.Half, Down = RoomTrigger.CargoDown;
 
         // Icone de ameaca = terco do dano medio por visita do bot (docs/BALANCE_REGIAO4.md): 1 = R4-1, R4-5, R4-9 · 2 = R4-2, R4-3, R4-4, R4-6 ·
-        // 3 = R4-7, R4-8, R4-10 (o desenho chutava R4-5 = 2, R4-6 = 3, R4-7 = 2). Lava ou respiro = icone Pancada (RoomDef.Risk). Projetos de equipamento (CONTEUDO_REGIOES §8): Armadilha de
-        // urso em R4-3, R4-6 e S4-1; o 3o do Gancho em R4-4. Regras de desenho em CoreTestsRegiao4.LevelDesign_Regiao4_*.
+        // 3 = R4-7, R4-8, R4-10 (o desenho chutava R4-5 = 2, R4-6 = 3, R4-7 = 2). Lava ou respiro = icone Pancada (RoomDef.Risk). Projetos de equipamento (CONTEUDO_REGIOES §8; raia E, BALANCE.md
+        // "Economia da campanha": 4 baus para 3 projetos): Armadilha de urso em R4-3, R4-4, R4-6 e S4-1; o Gancho de reserva em R4-1. Regras de desenho em CoreTestsRegiao4.LevelDesign_Regiao4_*.
         public static readonly RoomDef[] Rooms =
         {
             new RoomDef(R1, "R4-1", "Ponte de Basalto", "lava é parede baixa: não se anda nela, mas tiro, flecha e frasco passam por cima; inimigo empurrado na lava pelo dash leva 3 de dano", 1,
                 new[] { O(4.5f, 10.5f, 0.4f, 0.4f) },
                 new[] { S(Salamander, 4.5f, 9.4f), S(KoboldBomber, 7.5f, 11.5f) }, P(2.0f, 2.5f), P(4.5f, 5.0f), 35,
                 wave: new[] { S(Salamander, 0.8f, 3.6f) }, trigger: Half)
-            { Lava = new[] { O(0.7f, 7.0f, 0.7f, 0.7f), O(4.5f, 7.0f, 1.5f, 0.7f), O(8.3f, 7.0f, 0.7f, 0.7f) } },
+            { Lava = new[] { O(0.7f, 7.0f, 0.7f, 0.7f), O(4.5f, 7.0f, 1.5f, 0.7f), O(8.3f, 7.0f, 0.7f, 0.7f) }, Blueprint = Gear.Hook },
             new RoomDef(R2, "R4-2", "Respiros", "respiro brilha 0,8 s e solta fogo por 1 s (2 de dano; racha a carga no chão; derrete gelo; 3 de dano em inimigo): passe logo depois do fogo", 2,
                 new[] { O(1.0f, 8.5f, 0.5f, 0.3f), O(8.0f, 8.5f, 0.5f, 0.3f) },
                 new[] { S(Bat, 1.5f, 11.0f), S(Slime, 7.5f, 10.5f) }, P(2.0f, 2.5f), P(8.2f, 6.6f), 40,
@@ -57,7 +57,7 @@ namespace DC.Core
                 new[] { O(2.0f, 6.5f, 0.6f, 0.4f), O(7.0f, 6.5f, 0.6f, 0.4f), O(4.5f, 9.5f, 0.6f, 0.4f) },
                 new[] { S(Imp, 7.5f, 11.0f), S(Imp, 2.0f, 12.0f), S(Bat, 4.5f, 12.5f) }, P(2.0f, 2.5f), P(8.2f, 9.0f), 45,
                 wave: new[] { S(Imp, 8.2f, 3.6f) }, trigger: Half)
-            { Lava = new[] { O(0.6f, 10.5f, 0.6f, 1.0f) }, Buried = new[] { X(4.5f, 11.5f, 45) }, Blueprint = Gear.Hook },
+            { Lava = new[] { O(0.6f, 10.5f, 0.6f, 1.0f) }, Buried = new[] { X(4.5f, 11.5f, 45) }, Blueprint = Gear.Trap },
             new RoomDef(R5, "R4-5", "Bancada dos Kobolds", "o kobold joga frasco em arco (círculo de aviso 0,9 s) que vira poça de fogo de 1 m por 4 s: não pouse onde o frasco cai, mude de lugar", 1,
                 new[] { O(2.0f, 6.0f, 0.6f, 0.4f), O(7.0f, 6.0f, 0.6f, 0.4f), O(4.5f, 8.5f, 1.4f, 0.3f) },
                 new[] { S(KoboldBomber, 2.0f, 11.5f), S(KoboldBomber, 7.0f, 11.5f), S(Thief, 8.0f, 9.6f) }, P(2.0f, 2.5f), P(0.8f, 9.0f), 40,

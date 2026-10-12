@@ -35,6 +35,8 @@ namespace DC
     ///                 na memoria (fotos das telas de meta).
     ///   -pausa        (com -testsession -contract) abre a pausa logo no inicio (foto).   -tela perk: escolha de perk de exemplo.
     ///   -weapon W     (com -testsession -contract) arma 0 estilingue, 1 bumerangue, 2 bombinha: destrava so na memoria e equipa.
+    ///   -room S       (com -testsession) comeca direto na sala de codigo S (ex.: B2, M4, R3-5), na camada dela (sim.DevStartAt): com
+    ///                 -contract K no contrato K; sem ele, no 1o contrato da campanha que passa por S. Fotos dos chefes sem jogar ate eles.
     ///   -reset        apaga o save antes de carregar.   -testsession  nao le nem grava save nem diario (semente fixa 1).
     ///   -lang L       (com -testsession) pt|en|es|id: forca o idioma so na memoria (fotos por idioma; a escolha gravada nao muda).
     ///   -record dir [-recordfps 30] [-recordsecs 20] [-recordfrom 0]   (com -testsession) criativos de UA (docs/CRIATIVOS.md): tempo fixo
@@ -157,9 +159,11 @@ namespace DC
                         Sim.DevStars(Math.Max(Sim.Stars, WeaponDef.All[w].Stars));   // dev: so na memoria, para fotografar bumerangue/bombinha
                         Sim.Equip((Weapon)w);
                     }
-                    StartContract(k, Sim.Pending != null);
+                    if (_test && !string.IsNullOrEmpty(Arg("-room"))) Begin(Sim.DevStartAt(k, Arg("-room")));   // dev: direto na sala (fotos dos chefes)
+                    else StartContract(k, Sim.Pending != null);
                     if (_test && Arg("-pausa") != null) _hud.ShowPause(false);   // dev: foto da pausa
                 }
+                else if (_test && !string.IsNullOrEmpty(Arg("-room"))) Begin(Sim.DevStartAt(-1, Arg("-room")));   // dev: 1o contrato que passa pela sala
                 else if (!string.IsNullOrEmpty(Arg("-tela"))) _hud.Dev(Arg("-tela"));
             }
             _started = true;
@@ -377,6 +381,7 @@ namespace DC
                 string name = SimEvent.DiaryName(e.Kind);
                 if (name != null) Diary(name, e);
                 _view.OnEvent(e, run);
+                _hud.EventoMundo(e, run);   // faixa da fase do chefe (BossPhase)
                 Hud.SomMeta(e);   // meta e loja (AUDIO.md): evento, temporada, recompensa, projeto, compra na loja
                 if (WorldView.Som(e, run)) continue;   // regioes 2-4 (AUDIO §1.1): som proprio no lugar do generico
                 // som e haptica: tabela do docs/AUDIO.md §1 (banco do Audio.cs; nome sem clipe nao toca nada)

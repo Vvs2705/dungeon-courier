@@ -63,12 +63,12 @@ namespace DC.Core
                 new[] { O(2.0f, 7.5f, 0.4f, 0.9f), O(7.0f, 7.5f, 0.4f, 0.9f), O(4.5f, 10.5f, 0.9f, 0.4f) },
                 new[] { S(Mummy, 2.0f, 10.5f), S(Mummy, 7.0f, 10.5f) }, P(2.0f, 2.5f), P(4.5f, 8.0f), 45,
                 wave: new[] { S(Skeleton, 8.2f, 3.6f) }, trigger: Half)
-            { Dark = true, Torches = new[] { P(0.3f, 5.0f), P(8.7f, 5.0f), P(8.7f, 11.0f) }, Buried = new[] { Bu(4.5f, 5.0f, 35) } },
+            { Dark = true, Torches = new[] { P(0.3f, 5.0f), P(8.7f, 5.0f), P(8.7f, 11.0f) }, Buried = new[] { Bu(4.5f, 5.0f, 35) }, Blueprint = Gear.Hook },
             new RoomDef(R6, "R3-6", "Galeria das Gárgulas", "gárgula é pedra (invulnerável) até o courier passar a 3 m COM a carga; aí mergulha em linha (aviso 0,9 s) e fica 2,5 s no chão, vulnerável; sem a carga nas mãos ela dorme", 2,
                 new[] { O(2.8f, 5.5f, 0.5f, 0.5f), O(6.2f, 5.5f, 0.5f, 0.5f) },
                 new[] { S(Gargoyle, 1.0f, 9.0f), S(Gargoyle, 8.0f, 9.0f), S(Archer, 4.5f, 12.0f) }, P(2.0f, 2.5f), P(0.8f, 11.5f), 45,
                 wave: new[] { S(Bat, 0.8f, 3.6f), S(Bat, 8.2f, 3.6f) }, trigger: Half)
-            { Dark = true, Torches = new[] { P(0.3f, 6.0f), P(8.7f, 6.0f), P(0.3f, 12.0f), P(8.7f, 12.0f) } },
+            { Dark = true, Torches = new[] { P(0.3f, 6.0f), P(8.7f, 6.0f), P(0.3f, 12.0f), P(8.7f, 12.0f) }, Blueprint = Gear.Smoke },
             new RoomDef(R7, "R3-7", "Emboscada na Cripta", "emboscada: passar da metade ergue dois esqueletos e um fantasma por cima e a porta fecha; mate perto da carga ou eles voltam", 2,
                 new[] { O(2.0f, 6.0f, 0.6f, 0.3f), O(7.0f, 6.0f, 0.6f, 0.3f), O(2.0f, 9.0f, 0.6f, 0.3f), O(7.0f, 9.0f, 0.6f, 0.3f) },
                 new[] { S(Spider, 4.5f, 10.5f), S(Bat, 1.5f, 11.5f) }, P(2.0f, 2.5f),

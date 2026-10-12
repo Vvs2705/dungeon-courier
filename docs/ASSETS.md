@@ -233,6 +233,22 @@ Pasta: `client/Assets/_DC/Resources/Sprites/<pasta>/`, com `<Clipe>.png` + `meta
 | `golem` / `golem_fim` | Lote 4 + `arte/mixamo/golem/` e `golem_fim/` | 3 / 1 | 448 × 9 quadros / 576 × 7 | 2,60 m | Idle, Walk, Slam, Charge, Stun / Dying |
 | `picareta`, `coracao`, `gaiola`, `lanterna_mina` | Lote 4 | 1 | 96 | altura 0,45 / 0,45 / 0,50 / 0,50 m | Static |
 | `sapo`, `besouro`, `vagonete`, `cristal`, `escora` | Lote 4 | 1 | 144 / 112 / 208 / 96 / 176 | largura 0,90 / 0,60 / 1,20 / 0,50 / 1,20 m | Static |
+| `esqueleto` | Lote 5 + `arte/mixamo/esqueleto/` + clava (`--attach`) | 3 | 256 | 1,35 m | Idle, Walk, Attack, Collapse, Rise, Hit |
+| `mumia` | Lote 5 + `arte/mixamo/mumia/` | 3 | 256 | 1,50 m | Idle, Walk, Grab, Hold (laço), Hit |
+| `gargula` | Lote 5 + `arte/mixamo/gargula/` | 3 | 288 | 1,40 m | Statue (1 quadro), Wake, Dive, Perch (laço), Hit; **sem Idle** (a View cai no Statue/Perch) |
+| `necromante` / `necromante_fim` | Lote 5 + `arte/mixamo/necromante/` e `_fim/` + cajado (`--attach`, nos dois) | 3 / 1 | 320 / 320 | 1,60 m | Idle, Cast, Summon, Hit / Dying |
+| `clava`, `cajado`, `fantasma`, `lanterna`, `lanterna_apagada`, `espelho`, `vela` | Lote 5 | 1 | 96 / 144 / 128 / 96 / 96 / 96 / 112 | largura 0,49 m / altura 1,40 / 0,90 / 0,45 / 0,45 / 0,50 / 0,70 m | Static |
+| `aranha`, `aranha_empinada`, `viuva`, `viuva_empinada`, `balao`, `lapide` | Lote 5 | 1 | 128 / 144 / 320 / 352 / 128 / 176 | largura 0,80 / 0,80 / 2,00 / 2,00 / 0,60 / 1,20 m (empinadas: 35° e 30°) | Static |
+| `sarcofago` | Lote 5 (`footprint` 0,8 × 1,8 m) | 3 (S, W, N; leste = espelho) | 288 | planta 0,80 × 1,80 m | Static (linha S/N = comprido em profundidade; W = atravessado) |
+| `courier_icone` + `caixa_icone` | #1 + `Hold.fbx` / #6 | 1 | 512 / 256 | 1,30 m / 0,50 m, **320 px/m**, câmera a 35° e −45° | CarryIdle (1 quadro) / Static: ícone da loja, a caixa composta no ponto `hands` (`loja_assets.py`) |
+| `diabrete` | Lote 6 + `arte/mixamo/diabrete/` | 3 | 192 | 0,90 m | Idle, Run, Swap, Vanish, Scratch, Hit, Stun |
+| `kobold` | Lote 6 + `arte/mixamo/kobold/` + frasco (`--attach`) | 3 | 192 | 1,00 m | Idle, Walk (recua), **Run** (persegue), Toss, Hit |
+| `magma` / `brasa` | Lote 6 (o mesmo modelo) + `arte/mixamo/magma/` e `brasa/` | 3 / 3 | 336 / 208 | 1,90 m / 1,10 m | Idle, Walk, Smash, Split, Hit / Idle, Run, Punch, Hit |
+| `capataz` / `capataz_fim` | Lote 6 + `arte/mixamo/capataz/` e `_fim/` + chicote (`--attach`, nos dois) | 3 / 1 | 256 / 320 | 1,40 m | Idle, Walk, Whip, Spin, Toss, Call, Hit / Dying |
+| `dragao` / `dragao_fim` | Lote 6 + `dragao_blender.py` (rig refeito, clipes no `.blend`) | 3 / 1 | **576 × 7 quadros** | 3,50 m de comprimento | Idle, Walk, Breath, Fly, Land, Roar / Dying |
+| `frasco`, `chicote`, `salamandra`, `planta`, `planta_aberta`, `mapa` | Lote 6 (`planta_aberta` = `planta_aberta.py`, 0 crédito) | 1 | 96 / 112 / 128 / 112 / 128 / 96 | altura 0,30 m / largura 0,60 / 0,80 m / altura 0,55 m (a aberta na mesma escala) / largura 0,45 m | Static |
+| `bigorna`, `braseiro`, `respiro`, `corrente` | Lote 6 | 1 | 176 / 176 / 272 / 160 | largura 1,20 m (veste o 1,2 × 0,8) / altura 0,70 m / largura 2,00 m / altura 1,50 m | Static |
+| `courier_noturno`, `courier_real`, `courier_explorador`, `courier_forja`, `courier_fantasma` | #1 recolorido (`roupas_courier.py`, 0 crédito) + `arte/mixamo/courier/` + `Hold.fbx` | 5 | 224 | 1,30 m | os 7 do courier (= `Hud.FolhaRoupa`) |
 
 **Medidas nas folhas** (`client/Builds/sprites_contact/<ator>_folhas.png`), quadros contados a partir de 0. Re-medidas em 2026-10-10 (raia G) com os clipes novos. O quadro de impacto do Blender foi posto de propósito em `round(ImpactFrac × quadros)` da View (`WorldView.cs`), então a View não precisa mudar:
 
@@ -253,10 +269,30 @@ Pasta: `client/Assets/_DC/Resources/Sprites/<pasta>/`, com `<Clipe>.png` + `meta
 | capitao/Run e CarryRun (Running do ARKANA, 10 quadros, 0,80 s) | — | **1,64**. Na Sim: 2,6 → **1,58×** |
 | bruto/Walk (Walking Forward do ARKANA, 12 quadros, 1,37 s) | — | **0,93**. Na Sim: 1,6 → **1,72×** |
 | ogro/Walk (o mesmo, 9 quadros) | — | **1,40**. Na Sim: 1,2 → **0,86×** |
-| arqueiro/Walk (Walking Backwards do ARKANA, 12 quadros, 1,30 s) | — | **0,59** (para trás). Na Sim: 1,4 → 2,38×, acima do teto de 2,3× da View: o pé patina ~3% |
+| arqueiro/Walk (**Running Backwards** do ARKANA desde 2026-10-11, 9 quadros, 0,77 s; recua) | — | **1,40** (para trás). Na Sim: 1,4 → **1,0×**. Era o Walking Backwards: 0,59 → 2,38×, acima do teto de 2,3× |
 | goblin_mineiro/Run (Running Forward do ARKANA, 10 quadros, 0,80 s; persegue) | — | **1,10**. Na Sim: 1,4 → **1,27×** |
 | goblin_mineiro/Walk (Running Backwards do ARKANA, 9 quadros, 0,77 s; recua) | — | **0,86** (para trás). Na Sim: 1,4 → **1,63×**. O Walking Backwards pedido no §12.1 dava 0,36 m/s → 3,9×, acima do teto |
 | golem/Walk (Walking Forward do ARKANA, 9 quadros, 1,37 s) | — | **1,33**. Na Sim: 1,0 → **0,75×** (o §12.1 previa ~0,6×). O Charge (laço de 2 passos em 0,67 s, sem `stride_mps`) fica para a View tocar no ritmo da investida de 7 m/s |
+| esqueleto/Attack (12) | **6** (= 0,5 × 12): a clava no chão à frente com passo. 0–5: a clava sobe pela frente até o alto atrás da cabeça (telegraph) | — |
+| mumia/Grab (12) | **7** (= round(0,6 × 12)): os dois braços esticados à frente, em passo longo. 0–6: braços erguidos à frente, tronco para trás | — |
+| necromante/Cast (12) | **10** (= round(0,8 × 12)): o cajado aponta o alvo, com o crânio à frente. 0–9: cajado em pé erguido, mão esquerda a frente | — |
+| necromante/Summon (12, 1,2 s, uma vez) | — (o cajado em pé acima da cabeça nos quadros 5–8; a View toca uma vez no `R3Act.Raise`) | — |
+| gargula/Wake (11, 0,9 s) e Dive (6, laço de voo) | Wake: braços em V no alto nos quadros 3–8 e inclina para mergulhar em 9–10. Dive: corpo na horizontal a ~0,6 m do chão (sem pé no chão) | — |
+| esqueleto/Collapse e Rise (6 quadros, 0,3 s) | o último quadro do Collapse = o primeiro do Rise (o monte); a View estica o Rise para 4 s | — |
+| esqueleto/Walk (Walking Forward do ARKANA, 12 quadros, 1,37 s) | — | **0,65**. Não há zombie walk no disco |
+| mumia/Walk (o mesmo) | — | **0,81** |
+| diabrete/Scratch (12, o Swipe da rainha) | **6** (= 0,5 × 12): patada cruzando o corpo | — |
+| diabrete/Swap (6, 0,4 s) e Vanish (6, 0,5 s) | — (a View toca o Swap no aviso do redemoinho; o Vanish ainda não é chamado) | — |
+| kobold/Toss (12) e capataz/Toss (o mesmo) | **7** = soltura (= round(0,6 × 12)): o frasco sai à frente e para o alto. 0–6: o braço desce para trás e passa por baixo | — |
+| magma/Smash (12, o do bruto) | **7** (= round(0,6 × 12)) | — |
+| brasa/Punch (12, o do capitão) | **6** (= 0,5 × 12) | — |
+| capataz/Whip (12) | **7** (= round(0,6 × 12)): chicotada à frente. 0–6: o chicote sobe pela frente até o alto atrás | — |
+| capataz/Spin (12) | **7**: meio do giro de 360° (aviso de 1 s nos quadros 0–5) | — |
+| dragao/Breath (7) | **4** (≈ 0,6 × 7 = 4,2; a View usa 0,5 → round(3,5) = 4 também): pescoço à frente, focinho erguido, boca aberta. 1–2: recua e inspira | — |
+| diabrete/Run, kobold/Run, brasa/Run (Running Forward do ARKANA, 10 quadros, 0,80 s) | — | **0,97 / 1,07 / 1,55** |
+| kobold/Walk (Running Backwards do ARKANA, 9 quadros, 0,77 s; recua) | — | **0,83** (para trás) |
+| magma/Walk e capataz/Walk (Walking Forward do ARKANA, 12 quadros, 1,37 s) | — | **0,99 / 0,56** |
+| dragao/Walk (Blender, no lugar, 7 quadros, 1,2 s) | — | sem `stride_mps` (sem root motion): a View acerta o ritmo pela velocidade |
 
 **Idle:** courier (Idle, CarryIdle), cliente, bruto, ogro, arqueiro e capitão usam a janela 199–289 do Breathing Idle: laço de **3,0 s** (antes 9,9 s a 1,2 fps), 12 quadros a 4 fps (ogro: 9 a 3 fps). A costura do laço é de ~1 px na tela.
 
@@ -286,7 +322,7 @@ Lote 3:
 
 | Conjunto | Clipes (quadros) | Fonte | Folha mais larga | Memória ASTC |
 |---|---|---|---|---|
-| `arqueiro` (3 × 224) | Hit 6, Idle 12, Shoot 12, Walk 12 | Walk = reuso ARKANA (Walking Backwards: recua de frente); Idle = reuso Forge (janela 199–289); Shoot e Hit = Blender; arco do Tripo preso à `LeftHand` (`--attach`) | 2 688 px | ~2,8 MB |
+| `arqueiro` (3 × 224) | Hit 6, Idle 12, Shoot 12, Walk 9 | Walk = reuso ARKANA (**Running Backwards** desde 2026-10-11: recua de frente; era o Walking Backwards, 12 quadros); Idle = reuso Forge (janela 199–289); Shoot e Hit = Blender; arco do Tripo preso à `LeftHand` (`--attach`) | 2 688 px | ~2,6 MB |
 | `capitao` (3 × 192) | Call 12, CarryRun 10, Grab 6, Idle 12, Punch 12, Run 10 | Run/CarryRun = reuso ARKANA (Running) + `Hold`; Idle = reuso Forge (janela 199–289); Grab, Call e Punch = Blender | 2 304 px | ~3,0 MB |
 | `limo`, `bolo`, `mensagem`, `caixa_pesada`, `barril`, `tocha`, `pilar` | Static 1 | Tripo | 288 px | ~0,1 MB |
 
@@ -302,7 +338,35 @@ Lote 4 (2026-10-11):
 | `golem_fim` (1 × 576) | Dying 7 | Dying = Blender (`Collapse`: desmorona de bruços) | 4 032 px | ~1,0 MB |
 | `picareta`, `sapo`, `besouro`, `vagonete`, `coracao`, `cristal`, `gaiola`, `lanterna_mina`, `escora` | Static 1 | Tripo | 208 px | ~0,1 MB |
 
-**Totais:** Lote 1 ~11,9 MB, Lote 2 ~16,1 MB, Lote 3 ~5,9 MB → **~33,9 MB** em ASTC. PNG em disco: 27,3 MB. Lote 4: **~25,4 MB** (o golem sozinho ~11,8 MB; só no B2).
+Lote 5 (2026-10-11):
+
+| Conjunto | Clipes (quadros) | Fonte | Folha mais larga | Memória ASTC |
+|---|---|---|---|---|
+| `esqueleto` (3 × 256) | Attack 12, Collapse 6, Hit 6, Idle 12, Rise 6, Walk 12 | Idle (janela 199–289), Walk = reuso ARKANA (Walking Forward); Attack, Collapse, Rise e Hit = Blender; clava do Tripo na `RightHand` (`--attach`) | 3 072 px | ~4,7 MB |
+| `mumia` (3 × 256) | Grab 12, Hit 6, Hold 8, Idle 12, Walk 12 | Idle (janela 199–289), Walk = reuso ARKANA (Walking Forward); Grab, Hold e Hit = Blender; rig a 16° (alinhado sozinho) | 3 072 px | ~4,4 MB |
+| `gargula` (3 × 288) | Dive 6, Hit 6, Perch 10, Statue 1, Wake 11 | todos do Blender (Hit = o do courier) | 3 168 px | ~3,8 MB |
+| `necromante` (3 × 320) | Cast 12, Hit 6, Idle 12, Summon 12 | Idle, Cast, Summon e Hit = Blender (o Idle também: com o braço caído do Breathing Idle o cajado ficava deitado); cajado do Tripo na `RightHand` | 3 840 px | ~5,7 MB |
+| `necromante_fim` (1 × 320) | Dying 12 | reuso ARKANA (Standing React Death Backward), com o cajado | 3 840 px | ~0,6 MB |
+| `courier_icone` (512) + `caixa_icone` (256) | CarryIdle 1 / Static 1 | ícone da loja (320 px/m, câmera 35°) | 512 px | ~0,2 MB |
+| `clava`, `cajado`, `fantasma`, `aranha`, `aranha_empinada`, `viuva`, `viuva_empinada`, `lanterna`, `lanterna_apagada`, `espelho`, `balao`, `lapide`, `vela`, `sarcofago` | Static 1 (sarcófago em 3 linhas) | Tripo; empinadas e lanterna apagada sem crédito (§7 do `RENDER_SPRITES.md`) | 352 px | ~0,3 MB |
+
+Lote 6 (2026-10-11):
+
+| Conjunto | Clipes (quadros) | Fonte | Folha mais larga | Memória ASTC |
+|---|---|---|---|---|
+| `diabrete` (3 × 192) | Hit 6, Idle 12, Run 10, Scratch 12, Stun 12, Swap 6, Vanish 6 | Idle (janela 199–289), Run = reuso ARKANA (Running Forward); Swap, Vanish, Scratch (= Swipe), Stun (= o do golem) e Hit = Blender | 2 304 px | ~3,1 MB |
+| `kobold` (3 × 192) | Hit 6, Idle 12, Run 10, Toss 12, Walk 9 | Idle, Run = Running Forward, Walk = Running Backwards (ARKANA); Toss e Hit = Blender; frasco do Tripo na `RightHand`; rig a 16° | 2 304 px | ~2,4 MB |
+| `magma` (3 × 336) | Hit 6, Idle 12, Smash 12, Split 7, Walk 12 | Idle, Walk = Walking Forward (ARKANA); Smash (= o do bruto), Split e Hit = Blender; rig a 23° | 4 032 px | ~7,4 MB |
+| `brasa` (3 × 208) | Hit 6, Idle 12, Punch 12, Run 10 | o modelo do magma a 1,10 m; Run = Running Forward; Punch = o do capitão | 2 496 px | ~2,3 MB |
+| `capataz` (3 × 256) | Call 12, Hit 6, Idle 12, Spin 12, Toss 12, Walk 12, Whip 12 | Idle, Walk = Walking Forward; Whip, Spin, Toss (= o do kobold), Call (= o do capitão) e Hit = Blender; chicote do Tripo na `RightHand` | 3 072 px | ~6,8 MB |
+| `capataz_fim` (1 × 320) | Dying 12 | reuso ARKANA (Standing React Death Backward), com o chicote | 3 840 px | ~0,6 MB |
+| `dragao` (3 × 576) | Breath 7, Fly 6, Idle 4, Land 6, Roar 7, Walk 7 | `dragao_blender.py` (rig e clipes no Blender) | 4 032 px | **~16,4 MB** |
+| `dragao_fim` (1 × 576) | Dying 7 | idem | 4 032 px | ~1,0 MB |
+| `frasco`, `chicote`, `salamandra`, `planta`, `planta_aberta`, `mapa`, `bigorna`, `braseiro`, `respiro`, `corrente` | Static 1 | Tripo; `planta_aberta` sem crédito | 272 px | ~0,1 MB |
+| `courier_noturno`, `_real`, `_explorador`, `_forja`, `_fantasma` (5 × 224 cada) | os 7 do courier | `roupas_courier.py` | 2 688 px | ~6,9 MB cada; **só a roupa equipada carrega** |
+
+**Totais:** Lote 1 ~11,9 MB, Lote 2 ~16,1 MB, Lote 3 ~5,7 MB (arqueiro com o Walk novo) → **~33,7 MB** em ASTC. PNG em disco: 27,3 MB. Lote 4: **~25,4 MB** (o golem sozinho ~11,8 MB; só no B2). Lote 5: **~19,6 MB** (o necromante ~6,3 MB com o `_fim`; só no B3). Lote 6 sem as roupas: **~40,1 MB**, dos quais o dragão ~17,4 MB (só no B4) e o par magma + brasa ~9,7 MB. Roupas: ~6,9 MB por roupa, uma de cada vez no lugar do `courier`.
+- Cada região só carrega o próprio elenco (`CONTEUDO_REGIOES.md` §12): a região 4 com o dragão é a mais pesada. Se passar do teto de 32 MB residentes com o courier, o primeiro corte é o dragão (Walk, Roar e Breath de 7 para 5 quadros: −2,6 MB; o Breath com o sopro no quadro 3 de 5) e depois o magma, sem mexer no golpe.
 - O Lote 1 subiu de ~11,3 para ~11,9 MB: a corrida passou a ter 8 quadros e o Throw 10.
 - O ogro sozinho tem ~9,6 MB e só aparece no B1.
 - Se faltar memória, o primeiro corte é `clips` no preset do ogro (Idle e Walk com 6 quadros, por exemplo), sem mexer no golpe.

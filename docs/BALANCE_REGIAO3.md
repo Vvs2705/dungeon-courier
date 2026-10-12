@@ -71,6 +71,8 @@ Médias por ícone: 0,53 → 1,50 → 4,93 (folga ≥ 0,3) e nenhuma sala passa 
 
 O bot entra com ~3.000 e sai com **~14.000 moedas paradas**. A região 3 paga 4.672 de base (desenho §10.3) e a Bolsa no máximo leva a ~17.900 por campanha; o único ralo novo é a Bomba de fumaça (3º projeto na S3-1; 600 + 1.200 + 2.000 + 3.000 = 6.800). O Gancho e a Armadilha só destravam na região 4 (13.600 de ralo), então a sobra é "estacionada" para lá. As alavancas do desenho (pagamento das regiões 3–4 −10% ≈ −1.800 aqui; baú −20%) não fecham a diferença sozinhas: é decisão do coordenador (ralo novo ou destravar o Gancho na região 3).
 
+**Leva C (raia E), resolvido em `BALANCE.md`, "Economia da campanha":** equipamento a 12.500 por peça, o Gancho completa aqui (3º projeto na R3-5) e a Fumaça tem um baú de reserva na R3-6. Na campanha completa, do zero, a região 3 termina com ~2.400 moedas (máx. 4.800) e ~700 sem nada para comprar.
+
 ## Ajustes sobre o desenho (com o porquê)
 
 - **R3.1 Morcego fora da R3-1, R3-3 e R3-5.** Era a 1ª morte (e o que fazia a sala "contar luta") em 41/52, 21/24 e 47/54 visitas: H1 de 77% para 65%. As salas ficam com o verbo delas (esqueleto, aranhas, múmias).

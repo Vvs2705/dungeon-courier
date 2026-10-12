@@ -261,11 +261,12 @@ namespace DC.Core
             Emit(Ev.RoomEnter, roomId, Layer);
         }
 
-        /// <summary>Projeto de equipamento do bau da sala (RoomDef.Blueprint), enquanto nao foi pego (Sim.ProjectTaken): visivel na porta.</summary>
+        /// <summary>Projeto de equipamento do bau da sala (RoomDef.Blueprint), enquanto nao foi pego (Sim.ProjectTaken) e o equipamento ainda
+        /// precisa dele (cada equipamento tem 4 baus para 3 projetos: o que sobra vira so moedas): visivel na porta.</summary>
         Gear ProjectAt(int roomId)
         {
             Gear g = Content.Rooms[roomId].Blueprint;
-            return g != Gear.None && !Sim.ProjectTaken(roomId) ? g : Gear.None;
+            return g != Gear.None && !Sim.ProjectTaken(roomId) && !Sim.GearUnlocked(g) ? g : Gear.None;
         }
 
         /// <summary>Perseguidor da Horda e do reforco extra dela, pela regiao da sala (CONTEUDO_REGIOES §9.2).</summary>

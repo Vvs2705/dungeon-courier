@@ -722,11 +722,11 @@ namespace DC.Tests
         [Test]
         public void Equipamento_3ProjetosDestravam_5NiveisComMoedas_RegiaoUmSemProjetoNaPorta()
         {
-            Sim g = Sim.Load("v=3\nseed=3\nrep=24\ncoins=9000\ngear=0,0,2,3,0,0,0,0,0,0,0\n");
+            Sim g = Sim.Load("v=3\nseed=3\nrep=24\ncoins=20000\ngear=0,0,2,3,0,0,0,0,0,0,0\n");
             Assert.AreEqual(2, g.Blueprints(Gear.Smoke)); Assert.IsFalse(g.GearUnlocked(Gear.Smoke)); Assert.IsTrue(g.GearUnlocked(Gear.Hook));
             Assert.AreEqual(0, g.GearLevel(Gear.Smoke)); Assert.AreEqual(1, g.GearLevel(Gear.Hook));
             Assert.IsFalse(g.EquipGear(Gear.Smoke), "bloqueado"); Assert.IsTrue(g.EquipGear(Gear.Hook)); Assert.AreEqual(Gear.Hook, g.GearEquipped);
-            int[] cost = { 600, 1200, 2000, 3000 };
+            int[] cost = { 1000, 2500, 4000, 5000 };   // raia E (BALANCE.md "Economia da campanha"): 12.500 por equipamento
             int coins = g.Coins;
             for (int lv = 1; lv < Balance.GearMaxLevel; lv++)
             {
