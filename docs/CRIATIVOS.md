@@ -116,7 +116,7 @@ Contrato M2-5 (`-contract 29`), medido em 2026-10-12: R2-3 com reforço aos 1,8 
 
 ### 5. O ganancioso pega o baú e cai · 16 s · bot
 
-- **Gancho:** 2 corações, o bolo de casamento e a luta na sala R5.
+- **Gancho:** 1 coração, o bolo de casamento e a luta na sala R5.
 - **Cenas:** 0–14,5 `c07 [0,5–15,0]`: vai ao baú com 2 de vida, entra na sala seguinte, cai e mostra o resultado. A carga fica na masmorra, e o resgate entra no contrato seguinte (diferencial C4 do GDD §27).
 
 | t (s) | pt | en | es | id |
