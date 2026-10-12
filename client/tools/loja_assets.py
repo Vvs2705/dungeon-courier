@@ -71,13 +71,13 @@ def contorno(img, cor, px):
     return out
 
 
-def courier_com_caixa(clip="CarryRun", linha=3, i=2, limao=3):
+def courier_com_caixa(clip="CarryIdle", linha=0, i=0, limao=6, quem="courier_icone", carga="caixa_icone"):
     """Courier com a caixa na ancora `hands` do quadro (por cima se frente = 1, por baixo se 0), como a View e o folhas.py.
-    Padrao: correndo para NW (linha 3), a pose em que o chapeu, o corpo e a caixa aparecem juntos (nas outras a caixa cobre o
-    courier). Devolve (imagem RGBA, pe)."""
+    Padrao: o par do icone (RENDER_SPRITES sec. 4): `courier_icone` (512 px, 320 px/m, 3/4 de frente) com a `caixa_icone` no ponto
+    `hands`. Com quem="courier"/carga="caixa", a folha do jogo (224 px, 120 px/m). Devolve (imagem RGBA, pe)."""
     M = 64
-    corpo, pe, c, m = ator("courier", clip, linha, i, M)
-    caixa = Image.open(os.path.join(SPRITES, "caixa", meta("caixa")["clips"][0]["file"])).convert("RGBA")
+    corpo, pe, c, m = ator(quem, clip, linha, i, M)
+    caixa = Image.open(os.path.join(SPRITES, carga, meta(carga)["clips"][0]["file"])).convert("RGBA")
     caixa = contorno(caixa.crop(caixa.getbbox()), CARGO, limao)
     hx, hy, frente = c["hands"][(linha * c["frames"] + i) * 3:][:3]
     pos = (int(round(M + hx - caixa.width / 2)), int(round(M + m["size"] - hy - caixa.height / 2)))
@@ -121,10 +121,10 @@ def icone():
     fundo = piso(W, W)
     vinheta = Image.radial_gradient("L").resize((W, W)).point(lambda v: int(v * 0.85))
     fundo = Image.composite(Image.new("RGB", (W, W), BG), fundo, vinheta)
-    img, pe = courier_com_caixa("CarryIdle", 3, 0, 4)   # parado, de costas para NW: a caixa inteira aparece atras do chapeu
+    img, pe = courier_com_caixa()   # courier_icone + caixa_icone, sem ampliar (1:1 ate ~430 px)
     box = img.getbbox()
     img, pe = img.crop(box), (pe[0] - box[0], pe[1] - box[1])
-    img, pe = escala(img, pe, min(390 / img.width, 410 / img.height))
+    img, pe = escala(img, pe, min(400 / img.width, 430 / img.height))
     x, y = (W - img.width) / 2, (W - img.height) / 2 + 6   # centrado (a sombra cai no pe)
     cola(fundo, img, pe, (x + pe[0], y + pe[1]), sombra=img.width * 0.8)
     return fundo
@@ -146,20 +146,19 @@ def logo(fotos):
 
 
 def feature(lg):
-    """1024x500: logo a esquerda sobre o Bg; a direita o piso real, o Ogro ao fundo, o ladrao vindo e o courier com a caixa."""
+    """1024x500: logo a esquerda sobre o Bg; a direita o piso real, o Dragao Anciao (chefe final) ao fundo, o ladrao vindo e o
+    courier com a caixa (par do icone)."""
     W, H = 1024, 500
     fundo = piso(W, H, 0.6)
     grad = Image.linear_gradient("L").rotate(-90, expand=True).resize((W, H))   # 255 na esquerda, 0 na direita
     grad = grad.point(lambda v: max(0, min(255, int((v - 93) * 5.1))))          # Bg ate x ~450, piso a partir de ~650
     fundo = Image.composite(Image.new("RGB", (W, H), BG), fundo, grad)
-    ogro, pe, _, _ = ator("ogro", "Idle", 0, 0)
-    cola(fundo, *escala(ogro, pe, 1.05), (845, 300), sombra=170)
-    morcego, pe, _, _ = ator("morcego")
-    cola(fundo, *escala(morcego, pe, 1.5), (975, 95))
+    dragao, pe, _, _ = ator("dragao", "Roar", 0, 3)
+    cola(fundo, *escala(dragao, pe, 0.85), (880, 300), sombra=230)
     ladrao, pe, _, _ = ator("ladrao", "Run", 2, 0)                     # linha W: corre para a esquerda, atras da carga
-    cola(fundo, *escala(ladrao, pe, 1.9), (940, 465), sombra=80)
-    courier, pe = courier_com_caixa(limao=4)                          # foge para NW com a caixa
-    cola(fundo, *escala(courier, pe, 1.75), (660, 455), sombra=130)
+    cola(fundo, *escala(ladrao, pe, 1.6), (975, 482), sombra=70)
+    courier, pe = courier_com_caixa()
+    cola(fundo, *escala(courier, pe, 0.70), (625, 468), sombra=120)
     if lg is not None:
         k = min(430 / lg.width, 450 / lg.height)
         lg2 = lg.resize((round(lg.width * k), round(lg.height * k)), Image.LANCZOS)

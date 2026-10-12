@@ -39,6 +39,12 @@ namespace DC
     ///                 -contract K no contrato K; sem ele, no 1o contrato da campanha que passa por S. Fotos dos chefes sem jogar ate eles.
     ///   -reset        apaga o save antes de carregar.   -testsession  nao le nem grava save nem diario (semente fixa 1).
     ///   -lang L       (com -testsession) pt|en|es|id: forca o idioma so na memoria (fotos por idioma; a escolha gravada nao muda).
+    ///   -codigo C     (com -testsession, sem -contract) comeca direto o contrato por codigo C (6 caracteres), com a campanha toda aberta
+    ///                 so na memoria. Ex.: -codigo JAAKNB -bot = ovo da regiao 2 que o bot deixa chocar (criativo 12).
+    ///   -projetos N   (com -testsession) N projetos (0-3) nos 4 equipamentos e a aba aberta, so na memoria (foto do equipamento com os
+    ///                 niveis 6-8 travados; nao junte com -dev-desbloqueia, que vence o Dragao).
+    ///   -roupa R      (com -testsession) veste a roupa so na memoria (sim.DevOutfit): noturno|real|explorador|forja|fantasma|mineiro|coveiro|
+    ///                 classico (ou o numero do enum Outfit). Criativo 13 (A/B de roupa) e fotos.
     ///   -record dir [-recordfps 30] [-recordsecs 20] [-recordfrom 0]   (com -testsession) criativos de UA (docs/CRIATIVOS.md): tempo fixo
     ///                 por quadro (Time.captureFramerate), pula `recordfrom` s de jogo sem gravar, grava `recordsecs` s em dir/00000.png...
     ///                 no tamanho da janela (540x960 no build Windows) e o som do jogo em dir/audio.wav (AudioRenderer); sai 0 no fim.
@@ -111,6 +117,12 @@ namespace DC
             string saved = _test ? "" : PlayerPrefs.GetString(SaveKey, "");
             // jogador novo: semente aleatoria (variedade entre jogadores); -testsession: semente 1 (fotos repetiveis)
             Sim = string.IsNullOrEmpty(saved) ? new Sim(_test ? 1 : UnityEngine.Random.Range(1, int.MaxValue)) : Sim.Load(saved);
+            if (_test && Roupa(Arg("-roupa")) is Outfit roupa) Sim.DevOutfit(roupa);   // dev: veste so na memoria (criativo 13, fotos)
+            if (_test && int.TryParse(Arg("-projetos"), NumberStyles.Integer, Inv, out int pj))
+            {
+                Sim.DevProjects(Gear.None, pj);   // dev: projetos nos 4 equipamentos (3 = destravados no nivel 1), so na memoria
+                Sim.Reputation = Math.Max(Sim.Reputation, Balance.GearOpenAfter);   // a aba abre depois do C6; o Dragao segue invicto (6-8 travados)
+            }
             _cfg = ConfigLocal.Texto();
             Sim.Config = Config.Parse(_cfg);   // padroes do build; a URL opcional (config_url) sobrescreve no Start
             _bot = new Bot(Sim.Seed);
@@ -164,6 +176,13 @@ namespace DC
                     if (_test && Arg("-pausa") != null) _hud.ShowPause(false);   // dev: foto da pausa
                 }
                 else if (_test && !string.IsNullOrEmpty(Arg("-room"))) Begin(Sim.DevStartAt(-1, Arg("-room")));   // dev: 1o contrato que passa pela sala
+                else if (_test && !string.IsNullOrEmpty(Arg("-codigo")))
+                {
+                    // dev: contrato por codigo direto, com a campanha aberta so na memoria (criativo 12: o bot choca o ovo no JAAKNB)
+                    Sim.Reputation = Math.Max(Sim.Reputation, Sim.Contracts.Length);
+                    Sim.DevStars(Sim.Contracts.Length * 3);
+                    if (!Begin(Sim.StartCode(Arg("-codigo").Trim().ToUpperInvariant(), false))) Debug.Log("CODIGO recusado: " + Arg("-codigo"));
+                }
                 else if (!string.IsNullOrEmpty(Arg("-tela"))) _hud.Dev(Arg("-tela"));
             }
             _started = true;
@@ -684,6 +703,18 @@ namespace DC
                 w.Write("data".ToCharArray()); w.Write(bytes);
                 foreach (float f in s) w.Write((short)Mathf.Clamp(f * 32767f, -32768f, 32767f));
             }
+        }
+
+        /// <summary>-roupa: nome da folha sem o "courier_" (noturno, real, explorador, forja, fantasma, mineiro, coveiro; classico) ou o
+        /// numero do enum. null = ausente ou desconhecida.</summary>
+        static Outfit? Roupa(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return null;
+            string folha = s == "classico" ? "courier" : "courier_" + s.Trim().ToLowerInvariant();
+            foreach (Outfit o in Enum.GetValues(typeof(Outfit)))
+                if (Hud.FolhaRoupa(o) == folha || ((int)o).ToString(Inv) == s) return o;
+            Debug.Log("ROUPA desconhecida: " + s);
+            return null;
         }
 
         static float ArgF(string name, float def) => float.TryParse(Arg(name), NumberStyles.Float, Inv, out float v) ? v : def;

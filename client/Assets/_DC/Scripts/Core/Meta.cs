@@ -375,6 +375,15 @@ namespace DC.Core
         }
         void GiveOutfit(Outfit o) { outfits |= 1 << (int)o; Dirty = true; }
 
+        /// <summary>SO teste/fotos (-testsession -roupa, como o DevStars): da e veste a roupa so na memoria, sem evento e sem Dirty (o teste A/B
+        /// de roupa dos criativos). Nao use no jogo normal.</summary>
+        public void DevOutfit(Outfit o)
+        {
+            if ((int)o < 0 || (int)o >= OutfitDef.All.Length) return;
+            outfits |= 1 << (int)o;
+            OutfitEquipped = o;
+        }
+
         // ------------------------------------------------------------------ IAP (direitos; o SDK fica na View)
 
         int owned;

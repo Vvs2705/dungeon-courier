@@ -51,11 +51,11 @@ G = {
     "c24_ogro": ("-contract 24 -bot -weapon 1", 112.0, 7.0, "B1: pancada 113,0/114,0; ladrao 114,8; dash 115,0"),
     "c24_fim": ("-contract 24 -bot -weapon 1", 185.5, 17.0, "ladrao+dash 186,1-188,8; Ogro cai ~192; entrega 197,0; cena 198,1-201,7"),
     "quadro": ("-tela quadro", 0.0, 2.0, "quadro de contratos parado"),
-    "h03_ovo": ("-contract 3 -weapon 1", 44.0, 30.0, "HUMANO (WASD + Espaco): segure o ovo ate chocar (55 s), lute perto dos 50 s, "
-                "entregue com o filhote antes dos 74 s"),
-    "m2_5_coracao": ("-contract 29 -bot", 0.0, 14.0, "PENDENTE: regiao 2 (M2-5, coracao arcano) no Core e na View; medir os tempos"),
-    "c02_roupa": ("-contract 2 -bot -roupa 1", 0.5, 17.0, "PENDENTE: flag -roupa e sprites das roupas (CONTRATO_LANCAMENTO 8); "
-                  "mesmos tempos do c02"),
+    "cod_ovo": ("-codigo JAAKNB -bot", 120.5, 21.5, "contrato por codigo da regiao 2 (ovo, 5 camadas): R2-6 121,2; explosoes 123,7; "
+                "choca 125,0; bau 132,6; D2 134,8; entrega 137,0; cena 138,1-141,7 (chocou e o filhote chegou)"),
+    "c29_coracao": ("-contract 29 -bot", 0.0, 14.0, "M2-5, coracao arcano: R2-3 reforco 1,8, dano 2,2/3,4, bau 4,1; R2-1 5,2; R2-10 8,5; "
+                    "R2-8 13,2"),
+    "c02_roupa": ("-contract 2 -bot -roupa noturno", 0.5, 17.0, "o c02 com a roupa Noturno (a roupa nao muda a partida)"),
 }
 
 # Roteiros (docs/CRIATIVOS.md sec. 3). cenas: (gravacao, de s, ate s) no tempo da gravacao. legendas: (de, ate, pt, en, es, id) no
@@ -83,7 +83,7 @@ R = {
         (4.4, 9, "1 coração. Só falta a porta.", "1 heart left. Just the door to go.", "1 corazón. Solo falta la puerta.",
          "Sisa 1 nyawa. Tinggal pintunya."),
         (9, 13.7, "ENTREGUE com 1 de vida!", "DELIVERED on 1 health!", "¡ENTREGADO con 1 de vida!", "TERKIRIM dengan 1 nyawa!")]),
-    4: dict(slug="coracao_arcano", pos="topo", cenas=[("m2_5_coracao", 0.0, 13.5)], legendas=[
+    4: dict(slug="coracao_arcano", pos="topo", cenas=[("c29_coracao", 0.0, 13.5)], legendas=[
         (0, 4, "Coração arcano: puxa moedas...", "Arcane heart: pulls in coins...", "Corazón arcano: atrae monedas...",
          "Jantung arkana: menarik koin..."),
         (4, 9, "...e puxa monstros também", "...and pulls in monsters too", "...y también atrae monstruos", "...dan juga menarik monster"),
@@ -141,13 +141,14 @@ R = {
          "Pencuri ambil paket? Dash dia!"),
         (8.6, 11.4, "Pegue de volta e corra", "Grab it back and run", "Recupérala y corre", "Ambil lagi dan lari"),
         (11.4, 15, "Entregue!", "Delivered!", "¡Entregado!", "Terkirim!")]),
-    12: dict(slug="ovo_choca", pos="topo", cenas=[("h03_ovo", 6.0, 22.0)], legendas=[
-        (0, 5, "O ovo choca se você demorar...", "The egg hatches if you take too long...", "El huevo eclosiona si tardas...",
+    12: dict(slug="ovo_choca", pos="topo", cenas=[("cod_ovo", 0.5, 16.5), ("cod_ovo", 17.6, 21.2)], legendas=[
+        (0, 4, "O ovo choca se você demorar...", "The egg hatches if you take too long...", "El huevo eclosiona si tardas...",
          "Telurnya menetas kalau kamu lama..."),
-        (5, 10, "Chocou! O filhote agora te segue", "It hatched! Now the chick follows you", "¡Eclosionó! Ahora la cría te sigue",
+        (4, 9, "Chocou! O filhote agora te segue", "It hatched! Now the chick follows you", "¡Eclosionó! Ahora la cría te sigue",
          "Menetas! Anak naga mengikutimu"),
-        (10, 16, "Leve o filhote até o cliente", "Get the chick to the client", "Lleva la cría al cliente",
-         "Antar anak naga ke pelanggan")]),
+        (9, 16, "Leve o filhote até o cliente", "Get the chick to the client", "Lleva la cría al cliente",
+         "Antar anak naga ke pelanggan"),
+        (16, 19.6, "Entregue com o filhote!", "Delivered with the chick!", "¡Entregado con la cría!", "Terkirim bersama anak naga!")]),
 }
 # 13 = o 11 com outra roupa do courier (o mascote saiu): mesma montagem e legendas, so a gravacao muda (teste A/B de roupa)
 R[13] = dict(R[11], slug="ladrao_e_dash_roupa", cenas=[("c02_roupa", a, b) for _, a, b in R[11]["cenas"]])
