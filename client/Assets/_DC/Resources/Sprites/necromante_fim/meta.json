@@ -1,0 +1,81 @@
+{
+ "size": 320,
+ "fps": 12.0,
+ "dirs": 1,
+ "rows": 1,
+ "dir_order": [
+  "S"
+ ],
+ "mirror": false,
+ "row0": "top",
+ "elev": 60.0,
+ "yaw": 0.0,
+ "ppu": 120.0,
+ "pivot_px": [
+  160.0,
+  70.4
+ ],
+ "pivot": [
+  0.5,
+  0.2201
+ ],
+ "light": "flat",
+ "outline_px": 3,
+ "src_fps": 30,
+ "preset": "necromante_fim",
+ "model_scale": 1.7012,
+ "hold": "",
+ "attach": [
+  "tripo_convert_52444c18-f057-4f51-a9ba-e3c27b7cc076.fbx:RightHand:-0.04,0.251,-0.02:-180,90,90:1.40"
+ ],
+ "align_arms": false,
+ "clips": [
+  {
+   "name": "Dying",
+   "file": "Dying.png",
+   "frames": 12,
+   "loop": false,
+   "fps": 3.303,
+   "duration_s": 3.633,
+   "src_frames": 109,
+   "hands": [
+    140.9,
+    103.3,
+    1,
+    146.6,
+    131.2,
+    1,
+    159.8,
+    103.5,
+    1,
+    155.1,
+    92.5,
+    1,
+    160.7,
+    117.1,
+    0,
+    157.1,
+    113.1,
+    1,
+    157.4,
+    101.7,
+    1,
+    164.9,
+    119.0,
+    1,
+    153.5,
+    198.6,
+    0,
+    176.8,
+    217.1,
+    0,
+    193.2,
+    208.0,
+    0,
+    190.7,
+    208.3,
+    0
+   ]
+  }
+ ]
+}
