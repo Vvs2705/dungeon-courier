@@ -7,7 +7,7 @@
   - **Lote 6 (região 4):** `diabrete`, `kobold` (frasco), `magma` + `brasa` (o mesmo modelo a 1,10 m), `capataz` + `capataz_fim` (chicote); props `frasco`, `chicote`, `salamandra`, `planta` + `planta_aberta`, `mapa`, `bigorna`, `braseiro`, `respiro`, `corrente`.
   - **Dragão:** `dragao` + `dragao_fim`, rig refeito e 7 clipes no Blender (§10).
   - **Ajustes pedidos:** `arqueiro` re-renderizado com o Walk = correr para trás (0,59 → 1,40 m/s: 1,0× na Sim); `courier_icone` + `caixa_icone` para o `loja_assets.py` (§4); posição das costas do golem para o brilho da View (§7).
-  - **Roupas do courier:** `courier_noturno`, `courier_real`, `courier_explorador`, `courier_forja`, `courier_fantasma` (os 7 clipes, troca de cor no mesmo modelo; §11). A Clássica é o `courier`.
+  - **Roupas do courier:** `courier_noturno`, `courier_real`, `courier_explorador`, `courier_forja`, `courier_fantasma` e, depois, `courier_mineiro` e `courier_coveiro` (os 7 clipes, troca de cor no mesmo modelo; §11). A Clássica é o `courier`.
 - **Texturas** `piso_cripta`/`parede_cripta` e `piso_forja`/`parede_forja` copiadas cruas para `Resources/Textures/`; ainda sem `.meta` (o Unity cria ao abrir).
 - **Scripts novos:** `dragao_blender.py` (§10), `planta_aberta.py` (§7) e `roupas_courier.py` (§11). No `render_sprites.py`: `footprint`, `tilt`, `--model` em `.blend`, actions do `.blend` com `--self`, laço `perch`/`hold`/`fly`, `ETAPA` no log (§1).
 - **O que travou e como saiu:** o import do FBX do Tripo levou de 7 a 14 min por personagem com o PC sem memória, e múmia, gárgula e necromante pararam no corte de 900 s. Cada personagem passou a ser importado uma vez e salvo em `.blend`; com ele, o render de um personagem leva de 3 a 12 s (§2).
@@ -290,7 +290,7 @@ Todos os presets usam `scale` 120, `outline` 3 e `max_frames` 12, exceto onde a 
 | `frasco` / `chicote` / `salamandra` / `mapa` | altura 0,30 m / largura 0,60 / 0,80 / 0,45 m | 1 | 96 / 112 / 128 / 96 | — | Static |
 | `planta` / `planta_aberta` | altura 0,55 / **0,596** m (a mesma escala: o lóbulo aberto sobe a altura do modelo) | 1 | 112 / 128 | — | Static; a aberta vem do `planta_aberta.py` (§7) |
 | `bigorna` / `braseiro` / `respiro` / `corrente` | largura 1,20 m / altura 0,70 m / largura 2,00 m / altura 1,50 m | 1 | 176 / **176** (112 recortava a bacia) / 272 / 160 | — | Static; a bigorna veste o obstáculo 1,2 × 0,8 da forja |
-| `courier_<roupa>` (noturno, real, explorador, forja, fantasma) | o preset `courier` (`-Preset courier`) | 8 com espelho (5) | 224 | 2 688 px | os 7 clipes do courier; modelo do `roupas_courier.py` (§11) |
+| `courier_<roupa>` (noturno, real, explorador, forja, fantasma, mineiro, coveiro) | o preset `courier` (`-Preset courier`) | 8 com espelho (5) | 224 | 2 688 px | os 7 clipes do courier; modelo do `roupas_courier.py` (§11) |
 
 As células foram calculadas pela geometria de projeto com 10% de margem e conferidas na folha (o `folhas.py` imprime a margem mínima).
 - Em 2026-10-10, o bruto, o ogro, o ogro_fim e o pilar encostavam na borda e subiram de célula.
@@ -638,17 +638,17 @@ Leva ~2 s (malha de 3 813 vértices; o FBX tem 0,34 MB).
 
 ## 11. Roupas do courier (`roupas_courier.py`, 2026-10-11)
 
-Cosmético, 0 crédito: o mesmo modelo do courier com o basecolor recolorido, um `.blend` por roupa, renderizado com o preset `courier` (os 7 clipes, 5 linhas). Os nomes são os do `Hud.FolhaRoupa` (`MetaTelas.cs`): `courier_noturno`, `courier_real`, `courier_explorador`, `courier_forja` (Bombeiro de forja) e `courier_fantasma`. A Clássica continua sendo o `courier`. Mineiro e Coveiro (fim do enum `Outfit`) ainda não têm chave no `RoupaChave` da View e não foram feitos.
+Cosmético, 0 crédito: o mesmo modelo do courier com o basecolor recolorido, um `.blend` por roupa, renderizado com o preset `courier` (os 7 clipes, 5 linhas). Os nomes são os do `Hud.FolhaRoupa` (`MetaTelas.cs`): `courier_noturno`, `courier_real`, `courier_explorador`, `courier_forja` (Bombeiro de forja), `courier_fantasma` e, desde 2026-10-11 (noite, roupas da raia E), `courier_mineiro` e `courier_coveiro`. A Clássica continua sendo o `courier`.
 
 ```
-blender.exe -b --factory-startup --python-exit-code 1 --python client\tools\roupas_courier.py -- %TEMP%\dc_in\courier\courier.blend %TEMP%\dc_in\roupas
+blender.exe -b --factory-startup --python-exit-code 1 --python client\tools\roupas_courier.py -- %TEMP%\dc_in\courier\courier.blend %TEMP%\dc_in\roupas [mineiro,coveiro]
 .\client\tools\render_sprites.ps1 -Nome courier_<roupa> -Preset courier -Model %TEMP%\dc_in\roupas\courier_<roupa>.blend -Anims %TEMP%\dc_arte\mixamo\courier -Hold %TEMP%\dc_arte\mixamo\Hold.fbx
 ```
 
 **Como recolore** (HSV no numpy, o sombreado da textura fica):
 - casaco e chapéu = os pixels azuis do basecolor (matiz 180–250°, saturação > 0,2);
 - bolsa, botas, cinto e luvas = os marrons saturados (matiz 0–45°, saturação > 0,35);
-- pele e camisa (pouca saturação) não mudam.
+- pele e camisa (pouca saturação) não mudam;
 
 | Roupa | Azul vira | Marrom vira | Tinta de reserva da View (`TintaRoupa`) |
 |---|---|---|---|
@@ -660,4 +660,4 @@ blender.exe -b --factory-startup --python-exit-code 1 --python client\tools\roup
 
 O Tripo liga o basecolor em dois nós de imagem do material ("Diffuse Texture.003" e ".005"); o script muda os dois.
 
-**Memória:** cada roupa tem a mesma folha do courier (~6,9 MB em ASTC, 5,2 MB de PNG). Só a roupa equipada carrega na corrida; no APK, as 5 somam ~26 MB de PNG. Se o tamanho do APK apertar, o corte é renderizar só Idle, CarryIdle, Run e CarryRun por roupa (e a View cair na folha `courier` para Throw, Dash e Hit), ou ficar só com a tinta de reserva.
+**Cores de papel (ART_BIBLE §3):** o capacete do Mineiro é âmbar, e não o amarelo-limão da carga (`#FFE14D`) nem o amarelo do capacete do goblin mineiro; o Coveiro usa sálvia acinzentada no lugar do "verde-musgo" proposto, que é o dominante do Ogro (`#6F8A4B`), e fica longe do verde `#7CFF9E` dos mortos-vivos. As duas foram conferidas sobre os pisos das 4 regiões (`piso`, `piso_mina`, `piso_cripta`, `piso_forja`): leem nos 4. O ponto mais fraco é o corpo marrom do Mineiro sobre a terra da mina, onde quem segura a leitura é o capacete âmbar e o contorno. Se o tamanho do APK apertar, o corte é renderizar só Idle, CarryIdle, Run e CarryRun por roupa (e a View cair na folha `courier` para Throw, Dash e Hit), ou ficar só com a tinta de reserva.

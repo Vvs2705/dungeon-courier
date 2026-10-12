@@ -248,7 +248,7 @@ Pasta: `client/Assets/_DC/Resources/Sprites/<pasta>/`, com `<Clipe>.png` + `meta
 | `dragao` / `dragao_fim` | Lote 6 + `dragao_blender.py` (rig refeito, clipes no `.blend`) | 3 / 1 | **576 × 7 quadros** | 3,50 m de comprimento | Idle, Walk, Breath, Fly, Land, Roar / Dying |
 | `frasco`, `chicote`, `salamandra`, `planta`, `planta_aberta`, `mapa` | Lote 6 (`planta_aberta` = `planta_aberta.py`, 0 crédito) | 1 | 96 / 112 / 128 / 112 / 128 / 96 | altura 0,30 m / largura 0,60 / 0,80 m / altura 0,55 m (a aberta na mesma escala) / largura 0,45 m | Static |
 | `bigorna`, `braseiro`, `respiro`, `corrente` | Lote 6 | 1 | 176 / 176 / 272 / 160 | largura 1,20 m (veste o 1,2 × 0,8) / altura 0,70 m / largura 2,00 m / altura 1,50 m | Static |
-| `courier_noturno`, `courier_real`, `courier_explorador`, `courier_forja`, `courier_fantasma` | #1 recolorido (`roupas_courier.py`, 0 crédito) + `arte/mixamo/courier/` + `Hold.fbx` | 5 | 224 | 1,30 m | os 7 do courier (= `Hud.FolhaRoupa`) |
+| `courier_noturno`, `courier_real`, `courier_explorador`, `courier_forja`, `courier_fantasma`, `courier_mineiro`, `courier_coveiro` | #1 recolorido (`roupas_courier.py`, 0 crédito) + `arte/mixamo/courier/` + `Hold.fbx` | 5 | 224 | 1,30 m | os 7 do courier (= `Hud.FolhaRoupa`) |
 
 **Medidas nas folhas** (`client/Builds/sprites_contact/<ator>_folhas.png`), quadros contados a partir de 0. Re-medidas em 2026-10-10 (raia G) com os clipes novos. O quadro de impacto do Blender foi posto de propósito em `round(ImpactFrac × quadros)` da View (`WorldView.cs`), então a View não precisa mudar:
 
@@ -363,7 +363,7 @@ Lote 6 (2026-10-11):
 | `dragao` (3 × 576) | Breath 7, Fly 6, Idle 4, Land 6, Roar 7, Walk 7 | `dragao_blender.py` (rig e clipes no Blender) | 4 032 px | **~16,4 MB** |
 | `dragao_fim` (1 × 576) | Dying 7 | idem | 4 032 px | ~1,0 MB |
 | `frasco`, `chicote`, `salamandra`, `planta`, `planta_aberta`, `mapa`, `bigorna`, `braseiro`, `respiro`, `corrente` | Static 1 | Tripo; `planta_aberta` sem crédito | 272 px | ~0,1 MB |
-| `courier_noturno`, `_real`, `_explorador`, `_forja`, `_fantasma` (5 × 224 cada) | os 7 do courier | `roupas_courier.py` | 2 688 px | ~6,9 MB cada; **só a roupa equipada carrega** |
+| `courier_noturno`, `_real`, `_explorador`, `_forja`, `_fantasma`, `_mineiro`, `_coveiro` (5 × 224 cada) | os 7 do courier | `roupas_courier.py` | 2 688 px | ~6,9 MB cada; **só a roupa equipada carrega** |
 
 **Totais:** Lote 1 ~11,9 MB, Lote 2 ~16,1 MB, Lote 3 ~5,7 MB (arqueiro com o Walk novo) → **~33,7 MB** em ASTC. PNG em disco: 27,3 MB. Lote 4: **~25,4 MB** (o golem sozinho ~11,8 MB; só no B2). Lote 5: **~19,6 MB** (o necromante ~6,3 MB com o `_fim`; só no B3). Lote 6 sem as roupas: **~40,1 MB**, dos quais o dragão ~17,4 MB (só no B4) e o par magma + brasa ~9,7 MB. Roupas: ~6,9 MB por roupa, uma de cada vez no lugar do `courier`.
 - Cada região só carrega o próprio elenco (`CONTEUDO_REGIOES.md` §12): a região 4 com o dragão é a mais pesada. Se passar do teto de 32 MB residentes com o courier, o primeiro corte é o dragão (Walk, Roar e Breath de 7 para 5 quadros: −2,6 MB; o Breath com o sopro no quadro 3 de 5) e depois o magma, sem mexer no golpe.
