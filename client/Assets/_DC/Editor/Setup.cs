@@ -133,4 +133,37 @@ namespace DC.EditorTools
             if (Application.isBatchMode) EditorApplication.Exit(r != null && r.summary.result == BuildResult.Succeeded ? 0 : 1);
         }
     }
+
+    /// <summary>Anuncio nao personalizado para todos (ECA Digital, publico 13+ com adolescentes; docs/MONETIZACAO.md §2.4): tira do APK o ID
+    /// de publicidade e as APIs do Privacy Sandbox que o SDK de anuncio traz. Marcadores tools:node="remove" no manifesto do unityLibrary,
+    /// que tem prioridade sobre as dependencias (AARs) na fusao do Gradle. Conferir com aapt dump permissions.</summary>
+    sealed class SemIdDePublicidade : UnityEditor.Android.IPostGenerateGradleAndroidProject
+    {
+        static readonly string[] Tirar =
+        {
+            "com.google.android.gms.permission.AD_ID", "android.permission.ACCESS_ADSERVICES_AD_ID",
+            "android.permission.ACCESS_ADSERVICES_ATTRIBUTION", "android.permission.ACCESS_ADSERVICES_TOPICS",
+        };
+        public int callbackOrder => 999;
+
+        public void OnPostGenerateGradleAndroidProject(string path)
+        {
+            string f = Path.Combine(path, "src", "main", "AndroidManifest.xml");
+            if (!File.Exists(f)) { Debug.LogWarning("DC Setup: manifesto do unityLibrary nao achado: " + f); return; }
+            const string tools = "http://schemas.android.com/tools", android = "http://schemas.android.com/apk/res/android";
+            var doc = new System.Xml.XmlDocument();
+            doc.Load(f);
+            System.Xml.XmlElement root = doc.DocumentElement;
+            if (!root.HasAttribute("xmlns:tools")) root.SetAttribute("xmlns:tools", tools);
+            foreach (string p in Tirar)
+            {
+                System.Xml.XmlElement e = doc.CreateElement("uses-permission");
+                e.SetAttribute("name", android, p);
+                e.SetAttribute("node", tools, "remove");
+                root.AppendChild(e);
+            }
+            doc.Save(f);
+            Debug.Log("DC Setup: AD_ID e Privacy Sandbox removidos do manifesto (" + Tirar.Length + ")");
+        }
+    }
 }

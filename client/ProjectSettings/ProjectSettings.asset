@@ -682,7 +682,7 @@ PlayerSettings:
   webWasm2023: 0
   webEnableSubmoduleStrippingCompatibility: 0
   scriptingDefineSymbols:
-    Android: IAP_FAKE_STORE_DEFAULT
+    Android: IAP_FAKE_STORE_DEFAULT;DC_LEVELPLAY
     Standalone: IAP_FAKE_STORE_DEFAULT
   additionalCompilerArguments: {}
   platformArchitecture: {}

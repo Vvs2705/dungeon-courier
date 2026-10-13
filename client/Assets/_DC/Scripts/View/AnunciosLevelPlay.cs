@@ -39,6 +39,11 @@ namespace DC
                 _rwId = rewarded; _itId = interstitial;
                 LevelPlay.OnInitSuccess += Iniciou;
                 LevelPlay.OnInitFailed += e => Debug.Log("DC LevelPlay: init falhou: " + e.ErrorMessage);
+                // anuncio nao personalizado para todos (ECA Digital, publico 13+ com adolescentes; docs/MONETIZACAO.md §2.4): sem consentimento
+                // de dados (GDPR), sem venda de dados (CCPA) e sem ID de publicidade no APK (Setup.SemIdDePublicidade); antes do Init
+                LevelPlayPrivacySettings.SetGDPRConsent(false);
+                LevelPlayPrivacySettings.SetCCPA(true);
+                LevelPlayPrivacySettings.SetCOPPA(false);
                 LevelPlay.Init(appKey);
             }
 

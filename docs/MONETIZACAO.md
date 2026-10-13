@@ -130,6 +130,15 @@ Tirar o LevelPlay economizou pouco no C# (a maior parte do IL2CPP é do IAP) e c
 
 ## 4. Religar o LevelPlay (quando houver conta e decisão do §2.4)
 
+**Estado em 2026-10-12: a branch `feat/levelplay` já tem os passos 1, 2 e a privacidade do 5.** Ela traz:
+- o pacote 9.5.1 com o Unity Ads e o resolver;
+- o define `DC_LEVELPLAY` no Android e o `Unity.LevelPlay` no asmdef e no viewcheck;
+- anúncio não personalizado para todos antes do `Init`: `LevelPlayPrivacySettings` com GDPR sem consentimento, CCPA com opt-out e COPPA desligado (público 13+);
+- `Setup.SemIdDePublicidade`, que tira do APK o `AD_ID` e as 3 permissões do Privacy Sandbox.
+
+Conferido com `aapt`. O APK fica com INTERNET, VIBRATE, ACCESS_NETWORK_STATE, BILLING e o WorkManager do SDK (WAKE_LOCK, RECEIVE_BOOT_COMPLETED, FOREGROUND_SERVICE), sem AD_ID, e tem 67,7 MiB. **Falta só o passo 3** (as 3 chaves da conta do Vinicius no `config.json`), depois o 5 na Play Console e o 6. Sem chave, o jogo segue no simulador e não chama o `Init`.
+
+
 Já foi feito uma vez e funcionou: commit `bd10ca9`, APK de 65,4 MiB. Na ordem:
 
 1. **Pacote:** em *Window > Package Manager*, instalar o **Ads Mediation** (`com.unity.services.levelplay`; o testado foi o 9.5.1) e aceitar o **Import** do Mobile Dependency Resolver.

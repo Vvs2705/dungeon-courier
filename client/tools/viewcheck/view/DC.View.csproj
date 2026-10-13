@@ -3,8 +3,10 @@
   <PropertyGroup><AssemblyName>DC</AssemblyName></PropertyGroup>
   <ItemGroup>
     <Compile Include="$(ProjClient)\Assets\_DC\Scripts\View\*.cs" />
-    <!-- Unity IAP (docs/MONETIZACAO.md): pacote de codigo-fonte (Library/PackageCache), compilado pelo Unity em ScriptAssemblies. O LevelPlay
-         (AnunciosLevelPlay.cs) so compila com DC_LEVELPLAY, desligado: sem a DLL dele aqui. -->
+    <!-- Unity IAP e LevelPlay (docs/MONETIZACAO.md): pacotes de codigo-fonte (Library/PackageCache), compilados pelo Unity em
+         ScriptAssemblies. O AnunciosLevelPlay.cs so compila com DC_LEVELPLAY (ligado no Android). -->
     <Reference Include="$(ProjClient)\Library\ScriptAssemblies\Unity.Purchasing.dll" Private="false" />
+    <Reference Include="$(ProjClient)\Library\ScriptAssemblies\Unity.LevelPlay.dll" Private="false" />
   </ItemGroup>
+  <PropertyGroup><DefineConstants>$(DefineConstants);DC_LEVELPLAY</DefineConstants></PropertyGroup>
 </Project>
