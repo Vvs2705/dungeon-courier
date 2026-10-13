@@ -9,7 +9,7 @@
 **Como vai ser jogar:** "entregue e saia vivo"; o pagamento melhora a guilda e o equipamento.
 
 ## Situação
-**1.2.0-beta (2026-10-12): o GDD inteiro do nosso lado** (4 regiões, 72 contratos, 20 inimigos, 8 chefes, 15 cargas, 25 perks, eventos, temporada, sem fim, 4 idiomas, sprites de todo o elenco, 8 roupas, Unity IAP com loja falsa, página da loja e 13 criativos em 4 idiomas). Anúncios no simulador até o LevelPlay ser religado. Testado no PC; no POCO F4 instala e roda (115–275 MB), mas a 28–36 fps: correção em teste. O que falta para o GDD completo está em [`docs/CONTRATO_LANCAMENTO.md`](docs/CONTRATO_LANCAMENTO.md) e no CHANGELOG.
+**1.2.0-beta (2026-10-12): o GDD inteiro do nosso lado** (4 regiões, 72 contratos, 20 inimigos, 8 chefes, 15 cargas, 25 perks, eventos, temporada, sem fim, 4 idiomas, sprites de todo o elenco, 8 roupas, Unity IAP com loja falsa, página da loja e 13 criativos em 4 idiomas). Anúncios no simulador até o LevelPlay ser religado. Testado no PC e no POCO F4 (Android 14, 120 Hz): ~55 fps em todas as telas, inclusive no Dragão, 115–275 MB de memória. O que falta para o GDD completo está em [`docs/CONTRATO_LANCAMENTO.md`](docs/CONTRATO_LANCAMENTO.md) e no CHANGELOG.
 
 - **Escopo da v1.0-beta:** [`docs/CONTRATO_V1.md`](docs/CONTRATO_V1.md) · **Balance medido pelo bot:** [`docs/BALANCE.md`](docs/BALANCE.md) · v0.1: [`docs/CONTRATO_V01.md`](docs/CONTRATO_V01.md)
 - **Teste com jogadores:** [`docs/TESTE_JOGADORES.md`](docs/TESTE_JOGADORES.md), [`docs/PERGUNTAS_PLAYTEST.md`](docs/PERGUNTAS_PLAYTEST.md); relatório dos diários: `python client/tools/diario_report.py <pasta>`
