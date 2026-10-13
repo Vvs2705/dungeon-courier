@@ -53,7 +53,7 @@ namespace DC.Tests
             Assert.AreEqual(RoomR3(Regiao3.S1), Content.Rooms[RoomR3(Regiao3.R4)].Secret); Assert.AreEqual(RoomR3(Regiao3.S1), Content.Rooms[RoomR3(Regiao3.R9)].Secret);
             var bp = new Dictionary<Gear, int>();
             foreach (int id in reg.Rooms) { Gear g = Content.Rooms[id].Blueprint; if (g != Gear.None) { bp[g] = (bp.TryGetValue(g, out int n) ? n : 0) + 1; Assert.Greater(Content.Rooms[id].ChestCoins, 0, "projeto sem bau"); } }
-            Assert.AreEqual(2, bp[Gear.Hook], "gancho: R3-2, R3-9"); Assert.AreEqual(2, bp[Gear.Smoke], "fumaca: R3-4, S3-1"); Assert.AreEqual(2, bp.Count);
+            Assert.AreEqual(3, bp[Gear.Hook], "gancho completa na regiao 3: R3-2, R3-5, R3-9 (raia E)"); Assert.AreEqual(3, bp[Gear.Smoke], "fumaca: R3-4, R3-6, S3-1"); Assert.AreEqual(2, bp.Count);
 
             int pay = 0; var debut = new Dictionary<CargoType, int>();
             for (int k = 0; k < reg.Contracts.Length; k++)

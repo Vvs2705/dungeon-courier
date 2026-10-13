@@ -1,5 +1,19 @@
 # RENDER_SPRITES — modelo 3D rigado → folhas de sprite 2D (Dungeon Courier)
 
+## Estado em 2026-10-11, noite (raia G, Leva C — Lotes 5 e 6, dragão, ícone e roupas)
+
+- **Todos com exit 0 e `SPRITES_OK`**, conferidos nas folhas (`client/Builds/sprites_contact/`): sem braço em T (exceções no §7), item preso à mão, margem ≥ 4 px (a menor é 6 px, num prop do Lote 5; nos personagens, 13 px, no Land do dragão), passada no `stride_mps`. Ainda sem aprovação visual do Vinicius.
+  - **Lote 5 (região 3):** `esqueleto` (clava), `mumia`, `gargula`, `necromante` + `necromante_fim` (cajado); props `clava`, `cajado`, `fantasma`, `aranha` + `aranha_empinada`, `viuva` + `viuva_empinada`, `lanterna` + `lanterna_apagada`, `espelho`, `balao`, `lapide`, `vela`, `sarcofago`.
+  - **Lote 6 (região 4):** `diabrete`, `kobold` (frasco), `magma` + `brasa` (o mesmo modelo a 1,10 m), `capataz` + `capataz_fim` (chicote); props `frasco`, `chicote`, `salamandra`, `planta` + `planta_aberta`, `mapa`, `bigorna`, `braseiro`, `respiro`, `corrente`.
+  - **Dragão:** `dragao` + `dragao_fim`, rig refeito e 7 clipes no Blender (§10).
+  - **Ajustes pedidos:** `arqueiro` re-renderizado com o Walk = correr para trás (0,59 → 1,40 m/s: 1,0× na Sim); `courier_icone` + `caixa_icone` para o `loja_assets.py` (§4); posição das costas do golem para o brilho da View (§7).
+  - **Roupas do courier:** `courier_noturno`, `courier_real`, `courier_explorador`, `courier_forja`, `courier_fantasma` e, depois, `courier_mineiro` e `courier_coveiro` (os 7 clipes, troca de cor no mesmo modelo; §11). A Clássica é o `courier`.
+- **Texturas** `piso_cripta`/`parede_cripta` e `piso_forja`/`parede_forja` copiadas cruas para `Resources/Textures/`; ainda sem `.meta` (o Unity cria ao abrir).
+- **Scripts novos:** `dragao_blender.py` (§10), `planta_aberta.py` (§7) e `roupas_courier.py` (§11). No `render_sprites.py`: `footprint`, `tilt`, `--model` em `.blend`, actions do `.blend` com `--self`, laço `perch`/`hold`/`fly`, `ETAPA` no log (§1).
+- **O que travou e como saiu:** o import do FBX do Tripo levou de 7 a 14 min por personagem com o PC sem memória, e múmia, gárgula e necromante pararam no corte de 900 s. Cada personagem passou a ser importado uma vez e salvo em `.blend`; com ele, o render de um personagem leva de 3 a 12 s (§2).
+
+**Correspondência com o `CONTEUDO_REGIOES.md` §12.2–12.3 e a View (`WorldView.EnemySheet`):** os nomes são os do zip e a View já procura todos (`kobold`, `magma`, `brasa`, `capataz`, `dragao` são o 1º nome de cada par). Clipes com os nomes que a View pede (`WorldViewElenco.AnimRegiao`): `Statue`, `Wake`, `Dive`, `Perch`, `Hold`, `Grab`, `Rise`, `Cast`, `Summon`, `Swap`, `Scratch`, `Stun`, `Toss`, `Smash`, `Punch`, `Whip`, `Spin`, `Call`, `Breath`, `Fly`, `Land`. O `Vanish` do diabrete e o `Split` do magma ainda não são chamados pela View.
+
 ## Estado em 2026-10-11 (raia G, Lote 4 — região 2 "Minas Alagadas")
 
 - **15 conjuntos novos, todos com exit 0 e `SPRITES_OK`**, conferidos nas folhas: sem braço em T, picareta presa à mão, margem ≥ 4 px (a menor é 10 px), passada no `stride_mps`. Ainda sem aprovação visual do Vinicius.
@@ -82,10 +96,10 @@ O que entra para o DC:
 | `align_arms` automático (2026-10-11) | Sem a opção, o retarget mede o ângulo entre o braço do rig e o do clipe. Acima de 15°, alinha e escreve `AVISO rig em pose A` no log; o meta registra `align_arms`. Os rigs em T (≤ 9°) não mudam. Evita uma importação só para inspecionar o rig (2 a 10 min cada, com o PC sem memória) |
 | `ground_cut` no preset (2026-10-11) | Clipes que entram e saem do chão (Emerge/Burrow da toupeira e da rainha). A malha é cortada em z = 0 (bmesh `bisect_plane`), e a parte enterrada não entra na folha nem nos limites. O contorno fecha a borda do buraco. O clipe vai com `"ground_cut": true` no meta, e a View não precisa recortar |
 | Laço por nome com `look`, `sleep`, `stun`, `charge` (2026-10-11) | Look da toupeira, Sleep do mineiro, Stun e Charge do golem são laços |
-| Laço por nome com `perch` e `hold` (Lote 5) | Perch da gárgula e Hold da múmia (segura o courier) são laços. O `Hold.fbx` do `--hold` continua fora da pasta `-Anims`, então não vira clipe |
+| Laço por nome com `perch`, `hold` e `fly` (Lotes 5 e 6) | Perch da gárgula, Hold da múmia (segura o courier) e Fly do dragão são laços. O `Hold.fbx` do `--hold` continua fora da pasta `-Anims`, então não vira clipe |
 | `footprint=(largura, comprimento)` no preset (Lote 5) | Escala **não uniforme** da planta: o eixo longo do modelo vai para Y, o comprimento vira `comprimento` e a largura e a altura viram `largura`. O sarcófago do Tripo (~1,4:1) veste o obstáculo de 0,8 × 1,8 m da sala R3-5 sem crédito novo. O log escreve `PLANTA ...` |
 | `tilt=graus` no preset (Lote 5) | Depois da escala, gira a frente (−Y) para cima em volta de X e apoia o ponto mais baixo no chão. Faz a aranha e a viúva **empinadas** (35° e 30°) a partir do mesmo modelo, sem crédito. O log escreve `EMPINA ...` |
-| `--model` aceita `.blend` (Lote 5) | Com o PC sem memória (0,3 a 0,7 GB livres), o import do FBX do Tripo passou de 10 min e o `.ps1` cortou três personagens em 900 s. O FBX é importado uma vez e salvo em `.blend` (comando no §2); o render lê o `.blend` (`bpy.data.libraries.load`) em segundos. O resultado é o mesmo do FBX: são os mesmos objetos, salvos logo depois do import |
+| `--model` aceita `.blend` (Lote 5) | Com o PC sem memória (0,3 a 0,7 GB livres), o import do FBX do Tripo passou de 10 min e o `.ps1` cortou três personagens em 900 s. O FBX é importado uma vez e salvo em `.blend` (comando no §2); o render lê o `.blend` (`bpy.data.libraries.load`) em segundos. O resultado é o mesmo do FBX: são os mesmos objetos, salvos logo depois do import (`model_scale` do esqueleto 1,4770 pelos dois caminhos). As actions do `.blend` também vêm, e com `--self` viram os clipes (o dragão, §10) |
 | `ETAPA` no log (Lote 5) | Linhas `ETAPA modelo/clipes/limites <s>` e saída sem buffer: se o `.ps1` cortar no timeout, o log mostra onde o tempo foi |
 
 ## 2. Como usar
@@ -161,10 +175,33 @@ blender.exe -b --factory-startup --python-exit-code 1 --python client\tools\anim
 .\client\tools\render_sprites.ps1 -Nome clava -Model $env:TEMP\dc_in\clava\tripo_convert_....fbx   (cajado, fantasma, aranha, viuva, lanterna, espelho, balao, lapide, vela, sarcofago: idem)
 ```
 
+**Comandos do Lote 6, do dragão e das roupas (2026-10-11, noite).** A conversão para `.blend` dos personagens do Lote 6 passou a importar sem a animação do modelo (`use_anim=False` no `import_scene.fbx`: o render troca a action de qualquer jeito). O kobold estourou os 900 s com a animação e passou em 626 s sem ela; o resto do tempo é o import da malha com pele.
+
+```
+blender.exe -b --factory-startup --python-exit-code 1 --python client\tools\anim_blender.py -- --rig %TEMP%\dc_arte\mixamo\courier\Idle.fbx --out %TEMP%\dc_anim_l6 --only ImpSwap,ImpVanish,KoboldToss,MagmaSplit,ForemanWhip,ForemanSpin
+.\client\tools\render_sprites.ps1 -Nome diabrete -Model $env:TEMP\dc_in\diabrete\diabrete.blend -Anims $env:TEMP\dc_arte\mixamo\diabrete
+.\client\tools\render_sprites.ps1 -Nome kobold   -Model $env:TEMP\dc_in\kobold\kobold.blend     -Anims $env:TEMP\dc_arte\mixamo\kobold `
+    -Extra @("--attach", "$env:TEMP\dc_in\frasco\tripo_convert_5e5251a0-....fbx:RightHand:-0.05,0,-0.03:90,0,0:0.30")
+.\client\tools\render_sprites.ps1 -Nome magma    -Model $env:TEMP\dc_in\magma\magma.blend       -Anims $env:TEMP\dc_arte\mixamo\magma
+.\client\tools\render_sprites.ps1 -Nome brasa    -Model $env:TEMP\dc_in\magma\magma.blend       -Anims $env:TEMP\dc_arte\mixamo\brasa
+.\client\tools\render_sprites.ps1 -Nome capataz  -Model $env:TEMP\dc_in\capataz\capataz.blend   -Anims $env:TEMP\dc_arte\mixamo\capataz `
+    -Extra @("--attach", "$env:TEMP\dc_in\chicote\tripo_convert_39a6f622-....fbx:RightHand:-0.04,-0.276,-0.02:1.1,9.0,153.2:0.60")
+.\client\tools\render_sprites.ps1 -Nome capataz_fim -Model (o mesmo .blend) -Anims $env:TEMP\dc_arte\mixamo\capataz_fim -Extra (o mesmo chicote)
+blender.exe -b --factory-startup --python-exit-code 1 --python client\tools\planta_aberta.py -- %TEMP%\dc_in\planta\tripo_convert_779e2e97-....fbx %TEMP%\dc_in\planta_aberta\planta_aberta.blend
+.\client\tools\render_sprites.ps1 -Nome planta_aberta -Model $env:TEMP\dc_in\planta_aberta\planta_aberta.blend
+.\client\tools\render_sprites.ps1 -Nome frasco -Model $env:TEMP\dc_in\frasco\tripo_convert_5e5251a0-....fbx   (chicote, salamandra, planta, mapa, bigorna, braseiro, respiro, corrente: idem)
+(dragão: §10)
+blender.exe -b --factory-startup --python-exit-code 1 --python client\tools\roupas_courier.py -- %TEMP%\dc_in\courier\courier.blend %TEMP%\dc_in\roupas
+.\client\tools\render_sprites.ps1 -Nome courier_noturno -Preset courier -Model $env:TEMP\dc_in\roupas\courier_noturno.blend -Anims $env:TEMP\dc_arte\mixamo\courier -Hold $env:TEMP\dc_arte\mixamo\Hold.fbx   (real, explorador, forja, fantasma: idem)
+```
+
+O lote rodou por um script que renderiza em `<nome>_novo` e só no fim copia PNG + `meta.json` por cima da pasta (os `.meta` do Unity ficam): um commit de segurança no meio do render não pega um conjunto pela metade.
+
 **Tempo medido** (PC de 7,7 GB):
 - Prop: 3 a 30 s.
 - Personagem: 2 a 3,5 min em 2026-10-09; de 2 a 9 min em 2026-10-10 (122 a 532 s), com ~1 GB livre; de 5,5 a 11 min em 2026-10-11 (321 a 665 s), com 0,5 a 0,9 GB livre (o Blender chegou a ficar paginado, com 1 s de CPU a cada 10 s).
 - O tempo vai quase todo no import do FBX do Tripo, que tem malha com pele. O `.ps1` corta em 900 s.
+- **Desde 2026-10-11 (noite), com o `.blend`:** a conversão leva de 434 a 834 s por personagem (uma vez só) e o render de um personagem, de 3 a 12 s (`ETAPA modelo 0 s`). O import do FBX gasta CPU (mais de 200 s de CPU no necromante, disputando o processador com as outras raias), não só memória: as page faults ficaram baixas.
 
 **Onde sai cada coisa:**
 - Saída do `.ps1`: `client/Assets/_DC/Resources/Sprites/<Nome>/`.
@@ -234,8 +271,8 @@ Todos os presets usam `scale` 120, `outline` 3 e `max_frames` 12, exceto onde a 
 | `picareta` / `coracao` / `gaiola` / `lanterna_mina` | altura 0,45 / 0,45 / 0,50 / 0,50 m | 1 | 96 | — | Static |
 | `sapo` / `besouro` / `vagonete` / `cristal` / `escora` | largura 0,90 / 0,60 / 1,20 / 0,50 / 1,20 m | 1 | 144 / 112 / 208 / 96 / 176 | — | Static |
 | `esqueleto` | altura 1,35 m | 4 com espelho (3) | **256** (224 recortava a clava no alto e o monte do Collapse) | 3 072 px | Idle 199–289; Collapse e Rise 6 quadros; clava pelo `--attach` na linha |
-| `mumia` | altura 1,50 m | 4 com espelho (3) | 224 | 2 688 px | Idle 199–289; Hold 8 quadros |
-| `gargula` | altura 1,40 m | 4 com espelho (3) | 256 | 3 072 px | Statue 1 quadro |
+| `mumia` | altura 1,50 m | 4 com espelho (3) | **256** (224 recortava o bote do Grab) | 3 072 px | Idle 199–289; Hold 8 quadros; rig a 16° (alinhado sozinho) |
+| `gargula` | altura 1,40 m | 4 com espelho (3) | **288** (256 recortava o Dive) | 3 168 px | Statue 1 quadro |
 | `necromante` / `necromante_fim` | altura 1,60 m | 4 com espelho (3) / 1 | 320 / 320 | 3 840 px | cajado pelo `--attach` na linha (nos dois) |
 | `clava` / `cajado` | largura 0,49 m / altura 1,40 m | 1 | 96 / 144 | — | Static (o item solto; na mão vem do `--attach`) |
 | `fantasma` / `lanterna` / `lanterna_apagada` / `espelho` / `vela` | altura 0,90 / 0,45 / 0,45 / 0,50 / 0,70 m | 1 | 128 / 96 / 96 / 96 / 112 | — | Static; `lanterna_apagada` = o mesmo modelo com a chama pintada de vidro escuro no basecolor (§7) |
@@ -245,6 +282,15 @@ Todos os presets usam `scale` 120, `outline` 3 e `max_frames` 12, exceto onde a 
 | `sarcofago` | `footprint` 0,80 × 1,80 m | 4 com espelho (3) | 288 | 288 × 864 px | Static em 3 linhas: S/N = comprido em profundidade, W = atravessado (as duas orientações do obstáculo) |
 | `courier_icone` | altura 1,30 m, **320 px/m** | 1, câmera a 35° e −45° (3/4 de frente) | 512 | 512 px | CarryIdle 1 quadro (janela 199–289) com `--hold`; contorno 6 px. Para o ícone da loja (`loja_assets.py`) |
 | `caixa_icone` | largura 0,50 m, 320 px/m | 1, 35° e −45° | 256 | — | Static; a caixa na mesma escala e câmera do `courier_icone` |
+| `diabrete` | altura 0,90 m | 4 com espelho (3) | 192 | 2 304 px | Idle 199–289; Swap e Vanish 6 quadros |
+| `kobold` | altura 1,00 m | 4 com espelho (3) | 192 | 2 304 px | Idle 199–289; frasco pelo `--attach` na linha; rig a 16° (alinhado sozinho) |
+| `magma` / `brasa` | altura 1,90 / 1,10 m (o mesmo modelo) | 4 com espelho (3) | 336 / 208 | 4 032 / 2 496 px | Idle 199–289; rig a 23° (alinhado sozinho) |
+| `capataz` / `capataz_fim` | altura 1,40 m | 4 com espelho (3) / 1 | 256 / 320 | 3 072 / 3 840 px | Idle 199–289; chicote pelo `--attach` na linha (nos dois) |
+| `dragao` / `dragao_fim` | largura 3,50 m (comprimento) | 4 com espelho (3) / 1 | 576, máx. 7 | 4 032 px | Idle 4, Fly 6, Land 6 quadros; `--self` (clipes no `.blend`, §10); `_fim` com `ground_cut` no Dying |
+| `frasco` / `chicote` / `salamandra` / `mapa` | altura 0,30 m / largura 0,60 / 0,80 / 0,45 m | 1 | 96 / 112 / 128 / 96 | — | Static |
+| `planta` / `planta_aberta` | altura 0,55 / **0,596** m (a mesma escala: o lóbulo aberto sobe a altura do modelo) | 1 | 112 / 128 | — | Static; a aberta vem do `planta_aberta.py` (§7) |
+| `bigorna` / `braseiro` / `respiro` / `corrente` | largura 1,20 m / altura 0,70 m / largura 2,00 m / altura 1,50 m | 1 | 176 / **176** (112 recortava a bacia) / 272 / 160 | — | Static; a bigorna veste o obstáculo 1,2 × 0,8 da forja |
+| `courier_<roupa>` (noturno, real, explorador, forja, fantasma, mineiro, coveiro) | o preset `courier` (`-Preset courier`) | 8 com espelho (5) | 224 | 2 688 px | os 7 clipes do courier; modelo do `roupas_courier.py` (§11) |
 
 As células foram calculadas pela geometria de projeto com 10% de margem e conferidas na folha (o `folhas.py` imprime a margem mínima).
 - Em 2026-10-10, o bruto, o ogro, o ogro_fim e o pilar encostavam na borda e subiram de célula.
@@ -322,6 +368,12 @@ carga.sortingOrder = portador.sortingOrder + (clip.hands[k + 2] > 0.5f ? 1 : -1)
 - override Android **ASTC 6×6** (sem ASTC o Unity descomprime para RGBA32: 9×, `ART_BIBLE.md` §5).
 - O halo de compressão na borda do contorno precisa ser conferido no aparelho (pendência herdada do Forge).
 
+**Ícone da loja (`courier_icone` + `caixa_icone`, 2026-10-11)** — para o `client/tools/loja_assets.py`, que hoje compõe o ícone com o CarryIdle do `courier` (224, 120 px/m) e a caixa:
+- `courier_icone/CarryIdle.png`: 1 quadro de 512 × 512, o courier segurando a carga em 3/4 de frente (câmera a 35° e −45°: ele olha para a frente-esquerda da tela), **320 px/m**, contorno de 6 px, sem a caixa. Pivô (256; 105,3) px.
+- `caixa_icone/Static.png`: a caixa de 256 × 256 na mesma câmera e escala (320 px/m, contorno 6 px), com pivô no centro de baixo como os outros props (128; 68,3).
+- **Composição:** a caixa vai no ponto `hands` do meta do ícone: `clips[0].hands = [195.5, 268.2, 1]` (x, y em px a partir do canto inferior esquerdo da célula; frente = 1 → a caixa por cima do courier). É a mesma conta da View (§4, `hands`), só que com a escala de 320 px/m nas duas folhas.
+- Medidas (alfa, px a partir do canto inferior esquerdo): o courier ocupa x 126–353 e y 50–462 da célula; a caixa, 228 × 244 px na célula dela. Centrada no ponto `hands`, a caixa vai de x ~81 a ~310, então o recorte do ícone composto começa à esquerda do courier (x ~80).
+
 ## 5. Como funciona (resumo técnico)
 
 1. `read_factory_settings(use_empty=True)`; fps da cena = `--src-fps`; importa o modelo; `--height`/`--width` escala os objetos-raiz em volta da origem.
@@ -397,6 +449,16 @@ carga.sortingOrder = portador.sortingOrder + (clip.hands[k + 2] > 0.5f ? 1 : -1)
 - **Sentado visto de frente a 60°:** as pernas para a câmera descem na tela, e o mineiro dormindo (Sleep) e o golem atordoado (Stun) quase não diminuem de altura na linha S. A leitura de "sentado" vem do perfil e do tronco caído. Os joelhos do Stun foram dobrados para a perna não passar da célula.
 - **O `--attach` usa o repouso:** deslocamento e giro valem na pose em T. A conta para o escudo está em §9; se a pose do braço do guarda mudar, refaça a conta e confira a folha.
 - **Chapéu do courier a 60°:** a aba larga cobre o tronco nas vistas S e N, e na corrida S só se veem o chapéu e um pé. É do modelo e da câmera (`ART_BIBLE.md` §2), não do clipe. Com a caixa por cima (frente = 1), a leitura "courier com carga" continua.
+- **Morte de costas parece de pé a 60° (Lotes 5 e 6):** o corpo deitado ao longo da profundidade (pés para a câmera) fica com 0,87 × o comprimento na tela, mais alto que o ator de pé (0,5 × a altura). No fim do Dying do `capataz_fim` e do `necromante_fim`, o boneco deitado lê como "em pé de braços abertos". É o mesmo clipe do `courier_fim` e do `ogro_fim`. A View pode baixar o alfa ou girar o sprite no fim, se incomodar.
+- **Tiras soltas da múmia:** o modelo tem tiras de bandagem penduradas nos braços, rígidas no osso. Com o braço erguido à frente, elas saíam para os lados como varetas (lia como braço em T). O Grab gira o braço e o antebraço no próprio eixo (−26° a −45°) para as tiras penderem para baixo.
+- **Asas da gárgula:** não são puxadas pelos ombros. No Hit, as asas dobradas aparecem de quina na linha S (duas barras finas acima dos ombros), que é a silhueta do modelo de frente. No Wake, os braços sobem em V estreito (0,25 para o lado): mais aberto, de costas parecia um T.
+- **Cajado do necromante (o giro da mão):** o cajado preso à mão fica em pé quando a mão aponta para a frente com giro de +90° (o Idle). Com a mão apontando outra direção, o giro que mantém o cajado no lugar muda, porque o `aim` parte do arco mínimo desde o repouso. A conta (numpy, fora do Blender) deu: mão para baixo e à frente (0; −0,3; −0,95) com giro 17,5° = cajado apontado à frente com o crânio 17° acima (o disparo do Cast); mão (0; −1; 0,1) com giro 95,7° = cajado em pé com o antebraço para o alto (o Summon). Com 90° fixo, o cajado ficava deitado de lado.
+- **Lanterna apagada:** troca de material = o basecolor com a chama pintada de vidro escuro (o laranja vira cinza; o metal fica). A 60°, a chama quase não aparece (o globo é visto de cima), então a diferença entre acesa e apagada é sutil no sprite. A leitura forte é a luz da View.
+- **Sarcófago esticado:** a planta 0,8 × 1,8 m é escala não uniforme (o modelo é ~1,4:1): a tampa e o rosto entalhado ficam ~60% mais compridos em proporção (2,25:1 contra ~1,4:1). Linhas S e N: comprido em profundidade; W: atravessado (E = espelho). Cobre o obstáculo em pé e deitado da sala R3-5.
+- **Planta de boca aberta:** o modelo do Tripo já veio de boca entreaberta. A `planta_aberta` escancara: o lóbulo de cima gira 28° para cima em volta da dobradiça de trás (y 0,07; z 0,75 no FBX), com transição de 5 cm (z 0,73–0,78) para não rasgar a malha. 869 dos 3 923 vértices se movem.
+- **Necromante:** o Idle também é do Blender. Com o braço caído do Breathing Idle, o cajado ficava deitado. O Cast e o Summon não usam os clipes de magia do ARKANA sugeridos pela raia T, pelo mesmo motivo e pelo quadro do disparo.
+- **Giro do Capataz (Spin):** o braço do chicote vai esticado à frente-baixo enquanto o corpo gira; nos quadros de lado (linhas S e N no meio do giro) ele aparece horizontal. É o golpe, não um T de repouso.
+- **Roupas do courier:** a Noturno (anil escuro, couro quase preto) é a de menor contraste com o piso escuro; o contorno de 3 px segura a silhueta. A Fantasma é a textura inteira em cinza-ciano claro; a transparência fica na View (a `TintaRoupa` dela tem alfa 0,6; com a folha `courier_fantasma` a View passa a usar branco e perde o alfa, então convém manter o alfa só para essa roupa).
 
 ## 8. Folhas de conferência (`folhas.py`)
 
@@ -455,7 +517,36 @@ blender.exe -b --factory-startup --python-exit-code 1 --python client\tools\anim
 | `Charge` | 21 (0,67), laço → 8 | golem (investida, fase 2) | 2 passos no lugar, tronco a 35° à frente, braço oposto à perna, braços junto do corpo (abertos, liam como T com os ombros largos do golem) |
 | `Stun` | 41 (1,33), laço → 9 | golem atordoado | Sentado, joelhos para cima, braços apoiados à frente, cabeça rodando (0 → 10 → 20 → 30 → 40 = 0) |
 | `Collapse` → `golem_fim/Dying` | 46 (1,50) → 7 | golem morre | Cambaleia para trás com os braços à frente (8, "out") → os joelhos cedem (16) → cai à frente nos punhos (26) → de bruços (36, "out") → assenta (45) |
-| `Call` | 31 (1,00) → 12 | capitão (`CaptainCall`) | Pronto → inspira, mão direita à boca (6) → braço esquerdo sobe pela frente (9) → **grita: mão em concha na boca e braço esquerdo erguido (12, "out")** → acena para fora (18) e para dentro (24) → desce o braço pela frente (27) → pronto (30) |
+| `Call` | 31 (1,00) → 12 | capitão (`CaptainCall`); Capataz (o apito) | Pronto → inspira, mão direita à boca (6) → braço esquerdo sobe pela frente (9) → **grita: mão em concha na boca e braço esquerdo erguido (12, "out")** → acena para fora (18) e para dentro (24) → desce o braço pela frente (27) → pronto (30) |
+| `SkelAttack` → `esqueleto/Attack` | 30 (0,97) → 12 | esqueleto (clava) | Pronto → a clava sobe pela frente (2) → no alto atrás da cabeça, tronco torcido (5–12 = telegraph) → **pancada no chão com passo (15, "out") = quadro 6** → passa do ponto (19) → recolhe (24) → pronto (29) |
+| `BoneCollapse` / `BoneRise` → `Collapse` / `Rise` | 10 (0,30) → 6 | esqueleto | Desaba: tranco para trás (2) → agacha (5) → monte agachado com as mãos no chão (7 = 9). O Rise é o inverso; o último quadro de um é o primeiro do outro |
+| `MummyGrab` → `mumia/Grab` | 30 (0,97) → 12 | múmia | Curvada, braços à frente → **braços erguidos à frente** e girados (−26°/−41°) para as tiras penderem (6–15 = telegraph) → **bote em passo longo, braços esticados (17, "out") = quadro 7** → segura (21) → volta (25–29) |
+| `MummyHold` → `mumia/Hold` | 21 (0,67), laço → 8 | múmia segurando o courier | Passo à frente, braços à frente apertando (0 → 10 → 20 = 0) |
+| `GargStatue` / `GargPerch` | 10 / 25 (laço) → 1 / 10 | gárgula no pedestal / pousada | Agachada com as mãos no chão à frente; o Perch ofega (0 → 12 → 24 = 0) |
+| `GargWake` → `gargula/Wake` | 28 (0,93) → 11 | gárgula acorda (aviso de 0,9 s) | Agachada → levanta com a cabeça para trás (4) → **braços em V estreito no alto (10–18)** → inclina para o mergulho com os braços para trás (23–27) |
+| `GargDive` → `gargula/Dive` | 16 (0,53) → 6 | gárgula no ar (`FREE`, sem pé no chão) | Corpo na horizontal a ~0,45 m (X Bot) do chão, pernas para trás, garras à frente; balança pouco |
+| `NecroIdle` → `necromante/Idle` | 61 (2,0), laço → 12 | necromante | Cajado em pé à frente (antebraço à frente, mão com giro +90°), respira |
+| `NecroCast` → `necromante/Cast` | 30 (0,97) → 12 | necromante (raio) | Ergue o cajado em pé (8–22 = telegraph) → **aponta o cajado com o crânio à frente, em passo (24, "out") = quadro 10** (`round(0,8 × 12)`) → segura (27) → volta (29) |
+| `NecroSummon` → `necromante/Summon` | 37 (1,2) → 12 | necromante ergue os esqueletos | Abaixa (8) → os braços sobem pela frente (12) → **cajado em pé acima da cabeça, as duas mãos (16–24)** → desce pela frente (28) → pronto (36) |
+| `ImpSwap` → `diabrete/Swap` | 13 (0,40) → 6 | diabrete (redemoinho na carga) | Gira 90° por quadro amostrado (o quadril em Z; o pé segue a canela), agachando e encolhendo os braços; termina com os braços no alto |
+| `ImpVanish` → `diabrete/Vanish` | 16 (0,50) → 6 | diabrete pisca (aviso de 0,5 s) | Agacha com os braços para trás (5) → salta encolhido (10, "out") → mais alto (15). `FREE`; a View apaga com alfa |
+| `KoboldToss` → `kobold/Toss` e `capataz/Toss` | 30 (0,97) → 12 | kobold (frasco na mão direita), Capataz | Pronto → braço desce para trás (5) → carregado agachado (10–15 = telegraph) → passa por baixo (16) → **solta à frente e para o alto (17, "out") = quadro 7** (`round(0,6 × 12)`) → acompanha (21) → volta (25–29) |
+| `MagmaSplit` → `magma/Split` | 19 (0,60) → 7 | magma estoura em brasas | Cambaleia para trás (4, "out") → encolhe com os braços cruzados (9) → braços sobem pela frente (11) → **estoura com os braços em V à frente (14–18)**; a View troca pelas brasas |
+| `ForemanWhip` → `capataz/Whip` | 30 (0,97) → 12 | Capataz (chicote na mão direita) | As poses do `SkelAttack` retimadas: o chicote sobe pela frente (2) → no alto atrás (6–14 = telegraph) → **chicotada à frente (17, "out") = quadro 7** → (21–29) |
+| `ForemanSpin` → `capataz/Spin` | 30 (0,97) → 12 | Capataz (giro de 3 m) | Arma torcido com o chicote cruzado (6–12 = telegraph) → gira 360° em 90° por chave (14, **17 "out" = quadro 7**, 20, 23) com o chicote esticado à frente-baixo → pronto (29) |
+
+**Reusados nos Lotes 5 e 6 sem mudar as chaves:** `Hit` (todos), `Swipe` → `diabrete/Scratch` (impacto no quadro 6), `Stun` do golem → `diabrete/Stun`, `Smash` do bruto → `magma/Smash` (quadro 7), `Punch` do capitão → `brasa/Punch` (quadro 6), `Call` do capitão → `capataz/Call`.
+
+**Itens presos à mão (`--attach`, contas de 2026-10-11):** mesma regra da picareta (abaixo): no repouso em T a mão direita aponta −X com a palma para −Z; o punho fecha ~0,04 m ao longo da mão e ~0,02 m para o lado da palma; os eixos do prop vêm de uma PCA dos vértices (`dc_geo.py`, fora do repositório).
+
+| Item → osso | Tamanho | Deslocamento (m) | Giro (Euler XYZ) | Por quê |
+|---|---|---|---|---|
+| clava → `RightHand` do esqueleto | 0,49 m | (−0,04; −0,25; −0,02) | (31,9; 44,1; −78,0) | Cabo atravessa o punho para a frente, com a cabeça da clava à frente; o centro da caixa fica 0,25 m à frente do punho |
+| cajado → `RightHand` do necromante | 1,40 m | (−0,04; 0,251; −0,02) | (−180; 90; 90) (resolvido numericamente: trava de cardan) | Cajado ao longo do eixo do polegar, com o crânio para cima quando a mão aponta à frente com giro +90°; o punho fica 0,25 m abaixo do centro |
+| frasco → `RightHand` do kobold | 0,30 m | (−0,05; 0; −0,03) | (90; 0; 0) | O frasco em pé no modelo (gargalo para +Z) vai com o gargalo para o lado do polegar (−Y no T); o centro fica no punho |
+| chicote → `RightHand` do Capataz | 0,60 m | (−0,04; −0,276; −0,02) | (1,1; 9,0; 153,2) | Chicote enrolado: o cabo (a ponta estreita da PCA) no punho, o rolo à frente (−Y no T) e o plano do rolo com a normal para +Z; o centro fica 0,276 m à frente do punho |
+
+Conferido nas folhas: a clava, o cajado, o frasco e o chicote ficam na mão direita em todos os quadros (`*_folhas.png`).
 
 **Folha de palitos para iterar** (2026-10-10, fora do repositório, em `%TEMP%`): `dc_prev.py` no Blender grava as juntas projetadas a 60° de cada FBX de clipe por direção e quadro amostrado, e imprime a altura do tornozelo. `dc_prev_draw.py` (Pillow) desenha os bonecos. Leva ~3 s, contra 3 a 8 min de um render com a malha do Tripo, e serviu para achar braço em T, pé afundando e pose fora do quadro amostrado.
 
@@ -497,3 +588,76 @@ blender.exe -b --factory-startup --python-exit-code 1 --python client\tools\anim
   - A rotação que leva os eixos do modelo a esses dá Euler XYZ (31,6; −67,3; 98,4), conferida pela matriz.
 - **Ponto:** o punho fecha a 0,5 do centro para o cabo, perto do fim. Com `tamanho` 0,45 m (escala 0,459, cabo de 0,55 m), o centro da caixa fica 0,229 m à frente do punho. A palma fica 0,04 m ao longo da mão e 0,02 m para o lado da palma, o que dá o deslocamento (−0,04; −0,229; −0,02).
 - **Conferido na folha `goblin_mineiro_folhas.png`:** a picareta fica na mão direita nos 7 clipes. No Throw ela vai ao alto atrás da cabeça (quadros 3–6) e para a frente na soltura (quadro 7). O projétil é o sprite `picareta` girando por código; durante o acompanhamento, o sprite da mão continua mostrando a picareta.
+
+## 10. Dragão (`dragao_blender.py`, 2026-10-11)
+
+O FBX do dragão veio com o rig "Outro" do Tripo: 43 ossos `bone_0..42`, sem mandíbula e sem nome. Não é Mixamo, então o retarget do `render_sprites.py` não serve. O `client/tools/dragao_blender.py` refaz o rig e anima por keyframe, e o render lê o `.blend` com `--self`.
+
+```
+blender.exe -b --factory-startup --python-exit-code 1 --python client\tools\dragao_blender.py -- --fbx %TEMP%\dc_in\dragao\tripo_convert_c0f56bd1-....fbx --out %TEMP%\dc_in\dragao
+.\client\tools\render_sprites.ps1 -Nome dragao     -Model $env:TEMP\dc_in\dragao\dragao.blend     -Extra @("--self")
+.\client\tools\render_sprites.ps1 -Nome dragao_fim -Model $env:TEMP\dc_in\dragao\dragao_fim.blend -Extra @("--self")
+```
+
+Leva ~2 s (malha de 3 813 vértices; o FBX tem 0,34 MB).
+
+**O rig como veio** (inspeção no Blender; no FBX o dragão olha +X e o lado esquerdo é +Y):
+- a hierarquia faz sentido: corpo, pescoço de 3 ossos, cabeça com 2 chifres e uma "garganta" de 2 ossos, 4 pernas, 2 asas e cauda de 4 ossos;
+- **os pesos não:** 1 065 dos 3 813 vértices não tinham peso nenhum (ficariam parados com o corpo andando) e o grupo `bone_42` (a pata traseira direita) pegava o corpo de ponta a ponta;
+- as asas são assimétricas (5 ossos à esquerda, 7 à direita) e ficam erguidas atrás, com a membrana no plano do corpo.
+
+**O que o script faz:**
+
+| Passo | Como |
+|---|---|
+| Nomes | Tabela `NAMES`: `root`, `spine_0..1`, `neck_0..2`, `head`, `throat_0..1`, `horn_L/R_0..1`, `leg_FL/FR_0..3` (dianteiras), `leg_HL_0..2` e `leg_HR_0..1` (traseiras), `wing_L_0..4`, `wing_R_0..6`, `pelvis`, `tail_0..3` |
+| Mandíbula | Osso novo `jaw`, filho de `head`, da dobradiça atrás do canto da boca (0,37; 0; 0,50) ao queixo (0,47; 0; 0,44), em unidades do FBX. Pega os 71 vértices abaixo da linha dos dentes de cima, com transição de 3 cm na dobradiça |
+| Pesos | Refeitos do zero: inverso da distância⁴ aos 2 ossos mais próximos (segmento cabeça–cauda do osso). Osso de um lado (`_L_`, `FL`, `HL` / `_R_`, `FR`, `HR`) não pega vértice do outro lado. `root` fica sem peso |
+| Frente | Gira −90° em Z e aplica: o dragão olha −Y, como os rigs Mixamo (sem `--yaw` no preset) |
+| Clipes | Pose = giro de cada osso em eixos do mundo do repouso, relativo ao pai (a convenção do `anim_blender.py`: X = esquerda, Y = trás, Z = cima). Chaves nos quadros que o render amostra |
+
+**Clipes** (30 fps na fonte, folha a até 7 quadros):
+
+| Clipe | Quadros → folha | O que faz |
+|---|---|---|
+| `Idle` | 30 (1,0 s), laço → 4 | Respira: peito, pescoço, asas e cauda |
+| `Walk` | 36 (1,2 s), laço → 7 | Passo diagonal lento (dianteira esquerda com traseira direita), joelho dobra na volta da perna, cauda e pescoço balançam. Sem `stride_mps` (no lugar, sem root motion): a View acerta o ritmo pela velocidade |
+| `Breath` | 34 (1,13 s) → 7 | Recua e inspira (1–2, a garganta acesa aparece) → **sopro no quadro 4 de 7** (≈ 0,6): pescoço à frente, focinho erguido e boca aberta → segura (5) → volta. Com a cabeça para baixo a boca sumia da câmera de 60° |
+| `Fly` | 18 (0,6 s), laço → 6 | Asas abertas em V batendo de 33° a 77° acima da horizontal, dedos de trás abertos no plano da asa, pernas recolhidas. No lugar: a altura do voo e a sombra são da View |
+| `Land` | 24 (0,8 s) → 6 | Do voo ao chão: asas fecham, o corpo afunda e a cabeça vai ao chão (a janela de dano `HeadDown`); o último quadro segura |
+| `Roar` | 36 (1,2 s) → 7 | Empina o pescoço, cabeça para o alto, boca aberta, asas meio abertas |
+| `Dying` (`dragao_fim`) | 45 (1,5 s) → 7 | Cambaleia rugindo → as pernas abrem e o corpo desce de barriga → pescoço e asas caem no chão. `ground_cut`: o que passa do chão é cortado |
+
+**Presets:** `dragao` 3,50 m de comprimento (`width`), 4 direções com espelho, célula 576, até 7 quadros (7 × 576 = 4 032 px); `dragao_fim` 1 direção, 576 × 7. A ~4,5 m na tela, a célula de 576 (4,8 m) deixa 13 a 34 px de margem. O `AVISO recorte` do log (4,96 m) é a medida com 10% de folga.
+
+**Limites conhecidos:**
+- A boca aberta só aparece com a cabeça erguida: a 60°, de frente, o focinho no nível mostra o alto da cabeça.
+- A mandíbula é pequena no sprite: os dentes aparecem no Breath de frente, mas o que vende o sopro é o cone da View.
+- O voo é no lugar e sem sombra própria.
+- Os dedos da asa direita (7 ossos) e da esquerda (5) não são simétricos; na folha N do `Fly` a ponta direita aparece um pouco mais longa.
+
+## 11. Roupas do courier (`roupas_courier.py`, 2026-10-11)
+
+Cosmético, 0 crédito: o mesmo modelo do courier com o basecolor recolorido, um `.blend` por roupa, renderizado com o preset `courier` (os 7 clipes, 5 linhas). Os nomes são os do `Hud.FolhaRoupa` (`MetaTelas.cs`): `courier_noturno`, `courier_real`, `courier_explorador`, `courier_forja` (Bombeiro de forja), `courier_fantasma` e, desde 2026-10-11 (noite, roupas da raia E), `courier_mineiro` e `courier_coveiro`. A Clássica continua sendo o `courier`.
+
+```
+blender.exe -b --factory-startup --python-exit-code 1 --python client\tools\roupas_courier.py -- %TEMP%\dc_in\courier\courier.blend %TEMP%\dc_in\roupas [mineiro,coveiro]
+.\client\tools\render_sprites.ps1 -Nome courier_<roupa> -Preset courier -Model %TEMP%\dc_in\roupas\courier_<roupa>.blend -Anims %TEMP%\dc_arte\mixamo\courier -Hold %TEMP%\dc_arte\mixamo\Hold.fbx
+```
+
+**Como recolore** (HSV no numpy, o sombreado da textura fica):
+- casaco e chapéu = os pixels azuis do basecolor (matiz 180–250°, saturação > 0,2);
+- bolsa, botas, cinto e luvas = os marrons saturados (matiz 0–45°, saturação > 0,35);
+- pele e camisa (pouca saturação) não mudam;
+
+| Roupa | Azul vira | Marrom vira | Tinta de reserva da View (`TintaRoupa`) |
+|---|---|---|---|
+| `noturno` | anil escuro (245°) | couro quase preto | `#7C86D8` |
+| `real` | roxo real (280°) | dourado (45°) | `#D7A0F0` |
+| `explorador` | cáqui (42°) | couro escuro | `#E2CC98` |
+| `forja` | vermelho-fogo (10°) | couro carvão | `#F2905C` |
+| `fantasma` | tudo cinza-ciano claro | — | branco-ciano com alfa 0,6 |
+
+O Tripo liga o basecolor em dois nós de imagem do material ("Diffuse Texture.003" e ".005"); o script muda os dois.
+
+**Cores de papel (ART_BIBLE §3):** o capacete do Mineiro é âmbar, e não o amarelo-limão da carga (`#FFE14D`) nem o amarelo do capacete do goblin mineiro; o Coveiro usa sálvia acinzentada no lugar do "verde-musgo" proposto, que é o dominante do Ogro (`#6F8A4B`), e fica longe do verde `#7CFF9E` dos mortos-vivos. As duas foram conferidas sobre os pisos das 4 regiões (`piso`, `piso_mina`, `piso_cripta`, `piso_forja`): leem nos 4. O ponto mais fraco é o corpo marrom do Mineiro sobre a terra da mina, onde quem segura a leitura é o capacete âmbar e o contorno. Se o tamanho do APK apertar, o corte é renderizar só Idle, CarryIdle, Run e CarryRun por roupa (e a View cair na folha `courier` para Throw, Dash e Hit), ou ficar só com a tinta de reserva.

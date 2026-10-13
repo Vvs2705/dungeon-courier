@@ -1,0 +1,88 @@
+{
+ "size": 576,
+ "fps": 12.0,
+ "dirs": 4,
+ "rows": 3,
+ "dir_order": [
+  "S",
+  "W",
+  "N"
+ ],
+ "mirror": true,
+ "row0": "top",
+ "elev": 60.0,
+ "yaw": 0.0,
+ "ppu": 120.0,
+ "pivot_px": [
+  288.0,
+  196.2
+ ],
+ "pivot": [
+  0.5,
+  0.3406
+ ],
+ "light": "flat",
+ "outline_px": 3,
+ "src_fps": 30,
+ "preset": "dragao",
+ "model_scale": 3.5675,
+ "hold": "",
+ "attach": [],
+ "align_arms": false,
+ "clips": [
+  {
+   "name": "Breath",
+   "file": "Breath.png",
+   "frames": 7,
+   "loop": false,
+   "fps": 6.176,
+   "duration_s": 1.133,
+   "src_frames": 34
+  },
+  {
+   "name": "Fly",
+   "file": "Fly.png",
+   "frames": 6,
+   "loop": true,
+   "fps": 10.0,
+   "duration_s": 0.6,
+   "src_frames": 18
+  },
+  {
+   "name": "Idle",
+   "file": "Idle.png",
+   "frames": 4,
+   "loop": true,
+   "fps": 4.0,
+   "duration_s": 1.0,
+   "src_frames": 30
+  },
+  {
+   "name": "Land",
+   "file": "Land.png",
+   "frames": 6,
+   "loop": false,
+   "fps": 7.5,
+   "duration_s": 0.8,
+   "src_frames": 24
+  },
+  {
+   "name": "Roar",
+   "file": "Roar.png",
+   "frames": 7,
+   "loop": false,
+   "fps": 5.833,
+   "duration_s": 1.2,
+   "src_frames": 36
+  },
+  {
+   "name": "Walk",
+   "file": "Walk.png",
+   "frames": 7,
+   "loop": true,
+   "fps": 5.833,
+   "duration_s": 1.2,
+   "src_frames": 36
+  }
+ ]
+}

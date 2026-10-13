@@ -1,0 +1,50 @@
+{
+ "size": 512,
+ "fps": 12.0,
+ "dirs": 1,
+ "rows": 1,
+ "dir_order": [
+  "S"
+ ],
+ "mirror": false,
+ "row0": "top",
+ "elev": 35.0,
+ "yaw": -45.0,
+ "ppu": 320.0,
+ "pivot_px": [
+  256.0,
+  105.3
+ ],
+ "pivot": [
+  0.5,
+  0.2056
+ ],
+ "light": "flat",
+ "outline_px": 6,
+ "src_fps": 30,
+ "preset": "courier_icone",
+ "model_scale": 1.3318,
+ "hold": "Hold.fbx",
+ "attach": [],
+ "align_arms": false,
+ "clips": [
+  {
+   "name": "CarryIdle",
+   "file": "CarryIdle.png",
+   "frames": 1,
+   "loop": true,
+   "fps": 0.333,
+   "duration_s": 3.0,
+   "src_frames": 90,
+   "src_range": [
+    199,
+    289
+   ],
+   "hands": [
+    195.5,
+    268.2,
+    1
+   ]
+  }
+ ]
+}

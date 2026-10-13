@@ -110,6 +110,7 @@ Fonte do desenho: [`CONTEUDO_REGIOES.md`](CONTEUDO_REGIOES.md) §1.1 (lava, resp
 ## Riscos e pendências
 
 - **Moedas paradas: ~21.600 no fim da região 4** (13.900 estimadas na entrada + 21.300 ganhas − 13.600 do Gancho e da Armadilha). O alvo do desenho (§10.3) era sobrar no máximo 1 nível de equipamento (~3.000). As alavancas do desenho, em ordem: (1) pagamento das regiões 3–4 −10% (aqui tira ~2.100); (2) baú −20% (~900 na região); (3) um ralo novo — **decisão do coordenador**. A região 4 sozinha deixa ~7.700 (ganha 21.300, só tem 13.600 para gastar).
+- **Leva C (raia E), resolvido em `BALANCE.md`, "Economia da campanha":** equipamento a 12.500 por peça; o 3º projeto do Gancho foi para a R3-5 (o Gancho de reserva fica na R4-1) e a Armadilha ganhou um baú de reserva na R4-4. A campanha completa, do zero, termina com ~2.600 moedas (máx. 4.900).
 - **Ponto de partida estimado:** guilda e armas no máximo, Fumaça e Botas no nível 5 e 13.900 moedas são hipótese; refazer com o save real do fim da região 3 quando a R3 medir.
 - **Mais duras por tentativa:** M4-16 (61%), M4-4 relíquia (65%), M4-14 e M4-7 planta (78–80%), M4-15 bolo (88%). A campanha fecha com ≤ 1,8 tentativa em cada.
 - **Duração:** 5 contratos do 4º em diante abaixo de 90 s (60–89 s). Alavanca, se o coordenador quiser: nível (vida) da região, que hoje sobe 16→31 (×2,8→×4,6) — subir mais aumenta a morte no M4-16.

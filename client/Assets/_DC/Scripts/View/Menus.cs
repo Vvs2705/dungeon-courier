@@ -170,7 +170,7 @@ namespace DC
                 case "loja": ShowMenu(); ShowLoja(); break;
                 case "compra": ShowMenu(); ShowLoja(); Compra(Product.StarterPack); break;
                 case "anuncio": ShowMenu(); _ads.Recompensado(Textos.PremioBau(Sim.DailyChestCoins(_g.Hoje), S.DailyChestBlueprint(_g.Hoje)), _ => { }); break;
-                case "intersticial": ShowMenu(); _ads.Intersticial(() => { }); break;
+                case "intersticial": ShowMenu(); _ads.Intersticial(_ => { }); break;
                 case "oferta": DevResultado(false); break;
                 case "bonus": DevResultado(true); break;
             }
@@ -339,9 +339,11 @@ namespace DC
         {
             t.B.gameObject.SetActive(show);
             if (!show) return;
-            bool can = S.CanReroll(rare);
+            bool can = S.CanReroll(rare), done = S.RerolledToday(rare);
             t.B.interactable = can;
-            t.Cost.text = Textos.Num(S.RerollCost);
+            t.Coin.enabled = !done;
+            t.Cost.text = done ? Textos.TrocaAmanha : Textos.Num(S.RerollCost);   // ja trocou hoje: so amanha
+            t.Cost.color = !done && S.Coins < S.RerollCost ? Art.Bad : Art.Tinta;   // falta moeda: preco em vermelho
             ((Image)t.B.targetGraphic).color = can ? Art.Paper : Art.Off;
         }
 
@@ -366,14 +368,15 @@ namespace DC
                 WRow row = _gears[i];
                 var g = (Gear)(i + 1);
                 bool un = S.GearUnlocked(g), eq = S.GearEquipped == g;
-                int bp = S.Blueprints(g), lv = S.GearLevel(g), cost = S.GearCost(g);
+                int bp = S.Blueprints(g), lv = S.GearLevel(g), cost = S.GearCost(g), cap = S.GearCap;
+                bool dragon = un && cost < 0 && lv >= cap && cap < Balance.GearMaxLevel;   // no 5: os niveis 6-8 abrem com o Dragao
                 row.G.alpha = un ? 1f : 0.6f;
                 row.Lock.enabled = !un;
-                // travado: os 3 projetos (cheio = achado); destravado: os 5 niveis
+                // travado: os 3 projetos (cheio = achado); destravado: os 8 niveis, os acima do teto (6-8 antes do Dragao) quase apagados
                 for (int k = 0; k < row.Dots.Length; k++)
                 {
                     row.Dots[k].enabled = un || k < Balance.GearBlueprints;
-                    row.Dots[k].color = k < (un ? lv : bp) ? Art.Courier : Art.A(Art.Tinta, 0.25f);
+                    row.Dots[k].color = k < (un ? lv : bp) ? Art.Courier : un && k >= cap ? Art.A(Art.Tinta, 0.08f) : Art.A(Art.Tinta, 0.25f);
                 }
                 row.Level.text = un ? Textos.ArmaNivel(lv, Balance.GearMaxLevel) : Textos.Projetos(bp, Balance.GearBlueprints);
                 row.Equip.interactable = un && !S.InContract;   // tocar no equipado tira (espaco vazio)
@@ -383,7 +386,7 @@ namespace DC
                 bool can = S.CanUpgradeGear(g);
                 row.Up.gameObject.SetActive(un);
                 row.Up.interactable = can;
-                row.UpText.text = cost < 0 ? Textos.Maximo : Textos.Melhorar;
+                row.UpText.text = dragon ? Textos.GearDragao : cost < 0 ? Textos.Maximo : Textos.Melhorar;
                 row.Cost.text = cost < 0 ? "" : Textos.Num(cost);
                 row.UpCoin.enabled = cost >= 0;
                 ((Image)row.Up.targetGraphic).color = can ? Art.Good : Art.Off;
@@ -875,7 +878,7 @@ namespace DC
             return row;
         }
 
-        /// <summary>Linha do equipamento lateral (4 linhas de ~289 px): icone, nome, efeito, projetos 0/3 ou niveis 1-5, e EQUIPAR | MELHORAR
+        /// <summary>Linha do equipamento lateral (4 linhas de ~289 px): icone, nome, efeito, projetos 0/3 ou niveis 1-8, e EQUIPAR | MELHORAR
         /// lado a lado (cada um ~188 x 220 px de referencia, acima de 48 dp). Tocar no equipado tira (espaco vazio).</summary>
         WRow BuildGearRow(Transform parent, int i, int count)
         {
@@ -890,9 +893,9 @@ namespace DC
             Shrink(Loc(Ink(r, "Nome", 36, new Vector2(0.17f, 0.69f), new Vector2(0.59f, 0.97f), TextAnchor.MiddleLeft, true), () => Textos.GearNome(g)), 20);
             Text eff = Shrink(Loc(Ink(r, "Efeito", 24, new Vector2(0.17f, 0.32f), new Vector2(0.59f, 0.69f), TextAnchor.MiddleLeft), () => Textos.GearEfeito(g)), 14);
             eff.color = Art.A(Art.Tinta, 0.8f);
-            for (int k = 0; k < row.Dots.Length; k++)
-                row.Dots[k] = Art.Img(r, "Ponto", Art.Disc(), Art.Off, new Vector2(0.17f + k * 0.042f, 0.06f), new Vector2(0.204f + k * 0.042f, 0.27f));
-            row.Level = Shrink(Ink(r, "NivelTexto", 24, new Vector2(0.385f, 0.04f), new Vector2(0.59f, 0.3f), TextAnchor.MiddleLeft), 13);
+            for (int k = 0; k < row.Dots.Length; k++)   // 8 pontos (niveis 1-8; 6-8 depois do Dragao)
+                row.Dots[k] = Art.Img(r, "Ponto", Art.Disc(), Art.Off, new Vector2(0.17f + k * 0.0285f, 0.08f), new Vector2(0.194f + k * 0.0285f, 0.25f));
+            row.Level = Shrink(Ink(r, "NivelTexto", 24, new Vector2(0.405f, 0.04f), new Vector2(0.59f, 0.3f), TextAnchor.MiddleLeft), 13);
             row.Level.color = Art.A(Art.Tinta, 0.75f);
             row.Equip = Art.NewButton(r, "", 28, Art.Good, new Vector2(0.6f, 0.1f), new Vector2(0.785f, 0.9f), () => EquipGear(g), "confirmar");
             row.EquipText = row.Equip.GetComponentInChildren<Text>();

@@ -37,36 +37,37 @@ G = {
     "c02": ("-contract 2 -bot", 0.5, 17.0, "R3 3,2; pousa 5,4; ladrao 7,0; dash 7,1; entrega 12,4; cena 13,5-17,1"),
     "c03": ("-contract 3 -bot", 7.5, 10.0, "portas no R1; entra no R4 (3 caveiras) 11,0; cai 13,9; resultado 15,0"),
     "c04_inicio": ("-contract 4 -bot", 0.0, 13.0, "R5 com Bruto; bau 5,4; R3 7,3; bau 11,7"),
-    "c04_fim": ("-contract 4 -bot", 49.5, 17.5, "vida 2; S1 52,7; vida 1 54,4; D1 56,4; entrega 59,0; cena 60,1-63,7; resultado 63,7"),
-    "c05_bumerangue": ("-contract 5 -bot -weapon 1", 20.5, 9.0, "reliquia: rachaduras 22,5 / 24,3 / 25,5 (quebra); resultado 26,6"),
+    "c04_fim": ("-contract 4 -bot", 49.5, 17.5, "vida 2; vida 1 50,2; S1 52,7 (+1); vida 1 54,4; D1 56,4 (+1: entrega com 2); entrega 59,0; cena 60,1-63,7"),
+    "c05_bumerangue": ("-contract 5 -bot -weapon 1", 14.0, 15.5, "guardas e limo 14-20; R3 ~20; reliquia: rachaduras 22,5 / 24,3 / 25,5 (quebra); "
+                       "resultado 26,6"),
     "c06_bomba": ("-contract 6 -bot -weapon 2", 0.5, 10.5, "explosoes racham o ovo 3,2 / 4,3 / 9,8"),
     "c06_bumerangue": ("-contract 6 -bot -weapon 1", 0.5, 6.5, "R6: ladrao 4,2; dash 4,9"),
     "c06_bumerangue_fim": ("-contract 6 -bot -weapon 1", 56.5, 4.5, "entrega 55,7; cena 56,8-60,4 (ovo intacto)"),
-    "c07": ("-contract 7 -bot", 32.5, 15.5, "bolo, vida 2; bau 38,0; R2 40,1; vida 1 41,8; cai 42,8; resultado 43,9"),
-    "c08": ("-contract 8 -bot", 0.0, 9.5, "R7 arqueiros; reforco 3,4; 2 rachaduras 7,5 / 7,6"),
-    "c08_fim": ("-contract 8 -bot", 76.0, 5.0, "entrega 75,5; cena 76,6-80,2 (2 rachaduras)"),
+    "c07": ("-contract 7 -bot", 32.5, 15.5, "bolo, vida 1; bau 38,0; R2 40,1 (vida 3); vida 1 41,8; cai 42,8; resultado 43,9"),
     "c12_r4": ("-contract 12 -bot", 0.0, 5.0, "R4: bau 2,0; dano 3,2; reforco 4,1"),
     "c12_r14": ("-contract 12 -bot", 24.3, 5.0, "R14 24,6; dano 28,5; bau 28,8"),
     "c12_m1": ("-contract 12 -bot", 43.0, 10.5, "M1 43,5; Capitao chama 46,5-50,1; foge com a carga 51,1; resultado 52,2"),
     "c24_ogro": ("-contract 24 -bot -weapon 1", 112.0, 7.0, "B1: pancada 113,0/114,0; ladrao 114,8; dash 115,0"),
-    "c24_fim": ("-contract 24 -bot -weapon 1", 185.5, 17.0, "ladrao+dash 186,1-188,8; Ogro cai ~192; entrega 197,0; cena 198,1-201,7"),
+    "c24_fim": ("-contract 24 -bot -weapon 1", 165.5, 16.5, "B1: ladrao 166-167; o Ogro cai ~172,5; entrega 176,5 (D1); cena 177,6-181,2 "
+                "(1 rachadura)"),
     "quadro": ("-tela quadro", 0.0, 2.0, "quadro de contratos parado"),
-    "h03_ovo": ("-contract 3 -weapon 1", 44.0, 30.0, "HUMANO (WASD + Espaco): segure o ovo ate chocar (55 s), lute perto dos 50 s, "
-                "entregue com o filhote antes dos 74 s"),
-    "m2_5_coracao": ("-contract 29 -bot", 0.0, 14.0, "PENDENTE: regiao 2 (M2-5, coracao arcano) no Core e na View; medir os tempos"),
-    "c02_roupa": ("-contract 2 -bot -roupa 1", 0.5, 17.0, "PENDENTE: flag -roupa e sprites das roupas (CONTRATO_LANCAMENTO 8); "
-                  "mesmos tempos do c02"),
+    "cod_ovo": ("-codigo JLQWHG -bot", 145.5, 23.0, "contrato por codigo da regiao 2 (ovo, 6 camadas): choca 150,0; entrega 163,7; "
+                "cena 164,8-168,4 (chocou e o filhote chegou)"),
+    "c29_coracao": ("-contract 29 -bot", 0.0, 14.0, "M2-5, coracao arcano: R2-3 reforco 1,8, dano 2,2/3,4, bau 4,1; R2-1 5,2; R2-10 8,5; "
+                    "R2-8 13,2"),
+    "c02_roupa": ("-contract 2 -bot -roupa noturno", 0.5, 17.0, "o c02 com a roupa Noturno (a roupa nao muda a partida)"),
 }
 
 # Roteiros (docs/CRIATIVOS.md sec. 3). cenas: (gravacao, de s, ate s) no tempo da gravacao. legendas: (de, ate, pt, en, es, id) no
 # tempo do video (sem o CTA). pos: onde vai a legenda.
 R = {
-    1: dict(slug="carga_fragil", pos="topo", cenas=[("c08", 0.5, 8.5), ("c05_bumerangue", 0.5, 8.5)], legendas=[
-        (0, 3, "Relíquia frágil. Arqueiros na sala.", "Fragile relic. Archers in the room.", "Reliquia frágil. Arqueros en la sala.",
-         "Relik rapuh. Ada pemanah di ruangan."),
-        (3, 8, "Cada golpe deixa uma rachadura", "Every hit leaves a crack", "Cada golpe deja una grieta", "Tiap pukulan bikin retakan"),
-        (8, 12.5, "3 rachaduras...", "3 cracks...", "3 grietas...", "3 retakan..."),
-        (12.5, 16, "...quebrou! Você entregaria inteira?", "...broken! Could you deliver it whole?",
+    1: dict(slug="carga_fragil", pos="topo", cenas=[("c05_bumerangue", 0.5, 15.0)], legendas=[
+        (0, 4, "Relíquia frágil. Guardas na sala.", "Fragile relic. Guards in the room.", "Reliquia frágil. Guardias en la sala.",
+         "Relik rapuh. Ada penjaga di ruangan."),
+        (4, 8, "Pousa para lutar, pega e segue", "Set it down to fight, grab it, go", "Déjala para luchar, tómala y sigue",
+         "Taruh untuk bertarung, ambil, lanjut"),
+        (8, 11, "Cada golpe deixa uma rachadura", "Every hit leaves a crack", "Cada golpe deja una grieta", "Tiap pukulan bikin retakan"),
+        (11, 14.5, "...quebrou! Você entregaria inteira?", "...broken! Could you deliver it whole?",
          "...¡se rompió! ¿Tú la entregarías entera?", "...pecah! Kamu bisa antar utuh?")]),
     2: dict(slug="duas_portas", pos="baixo", cenas=[("c04_inicio", 0.0, 12.5), ("c04_fim", 14.3, 17.3)], legendas=[
         (0, 3, "Porta segura ou porta do tesouro?", "Safe door or treasure door?", "¿Puerta segura o puerta del tesoro?",
@@ -80,17 +81,17 @@ R = {
     3: dict(slug="um_de_vida", pos="topo", cenas=[("c04_fim", 0.5, 14.2)], legendas=[
         (0, 4.4, "Quase sem vida, com a caixa nas mãos", "Almost out of health, crate in hand", "Casi sin vida, con la caja en las manos",
          "Nyawa hampir habis, kotak di tangan"),
-        (4.4, 9, "1 coração. Só falta a porta.", "1 heart left. Just the door to go.", "1 corazón. Solo falta la puerta.",
-         "Sisa 1 nyawa. Tinggal pintunya."),
-        (9, 13.7, "ENTREGUE com 1 de vida!", "DELIVERED on 1 health!", "¡ENTREGADO con 1 de vida!", "TERKIRIM dengan 1 nyawa!")]),
-    4: dict(slug="coracao_arcano", pos="topo", cenas=[("m2_5_coracao", 0.0, 13.5)], legendas=[
+        (4.4, 6.4, "Sobrou 1 coração...", "Down to 1 heart...", "Queda 1 corazón...", "Tinggal 1 nyawa..."),
+        (6.4, 9, "Porta nova: +1 coração. Corre!", "New room: +1 heart. Run!", "Sala nueva: +1 corazón. ¡Corre!", "Ruang baru: +1 nyawa. Lari!"),
+        (9, 13.7, "ENTREGUE por um triz!", "DELIVERED by a hair!", "¡ENTREGADO por un pelo!", "TERKIRIM nyaris saja!")]),
+    4: dict(slug="coracao_arcano", pos="topo", cenas=[("c29_coracao", 0.0, 13.5)], legendas=[
         (0, 4, "Coração arcano: puxa moedas...", "Arcane heart: pulls in coins...", "Corazón arcano: atrae monedas...",
          "Jantung arkana: menarik koin..."),
         (4, 9, "...e puxa monstros também", "...and pulls in monsters too", "...y también atrae monstruos", "...dan juga menarik monster"),
         (9, 13.5, "Vale o risco?", "Worth the risk?", "¿Vale el riesgo?", "Sepadan risikonya?")]),
     5: dict(slug="ganancioso", pos="topo", cenas=[("c07", 0.5, 15.0)], legendas=[
-        (0, 3, "2 corações e um bolo de casamento...", "2 hearts and a wedding cake...", "2 corazones y un pastel de bodas...",
-         "2 nyawa dan kue pengantin..."),
+        (0, 3, "1 coração e um bolo de casamento...", "1 heart and a wedding cake...", "1 corazón y un pastel de bodas...",
+         "1 nyawa dan kue pengantin..."),
         (3, 7.1, "...mas olha aquele baú!", "...but look at that chest!", "...¡pero mira ese cofre!", "...tapi lihat peti itu!"),
         (7.1, 10.9, "A ganância custa caro", "Greed costs a lot", "La codicia sale cara", "Serakah itu mahal"),
         (10.9, 14.5, "A carga fica na masmorra:\nvolte para resgatar", "The cargo stays in the dungeon:\ncome back for it",
@@ -108,20 +109,20 @@ R = {
         (3, 9.5, "Cada explosão racha o ovo", "Every blast cracks the egg", "Cada explosión agrieta el huevo", "Tiap ledakan bikin telur retak"),
         (9.5, 15.5, "Troque a arma: bumerangue", "Switch weapons: boomerang", "Cambia de arma: bumerán", "Ganti senjata: bumerang"),
         (15.5, 19.1, "Ovo intacto, cliente feliz", "Egg intact, happy client", "Huevo intacto, cliente feliz", "Telur utuh, pelanggan senang")]),
-    8: dict(slug="dash_e_ogro", pos="topo", cenas=[("c24_ogro", 0.5, 6.5), ("c24_fim", 0.0, 7.5), ("c24_fim", 12.6, 16.2)], legendas=[
+    8: dict(slug="dash_e_ogro", pos="topo", cenas=[("c24_ogro", 0.5, 6.5), ("c24_fim", 0.0, 7.5), ("c24_fim", 12.1, 15.7)], legendas=[
         (0, 3, "O Ogro bate. O ladrão rouba.", "The Ogre smashes. The thief steals.", "El Ogro golpea. El ladrón roba.",
          "Ogre menghantam. Pencuri mencuri."),
         (3, 6, "Dash! A carga volta para as mãos", "Dash! The cargo is back in your hands", "¡Dash! La carga vuelve a tus manos",
          "Dash! Paket kembali ke tangan"),
         (6, 13.5, "Pouse, lute, pegue de novo", "Set it down, fight, grab it again", "Déjala, lucha, tómala otra vez",
          "Taruh, lawan, ambil lagi"),
-        (13.5, 17.1, "Chefe vencido. Carga perfeita.", "Boss down. Perfect cargo.", "Jefe vencido. Carga perfecta.",
-         "Bos kalah. Paket sempurna.")]),
+        (13.5, 17.1, "Chefe vencido. Carga entregue.", "Boss down. Cargo delivered.", "Jefe vencido. Carga entregada.",
+         "Bos kalah. Paket terkirim.")]),
     9: dict(slug="cliente_reage", pos="topo",
-            cenas=[("c08", 5.0, 9.0), ("c08_fim", 0.6, 4.2), ("c01", 3.0, 6.0), ("c01", 11.9, 15.5)], legendas=[
+            cenas=[("c05_bumerangue", 6.9, 10.9), ("c24_fim", 12.1, 15.7), ("c01", 3.0, 6.0), ("c01", 11.9, 15.5)], legendas=[
         (0, 4, "Relíquia levando golpe...", "The relic is taking hits...", "La reliquia recibe golpes...", "Relik kena pukulan..."),
-        (4, 7.6, "O cliente abre a caixa: 2 rachaduras", "The client opens the box: 2 cracks", "El cliente abre la caja: 2 grietas",
-         "Pelanggan buka kotak: 2 retakan"),
+        (4, 7.6, "O cliente abre a caixa: 1 rachadura", "The client opens the box: 1 crack", "El cliente abre la caja: 1 grieta",
+         "Pelanggan buka kotak: 1 retakan"),
         (7.6, 10.6, "Agora, protegendo a caixa...", "Now, guarding the crate...", "Ahora, cuidando la caja...", "Sekarang, jaga kotaknya..."),
         (10.6, 14.2, "Perfeito! O cliente comemora", "Perfect! The client cheers", "¡Perfecto! El cliente celebra",
          "Sempurna! Pelanggan bersorak")]),
@@ -141,13 +142,14 @@ R = {
          "Pencuri ambil paket? Dash dia!"),
         (8.6, 11.4, "Pegue de volta e corra", "Grab it back and run", "Recupérala y corre", "Ambil lagi dan lari"),
         (11.4, 15, "Entregue!", "Delivered!", "¡Entregado!", "Terkirim!")]),
-    12: dict(slug="ovo_choca", pos="topo", cenas=[("h03_ovo", 6.0, 22.0)], legendas=[
-        (0, 5, "O ovo choca se você demorar...", "The egg hatches if you take too long...", "El huevo eclosiona si tardas...",
+    12: dict(slug="ovo_choca", pos="topo", cenas=[("cod_ovo", 0.5, 18.2), ("cod_ovo", 19.3, 22.9)], legendas=[
+        (0, 4, "O ovo choca se você demorar...", "The egg hatches if you take too long...", "El huevo eclosiona si tardas...",
          "Telurnya menetas kalau kamu lama..."),
-        (5, 10, "Chocou! O filhote agora te segue", "It hatched! Now the chick follows you", "¡Eclosionó! Ahora la cría te sigue",
+        (4, 9, "Chocou! O filhote agora te segue", "It hatched! Now the chick follows you", "¡Eclosionó! Ahora la cría te sigue",
          "Menetas! Anak naga mengikutimu"),
-        (10, 16, "Leve o filhote até o cliente", "Get the chick to the client", "Lleva la cría al cliente",
-         "Antar anak naga ke pelanggan")]),
+        (9, 17.7, "Leve o filhote até o cliente", "Get the chick to the client", "Lleva la cría al cliente",
+         "Antar anak naga ke pelanggan"),
+        (17.7, 21.3, "Entregue com o filhote!", "Delivered with the chick!", "¡Entregado con la cría!", "Terkirim bersama anak naga!")]),
 }
 # 13 = o 11 com outra roupa do courier (o mascote saiu): mesma montagem e legendas, so a gravacao muda (teste A/B de roupa)
 R[13] = dict(R[11], slug="ladrao_e_dash_roupa", cenas=[("c02_roupa", a, b) for _, a, b in R[11]["cenas"]])

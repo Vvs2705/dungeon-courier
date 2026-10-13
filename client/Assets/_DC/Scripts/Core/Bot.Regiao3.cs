@@ -19,7 +19,7 @@ namespace DC.Core
             var st = new char[reg.First]; int left = Math.Min(Region3StartStars, 3 * reg.First);
             for (int i = 0; i < st.Length; i++) { int k = Math.Min(3, left); st[i] = (char)('0' + k); left -= k; }
             return "v=3\nseed=" + seed + "\ncoins=" + coins + "\nrep=" + reg.First + "\nlv=8,8,8,8\nstars=" + new string(st) + "\nwlv=3,3,3\nwpn=0\n"
-                   + "gear=" + (int)Gear.Boots + ",0,1,0,0,3,0,0,0,0," + Balance.GearMaxLevel + "\n";
+                   + "gear=" + (int)Gear.Boots + ",0,1,0,0,3,0,0,0,0," + Balance.GearCampaignLevel + "\n";
         }
         public const int Region3StartCoins = 3000, Region3StartStars = 97;
 

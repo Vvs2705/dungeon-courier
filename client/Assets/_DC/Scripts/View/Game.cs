@@ -35,8 +35,18 @@ namespace DC
     ///                 na memoria (fotos das telas de meta).
     ///   -pausa        (com -testsession -contract) abre a pausa logo no inicio (foto).   -tela perk: escolha de perk de exemplo.
     ///   -weapon W     (com -testsession -contract) arma 0 estilingue, 1 bumerangue, 2 bombinha: destrava so na memoria e equipa.
+    ///   -room S       (com -testsession) comeca direto na sala de codigo S (ex.: B2, M4, R3-5), na camada dela (sim.DevStartAt): com
+    ///                 -contract K no contrato K; sem ele, no 1o contrato da campanha que passa por S. Fotos dos chefes sem jogar ate eles.
+    ///   -guilda       (com -testsession -contract) compra tudo o que a guilda, as armas e o equipamento destravado vendem (Bot.BuyAll com
+    ///                 moedas sem fim), so na memoria: o courier forte da campanha para as fotos dos chefes com -room.
     ///   -reset        apaga o save antes de carregar.   -testsession  nao le nem grava save nem diario (semente fixa 1).
     ///   -lang L       (com -testsession) pt|en|es|id: forca o idioma so na memoria (fotos por idioma; a escolha gravada nao muda).
+    ///   -codigo C     (com -testsession, sem -contract) comeca direto o contrato por codigo C (6 caracteres), com a campanha toda aberta
+    ///                 so na memoria. Ex.: -codigo JLQWHG -bot = ovo da regiao 2 que o bot deixa chocar (criativo 12).
+    ///   -projetos N   (com -testsession) N projetos (0-3) nos 4 equipamentos e a aba aberta, so na memoria (foto do equipamento com os
+    ///                 niveis 6-8 travados; nao junte com -dev-desbloqueia, que vence o Dragao).
+    ///   -roupa R      (com -testsession) veste a roupa so na memoria (sim.DevOutfit): noturno|real|explorador|forja|fantasma|mineiro|coveiro|
+    ///                 classico (ou o numero do enum Outfit). Criativo 13 (A/B de roupa) e fotos.
     ///   -record dir [-recordfps 30] [-recordsecs 20] [-recordfrom 0]   (com -testsession) criativos de UA (docs/CRIATIVOS.md): tempo fixo
     ///                 por quadro (Time.captureFramerate), pula `recordfrom` s de jogo sem gravar, grava `recordsecs` s em dir/00000.png...
     ///                 no tamanho da janela (540x960 no build Windows) e o som do jogo em dir/audio.wav (AudioRenderer); sai 0 no fim.
@@ -84,6 +94,8 @@ namespace DC
 
         void Awake()
         {
+            // vSyncCount 0: senao a qualidade Medium (vSyncCount 1) prende o quadro ao vsync de 120 Hz (POCO F4) e o targetFrameRate nao vale
+            QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = 60;
             _headless = Arg("-autoplay") != null;
             _test = _headless || Arg("-testsession") != null;
@@ -109,6 +121,12 @@ namespace DC
             string saved = _test ? "" : PlayerPrefs.GetString(SaveKey, "");
             // jogador novo: semente aleatoria (variedade entre jogadores); -testsession: semente 1 (fotos repetiveis)
             Sim = string.IsNullOrEmpty(saved) ? new Sim(_test ? 1 : UnityEngine.Random.Range(1, int.MaxValue)) : Sim.Load(saved);
+            if (_test && Roupa(Arg("-roupa")) is Outfit roupa) Sim.DevOutfit(roupa);   // dev: veste so na memoria (criativo 13, fotos)
+            if (_test && int.TryParse(Arg("-projetos"), NumberStyles.Integer, Inv, out int pj))
+            {
+                Sim.DevProjects(Gear.None, pj);   // dev: projetos nos 4 equipamentos (3 = destravados no nivel 1), so na memoria
+                Sim.Reputation = Math.Max(Sim.Reputation, Balance.GearOpenAfter);   // a aba abre depois do C6; o Dragao segue invicto (6-8 travados)
+            }
             _cfg = ConfigLocal.Texto();
             Sim.Config = Config.Parse(_cfg);   // padroes do build; a URL opcional (config_url) sobrescreve no Start
             _bot = new Bot(Sim.Seed);
@@ -152,13 +170,23 @@ namespace DC
                     Sim.Reputation = Math.Max(Sim.Reputation, k);   // dev: libera ate K so na memoria (com -testsession nada e gravado)
                     if (_test && RegionDef.Of(Sim.Contracts[k].Region) is RegionDef rg && rg.Id > 1 && Sim.Stars < rg.Stars)
                         Sim.DevStars(rg.Stars);   // dev: regioes 2-4 pedem estrelas (so na memoria), para fotografar -contract 25..72
+                    if (_test && Arg("-guilda") != null) { int c0 = Sim.Coins; Sim.Coins = int.MaxValue / 2; Bot.BuyAll(Sim); Sim.Coins = c0; }   // dev: tudo comprado, so na memoria
                     if (_test && int.TryParse(Arg("-weapon"), NumberStyles.Integer, Inv, out int w) && w >= 0 && w < WeaponDef.All.Length)
                     {
                         Sim.DevStars(Math.Max(Sim.Stars, WeaponDef.All[w].Stars));   // dev: so na memoria, para fotografar bumerangue/bombinha
                         Sim.Equip((Weapon)w);
                     }
-                    StartContract(k, Sim.Pending != null);
+                    if (_test && !string.IsNullOrEmpty(Arg("-room"))) Begin(Sim.DevStartAt(k, Arg("-room")));   // dev: direto na sala (fotos dos chefes)
+                    else StartContract(k, Sim.Pending != null);
                     if (_test && Arg("-pausa") != null) _hud.ShowPause(false);   // dev: foto da pausa
+                }
+                else if (_test && !string.IsNullOrEmpty(Arg("-room"))) Begin(Sim.DevStartAt(-1, Arg("-room")));   // dev: 1o contrato que passa pela sala
+                else if (_test && !string.IsNullOrEmpty(Arg("-codigo")))
+                {
+                    // dev: contrato por codigo direto, com a campanha aberta so na memoria (criativo 12: o bot choca o ovo no JLQWHG)
+                    Sim.Reputation = Math.Max(Sim.Reputation, Sim.Contracts.Length);
+                    Sim.DevStars(Sim.Contracts.Length * 3);
+                    if (!Begin(Sim.StartCode(Arg("-codigo").Trim().ToUpperInvariant(), false))) Debug.Log("CODIGO recusado: " + Arg("-codigo"));
                 }
                 else if (!string.IsNullOrEmpty(Arg("-tela"))) _hud.Dev(Arg("-tela"));
             }
@@ -179,6 +207,7 @@ namespace DC
             float dt = _recFps > 0 ? 1f / _recFps : Mathf.Min(Time.unscaledDeltaTime, 0.1f);   // -record: passo fixo, repetivel
             if (_skipDt) { dt = 0f; _skipDt = false; }
             if (_screen.x != Screen.width || _screen.y != Screen.height) Fit();
+            SeeDate();   // meia-noite com a tela aberta: reroll, pacote de evento e bau do dia usam LastDateSeen como "hoje" (senao cobra pelo dia de ontem)
             BackKey();
 
             bool playing = _mode == Mode.Play && !_hud.Blocking && !_paused;
@@ -321,6 +350,7 @@ namespace DC
             _fpsT += Time.unscaledDeltaTime;
             if (_fpsT < 60f) return;
             Sim.Log(Ev.DeviceFps, Sim.FpsBucket(_fpsN / _fpsT));
+            Debug.Log(string.Format(Inv, "DC fps={0:0.0} (60 s)", _fpsN / _fpsT));   // logcat: medir no aparelho
             Sim.Touch(Agora);
             _fpsT = 0f; _fpsN = 0;
             HandleEvents();
@@ -377,6 +407,7 @@ namespace DC
                 string name = SimEvent.DiaryName(e.Kind);
                 if (name != null) Diary(name, e);
                 _view.OnEvent(e, run);
+                _hud.EventoMundo(e, run);   // faixa da fase do chefe (BossPhase)
                 Hud.SomMeta(e);   // meta e loja (AUDIO.md): evento, temporada, recompensa, projeto, compra na loja
                 if (WorldView.Som(e, run)) continue;   // regioes 2-4 (AUDIO §1.1): som proprio no lugar do generico
                 // som e haptica: tabela do docs/AUDIO.md §1 (banco do Audio.cs; nome sem clipe nao toca nada)
@@ -506,6 +537,7 @@ namespace DC
         void Away(bool away)
         {
             if (_headless || Sim == null || !_started || _recFps > 0) return;   // -record: segue gravando sem foco (runInBackground)
+            if (_hud != null && _hud.AnuncioAberto) return;   // anuncio real em tela cheia: o app vai ao fundo, mas a sessao e a mesma
             if (away)
             {
                 if (!_paused) Log("app_background", Time.realtimeSinceStartup.ToString("0", Inv));   // fim de sessao no Android (o quit raramente chega)
@@ -678,6 +710,18 @@ namespace DC
                 w.Write("data".ToCharArray()); w.Write(bytes);
                 foreach (float f in s) w.Write((short)Mathf.Clamp(f * 32767f, -32768f, 32767f));
             }
+        }
+
+        /// <summary>-roupa: nome da folha sem o "courier_" (noturno, real, explorador, forja, fantasma, mineiro, coveiro; classico) ou o
+        /// numero do enum. null = ausente ou desconhecida.</summary>
+        static Outfit? Roupa(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return null;
+            string folha = s == "classico" ? "courier" : "courier_" + s.Trim().ToLowerInvariant();
+            foreach (Outfit o in Enum.GetValues(typeof(Outfit)))
+                if (Hud.FolhaRoupa(o) == folha || ((int)o).ToString(Inv) == s) return o;
+            Debug.Log("ROUPA desconhecida: " + s);
+            return null;
         }
 
         static float ArgF(string name, float def) => float.TryParse(Arg(name), NumberStyles.Float, Inv, out float v) ? v : def;

@@ -39,7 +39,7 @@ from mathutils import Euler, Matrix, Quaternion, Vector
 DIRS = {1: ["S"], 4: ["S", "W", "N", "E"], 8: ["S", "SW", "W", "NW", "N", "NE", "E", "SE"]}
 LIGHT = {"flat": ("FLAT", None), "matcap": ("MATCAP", "toon_light.exr"), "studio": ("STUDIO", "Default")}
 BONE_RE = re.compile(r'pose\.bones\["([^"]+)"\]')
-LOOP_RE = re.compile(r"idle|walk|run|lurk|look|sleep|stun|charge|perch|hold", re.I)  # ponytail: laco por nome; o Unity pode sobrescrever
+LOOP_RE = re.compile(r"idle|walk|run|lurk|look|sleep|stun|charge|perch|hold|fly", re.I)  # ponytail: laco por nome; o Unity pode sobrescrever
 ARM_RE = re.compile(r"(Left|Right)(Shoulder|\w*Arm|Hand)")  # ombro, braco, antebraco, mao, dedos (Mixamo e placeholder COE)
 HAND_RE = re.compile(r"(Left|Right)Hand$")
 ALIGN_SEEN = set()  # clipes alinhados sozinhos (rig em pose A sem --align-arms); vai para o meta
@@ -58,8 +58,8 @@ DC = dict(scale=120.0, outline=3, max_frames=12)  # 120 px/m na textura; a View 
 # 3,0 s com a menor costura entre as janelas de 2-3 s: 2,2 cm na mao direita (X Bot de 1,8 m; ~1,6 cm no courier)
 BREATH = dict(range=(199, 289))
 EMERGE = dict(frames=6)  # sobe/mergulha em 0,3 s: 6 quadros de 1,5 em 1,5 (o padrao daria 4)
-RUN8 = dict(frames=8)
-SIX = dict(frames=6)  # clipes de 0,3 s com o ultimo quadro amostrado ja na pose final  # Sprint do ARKANA: ciclo de 16 quadros de 2 em 2, sem subquadro (6 quadros pulavam 2,67)
+RUN8 = dict(frames=8)  # Sprint do ARKANA: ciclo de 16 quadros de 2 em 2, sem subquadro (6 quadros pulavam 2,67)
+SIX = dict(frames=6)  # clipes de 0,3 s com o ultimo quadro amostrado ja na pose final
 PRESETS = {
     "courier": dict(DC, height=1.30, dirs=8, mirror=True, size=224,
                     clips={"Idle": BREATH, "CarryIdle": BREATH, "Run": RUN8, "CarryRun": RUN8, "Throw": dict(frames=10)}),
@@ -105,8 +105,8 @@ PRESETS = {
     "escora": dict(DC, width=1.20, dirs=1, size=176),
     # Lote 5 (regiao 3, 2026-10-11): clava e cajado presos a RightHand pelo --attach na linha
     "esqueleto": dict(DC, height=1.35, dirs=4, mirror=True, size=256, clips=dict(Idle=BREATH, Collapse=SIX, Rise=SIX)),
-    "mumia": dict(DC, height=1.50, dirs=4, mirror=True, size=224, clips=dict(Idle=BREATH, Hold=dict(frames=8))),
-    "gargula": dict(DC, height=1.40, dirs=4, mirror=True, size=256, clips=dict(Statue=dict(frames=1))),
+    "mumia": dict(DC, height=1.50, dirs=4, mirror=True, size=256, clips=dict(Idle=BREATH, Hold=dict(frames=8))),
+    "gargula": dict(DC, height=1.40, dirs=4, mirror=True, size=288, clips=dict(Statue=dict(frames=1))),
     "necromante": dict(DC, height=1.60, dirs=4, mirror=True, size=320),
     "necromante_fim": dict(DC, height=1.60, dirs=1, size=320),
     "clava": dict(DC, width=0.49, dirs=1, size=96),
@@ -128,6 +128,28 @@ PRESETS = {
     "courier_icone": dict(DC, height=1.30, dirs=1, size=512, scale=320.0, elev=35.0, yaw=-45.0, outline=6,
                           clips=dict(CarryIdle=dict(range=(199, 289), frames=1))),
     "caixa_icone": dict(DC, width=0.50, dirs=1, size=256, scale=320.0, elev=35.0, yaw=-45.0, outline=6),
+    # Lote 6 (regiao 4, 2026-10-11): frasco na RightHand do kobold e chicote na do Capataz pelo --attach na linha;
+    # brasa = o modelo do magma a 1,10 m (0 credito)
+    "diabrete": dict(DC, height=0.90, dirs=4, mirror=True, size=192, clips=dict(Idle=BREATH, Swap=SIX, Vanish=SIX)),
+    "kobold": dict(DC, height=1.00, dirs=4, mirror=True, size=192, clips={"Idle": BREATH}),
+    "magma": dict(DC, height=1.90, dirs=4, mirror=True, size=336, clips={"Idle": BREATH}),
+    "brasa": dict(DC, height=1.10, dirs=4, mirror=True, size=208, clips={"Idle": BREATH}),
+    "capataz": dict(DC, height=1.40, dirs=4, mirror=True, size=256, clips={"Idle": BREATH}),
+    "capataz_fim": dict(DC, height=1.40, dirs=1, size=320),
+    "frasco": dict(DC, height=0.30, dirs=1, size=96),
+    "chicote": dict(DC, width=0.60, dirs=1, size=112),
+    "salamandra": dict(DC, width=0.80, dirs=1, size=128),
+    "planta": dict(DC, height=0.55, dirs=1, size=112),
+    "planta_aberta": dict(DC, height=0.596, dirs=1, size=128),  # boca escancarada (planta_aberta.py); 0,596 = a mesma escala da planta (o lobulo aberto subiu a altura de 0,981 para 1,063)
+    "mapa": dict(DC, width=0.45, dirs=1, size=96),
+    "bigorna": dict(DC, width=1.20, dirs=1, size=176),  # veste o obstaculo 1,2 x 0,8 da forja
+    "braseiro": dict(DC, height=0.70, dirs=1, size=176),  # a bacia e mais larga que alta: 112 recortava
+    "respiro": dict(DC, width=2.00, dirs=1, size=272),
+    "corrente": dict(DC, height=1.50, dirs=1, size=160),
+    # dragao: rig refeito e clipes do dragao_blender.py (--self); 3,5 m de comprimento; 576 x 7 quadros = 4 032 px
+    "dragao": dict(DC, width=3.50, dirs=4, mirror=True, size=576, max_frames=7,
+                   clips=dict(Idle=dict(frames=4), Fly=dict(frames=6), Land=dict(frames=6))),
+    "dragao_fim": dict(DC, width=3.50, dirs=1, size=576, max_frames=7, ground_cut=("Dying",)),
     "morcego": dict(DC, width=0.70, dirs=1, size=112),
     "filhote": dict(DC, height=0.50, dirs=1, size=96),
     "caixa": dict(DC, width=0.50, dirs=1, size=112),
@@ -186,7 +208,7 @@ def parse_args():
 def import_file(path):
     if path.lower().endswith(".blend"):  # FBX do Tripo ja importado e salvo (2026-10-11): o import do FBX levava 10+ min
         with bpy.data.libraries.load(path) as (src, dst):  # com o PC sem memoria e estourava o corte de 900 s
-            dst.objects = list(src.objects)
+            dst.objects, dst.actions = list(src.objects), list(src.actions)  # actions: o dragao vem com os clipes (--self)
         for o in dst.objects:
             bpy.context.scene.collection.objects.link(o)
         return list(dst.objects)

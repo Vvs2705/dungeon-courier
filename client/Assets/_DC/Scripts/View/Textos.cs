@@ -50,6 +50,8 @@ namespace DC
         public static string Recusar => L("RECUSAR", "DECLINE", "RECHAZAR", "TOLAK");
         public static string Comprar => L("COMPRAR", "BUY", "COMPRAR", "BELI");
         public static string Maximo => L("MÁX", "MAX", "MÁX", "MAKS");
+        /// <summary>Equipamento no 5 antes de vencer o Dragao: os niveis 6-8 (fim de jogo) abrem depois dele.</summary>
+        public static string GearDragao => L("6-8: DRAGÃO", "6-8: DRAGON", "6-8: DRAGÓN", "6-8: NAGA");
         public static string Versao(string v) => F("versão {0}", "version {0}", "versión {0}", "versi {0}", v);
 
         // ------------------------------------------------------------------ titulo e menu
@@ -283,6 +285,32 @@ namespace DC
         public static string Reforco => L("reforço!", "reinforcements!", "¡refuerzos!", "bala bantuan!");
         public static string TempoEsgotado => L("tempo esgotado!", "time's up!", "¡sin tiempo!", "waktu habis!");
         public static string Bum => L("BUM!", "BOOM!", "¡BUM!", "DUAR!");
+        public static string Estourou => L("estourou!", "popped!", "¡reventó!", "meletus!");
+        public static string DanoEmDobro => L("dano em dobro!", "double damage!", "¡daño doble!", "pukulan x2!");
+
+        // HUD das cargas novas (regioes 2-4): no lugar do relogio da faixa de cima (cabe em ~200 px: encolhe ate 18)
+        public static string Gelo => L("gelo", "ice", "hielo", "es");
+        public static string LanternaApagada => L("lanterna apagada", "lantern out", "linterna apagada", "lentera padam");
+        public static string EspelhoRachaduras(int n, int max) => F("{0}/{1} rachaduras", "{0}/{1} cracks", "{0}/{1} grietas", "{0}/{1} retakan", n, max);
+
+        /// <summary>Faixa da fase do chefe (BossPhase: A = chefe, B = fase nova), CONTEUDO_REGIOES §5. null = sem faixa.</summary>
+        public static string FaseChefe(EnemyType t, int fase)
+        {
+            switch (t)
+            {
+                case EnemyType.MoleQueen: return L("a Rainha emerge duas vezes!", "the Queen bursts out twice!", "¡la Reina emerge dos veces!", "Ratu muncul dua kali!");
+                case EnemyType.StoneGolem: return L("o Golem vai investir!", "the Golem is about to charge!", "¡el Gólem va a embestir!", "Golem akan menyeruduk!");
+                case EnemyType.SpiderWidow: return L("a Viúva sobe ao teto!", "the Widow climbs to the ceiling!", "¡la Viuda sube al techo!", "Janda naik ke langit-langit!");
+                case EnemyType.Necromancer: return fase >= 3
+                    ? L("o Necromante apaga a luz!", "the Necromancer dims the light!", "¡el Nigromante apaga la luz!", "Nekromanser meredupkan cahaya!")
+                    : L("o Necromante dispara raio duplo!", "the Necromancer fires twin beams!", "¡el Nigromante lanza rayo doble!", "Nekromanser menembak sinar ganda!");
+                case EnemyType.KoboldForeman: return L("o Capataz gira o chicote!", "the Foreman spins his whip!", "¡el Capataz gira el látigo!", "Mandor memutar cambuknya!");
+                case EnemyType.ElderDragon: return fase >= 3
+                    ? L("o Dragão varre o fogo!", "the Dragon sweeps its fire!", "¡el Dragón barre el fuego!", "Naga menyapu api!")
+                    : L("o Dragão levanta voo!", "the Dragon takes flight!", "¡el Dragón alza el vuelo!", "Naga terbang!");
+                default: return null;
+            }
+        }
 
         /// <summary>Dica da HUD pelo enum Hint do Core. pt = Hints.Text (fonte do Core); o resto pela tabela; sem traducao = EN ou Core.
         /// So literais: a HUD chama todo quadro e compara por referencia, nada aloca.</summary>
@@ -337,8 +365,9 @@ namespace DC
                     "balon di lantai terbang dalam 4 dtk: ambil!");
                 case Hint.Lava: return L(pt, "dash enemies into the lava", "empuja enemigos a la lava con el dash", "dorong musuh ke lava dengan dash");
                 case Hint.Vent: return L(pt, "glowing vent: fire incoming", "respiradero brillando: va a salir fuego", "lubang menyala: api akan keluar");
-                case Hint.PlantBite: return L(pt, "the plant bites anyone close: step away", "la planta muerde a quien está cerca: da un paso",
-                    "tanaman menggigit yang dekat: menjauh selangkah");
+                // o pt do Core ("de um passo") nao diz como: o toque rapido (dash) e o jeito de sair do alcance
+                case Hint.PlantBite: return L("a planta morde quem fica perto: toque rápido para se afastar", "the plant bites anyone close: quick tap to dash away",
+                    "la planta muerde a quien está cerca: toque rápido para alejarte", "tanaman menggigit yang dekat: ketuk cepat untuk menjauh");
                 case Hint.MapReveal: return L(pt, "the map shows buried chests", "el mapa muestra cofres enterrados", "peta menunjukkan peti terkubur");
                 case Hint.ImpSwap: return L(pt, "the imp is about to swap places with the cargo", "el diablillo va a cambiar de lugar con la carga",
                     "iblis kecil akan bertukar tempat dengan paket");
@@ -348,6 +377,9 @@ namespace DC
 
         /// <summary>Linha da dica quando o Core nao tem dica (Hint.None): o objetivo da sala.</summary>
         public static string Objetivo(Run r) => r.Room.Delivery ? L("leve a carga até o cliente", "bring the cargo to the client", "lleva la carga al cliente", "antar paket ke pelanggan")
+            : r.Doors.Count > 0 && r.Doors[0].Locked
+                ? r.Room.Boss || r.Room.Mini ? L("derrote o chefe para abrir a porta", "defeat the boss to open the door", "vence al jefe para abrir la puerta", "kalahkan bos untuk membuka pintu")
+                    : L("derrote os guardas para abrir a porta", "defeat the guards to open the door", "vence a los guardias para abrir la puerta", "kalahkan para penjaga untuk membuka pintu")
             : L("escolha uma porta no topo", "pick a door at the top", "elige una puerta arriba", "pilih pintu di atas");
 
         // ------------------------------------------------------------------ conteudo do Core (cargas, inimigos, salas)
@@ -544,6 +576,35 @@ namespace DC
             }
         }
 
+        /// <summary>Titulo do resultado: CargoBroken pelo nome da carga quebrada (reliquia, espelho, balao; com o Fragil, qualquer carga).</summary>
+        public static string Titulo(ContractResult r)
+        {
+            if (r.Outcome != Outcome.CargoBroken) return Titulo(r.Outcome);
+            switch (r.Def != null ? r.Def.Cargo : CargoType.Relic)
+            {
+                case CargoType.Relic: return Titulo(r.Outcome);
+                case CargoType.Mirror: return L("O espelho quebrou", "The mirror broke", "El espejo se rompió", "Cermin pecah");
+                case CargoType.Balloon: return L("O balão estourou", "The balloon popped", "El globo reventó", "Balon meletus");
+                default: return L("A carga quebrou", "The cargo broke", "La carga se rompió", "Paket pecah");
+            }
+        }
+
+        static string Quebra(ContractResult r)
+        {
+            int n = r.Cracks > 0 ? r.Cracks : Balance.RelicBreak;
+            switch (r.Def != null ? r.Def.Cargo : CargoType.Relic)
+            {
+                case CargoType.Relic: return F("A {0}ª rachadura quebrou a relíquia.", "Crack number {0} broke the relic.", "La {0}.ª grieta rompió la reliquia.",
+                    "Retakan ke-{0} memecahkan relik.", n);
+                case CargoType.Mirror: return F("A {0}ª rachadura quebrou o espelho.", "Crack number {0} broke the mirror.", "La {0}.ª grieta rompió el espejo.",
+                    "Retakan ke-{0} memecahkan cermin.", n);
+                case CargoType.Balloon: return F("O balão estourou na {0}ª rachadura.", "The balloon popped at crack number {0}.", "El globo reventó en la {0}.ª grieta.",
+                    "Balon meletus pada retakan ke-{0}.", n);
+                default: return F("A {0}ª rachadura quebrou a carga.", "Crack number {0} broke the cargo.", "La {0}.ª grieta rompió la carga.",
+                    "Retakan ke-{0} memecahkan paket.", n);
+            }
+        }
+
         public static string Motivo(ContractResult r)
         {
             switch (r.Outcome)
@@ -555,7 +616,7 @@ namespace DC
                         : L("O courier caiu.", "The courier fell.", "El courier cayó.", "Kurir tumbang.");
                 case Outcome.CargoStolen: return L("O ladrão escapou pela borda da sala com a carga.", "The thief escaped through the edge of the room with the cargo.",
                     "El ladrón escapó por el borde de la sala con la carga.", "Pencuri kabur lewat tepi ruangan membawa paket.");
-                case Outcome.CargoBroken: return L("A 3ª rachadura quebrou a relíquia.", "The 3rd crack broke the relic.", "La 3.ª grieta rompió la reliquia.", "Retakan ke-3 memecahkan relik.");
+                case Outcome.CargoBroken: return Quebra(r);
                 case Outcome.PetDied: return L("O filhote foi atingido duas vezes.", "The chick was hit twice.", "La cría recibió dos golpes.", "Anak naga terkena dua kali.");
                 case Outcome.Abandoned: return L("Você desistiu do contrato.", "You abandoned the contract.", "Abandonaste el contrato.", "Kamu membatalkan kontrak.");
                 case Outcome.TimeUp: return L("A mensagem urgente chegou tarde demais.", "The urgent message arrived too late.", "El mensaje urgente llegó demasiado tarde.",
@@ -724,6 +785,8 @@ namespace DC
         public static string VolteAmanha => L("Volte amanhã para o contrato raro.", "Come back tomorrow for the rare contract.",
             "Vuelve mañana por el contrato raro.", "Kembali besok untuk kontrak langka.");
         public static string Trocar => L("TROCAR", "SWAP", "CAMBIAR", "GANTI");
+        /// <summary>No lugar do preco do TROCAR quando ja trocou hoje (sim.RerolledToday); falta de moeda fica com o preco em vermelho.</summary>
+        public static string TrocaAmanha => L("amanhã", "tomorrow", "mañana", "besok");
 
         // modificadores (§6.2)
         public static string Modificadores => L("Modificadores", "Modifiers", "Modificadores", "Pengubah");
@@ -947,6 +1010,8 @@ namespace DC
                 case Outfit.Explorer: return L(pt, "Explorer", "Explorador", "Penjelajah");
                 case Outfit.Forge: return L(pt, "Forge firefighter", "Bombero de forja", "Pemadam tempaan");
                 case Outfit.Ghost: return L(pt, "Ghost", "Fantasma", "Hantu");
+                case Outfit.Miner: return L(pt, "Miner", "Minero", "Penambang");
+                case Outfit.Gravekeeper: return L(pt, "Gravekeeper", "Sepulturero", "Penjaga makam");
                 default: return pt;
             }
         }
@@ -980,6 +1045,23 @@ namespace DC
             "Beli {0} seharga {1}?\n\nPembelian uji: tidak ada tagihan.", nome, preco);
         public static string Confirmar => L("CONFIRMAR", "CONFIRM", "CONFIRMAR", "KONFIRMASI");
         public static string Cancelar => L("CANCELAR", "CANCEL", "CANCELAR", "BATAL");
+        // loja real (Unity IAP no Google Play; MONETIZACAO.md)
+        public static string LojaCabecaReal => L("Conteúdo fixo e listado, nada aleatório.", "Fixed, listed content, nothing random.",
+            "Contenido fijo y listado, nada aleatorio.", "Isi tetap dan tertulis, tanpa acak.");
+        public static string LojaCarregando => "…";
+        public static string LojaIndisponivel => L("indisponível", "unavailable", "no disponible", "tidak tersedia");
+        public static string CompraPendente => L("Compra pendente: o conteúdo chega quando o pagamento for aprovado.",
+            "Purchase pending: the content arrives when the payment is approved.", "Compra pendiente: el contenido llega cuando se apruebe el pago.",
+            "Pembelian tertunda: isi masuk setelah pembayaran disetujui.");
+        public static string CompraFalhou => L("A compra não foi concluída.", "The purchase was not completed.", "La compra no se completó.",
+            "Pembelian tidak selesai.");
+        public static string Restaurar => L("Restaurar compras", "Restore purchases", "Restaurar compras", "Pulihkan pembelian");
+        public static string RestaurarSub => L("Devolve o que já foi comprado nesta conta da loja.", "Brings back what this store account already bought.",
+            "Devuelve lo que ya se compró con esta cuenta de la tienda.", "Mengembalikan yang sudah dibeli akun toko ini.");
+        public static string RestaurarBotao => L("RESTAURAR", "RESTORE", "RESTAURAR", "PULIHKAN");
+        public static string Restaurado => L("Compras restauradas.", "Purchases restored.", "Compras restauradas.", "Pembelian dipulihkan.");
+        public static string RestaurarFalhou => L("Não deu para restaurar agora. Tente de novo com internet.", "Could not restore now. Try again online.",
+            "No se pudo restaurar ahora. Inténtalo de nuevo con internet.", "Belum bisa memulihkan. Coba lagi saat online.");
 
         public static string ProdutoNome(Product p)
         {
@@ -988,9 +1070,21 @@ namespace DC
                 case Product.RemoveAds: return L("Remover anúncios", "Remove ads", "Quitar anuncios", "Hapus iklan");
                 case Product.StarterPack: return L("Pacote inicial", "Starter Pack", "Paquete inicial", "Paket pemula");
                 case Product.EventPack: return L("Pacote de evento", "Event pack", "Paquete de evento", "Paket event");
-                default:
-                    Outfit o = p == Product.OutfitNight ? Outfit.Night : p == Product.OutfitRoyal ? Outfit.Royal : p == Product.OutfitExplorer ? Outfit.Explorer : Outfit.Forge;
-                    return F("Roupa {0}", "{0} outfit", "Traje {0}", "Pakaian {0}", RoupaNome(o));
+                default: return F("Roupa {0}", "{0} outfit", "Traje {0}", "Pakaian {0}", RoupaNome(RoupaDoProduto(p)));
+            }
+        }
+
+        /// <summary>Roupa que o produto da (so os Product.Outfit*).</summary>
+        public static Outfit RoupaDoProduto(Product p)
+        {
+            switch (p)
+            {
+                case Product.OutfitNight: return Outfit.Night;
+                case Product.OutfitRoyal: return Outfit.Royal;
+                case Product.OutfitExplorer: return Outfit.Explorer;
+                case Product.OutfitMiner: return Outfit.Miner;
+                case Product.OutfitGravekeeper: return Outfit.Gravekeeper;
+                default: return Outfit.Forge;
             }
         }
 
@@ -1002,9 +1096,10 @@ namespace DC
                 case Product.RemoveAds: return L("Tira os anúncios entre contratos. Os anúncios com recompensa continuam opcionais.",
                     "Removes ads between contracts. Reward ads stay optional.", "Quita los anuncios entre contratos. Los anuncios con recompensa siguen siendo opcionales.",
                     "Menghapus iklan antar kontrak. Iklan berhadiah tetap opsional.");
-                case Product.StarterPack: return F("{0} moedas + roupa Explorador + 1 projeto de cada equipamento (4)",
-                    "{0} coins + Explorer outfit + 1 blueprint of each gear (4)", "{0} monedas + traje Explorador + 1 plano de cada equipo (4)",
-                    "{0} koin + pakaian Penjelajah + 1 cetak biru tiap perlengkapan (4)", Balance.StarterCoins);
+                case Product.StarterPack: return F("{0} moedas + roupa Explorador + 1 projeto de cada equipamento (4; já destravado = {1} moedas)",
+                    "{0} coins + Explorer outfit + 1 blueprint of each gear (4; already unlocked = {1} coins)",
+                    "{0} monedas + traje Explorador + 1 plano de cada equipo (4; ya desbloqueado = {1} monedas)",
+                    "{0} koin + pakaian Penjelajah + 1 cetak biru tiap perlengkapan (4; sudah terbuka = {1} koin)", Balance.StarterCoins, Balance.StarterBlueprintCoins);
                 case Product.EventPack: return F("+{0} vagas no evento desta semana (+{1} e +{2} moedas)", "+{0} slots in this week's event (+{1} and +{2} coins)",
                     "+{0} puestos en el evento de esta semana (+{1} y +{2} monedas)", "+{0} slot di event minggu ini (+{1} dan +{2} koin)",
                     Balance.EventPackContracts, Sim.EventReward(3), Sim.EventReward(4));
@@ -1015,6 +1110,10 @@ namespace DC
 
         // anuncios (simulador de teste) e ofertas de rewarded (§7)
         public static string AnuncioTeste => L("ANÚNCIO DE TESTE", "TEST AD", "ANUNCIO DE PRUEBA", "IKLAN UJI");
+        // anuncio real (LevelPlay): espera do rewarded
+        public static string AnuncioCarregando => L("Carregando o anúncio…", "Loading the ad…", "Cargando el anuncio…", "Memuat iklan…");
+        public static string AnuncioSemAnuncio => L("Nenhum anúncio disponível agora.\nTente de novo mais tarde.", "No ad available right now.\nTry again later.",
+            "No hay anuncios disponibles ahora.\nInténtalo más tarde.", "Belum ada iklan sekarang.\nCoba lagi nanti.");
         public static string AnuncioGanha(string premio) => F("Assista até o fim para ganhar:\n{0}", "Watch to the end to get:\n{0}",
             "Mira hasta el final para ganar:\n{0}", "Tonton sampai habis untuk dapat:\n{0}", premio);
         public static string AnuncioEntre => L("Anúncio entre contratos.\nRemover anúncios tira este.", "Ad between contracts.\nRemove ads turns these off.",

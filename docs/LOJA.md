@@ -289,36 +289,39 @@ Coerente com o jogo de hoje (`Textos.Privacidade`, `UI_V1.md` §4): o progresso 
 
 O SDK de anúncio usa a internet e coleta dados por conta própria. **Antes de publicar o build com anúncios**, a política ganha dois itens (nos 4 idiomas), a frase 3 muda para "o jogo não envia dados para servidores da V-STACK; os anúncios usam a internet" e o formulário de segurança dos dados muda junto:
 
-> 7. **Anúncios.** Os anúncios são exibidos pela `<AdMob | LevelPlay>`, que pode coletar o identificador de publicidade do aparelho, o endereço IP e dados de interação com o anúncio, conforme a política dela (`<link>`). Você pode redefinir ou desativar o identificador de publicidade nas configurações do Android.
+> 7. **Anúncios.** Os anúncios são exibidos pelo Unity LevelPlay e pelas redes que ele usa (Unity Ads e, se ligada, AdMob). Eles podem coletar o identificador de publicidade do aparelho, o endereço IP e dados de interação com o anúncio, conforme a política de cada um (`<links>`). Você pode redefinir ou desativar o identificador de publicidade nas configurações do Android.
 > 8. **Compras.** As compras são processadas pela Google Play. A V-STACK recebe só a confirmação da compra, sem dados de pagamento.
+
+**O build de hoje tem só o Unity IAP** (`docs/MONETIZACAO.md` §1.3, medido no APK). O manifesto ganha só `com.android.vending.BILLING` e `ACCESS_NETWORK_STATE`, esta do `datatransport`, a telemetria do Google Play Billing (permissão normal, sem dado do jogador). O `INTERNET` já existia por causa do `config_url`. **Não há SDK de anúncio no APK, então não há `AD_ID`**, nem as permissões do Privacy Sandbox e do WorkManager. O LevelPlay está pronto no código e desligado (define `DC_LEVELPLAY`). Quando ele voltar (`MONETIZACAO.md` §4), entram o item 7 da política, a frase 3 nova, `AD_ID`, `ACCESS_ADSERVICES_*`, `WAKE_LOCK`, `RECEIVE_BOOT_COMPLETED` e `FOREGROUND_SERVICE` (Unity Ads), e a declaração de ID de publicidade passa a ser **sim**.
 
 **Segurança dos dados (Play Console):**
 
 | Build | Coleta | Compartilha | Observação |
 |---|---|---|---|
-| Hoje (sem anúncios nem compras) | nenhum dado | nenhum | o diário só sai por ação do jogador (exportação feita pelo usuário, que não conta como coleta) |
-| Com anúncios e compras | identificadores do dispositivo e interações com o app, coletados pelo SDK de anúncio | com a rede de anúncios (publicidade) | criptografia em trânsito: a do SDK; pedido de exclusão: desinstalar + o canal da rede |
+| Hoje (só Unity IAP na loja falsa, simulador de anúncio) | nenhum dado | nenhum | o diário só sai por ação do jogador (exportação feita pelo usuário, que não conta como coleta). Contém anúncios: não. ID de publicidade: **não** (sem `AD_ID` no manifesto) |
+| Com compras reais (Google Play, `iap_google_play: true`) | histórico de compras, processado pela Google Play | nenhum | item 8 da política |
+| Com anúncios (LevelPlay religado, com app key) | identificadores do dispositivo (ID de publicidade), interações com o app e localização aproximada (pelo IP), coletados pelo SDK de anúncio | com o LevelPlay e as redes de anúncio (publicidade, análise e prevenção de fraude) | item 7 da política e ID de publicidade: sim. Criptografia em trânsito: a dos SDKs; pedido de exclusão: desinstalar + o canal da rede. Confira a tabela de segurança dos dados publicada pelo LevelPlay e pelo Unity Ads na versão do SDK do build |
 
 ## 5. As 8 capturas (1080 × 1920)
 
-Tire as fotos no **build de release** (`client/Builds/win-release/`), que não tem a marca "Development Build" no canto, com `-lang L` e o sufixo `_L` no nome. Depois rode `python -I client/tools/loja_assets.py --fotos <pasta>`, que amplia cada foto de 540 × 960 para 1080 × 1920 (lanczos) e grava em `client/Builds/loja/capturas/NN_<nome>_<L>.png`. Sem a foto do idioma, ele usa a de hoje (pt, sem sufixo) e avisa.
+Tire as fotos no **build de release** (`client/Builds/win-release/`), que não tem a marca "Development Build" no canto, com `-lang L`. As 6 de partida saem de uma gravação `-record` a 10 quadros/s (o passo do bot é fixo, então o quadro N é o mesmo nos 4 idiomas; só o texto muda). Copie o quadro para `client/Builds/loja_fotos/<foto>_<L>.png`. As 2 telas saem com `-shot`. Depois rode `python -I client/tools/loja_assets.py`, que amplia cada foto de 540 × 960 para 1080 × 1920 (lanczos) e grava em `client/Builds/loja/capturas/NN_<nome>_<L>.png`. Sem a foto do idioma, ele usa a `_pt` e avisa.
 
-Base de todo comando: `client/Builds/win-release/DungeonCourier.exe -screen-width 540 -screen-height 960 -screen-fullscreen 0 -testsession -lang L`.
+Base de todo comando: `client/Builds/win-release/DungeonCourier.exe -screen-width 540 -screen-height 960 -screen-fullscreen 0 -testsession -lang L`. Gravação: `... <flags> -record <pasta> -recordfps 10 -recordsecs <s> [-recordfrom <s>]`.
 
-| # | Captura (ordem da loja) | O que mostra | Flags (depois da base) | Foto de hoje |
+| # | Captura (ordem da loja) | O que mostra | Flags (depois da base) | Foto = quadro |
 |---|---|---|---|---|
-| 01 | `01_ladrao_quer_a_carga` | Capitão Ladrão chamando ladrões, a carga em jogo e o aviso "ladrão! ele quer a sua carga" | `-contract 12 -bot -shot <fotos>/c12_chamando_L.png -shotdelay 46.8` | `c12_chamando` |
-| 02 | `02_pousar_para_lutar` | 1ª sala: "solte o dedo para pousar e lutar" e as portas com caveiras e baú | `-contract 1 -bot -shot <fotos>/c1_ambiente_L.png -shotdelay 1.0` | `c1_ambiente` |
-| 03 | `03_cliente_abre_a_caixa` | cena da entrega: o cliente abre a caixa e comemora ("Perfeito!") | `-contract 1 -bot -shot <fotos>/c1_fim_24_L.png -shotdelay 24.0` | `c1_fim_23` |
-| 04 | `04_reliquia_fragil` | relíquia com 2 rachaduras entre arqueiros | `-contract 8 -bot -shot <fotos>/c8_rachaduras_L.png -shotdelay 7.8` | `c8_flecha` |
-| 05 | `05_barril_de_polvora` | barril aceso no chão (alcance e contagem) | `-contract 13 -bot -shot <fotos>/c13_barril_L.png -shotdelay 5.0` | `c13_barril` |
-| 06 | `06_chefe_ogro` | Ogro com a barra de chefe e a pancada telegrafada | `-contract 24 -bot -weapon 1 -shot <fotos>/c24_ogro_b1_L.png -shotdelay 95.3` | `c24s_45` |
-| 07 | `07_quadro_de_contratos` | quadro de contratos da região (72 na campanha) | `-tela quadro -shot <fotos>/tela_quadro_L.png` | `tela_quadro` |
-| 08 | `08_guilda_sem_energia` | guilda: melhorias compradas com moedas do jogo, sem energia | `-tela guilda -shot <fotos>/tela_guilda_L.png` | `tela_guilda` |
+| 01 | `01_ladrao_quer_a_carga` | Capitão Ladrão chamando ladrões (fios lilás) e o aviso "ladrão! ele quer a sua carga" | `-contract 12 -bot`, `-recordfrom 44 -recordsecs 6` | `c12_chamando` = 35 |
+| 02 | `02_pousar_para_lutar` | 1ª sala: "solte o dedo para pousar e lutar", portas com caveiras e baú | `-contract 1 -bot`, `-recordsecs 3` | `c1_ambiente` = 20 |
+| 03 | `03_cliente_abre_a_caixa` | cena da entrega: o cliente abre a caixa e comemora ("Perfeito!") | `-contract 1 -bot`, `-recordfrom 21 -recordsecs 5` | `c1_fim_24` = 28 |
+| 04 | `04_reliquia_fragil` | relíquia entre arqueiros, linha de mira | `-contract 8 -bot`, `-recordfrom 6 -recordsecs 3` | `c8_rachaduras` = 10 |
+| 05 | `05_cristal_de_gelo` | Minas Alagadas: cristal de gelo (barra "gelo" no HUD) e o ladrão chegando | `-contract 27 -bot`, `-recordsecs 3` | `c27_gelo` = 25 |
+| 06 | `06_dragao_anciao` | Dragão Ancião com a barra de chefe e o cone do sopro | `-contract 72 -room B4 -bot -weapon 1 -guilda`, `-recordsecs 9` | `b4_dragao` = 80 |
+| 07 | `07_quadro_de_contratos` | quadro de contratos (72 na campanha) | `-dev-desbloqueia -tela quadro -shot <fotos>/tela_quadro_L.png -shotdelay 1.5` | — |
+| 08 | `08_guilda_sem_energia` | guilda: melhorias compradas com moedas do jogo, sem energia | `-dev-desbloqueia -tela guilda -shot <fotos>/tela_guilda_L.png -shotdelay 1.5` | — |
 
-- Tempos medidos em 2026-10-11 com o Core da `feat/lancamento` (semente 1, `Bot(1)`, guilda 0), a mesma partida do `-bot`. Se o Core mudar, confira `t=` e `sala=` na linha `SHOT` do log.
-- **Quando a View das regiões 2–4 estiver pronta**, troque a 05 e a 06 por fotos de região nova, sem mudar o total de 8. Sugestão: Minas Alagadas com o cristal de gelo (`-contract 27`, M2-3) e o Dragão Ancião (`-contract 72`, M4-16, `-weapon 1`). Meça o `-shotdelay` antes.
-- O ícone (512 × 512) e o feature graphic (1024 × 500) saem do mesmo script (`icone_512.png`, `feature_1024x500.png`), só com sprites e fotos do jogo.
+- Quadros escolhidos em 2026-10-12 com o build da `feat/leva-c` (1.2.0-beta). Se o Core mudar, grave o pt de novo e confira o quadro antes dos outros idiomas.
+- O logo do CTA e do feature graphic sai de `tela_titulo.png` (`-dev-desbloqueia -tela titulo -shot`).
+- O ícone (512 × 512) e o feature graphic (1024 × 500) saem do mesmo script (`icone_512.png`, `feature_1024x500.png`), só com sprites e fotos do jogo. O pacote da loja vai como anexo da pré-release no GitHub.
 
 ## 6. Artes (resumo)
 

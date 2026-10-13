@@ -143,7 +143,7 @@ using System.Text;
 //   Meta:       temporada: Season.Goals[20], sim.SeasonId, sim.SeasonProgress(i), SeasonReady(i), ClaimSeason(i), SeasonClaimed(i).
 //               Maestria: sim.MasteryCount/MasteryLevel(carga) (+2% no pagamento por nivel). Marcos: Balance.Milestones,
 //               sim.MilestoneReady/ClaimMilestone/MilestoneClaimed(i). Equipamento: GearDef.All (+ SmokeTime, SmokeUses, HookCooldown,
-//               TrapTime, TrapCatches por nivel), sim.GearOpen, sim.Blueprints(g), GearUnlocked, GearLevel (0-5), GearCost, CanUpgradeGear,
+//               TrapTime, TrapCatches por nivel), sim.GearOpen, sim.Blueprints(g), GearUnlocked, GearLevel (0-8), GearCost, CanUpgradeGear,
 //               UpgradeGear, EquipGear (Gear.None = vazio; so fora do contrato), GearEquipped, ProjectTaken(sala). Roupas: OutfitDef.All,
 //               sim.OwnsOutfit, sim.EquipOutfit, sim.OutfitEquipped.
 //   Monetizacao (o Core nao fala com SDK): rewarded = sim.RewardOffer(t) (mostra o botao?), sim.RewardId(t) (rw-<contrato>-<tipo>) e,
@@ -167,6 +167,27 @@ using System.Text;
 //               compra nivel de equipamento destravado (regiao 1: nenhum). Regiao 4: Bot.MeasureRegion4; API da View no topo de Run.Regiao4.cs
 //               (run.Forge, VentState/VentFireIn, NearFire, InLava; eventos BossPhase, TakeOff, Land, PlantBite, LavaBurn, VentFire, EggHatch,
 //               ForemanCall). run.Untouchable(e) = intocavel (Dragao no ar; gancho HitMulRn no fim de Run.cs, 2 = dano x2 na cabeca baixa).
+//
+// ---------------------------------------------------------------------------------------------------------------------------------
+// LANCAMENTO, Leva C, raia E (economia; BALANCE.md "Economia da campanha") — ACRESCIMOS. Nada acima foi renomeado nem removido.
+// ---------------------------------------------------------------------------------------------------------------------------------
+//   Reroll:     sim.RerolledToday(raro) = ja trocou hoje (CanReroll falso por isso, e nao por falta de moeda: compare com Coins < RerollCost).
+//   Evento:     sim.WeekProject(data) = projeto que as 3 vagas da semana dao (Gear.None = nenhum faltando: Balance.EventProjectCoins moedas).
+//   Roupas:     Outfit.Miner (Mineiro) e .Gravekeeper (Coveiro) no fim do enum, a venda por Product.OutfitMiner / .OutfitGravekeeper (no fim do
+//               enum, depois do EventPack): 6 roupas na loja; Classica gratis e Fantasma so por marco/temporada.
+//   Equipamento (MUDOU): niveis custam 1.000 / 2.500 / 4.000 / 5.000 (GearDef.Cost); cada equipamento tem 4 baus de projeto para 3
+//               projetos (o Gancho completa na regiao 3) e a porta/bau so mostram o projeto enquanto o equipamento precisa dele
+//               (Door.Blueprint / Chest.Blueprint = None depois de destravado; o bau sobrando paga so as moedas).
+//   Dev (so teste/fotos, como o DevStars): sim.DevProjects(gear, n) poe n projetos (Gear.None = nos 4) so na memoria; sim.DevStartAt(contrato,
+//               "B2") comeca o contrato direto na camada da sala (contrato -1 = o 1o que passa por ela). Game.cs: -testsession -room B2.
+//   Bot:        Bot.BuyAll(sim) = a regra de compra da campanha; Campaign.EarnedPer/SpentPer (por contrato) e Campaign.End (save do fim).
+//   Fim de jogo (raia E2, MUDOU): Balance.GearMaxLevel = 8 (era 5) e Balance.GearCampaignLevel = 5. sim.GearCap = 5 ate vencer o Dragao
+//               (sim.DragonBeaten: M4-16 entregue), depois 8; GearCost = -1 no teto. Niveis 6-8 custam 10.000 / 13.000 / 18.000; as tabelas
+//               por nivel (GearDef.SmokeTime/SmokeUses/HookCooldown/TrapTime/TrapCatches e o novo BootsFire) tem 8 entradas. A tela desenha
+//               8 pontos e os acima de sim.GearCap travados ("6-8: DRAGAO"). O efeito extra do nivel 5 (GearCampaignLevel) continua no 5.
+//   Exploits (revisao do GDD §28, MUDOU): a linha cgN do save ganha um 6o campo opcional = gelo exato do cristal ou 1 = lanterna apagada
+//               (reabrir o app nao devolve gelo nem reacende; save sem o campo = topo da faixa, como antes; o rewarded retomar continua assim).
+//               Cacador paga no maximo Balance.PerkHunterCap (20, antes da Bolsa) por visita de sala (CONTEUDO_REGIOES §7).
 
 namespace DC.Core
 {
@@ -300,6 +321,29 @@ namespace DC.Core
         public void DevStars(int n)
         {
             for (int i = 0; i < best.Length; i++) { int k = Math.Max(0, Math.Min(3, n)); best[i] = k; n -= k; }
+        }
+
+        /// <summary>SO teste/fotos (-testsession -room B2): comeca o contrato `index` da campanha (index &lt; 0 = o 1o que passa pela sala) direto
+        /// na sala de codigo `room` ("B2", "M4", "R3-5"; sem diferenca de maiuscula), na camada dela, sem resgate e sem pedir o contrato
+        /// destravado. As perks das camadas anteriores nao sao oferecidas. null = sala fora do contrato, contrato em curso ou save recusado.</summary>
+        public Run DevStartAt(int index, string room)
+        {
+            if (InContract || SaveRefused || string.IsNullOrEmpty(room) || index >= Contracts.Length) return null;
+            for (int i = Math.Max(0, index); i < (index < 0 ? Contracts.Length : index + 1); i++)
+            {
+                ContractDef def = Contracts[i];
+                for (int l = 0; l < def.Layers.Length; l++)
+                    foreach (int id in def.Layers[l])
+                    {
+                        if (!string.Equals(Content.Rooms[id].Code, room.Trim(), StringComparison.OrdinalIgnoreCase)) continue;
+                        Run r = Begin(def, false, Modifier.None);
+                        r.Layer = l;
+                        r.EnterRoom(id, false);
+                        Checkpoint();
+                        return r;
+                    }
+            }
+            return null;
         }
 
         public bool WeaponUnlocked(Weapon w) => (int)w >= 0 && (int)w < WeaponDef.All.Length && Stars >= WeaponDef.All[(int)w].Stars;
@@ -542,6 +586,15 @@ namespace DC.Core
         public string Save()
         {
             if (SaveRefused) return null;
+            // Append(int) usa a cultura do aparelho: sv/nb/fi escrevem o menos como U+2212 (ar/fa com marca de direcao) e o Load le invariante
+            CultureInfo cur = CultureInfo.CurrentCulture;
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+            try { return SaveText(); }
+            finally { CultureInfo.CurrentCulture = cur; }
+        }
+
+        string SaveText()
+        {
             var sb = new StringBuilder();
             sb.Append("v=").Append(SaveVersion).Append('\n');
             sb.Append("seed=").Append(Seed).Append('\n');
@@ -572,8 +625,9 @@ namespace DC.Core
             return sb.ToString();
         }
 
-        /// <summary>Linhas do contrato em curso (run, rk, rx, cgN): o save e o ponto de retomada do rewarded (Checkpoint).</summary>
-        static void WriteRun(StringBuilder sb, Run r)
+        /// <summary>Linhas do contrato em curso (run, rk, rx, cgN): o save e o ponto de retomada do rewarded (Checkpoint). cargo = grava o estado
+        /// exato da carga (gelo, lanterna apagada); o Checkpoint nao grava: retomar pelo rewarded volta com o gelo no topo da faixa e a lanterna acesa.</summary>
+        static void WriteRun(StringBuilder sb, Run r, bool cargo = true)
         {
             var ci = CultureInfo.InvariantCulture;
             sb.Append("run=").Append(r.Contract.Index).Append(',').Append(r.Layer).Append(',').Append(r.Room.Id).Append(',').Append(r.Courier.Hp).Append(',')
@@ -591,17 +645,21 @@ namespace DC.Core
             int buried = 0;
             for (int i = 0; i < r.Buried.Count && i < 30; i++) if (r.Buried[i].Opened) buried |= 1 << i;
             // rx (v3) = id da tentativa, modificadores, vaga do evento, segundo folego, fumacas restantes, inimigos, baus, secretas, chefes sem dano,
-            // Cacador, baus enterrados abertos na sala (bits)
+            // Cacador, baus enterrados abertos na sala (bits), regiao do contrato (dia/codigo da v2 migrado: regiao 1 com bits altos no payload)
             sb.Append("rx=").Append(r.Id).Append(',').Append((int)r.Mods).Append(',').Append(r.Contract.Slot).Append(',').Append(r.SecondWindUsed ? 1 : 0).Append(',')
               .Append(r.SmokeLeft).Append(',').Append(r.Kills).Append(',').Append(r.ChestsOpened).Append(',').Append(r.SecretsFound).Append(',')
-              .Append(r.BossesClean).Append(',').Append(r.HuntCoins).Append(',').Append(buried).Append('\n');
+              .Append(r.BossesClean).Append(',').Append(r.HuntCoins).Append(',').Append(buried).Append(',').Append(r.Contract.Region).Append('\n');
             for (int i = 0; i < r.Cargos.Count; i++)
             {
                 Cargo g = r.Cargos[i];
                 // ao retomar: 0 = nas maos, 1 = no chao no ponto de resgate (resgate ainda nao pego na 1ª sala), 2 = fora do jogo
                 int st = g.State == CargoState.Gone ? 2 : g.Rescue && r.Layer == 0 && g.State == CargoState.Ground ? 1 : 0;
                 sb.Append("cg").Append(i).Append('=').Append(g.Id).Append(',').Append((int)g.Type).Append(',').Append(g.Cracks).Append(',')
-                  .Append(g.Rescue ? 1 : 0).Append(',').Append(st).Append('\n');
+                  .Append(g.Rescue ? 1 : 0).Append(',').Append(st);
+                // 6o campo (GDD §28: reabrir nao restaura a carga): gelo exato do cristal (0-100) ou 1 = lanterna apagada
+                if (cargo && g.Type == CargoType.IceCrystal) sb.Append(',').Append(r.IceOf(g).ToString("G9", ci));
+                else if (cargo && g.Type == CargoType.Lantern && g.Out) sb.Append(",1");
+                sb.Append('\n');
             }
         }
 
@@ -676,7 +734,8 @@ namespace DC.Core
             if (p.Length < 14 || k.Length < 5 + Balance.PerkOfferSize) return null;
             int ci = I(p[0], -2), layer = I(p[1], -1), room = I(p[2], -1), hp = I(p[3], 0), kind = I(k[0], -1), payload = I(k[1], 0), date = I(k[2], 0);
             if (hp <= 0) return null;
-            int old = v < 3 ? 1 : 0;   // v2: dia/codigo da beta eram sempre da regiao 1
+            // v2: dia/codigo da beta eram sempre da regiao 1; v3 grava a regiao no rx (o migrado continua na 1 depois de regravar)
+            int old = v < 3 ? 1 : x.Length >= 12 ? I(x[11], 0) : 0;
             ContractDef def;
             switch ((ContractKind)kind)
             {
@@ -727,6 +786,8 @@ namespace DC.Core
                 CargoState state = st == 0 ? CargoState.Held : st == 1 && rescue && layer == 0 ? CargoState.Ground : CargoState.Gone;
                 if (i == 0 && state != CargoState.Held && !run.Hatched) return null;   // carga do contrato fora das maos so se chocou
                 Cargo c = run.AddCargo(Math.Max(1, I(g[0], 1)), (CargoType)type, Math.Max(0, I(g[2], 0)), rescue, state);
+                if (g.Length > 5 && c.Type == CargoType.IceCrystal) { float ice = F(g[5], -1f); if (ice >= 0f) run.SetIce(c, ice); }   // sem o campo: topo da faixa
+                if (g.Length > 5 && c.Type == CargoType.Lantern) c.Out = g[5] == "1";
                 if (i == 0 && run.Hatched) c.State = CargoState.Gone;
                 if (run.Breaks(c)) return null;
             }

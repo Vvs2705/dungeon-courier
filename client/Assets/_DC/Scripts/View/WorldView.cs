@@ -29,7 +29,7 @@ namespace DC
         // vao escuro OPACO de 1,21 m de largura do chao ate 0,55 (quinas curvas desde 0,45) -> a grade vai por cima do sprite, no vao
         const float ArchTop = 1.78f, ArchOpen = 0.52f, ArchOpenW = 1.2f;
         // arremesso: solta no quadro 3 de 8 do courier/Throw (ASSETS §5); resto do golpe; clipe Hit; largura de projeto do bau
-        const float ThrowRelease = 3f / 8f, StrikeHold = 0.15f, HitTime = 0.3f, BauW = 0.8f;
+        const float ThrowRelease = 3f / 8f, StrikeHold = 0.15f, HitTime = 0.3f, BauW = 0.8f, HitFlashGap = 0.3f;
         // altura de voo do morcego e do projetil e do pulo do filhote (m, altura real: x Lift na tela); contorno limao da carga (m)
         const float BatZ = 1.0f, ShotZ = 0.9f, PetHop = 0.15f, CargoLine = 0.06f, WaveTime = 2.5f;
         // ordens de desenho: decalques do chao (sombra/anel dos atores 7-9) < porta (o pe do arco cobre o chao atras dele) < placa
@@ -98,7 +98,7 @@ namespace DC
             public Vector2 Last, Hand; public bool HasHand, HandFront = true, FlipX; public float StrikeT, RoarT, SpawnT;
             /// <summary>HitT = clipe Hit; WakeT = clipe Wake (WasAsleep = para tocar); Shown = corpo visivel (escuro, por baixo da terra, no
             /// teto, no ar); StepT = ritmo das ondas/rastro; TeleT0/TeleDur = relogio proprio do aviso (TeleK) quando o Core nao desconta Tele.</summary>
-            public bool WasAsleep, WasTele, Shown = true; public float HitT, WakeT, StepT, TeleT0, TeleDur;
+            public bool WasAsleep, WasTele, WasHead, Shown = true; public float HitT, WakeT, StepT, TeleT0, TeleDur;
         }
         sealed class CargoV
         {
@@ -119,7 +119,9 @@ namespace DC
         readonly Transform _root, _roomRoot;
         readonly List<Text> _roomLabels = new List<Text>();
         readonly List<Vector3> _roomLabelPos = new List<Vector3>();
-        readonly SpriteSheet _sCourier, _sCourierFim, _sArco, _sBau, _sBauAberto, _sCliente, _sOgroFim;
+        readonly SpriteSheet _sCourierFim, _sArco, _sBau, _sBauAberto, _sCliente, _sOgroFim;
+        SpriteSheet _sCourier;   // a folha da roupa equipada (Roupa)
+        Outfit _roupa = Outfit.Classic; Color _roupaC = Color.white;
         readonly float _plateS;   // y de tela do centro das placas das portas
         Run _run; int _roomKey = -1;
         Vector3 _camBase; float _shakeT, _shakeDur = 1f, _shakeA, _time;
@@ -129,6 +131,9 @@ namespace DC
         readonly Ent _pet; float _petHit;
         SpriteRenderer _chest, _chestLock, _chestArc, _deliverRing; Sprite _chestShut, _chestOpen;
         SpriteAnim _client, _corpse; float _waveT;
+        /// <summary>Clipe tocado uma vez fora de um ator (o Split do magma): some no fim.</summary>
+        sealed class OneShot { public SpriteAnim A; public float Left; }
+        readonly List<OneShot> _oneShots = new List<OneShot>();
         readonly List<DoorV> _doors = new List<DoorV>();
         readonly List<Ent> _enemies = new List<Ent>();
         readonly Dictionary<int, float> _enemyHit = new Dictionary<int, float>();
@@ -238,7 +243,7 @@ namespace DC
                 AnimCourier(run, c, dt);
                 bool flash = _courierHit > 0.52f;   // 0,08 s de branco (shader) ou de tinta (sem ele), depois pisca
                 // na poca do limo: tinta rosada (com a gosma no pe e as gotas do DrawCourierFx)
-                _courier.Spr.color = flash ? Art.FxMat != null ? Color.white : Flash : blink ? Ghost : c.Slowed ? SlowTint : Color.white;
+                _courier.Spr.color = flash ? Art.FxMat != null ? Color.white : Flash : Mul(blink ? Ghost : c.Slowed ? SlowTint : Color.white, _roupaC);
                 Art.Fx(_courier.Spr, flash ? 1f : 0f);
                 return;
             }
@@ -252,7 +257,7 @@ namespace DC
                 s = new Vector2(1f - 0.06f * k, 1f + 0.08f * k);   // squash and stretch andando
             }
             _courier.Body.transform.localScale = new Vector3(d * s.x, d * s.y, 1f);
-            Color body = c.State == CourierState.Dead ? Art.Dim : c.Slowed ? Color.Lerp(Art.Courier, SlimePink, 0.35f) : Art.Courier;
+            Color body = c.State == CourierState.Dead ? Art.Dim : Mul(c.Slowed ? Color.Lerp(Art.Courier, SlimePink, 0.35f) : Art.Courier, _roupaC);
             _courier.Body.color = _courierHit > 0.52f ? Color.white : blink ? Art.A(body, 0.45f) : body;
         }
 
@@ -508,10 +513,11 @@ namespace DC
                 {
                     v.Root.localPosition = p;
                     AnimEnemy(v, e, p, vel, cp, dt);
-                    // flash branco de 0,06 s no golpe recebido; tinta vermelha a 30% piscando nos ultimos 0,15 s do telegraph
-                    bool flash = hit > 0.06f;
+                    // flash branco de 0,06 s no golpe recebido (no maximo 1 a cada HitFlashGap s; no chefe a 60%: o bumerangue acerta varias vezes
+                    // por segundo e o chefe virava um vulto branco); tinta vermelha a 30% piscando nos ultimos 0,15 s do telegraph
+                    bool flash = hit > HitFlashGap - 0.06f;
                     v.Spr.color = flash && Art.FxMat == null ? Flash : warn ? Color.Lerp(Color.white, Art.Bad, 0.3f) : Color.white;
-                    Art.Fx(v.Spr, flash ? 1f : 0f);
+                    Art.Fx(v.Spr, flash ? d.Boss ? 0.6f : 1f : 0f);
                 }
                 else
                 {
@@ -535,7 +541,7 @@ namespace DC
                         v.Extra.transform.localPosition = Quaternion.Euler(0f, 0f, ang) * new Vector3(0.62f * d.Radius, 0f, 0f);
                     }
                     else if (e.Type >= EnemyType.GoblinMiner) AnimProcRegiao(v, e, vel, tele);   // regioes 2-4: squash, flutuar, asas...
-                    v.Body.color = hit > 0.06f ? Color.white : warn ? Color.Lerp(v.BodyC, Art.Bad, 0.3f) : v.BodyC;
+                    v.Body.color = hit > HitFlashGap - 0.06f ? Color.white : warn ? Color.Lerp(v.BodyC, Art.Bad, 0.3f) : v.BodyC;
                 }
                 // telegraph (ART_BIBLE §7): circulo de raio Reach no chao; enchimento a 25% crescendo com TeleProgress; borda a 90%, branca no
                 // ultimo 0,1 s. Arqueiro: a mesma regra numa LINHA de mira ate a parede/obstaculo (o circulo de 7 m cobriria a sala)
@@ -658,7 +664,7 @@ namespace DC
                     else { clip = s.Pick("Idle"); face = cp - p; }
                     break;
                 default:
-                    if (AnimRegiao(v, e, s, p, vel, cp, tele, impact, ref face, ref speed, out clip, out frame)) break;   // regioes 2-4
+                    if (AnimRegiao(v, e, ref s, p, vel, cp, tele, impact, ref face, ref speed, out clip, out frame)) break;   // regioes 2-4
                     clip = tele || v.StrikeT > 0f ? s.Clip(At(AttackClip, (int)e.Type, null) ?? "Attack") : -1;
                     if (clip >= 0)
                     {
@@ -738,6 +744,14 @@ namespace DC
                 _client.Show(-1, true);   // aceno e reacao em laco (o meta so poe laco em idle/walk/run/lurk)
             }
             if (_corpse != null) { _corpse.T += dt; _corpse.Show(); }   // ogro_fim/Dying uma vez, para no ultimo quadro
+            for (int i = _oneShots.Count - 1; i >= 0; i--)
+            {
+                OneShot o = _oneShots[i];
+                o.A.T += dt; o.Left -= dt;
+                if (o.Left > 0f) { o.A.Show(); continue; }
+                Object.Destroy(o.A.R.transform.parent.gameObject);
+                _oneShots.RemoveAt(i);
+            }
         }
 
         /// <summary>0 rachaduras Cheering, 1 Thankful, 2+ Shrug; ovo chocado Thankful.</summary>
@@ -748,10 +762,11 @@ namespace DC
         void BuildRoom(Run run, int key)
         {
             _run = run; _roomKey = key;
+            Roupa(run);
             for (int i = _roomRoot.childCount - 1; i >= 0; i--) Object.Destroy(_roomRoot.GetChild(i).gameObject);
             foreach (Text t in _roomLabels) Object.Destroy(t.gameObject);
             _roomLabels.Clear(); _roomLabelPos.Clear(); _doors.Clear(); _enemyHit.Clear();
-            _chest = _chestLock = _chestArc = _deliverRing = null; _chestShut = _chestOpen = null; _client = _corpse = null;
+            _chest = _chestLock = _chestArc = _deliverRing = null; _chestShut = _chestOpen = null; _client = _corpse = null; _oneShots.Clear();
             foreach (CargoV v in _cargos) v.PulseT = 0f;
             ClearRoomV1();
             Transform r = _roomRoot;
@@ -918,6 +933,19 @@ namespace DC
             e.Up.localPosition = Vector3.zero;
             e.Spr.transform.localScale = Vector3.one;
             e.Spr.flipX = false;
+        }
+
+        /// <summary>Roupa equipada (Sim.OutfitEquipped): a folha `courier_<roupa>` (Hud.FolhaRoupa) quando existe; senao a do courier
+        /// com a Hud.TintaRoupa (o mesmo par do retrato na tela de roupas). Troca so ao montar a sala.</summary>
+        void Roupa(Run run)
+        {
+            Outfit o = run.Sim.OutfitEquipped;
+            if (o == _roupa && _sCourier != null) return;
+            _roupa = o;
+            SpriteSheet s = SpriteSheet.Get(Hud.FolhaRoupa(o));
+            _roupaC = s != null ? Hud.CorComFolha(o) : Hud.TintaRoupa(o);   // a Fantasma fica translucida tambem com a folha propria
+            s = s ?? SpriteSheet.Get("courier");
+            if (s != _sCourier) { _sCourier = s; UseSprite(_courier, s, Balance.CourierR); }
         }
 
         /// <summary>Courier (azul, so ele): corpo azul, bolsa de couro atras, nariz creme e olhos para onde anda.</summary>
@@ -1191,8 +1219,14 @@ namespace DC
                     for (int i = 0; i < run.Cargos.Count && i < _cargos.Length; i++) if (run.Cargos[i].Id == e.A) _cargos[i].PulseT = PulseTime;
                     Burst(p, Art.A(Art.Dim, 0.8f), 4, 1.5f, 0.1f, 0.25f);   // 4 graos de poeira
                     break;
-                case Ev.CargoBroken: Float(p, Textos.Quebrou, Art.Bad, 56); Burst(p, Art.CargoColor(CargoType.Relic), 14, 4f, 0.18f, 0.6f); Burst(p, Art.Gold, 8, 3f, 0.12f, 0.5f); Shake(0.2f, 0.3f); break;
-                case Ev.EnemyHit: _enemyHit[e.A] = 0.12f; Burst(p, Color.white, 3, 2f, 0.1f, 0.2f); break;
+                case Ev.CargoBroken:   // reliquia, espelho, balao (estoura) ou qualquer carga com o Fragil
+                {
+                    CargoType bt = Tipo(run, e.A);
+                    Float(p, bt == CargoType.Balloon ? Textos.Estourou : Textos.Quebrou, Art.Bad, 56);
+                    Burst(p, CargoCor(bt), 14, 4f, 0.18f, 0.6f); Burst(p, Art.Gold, 8, 3f, 0.12f, 0.5f); Shake(0.2f, 0.3f);
+                    break;
+                }
+                case Ev.EnemyHit: if (!_enemyHit.TryGetValue(e.A, out float h0) || h0 <= 0f) _enemyHit[e.A] = HitFlashGap; Burst(p, Color.white, 3, 2f, 0.1f, 0.2f); break;
                 case Ev.EnemyDie:
                     Burst(p, Papel((EnemyType)e.B), 12, 3.5f, 0.2f, 0.45f);
                     SpriteSheet fim = e.B == (int)EnemyType.Ogre ? _sOgroFim : FimDe((EnemyType)e.B);   // chefes com folha `<ator>_fim`

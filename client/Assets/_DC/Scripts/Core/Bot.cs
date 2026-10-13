@@ -552,6 +552,27 @@ namespace DC.Core
             public readonly string[] Before = new string[Sim.Contracts.Length];
             /// <summary>Tempo (s) de jogo acumulado e moedas ganhas ate entregar cada contrato.</summary>
             public readonly float[] ClockAt = new float[Sim.Contracts.Length];
+            /// <summary>Moedas ganhas nas tentativas de cada contrato e gastas nas compras feitas antes delas (economia por regiao).</summary>
+            public readonly int[] EarnedPer = new int[Sim.Contracts.Length], SpentPer = new int[Sim.Contracts.Length];
+            /// <summary>Save no fim da campanha (sem a ultima rodada de compras).</summary>
+            public string End;
+        }
+
+        /// <summary>Compra o mais barato que couber (guilda, nivel de arma ou de equipamento destravado) ate nao caber mais nada; devolve o
+        /// gasto. E a regra de compra da campanha do bot.</summary>
+        public static int BuyAll(Sim sim)
+        {
+            int spent = 0;
+            while (true)
+            {
+                int pick = -1, cost = int.MaxValue;
+                for (int u = 0; u < Balance.UpgradeLines; u++) { int k = sim.UpgradeCost((Upgrade)u); if (sim.CanBuy((Upgrade)u) && k < cost) { cost = k; pick = u; } }
+                for (int w = 0; w < WeaponDef.All.Length; w++) { int k = sim.WeaponCost((Weapon)w); if (sim.CanUpgradeWeapon((Weapon)w) && k < cost) { cost = k; pick = 10 + w; } }
+                for (int g = 1; g < GearDef.All.Length; g++) { int k = sim.GearCost((Gear)g); if (sim.CanUpgradeGear((Gear)g) && k < cost) { cost = k; pick = 20 + g; } }
+                if (pick < 0) return spent;
+                spent += cost;
+                if (pick >= 20) sim.UpgradeGear((Gear)(pick - 20)); else if (pick >= 10) sim.UpgradeWeapon((Weapon)(pick - 10)); else sim.Buy((Upgrade)pick);
+            }
         }
 
         /// <summary>Campanha do zero (ou do save `from`, ex.: o estado estimado do fim da regiao anterior): joga o proximo contrato bloqueado
@@ -565,23 +586,15 @@ namespace DC.Core
             int end = reg.First + reg.Contracts.Length;   // joga ate o fim da regiao `region` (padrao: a regiao 1, os 24 da v1)
             while (sim.Reputation < end && cp.Attempts < maxAttempts)
             {
-                while (true)
-                {
-                    int pick = -1, cost = int.MaxValue;
-                    for (int u = 0; u < Balance.UpgradeLines; u++) { int k = sim.UpgradeCost((Upgrade)u); if (sim.CanBuy((Upgrade)u) && k < cost) { cost = k; pick = u; } }
-                    for (int w = 0; w < WeaponDef.All.Length; w++) { int k = sim.WeaponCost((Weapon)w); if (sim.CanUpgradeWeapon((Weapon)w) && k < cost) { cost = k; pick = 10 + w; } }
-                    for (int g = 1; g < GearDef.All.Length; g++) { int k = sim.GearCost((Gear)g); if (sim.CanUpgradeGear((Gear)g) && k < cost) { cost = k; pick = 20 + g; } }
-                    if (pick < 0) break;
-                    cp.Spent += cost;
-                    if (pick >= 20) sim.UpgradeGear((Gear)(pick - 20)); else if (pick >= 10) sim.UpgradeWeapon((Weapon)(pick - 10)); else sim.Buy((Upgrade)pick);
-                }
-                for (int g = 1; g < GearDef.All.Length && sim.GearEquipped == Gear.None; g++) if (sim.GearUnlocked((Gear)g)) sim.EquipGear((Gear)g);   // regiao 1: nenhum destravado
                 int c = sim.Reputation;
+                int spent = BuyAll(sim);
+                cp.Spent += spent; cp.SpentPer[c] += spent;
+                for (int g = 1; g < GearDef.All.Length && sim.GearEquipped == Gear.None; g++) if (sim.GearUnlocked((Gear)g)) sim.EquipGear((Gear)g);   // regiao 1: nenhum destravado
                 sim.Equip(WeaponFor(sim, Sim.Contracts[c]));
                 if (cp.Before[c] == null) cp.Before[c] = sim.Save();
                 int before = sim.Coins;
                 ContractResult res = Play(sim, c, sim.Pending != null, bot);
-                cp.Attempts++; cp.AttemptsPer[c]++; cp.Time += res.Time; cp.Earned += sim.Coins - before;
+                cp.Attempts++; cp.AttemptsPer[c]++; cp.Time += res.Time; cp.Earned += sim.Coins - before; cp.EarnedPer[c] += sim.Coins - before;
                 if (res.Outcome == Outcome.Died) cp.Deaths++;
                 else if (!res.Delivered) cp.CargoFails++;
                 if (res.RescueDelivered) { cp.Rescues++; cp.RescueBonus += res.RescueBonus; }
@@ -594,7 +607,7 @@ namespace DC.Core
                 }
             }
             cp.Finished = sim.Reputation >= end;
-            cp.Coins = sim.Coins; cp.Stars = sim.Stars;
+            cp.Coins = sim.Coins; cp.Stars = sim.Stars; cp.End = sim.Save();
             Array.Copy(sim.Levels, cp.Levels, cp.Levels.Length);
             for (int w = 0; w < WeaponDef.All.Length; w++) cp.WeaponLevels[w] = sim.WeaponLevel((Weapon)w);
             return cp;

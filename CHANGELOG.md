@@ -3,7 +3,22 @@
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões em [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
-- Falta para o GDD completo (`docs/CONTRATO_LANCAMENTO.md`): sprites da múmia, gárgula, necromante e de toda a região 4 (com o dragão armado no Blender), peça `corrente` travada no Tripo, roupas do courier renderizadas, SDKs reais de anúncio e compra (dependem das contas do Vinicius), gravação dos criativos e fotos da loja, balance da economia (sobra de moedas) e da duração.
+
+## [1.2.0-beta] - 2026-10-12
+### Adicionado
+- **Sprites de todo o elenco:** múmia, gárgula, necromante e toda a região 4 (diabrete, kobold, magma/brasa, Capataz, salamandra, planta, mapa, decoração) e o **Dragão Ancião armado à mão no Blender**; 7 roupas do courier (troca de cor, 0 crédito); ícone da loja.
+- **Economia medida na campanha inteira** (sobra no fim 23,7 mil → 2,6 mil moedas) e **fim de jogo**: níveis 6–8 do equipamento depois do Dragão (10/13/18 mil).
+- **Unity IAP 5.4.3**: loja falsa no PC, compra em 2 passos (o núcleo concede e só então confirma), restaurar compras; 9 produtos de conteúdo fixo.
+- HUD das cargas novas (gelo, espelho, lanterna, gaiola, balão), faixas de fase dos 6 chefes, elenco pelos estados do núcleo, rota segura na porta, roupa no mundo, texturas da cripta e da forja; flags de teste `-room` e `-roupa`.
+- **Página da loja nos 4 idiomas** (8 capturas, ícone 512, feature graphic com o Dragão) e os **13 criativos** gravados do jogo real em pt, en, es e id; flag de teste `-guilda` (fotos dos chefes).
+### Corrigido (revisão de correção de 2026-10-12)
+- Compra: a roupa Explorador do Pacote inicial não aparece mais à venda; o mesmo pedido do Pacote de evento não concede duas vezes (app fechado antes da confirmação); o Pacote inicial com equipamento já destravado dá 500 moedas por projeto que não cabe; interstitial que não abriu não conta como exibido; o baú do dia não volta depois de 64 rewarded.
+- Save: o gelo do cristal e a lanterna apagada sobrevivem a fechar o app; o contrato do dia vindo da 1.0 (save v2) não some; o save não depende do idioma do aparelho; o raro trocado não volta ao original no mesmo dia; o "hoje" vira à meia-noite com o quadro aberto.
+- Exploit: o perk Caçador tem o teto de 20 moedas por visita de sala (antes, sem teto).
+- Desempenho no Android: `vSyncCount 0` no início (a qualidade Medium prendia o quadro ao vsync de 120 Hz): o POCO F4 foi de 28–36 para ~55 fps; o logcat mostra `DC fps=` a cada 60 s.
+- Visual: o brilho de dano vem no máximo 1 vez a cada 0,3 s (e a 60% nos chefes, que viravam um vulto branco com o bumerangue); o ícone das cargas novas no HUD (caía num ovo marrom); a dica da sala trancada diz "derrote o chefe/os guardas para abrir a porta".
+### Mudado
+- **LevelPlay fora do build** até existir a conta (código atrás de `DC_LEVELPLAY`): o APK não pede `AD_ID` (privacidade dos testadores; ECA Digital). Ver `docs/MONETIZACAO.md`.
 
 ## [1.1.0-beta] - 2026-10-11
 ### Adicionado
@@ -27,6 +42,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões e
 - `Setup.BuildAndroidDev` apaga os APKs anteriores antes de gerar (fica só o atual).
 - Repositório criado (2026-10-09) com o GDD revisado (comparativo de mercado no topo), `docs/COMPETITIVO.md` e a estrutura de pastas do projeto Unity.
 
-[Unreleased]: https://github.com/Vvs2705/dungeon-courier/compare/v1.1.0-beta...HEAD
+[Unreleased]: https://github.com/Vvs2705/dungeon-courier/compare/v1.2.0-beta...HEAD
+[1.2.0-beta]: https://github.com/Vvs2705/dungeon-courier/compare/v1.1.0-beta...v1.2.0-beta
 [1.1.0-beta]: https://github.com/Vvs2705/dungeon-courier/compare/v1.0.0-beta...v1.1.0-beta
 [1.0.0-beta]: https://github.com/Vvs2705/dungeon-courier/releases/tag/v1.0.0-beta

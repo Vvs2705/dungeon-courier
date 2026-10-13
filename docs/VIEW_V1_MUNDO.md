@@ -66,7 +66,7 @@ Tempos medidos com `Sim(1)`/`Bot(1)` (a mesma partida do `-bot`) no Core de 2026
 
 Código: `WorldViewRegioes.cs` (tema, terreno, listas da visita, escuro, eventos, som) e `WorldViewElenco.cs` (inimigos, chefes e cargas novas). A View só lê o Core: o estado das raias R2–R4 (`run.R2Of`, `R3Of`, `Forge`, `Warns`, `Webs`, `Rocks`, `Bones`, `Spits`, `VentState`, `LightCut`, `TorchCut`, `Webbed`, `GrabbedBy`) e os eventos novos, ligados **pelo nome** (`Enum.TryParse`): renomear um evento no Core não quebra a View, só some o efeito.
 
-- **Tema por região** (`RoomDef.Region`): piso/parede próprios (`piso_mina`/`parede_mina`; cripta e forja usam a textura da região 1 tingida até a raia G copiar `piso_cripta`/`parede_cripta`/`piso_forja`/`parede_forja`), decoração do fundo (`tocha`, `lanterna_mina`, `vela`, `braseiro`), props nos obstáculos (`pilar`, `escora`, `lapide`, `sarcofago`, `bigorna`; lápide procedural se faltar) e música por `Audio.MusicaRegiao(região, chefe)`.
+- **Tema por região** (`RoomDef.Region`): piso/parede próprios (`piso_mina`/`parede_mina`, `piso_cripta`/`parede_cripta`, `piso_forja`/`parede_forja`; sem a textura, a da região 1 tingida), decoração do fundo (`tocha`, `lanterna_mina`, `vela`, `braseiro`), props nos obstáculos (`pilar`, `escora`, `lapide`, `sarcofago`, `bigorna`; lápide procedural se faltar) e música por `Audio.MusicaRegiao(região, chefe)`.
 - **Terreno:** água (brilho andando, respingo e som `agua` no passo), trilho (dormentes; vermelho e sino balançando com o vagonete em `R2Act.Bell`), lava (crosta, miolo pulsando, onda e bolhas), respiro (`run.VentState`: brilho que cresce no aviso, fogo e faíscas), baú enterrado (X com brilho só com `run.Revealed`, arco de cavar, buraco aberto).
 - **Listas da visita, todas acima do véu:** teia (70%, 35% fora da luz), avisos da cripta (`Warn`: faixa e círculo em vermelho, fio lilás, raio e runa em verde), avisos da forja (`ForgeMark`: o enchimento cresce até `Total`, a borda fica branca no fim; chicote em faixa, sopro em cone e em fogo quando `Active`; troca e surgir em lilás), fogo no chão, pedra do Golem (sombra crescendo enquanto cai e depois o bloco), pilha de ossos (com anel verde até remontar) e cuspe de teia.
 - **Escuro** (`run.Lit`): véu `#0B0D16` a 70% (nunca preto), com as mesmas luzes de `run.InLight` (courier ou lanterna acesa × Olhos de gato − `LightCut`; tochas − `TorchCut`; lanterna acesa no chão). Fora da luz, o inimigo mostra só os olhos e a sombra; telegraph e projéteis continuam visíveis.
@@ -106,4 +106,71 @@ Contratos 25–40 = região 2, 41–56 = região 3, 57–72 = região 4. O `-tes
 | 70 | 2,1 | planta mordendo (2,0); magma (3,8); fogo no chão (6,2) |
 | 71 | 2,6 | diabrete surgindo (lilás); queimadura de lava (4,5) |
 
-**Não sai com o bot de teste:** os chefes e mini-chefes das regiões 2–4 (M2 Rainha, B2 Golem, M3 Viúva, B3 Necromante, M4 Capataz, B4 Dragão). O bot perde ou acaba antes da sala do chefe em todos os contratos 25–72, então ficam sem foto as barras com fases, o ponto fraco do Golem, as pedras caindo, o voo e o pouso do Dragão, os ovos e o raio/runa do Necromante. Para esses: jogar no PC ou criar uma flag de dev que comece na sala do chefe (precisa do Core).
+**Chefes:** saem com a flag `-room` (seção 7). Não sai com o bot nem com ela: as fases 2 e 3 do Necromante (o bot cai antes, aos ~35 s).
+
+## 7. Ligações finais (raia K3)
+
+- **HUD das cargas novas** (faixa de cima, no lugar do relógio quando não há relógio):
+  - cristal de gelo: rótulo "gelo" e barra com marcas em 70 e 40 (`run.IceOf`; acima de 70 clara, entre 70 e 40 gelo, abaixo vermelha);
+  - espelho: "N/3 rachaduras" (`run.BreakAt`; vermelho a partir da 1ª);
+  - lanterna: "lanterna apagada" piscando (`Cargo.Out`); no mundo, a folha `lanterna_apagada`;
+  - gaiola: relógio até o grito (`run.CageLeft`), vermelho e pulsando no último 1 s;
+  - balão no chão: relógio de 4 s (`Balance.BalloonRise - Cargo.Fuse`), vermelho e com tique a cada segundo.
+  - O relógio do ovo agora só aparece no ovo: no cristal, o `EggTarget` é o `MeltTime`, e a HUD mostrava "0 s" vermelho.
+- **Resultado:** "O espelho quebrou", "O balão estourou" e "A carga quebrou" (com o Frágil), com o motivo na rachadura certa (`r.Cracks`). No mundo, o balão "estourou!" e o estilhaço na cor da carga.
+- **Faixa da fase do chefe** (`BossPhase`, abaixo da faixa de cima, 2,4 s): "a Rainha emerge duas vezes!", "o Golem vai investir!", "a Viúva sobe ao teto!", "o Necromante dispara raio duplo!" / "apaga a luz!", "o Capataz gira o chicote!", "o Dragão levanta voo!" / "varre o fogo!". A dica da planta virou "toque rápido para se afastar".
+- **Elenco pelo Core:**
+  - gárgula de pedra por `run.Untouchable(e)`;
+  - aranha e Viúva com a pose `_empinada` no aviso;
+  - múmia `Grab`/`Hold` e necromante `Cast`/`Summon`;
+  - dragão: `Fly` com a sombra em `Forge.Shadow`, `Breath` pelo aviso do sopro (boca aberta com `Active`), `Land` na cabeça baixa com brilho dourado e "dano em dobro!";
+  - pilha de ossos no último quadro do `Collapse` do `esqueleto`;
+  - planta com `planta_aberta` na mordida.
+  - Clipes das folhas que a G ainda vai entregar, pelos nomes do CONTEUDO_REGIOES §12.2–12.3. Sem a folha, o procedural continua.
+- **Roupa:** o courier usa a folha `courier_<roupa>` (`Hud.FolhaRoupa`) ou o `courier` com a `Hud.TintaRoupa`, o mesmo par do retrato.
+- **Rota segura:** a porta de `run.SafeDoor` brilha dourada no chão.
+- **Texturas:** a cripta e a forja usam as próprias (`piso_cripta`/`parede_cripta`, `piso_forja`/`parede_forja`, copiadas pela G); sem elas, a textura da região 1 tingida. No `piso_mina`, a tinta quente e o véu de terra a 38% tiram o turquesa das poças pintadas, que se confundiam com a água de jogo.
+
+### Fotos dos chefes (`-testsession -room X -bot -shot f.png -shotdelay s`)
+
+Rodada de 2026-10-12 (`client/Builds/validation_v3/shots`): `-contract K -room X -bot -weapon 1 -guilda -record <pasta> -recordfps 10`, com K = 32 (M2), 40 (B2), 48 (M3), 56 (B3), 64 (M4) e 72 (B4). Sem `-guilda` o bot começa sem melhorias e perde no B2 aos 22 s. Com ela as lutas duram mais que esta tabela (o Golem passa dos 40 s): use a tabela só como ordem dos eventos. A flag `-room` é da raia E e ainda não estava no `Game.cs` quando esta tabela foi feita. Os segundos são de sala (`Run.Time` num contrato montado só com a sala do chefe e a entrega, `Sim.StartDef`, `Sim(1)`, `Bot(Seed)`), medidos no Core em 2026-10-11. Se a flag montar a sala de outro jeito (nível, perks, ponto de partida), meça de novo.
+
+| sala | s | o que mostra |
+|---|---|---|
+| M2 | 3,1 | Rainha por baixo: monte de terra crescendo sob o alvo |
+| M2 | 4,1 | Rainha emergindo |
+| M2 | 11,6 | Rainha chamando toupeiras (`Call`, anel lilás e "!!") |
+| M2 | 13,4 | faixa "a Rainha emerge duas vezes!"; barra no meio (marca de 50%) |
+| M2 | 26,4 | Rainha caída (`rainha_toupeira_fim`) |
+| B2 | 2,4 | Golem: círculo da pancada e o brilho ciano nas costas |
+| B2 | 3,4 | sombras das pedras caindo (blocos aos ~4,2 s) |
+| B2 | 8,6 | Golem atordoado |
+| B2 | 11,7 | faixa "o Golem vai investir!" |
+| B2 | 21,3 | Golem caído (`golem_fim`) |
+| M3 | 0,9 | courier preso na teia |
+| M3 | 2,1 | Viúva empinada: leque (faixa vermelha) |
+| M3 | 3,4 | fio lilás puxando a carga |
+| M3 | 14,5 | faixa "a Viúva sobe ao teto!" e aranhas chamadas |
+| M3 | 15,4 | Viúva no teto: só a sombra |
+| M3 | 18,4 | círculo do despencar |
+| B3 | 0,5 | Necromante mirando (`Cast`, faixa do raio) |
+| B3 | 1,7 | raio disparando (verde) |
+| B3 | 1,9 | fumaça do salto (alfa) |
+| B3 | 5,1 | runas e esqueletos erguidos (`Summon`) |
+| M4 | 1,4 | Capataz: faixa do chicote e círculo do frasco |
+| M4 | 2,2 | fogo no chão |
+| M4 | 11,4 | faixa "o Capataz gira o chicote!" |
+| M4 | 14,1 | apito chamando kobolds |
+| M4 | 15,5 | giro (círculo de 3 m) |
+| M4 | 16,4 | Capataz caído (`capataz_fim`) |
+| B4 | 1,0 | cone do sopro enchendo |
+| B4 | 2,2 | sopro saindo e fogo no chão |
+| B4 | 16,1 | faixa "o Dragão levanta voo!" e ovos chocando |
+| B4 | 17,0 | fissuras de fogo ligadas |
+| B4 | 24,5 | Dragão no ar e a sombra grande seguindo o courier |
+| B4 | 27,5 | círculo do pouso |
+| B4 | 28,6 | pouso: cabeça baixa, brilho dourado e "dano em dobro!" |
+| B4 | 31,2 | faixa "o Dragão varre o fogo!" |
+| B4 | 54,4 | Dragão caído (`dragao_fim`) |
+
+As folhas `mumia`, `gargula`, `necromante`, `capataz`, `dragao` e as da região 4 ainda não estão no projeto, então as fotos desses atores saem com o procedural.

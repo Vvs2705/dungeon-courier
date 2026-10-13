@@ -8,16 +8,24 @@ namespace DC
 {
     /// <summary>
     /// Anuncios (CONTRATO_LANCAMENTO §7). O Core decide QUANDO (sim.RewardOffer, sim.InterstitialDue) e concede (sim.GrantReward); a View
-    /// so mostra. Hoje so ha o simulador (Hud.AnunciosTeste, PC/Editor, sem SDK); LevelPlay/AdMob entram numa raia propria implementando
-    /// esta interface, sem mexer nas telas.
+    /// so mostra. Implementacoes: Hud.AnunciosTeste (simulador; o build de hoje) e Hud.AnunciosLevelPlay (SDK LevelPlay; fora do build ate
+    /// haver conta: so com o define DC_LEVELPLAY, no Android e com app key no config.json). docs/MONETIZACAO.md.
     /// </summary>
     public interface IAnuncios
     {
+        /// <summary>Anuncio (ou a espera dele) na tela.</summary>
         bool Aberto { get; }
+        /// <summary>Ha interstitial carregado: sem ele o CONTINUAR segue sem anuncio e o Core nao conta nada.</summary>
+        bool IntersticialPronto { get; }
         /// <summary>Anuncio com recompensa: fim(true) SO quando assistido ate o fim (so entao a View chama sim.GrantReward).</summary>
         void Recompensado(string premio, Action<bool> fim);
-        /// <summary>Interstitial entre contratos (so quando sim.InterstitialDue deixar); fim ao fechar.</summary>
-        void Intersticial(Action fim);
+        /// <summary>Interstitial entre contratos (so quando sim.InterstitialDue deixar); fim(true) ao fechar um anuncio exibido, fim(false) se
+        /// ele nao abriu (o Core so conta o exibido: sim.InterstitialShown).</summary>
+        void Intersticial(Action<bool> fim);
+        /// <summary>Todo quadro (o Hud chama): contagem do simulador, espera e fim do anuncio real.</summary>
+        void Tick();
+        /// <summary>Voltar do aparelho: true = o anuncio tratou.</summary>
+        bool Voltar();
     }
 
     /// <summary>
@@ -28,10 +36,24 @@ namespace DC
     public sealed partial class Hud
     {
         IAnuncios _ads;
-        AnunciosTeste _adsTeste;
         Reward _resOfferT;
         bool _devOferta;   // -tela oferta/bonus: resultado de exemplo com a oferta forcada (foto)
         string _ofertaLog;
+
+        /// <summary>Anuncio real na tela: o app vai ao fundo, mas nao e o jogador saindo (o Game nao abre sessao nova nem pausa).</summary>
+        public bool AnuncioAberto => _ads.Aberto;
+
+        /// <summary>Anuncios do jogo: o simulador. LevelPlay so com o define DC_LEVELPLAY (desligado; o SDK nem vai no build), no Android e com
+        /// "levelplay_app_key" no config.json; sem isso nada de rede de anuncio e iniciado.</summary>
+        IAnuncios CriaAnuncios()
+        {
+#if DC_LEVELPLAY
+            string key = ConfigValor("levelplay_app_key");
+            if (!string.IsNullOrEmpty(key) && Application.platform == RuntimePlatform.Android)
+                return new AnunciosLevelPlay(this, key, ConfigValor("levelplay_rewarded"), ConfigValor("levelplay_interstitial"));
+#endif
+            return new AnunciosTeste(this);
+        }
 
         /// <summary>Diario: oferta mostrada (1 vez por id de concessao).</summary>
         void LogOferta(Reward t)
@@ -83,11 +105,10 @@ namespace DC
         void Continuar()
         {
             long agora = _g.Agora;
-            if (_g.BotDrive || !S.InterstitialDue(agora)) { _g.ToBoard(); return; }
-            _ads.Intersticial(() =>
+            if (_g.BotDrive || !S.InterstitialDue(agora) || !_ads.IntersticialPronto) { _g.ToBoard(); return; }
+            _ads.Intersticial(exibido =>
             {
-                S.InterstitialShown(agora);
-                _g.AfterMeta();   // interstitial_show
+                if (exibido) { S.InterstitialShown(agora); _g.AfterMeta(); }   // interstitial_show
                 _g.ToBoard();
             });
         }
@@ -114,7 +135,7 @@ namespace DC
             readonly Text _body, _count, _closeT;
             readonly Image _ring;
             readonly Button _close;
-            Action<bool> _fimR; Action _fimI;
+            Action<bool> _fimR, _fimI;
             float _t0; bool _rewarded, _done; int _sec = -1;
 
             public AnunciosTeste(Hud h)
@@ -138,6 +159,7 @@ namespace DC
             }
 
             public bool Aberto => _m.gameObject.activeSelf;
+            public bool IntersticialPronto => true;
 
             public void Recompensado(string premio, Action<bool> fim)
             {
@@ -146,7 +168,7 @@ namespace DC
                 Abre();
             }
 
-            public void Intersticial(Action fim)
+            public void Intersticial(Action<bool> fim)
             {
                 _rewarded = false; _fimI = fim; _fimR = null;
                 _body.text = Textos.AnuncioEntre;
@@ -184,7 +206,7 @@ namespace DC
                 _m.gameObject.SetActive(false);
                 Audio.Play("anuncio", 0.8f);
                 if (_rewarded) { Action<bool> f = _fimR; _fimR = null; f?.Invoke(ok); }
-                else { Action f = _fimI; _fimI = null; f?.Invoke(); }
+                else { Action<bool> f = _fimI; _fimI = null; f?.Invoke(true); }
             }
 
             /// <summary>Voltar do aparelho: fecha como o botao (recompensado antes do fim = sem recompensa; interstitial so depois dos 5 s).</summary>

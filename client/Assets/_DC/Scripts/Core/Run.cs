@@ -175,7 +175,7 @@ namespace DC.Core
         bool trapSet; float hookT;
         /// <summary>Porta da rota mais segura revelada pelo rewarded (-1 = nao revelada; vale so nesta sala).</summary>
         public int SafeDoor = -1;
-        bool gripUsed, shieldUsed; int roomDamage;
+        bool gripUsed, shieldUsed; int roomDamage, huntRoom;
 
         public Cargo Main => Cargos[0];
         public Cargo RescueCargo => Cargos.Count > 1 ? Cargos[1] : null;
@@ -226,7 +226,7 @@ namespace DC.Core
             nav = new Nav(Room);
             Enemies.Clear(); Shots.Clear(); Doors.Clear(); Arrows.Clear(); Puddles.Clear();
             FoughtHere = false; summonT = 0f; lastBlocked = -1; Waves = 0; downT = 0f; msgDoor = false; pending.Clear(); pendT = 0f;
-            gripUsed = false; shieldUsed = false; roomDamage = 0; SafeDoor = -1; Dark = Room.Dark || Contract.Event == LiveEvent.Midnight;
+            gripUsed = false; shieldUsed = false; roomDamage = 0; huntRoom = 0; SafeDoor = -1; Dark = Room.Dark || Contract.Event == LiveEvent.Midnight;
             Traps.Clear(); trapSet = false; hookT = 0f;
             var c = Courier;
             c.Pos = Balance.Entrance; c.Facing = V2.Up; c.IdleT = 0f; c.DashT = 0f; c.ShotCd = 0f; c.Slowed = false;
@@ -261,11 +261,12 @@ namespace DC.Core
             Emit(Ev.RoomEnter, roomId, Layer);
         }
 
-        /// <summary>Projeto de equipamento do bau da sala (RoomDef.Blueprint), enquanto nao foi pego (Sim.ProjectTaken): visivel na porta.</summary>
+        /// <summary>Projeto de equipamento do bau da sala (RoomDef.Blueprint), enquanto nao foi pego (Sim.ProjectTaken) e o equipamento ainda
+        /// precisa dele (cada equipamento tem 4 baus para 3 projetos: o que sobra vira so moedas): visivel na porta.</summary>
         Gear ProjectAt(int roomId)
         {
             Gear g = Content.Rooms[roomId].Blueprint;
-            return g != Gear.None && !Sim.ProjectTaken(roomId) ? g : Gear.None;
+            return g != Gear.None && !Sim.ProjectTaken(roomId) && !Sim.GearUnlocked(g) ? g : Gear.None;
         }
 
         /// <summary>Perseguidor da Horda e do reforco extra dela, pela regiao da sala (CONTEUDO_REGIOES §9.2).</summary>
@@ -697,7 +698,11 @@ namespace DC.Core
                 Kills++;
                 if (!e.Def.Locks && !(e.Wave && Room.WaveLocks)) FoughtHere = true;   // H1: Guarda/chefe e emboscada sao luta obrigatoria
                 if (e.Type == EnemyType.Slime) { Puddles.Add(new Puddle { Pos = e.Pos, Radius = Balance.PuddleR, Left = Balance.PuddleTime }); Emit(Ev.PuddleSpawn, e.Id, 0, e.Pos); }
-                if (Has(Perk.Hunter)) { int k = Sim.Credit(Balance.PerkHunterCoins); HuntCoins += k; Emit(Ev.CurrencySource, k, 4, e.Pos); }
+                if (Has(Perk.Hunter) && huntRoom < Balance.PerkHunterCap)   // teto por visita de sala
+                {
+                    huntRoom += Balance.PerkHunterCoins;
+                    int k = Sim.Credit(Balance.PerkHunterCoins); HuntCoins += k; Emit(Ev.CurrencySource, k, 4, e.Pos);
+                }
                 EnemyDiedR2(e); EnemyDiedR3(e); EnemyDiedR4(e);
             }
         }
@@ -1237,7 +1242,7 @@ namespace DC.Core
             if (HookCd > 0f) { HookCd = Math.Max(0f, HookCd - Balance.Step); hookT = 0f; return; }
             Cargo m = Main; var c = Courier;
             bool aim = false;
-            if (moving && !HasHeld && (m.State == CargoState.Ground || (m.State == CargoState.Stolen && GearLevel >= Balance.GearMaxLevel)))
+            if (moving && !HasHeld && (m.State == CargoState.Ground || (m.State == CargoState.Stolen && GearLevel >= Balance.GearCampaignLevel)))
             {
                 V2 to = m.Pos - c.Pos; float d = to.Len;
                 aim = d >= Balance.HookMin && d <= Balance.HookRange && V2.Dot(to * (1f / d), dir) >= Balance.HookCone;
@@ -1263,7 +1268,7 @@ namespace DC.Core
                 foreach (Enemy e in Enemies)
                 {
                     if (!e.Alive || e.Type == EnemyType.Bat || e.Def.Hazard || t.Caught.Contains(e.Id) || V2.Dist(e.Pos, t.Pos) > Balance.TrapReach + e.Def.Radius) continue;
-                    bool mini = e.Def.Mini && GearLevel >= Balance.GearMaxLevel;
+                    bool mini = e.Def.Mini && GearLevel >= Balance.GearCampaignLevel;
                     if (e.Def.Boss && !mini) continue;
                     e.Stun = Math.Max(e.Stun, mini ? Balance.TrapMini : GearDef.TrapTime[GearLevel - 1]);
                     t.Caught.Add(e.Id); t.Catches--;

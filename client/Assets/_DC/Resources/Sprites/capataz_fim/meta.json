@@ -1,0 +1,81 @@
+{
+ "size": 320,
+ "fps": 12.0,
+ "dirs": 1,
+ "rows": 1,
+ "dir_order": [
+  "S"
+ ],
+ "mirror": false,
+ "row0": "top",
+ "elev": 60.0,
+ "yaw": 0.0,
+ "ppu": 120.0,
+ "pivot_px": [
+  160.0,
+  87.3
+ ],
+ "pivot": [
+  0.5,
+  0.2727
+ ],
+ "light": "flat",
+ "outline_px": 3,
+ "src_fps": 30,
+ "preset": "capataz_fim",
+ "model_scale": 1.6429,
+ "hold": "",
+ "attach": [
+  "tripo_convert_39a6f622-bde5-49f7-9f1d-39be5290cd69.fbx:RightHand:-0.04,-0.276,-0.02:1.1,9.0,153.2:0.60"
+ ],
+ "align_arms": false,
+ "clips": [
+  {
+   "name": "Dying",
+   "file": "Dying.png",
+   "frames": 12,
+   "loop": false,
+   "fps": 3.303,
+   "duration_s": 3.633,
+   "src_frames": 109,
+   "hands": [
+    141.1,
+    113.6,
+    1,
+    147.6,
+    140.8,
+    1,
+    160.0,
+    113.4,
+    1,
+    157.0,
+    104.6,
+    1,
+    162.0,
+    127.2,
+    0,
+    157.7,
+    121.9,
+    1,
+    158.7,
+    111.1,
+    1,
+    165.2,
+    127.5,
+    1,
+    154.9,
+    196.4,
+    0,
+    177.1,
+    215.5,
+    0,
+    192.7,
+    208.9,
+    0,
+    189.4,
+    209.2,
+    0
+   ]
+  }
+ ]
+}

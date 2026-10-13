@@ -820,6 +820,9 @@ namespace DC.Core
 
         bool NearLava(V2 p) { foreach (Rect l in Room.Lava) if (V2.Dist(p, l.Closest(p)) <= Balance.IceLavaDist) return true; return false; }
 
+        /// <summary>Gelo gravado no save (Sim.LoadRun, antes de montar a sala): reabrir retoma com o valor exato, nao o topo da faixa (GDD §28).</summary>
+        internal void SetIce(Cargo g, float v) { if (g.Type == CargoType.IceCrystal) ice[g.Id] = Math.Max(0f, Math.Min(100f, v)); }
+
         /// <summary>Tira gelo do cristal (fogo direto da regiao 4: respiro -25, frasco -20, sopro -40...): o UpdateIce aplica a falha no mesmo passo.</summary>
         internal void MeltIce(Cargo g, float amount) { if (g.Type == CargoType.IceCrystal) ice[g.Id] = Math.Max(0f, IceOf(g) - amount); }
     }
