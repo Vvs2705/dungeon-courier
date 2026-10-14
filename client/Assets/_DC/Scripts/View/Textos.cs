@@ -58,7 +58,16 @@ namespace DC
         public const string Nome1 = "DUNGEON", Nome2 = "COURIER";   // nome do jogo: igual em todas as linguas
         public static string Slogan => L("Entregas pela masmorra", "Deliveries through the dungeon", "Entregas por la mazmorra", "Antar paket menembus dungeon");
         public static string TocarParaComecar => L("toque para começar", "tap to start", "toca para empezar", "ketuk untuk mulai");
-        public static string PrivacidadeCurta => L("Seu progresso e o diário de teste ficam só neste aparelho. Nada é enviado sem você mandar.",
+        /// <summary>O Hud liga quando o anuncio real (LevelPlay, com app key) nasceu: os textos de privacidade passam a citar os anuncios
+        /// (nao personalizados, sem ID de publicidade) e a politica publica (docs/LOJA.md §4).</summary>
+        public static bool AnunciosReais;
+        const string Politica = "vvs2705.github.io/dungeon-courier";
+        public static string PrivacidadeCurta => AnunciosReais
+            ? L("Seu progresso fica só neste aparelho. Os anúncios usam a internet e não são personalizados.",
+                "Your progress stays on this device. Ads use the internet and are not personalized.",
+                "Tu progreso queda solo en este dispositivo. Los anuncios usan internet y no son personalizados.",
+                "Progresmu hanya ada di perangkat ini. Iklan memakai internet dan tidak dipersonalisasi.")
+            : L("Seu progresso e o diário de teste ficam só neste aparelho. Nada é enviado sem você mandar.",
             "Your progress and the playtest log stay on this device. Nothing is sent unless you send it.",
             "Tu progreso y el registro de prueba quedan solo en este dispositivo. Nada se envía si tú no lo mandas.",
             "Progres dan catatan uji hanya ada di perangkat ini. Tak ada yang terkirim tanpa izinmu.");
@@ -734,7 +743,12 @@ namespace DC
             "A V-STACK game\n\nCreated, directed and produced by\nVinicius (V-STACK)\n\n3D models generated with AI (Tripo)\nAnimations by Mixamo and Blender\nSounds and music synthesized in code\nMade with Unity",
             "Un juego de V-STACK\n\nCreación, dirección y producción\nVinicius (V-STACK)\n\nModelos 3D generados con IA (Tripo)\nAnimaciones de Mixamo y Blender\nSonidos y música sintetizados por código\nHecho con Unity",
             "Game dari V-STACK\n\nKreasi, arahan, dan produksi\nVinicius (V-STACK)\n\nModel 3D dibuat dengan AI (Tripo)\nAnimasi dari Mixamo dan Blender\nSuara dan musik disintesis lewat kode\nDibuat dengan Unity");
-        public static string Privacidade => L("Privacidade: o jogo não coleta dados pessoais e não usa a internet. O progresso e o diário de teste ficam só neste aparelho; nada sai dele sem você tocar em Exportar diário.",
+        public static string Privacidade => AnunciosReais
+            ? L("Privacidade: o jogo não pede dados pessoais. O progresso e o diário ficam neste aparelho; o diário só sai se você tocar em Exportar diário. Os anúncios (Unity LevelPlay) usam a internet e não são personalizados, sem ID de publicidade. Política: " + Politica,
+                "Privacy: the game asks for no personal data. Progress and the log stay on this device; the log only leaves if you tap Export log. Ads (Unity LevelPlay) use the internet and are not personalized, with no advertising ID. Policy: " + Politica,
+                "Privacidad: el juego no pide datos personales. El progreso y el registro quedan en este dispositivo; el registro solo sale si tocas Exportar registro. Los anuncios (Unity LevelPlay) usan internet y no son personalizados, sin ID de publicidad. Política: " + Politica,
+                "Privasi: game ini tidak meminta data pribadi. Progres dan catatan ada di perangkat ini; catatan hanya keluar jika kamu ketuk Ekspor catatan. Iklan (Unity LevelPlay) memakai internet dan tidak dipersonalisasi, tanpa ID iklan. Kebijakan: " + Politica)
+            : L("Privacidade: o jogo não coleta dados pessoais e não usa a internet. O progresso e o diário de teste ficam só neste aparelho; nada sai dele sem você tocar em Exportar diário.",
             "Privacy: the game collects no personal data and does not use the internet. Progress and the playtest log stay on this device; nothing leaves it unless you tap Export log.",
             "Privacidad: el juego no recopila datos personales y no usa internet. El progreso y el registro de prueba quedan solo en este dispositivo; nada sale de él si no tocas Exportar registro.",
             "Privasi: game ini tidak mengumpulkan data pribadi dan tidak memakai internet. Progres dan catatan uji hanya ada di perangkat ini; tak ada yang keluar kecuali kamu ketuk Ekspor catatan.");

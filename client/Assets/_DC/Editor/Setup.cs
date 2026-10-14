@@ -90,6 +90,28 @@ namespace DC.EditorTools
         /// <summary>APK de release: nao-development, ARM64, IL2CPP (Apply), chave de debug do Unity; apaga os APKs anteriores.</summary>
         public static void BuildAndroidRelease() => Build(BuildTarget.Android, ApkDir + "/DungeonCourier-" + Version + ".apk", true);
         public static void BuildWindowsRelease() => Build(BuildTarget.StandaloneWindows64, "Builds/win-release/DungeonCourier.exe", true);
+        /// <summary>AAB para a Google Play (faixa interna/fechada/producao): release, assinado com a chave de upload do arquivo local de
+        /// UploadProps (fora do git; docs/LOJA.md §8). Apaga os AABs anteriores. A Play reassina com a chave do app (Play App Signing).</summary>
+        public static void BuildAndroidBundle() => Build(BuildTarget.Android, ApkDir + "/DungeonCourier-" + Version + ".aab", true, true);
+
+        /// <summary>Chave de upload: keystore=, alias=, storepass=, keypass= em %USERPROFILE%/.dungeoncourier/upload.properties (ou no caminho de
+        /// DC_UPLOAD_PROPS). Nunca no repositorio: guardar uma copia do .jks e do arquivo fora deste PC (perder = pedir reset ao suporte da Play).</summary>
+        static string UploadProps => System.Environment.GetEnvironmentVariable("DC_UPLOAD_PROPS") is string e && e.Length > 0 ? e
+            : Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile), ".dungeoncourier", "upload.properties");
+
+        static bool UseUploadKey()
+        {
+            if (!File.Exists(UploadProps)) { Debug.LogError("DC Setup: sem a chave de upload em " + UploadProps + " (docs/LOJA.md §8)"); return false; }
+            var kv = new System.Collections.Generic.Dictionary<string, string>();
+            foreach (string l in File.ReadAllLines(UploadProps)) { int i = l.IndexOf('='); if (i > 0) kv[l.Substring(0, i).Trim()] = l.Substring(i + 1).Trim(); }
+            if (!kv.ContainsKey("keystore") || !File.Exists(kv["keystore"])) { Debug.LogError("DC Setup: keystore nao achado (" + UploadProps + ")"); return false; }
+            PlayerSettings.Android.useCustomKeystore = true;
+            PlayerSettings.Android.keystoreName = kv["keystore"];
+            PlayerSettings.Android.keystorePass = kv.TryGetValue("storepass", out string sp) ? sp : "";
+            PlayerSettings.Android.keyaliasName = kv.TryGetValue("alias", out string al) ? al : "upload";
+            PlayerSettings.Android.keyaliasPass = kv.TryGetValue("keypass", out string kp) ? kp : "";
+            return true;
+        }
 
         /// <summary>So com o LevelPlay de volta (DC_LEVELPLAY, docs/MONETIZACAO.md §4): as dependencias nativas dele entram no Gradle pelo
         /// Mobile Dependency Resolver, que em batch pode nao resolver antes do build; forcamos o ResolveSync. Sem o resolver (hoje), nada.
@@ -102,7 +124,7 @@ namespace DC.EditorTools
             Debug.Log("DC Setup: Mobile Dependency Resolver " + (ok is bool b && b ? "ok" : "FALHOU"));
         }
 
-        static void Build(BuildTarget target, string path, bool release)
+        static void Build(BuildTarget target, string path, bool release, bool bundle = false)
         {
             Apply();
             BuildReport r = null;
@@ -111,13 +133,14 @@ namespace DC.EditorTools
                 if (target == BuildTarget.Android)
                 {
                     // regra do Vinicius (2026-10-09): fica so' o APK atual; os anteriores sao apagados antes de gerar o novo
-                    if (Directory.Exists(ApkDir)) foreach (string apk in Directory.GetFiles(ApkDir, "*.apk")) File.Delete(apk);
+                    if (Directory.Exists(ApkDir)) foreach (string apk in Directory.GetFiles(ApkDir, bundle ? "*.aab" : "*.apk")) File.Delete(apk);
                     // o empacotamento incremental do Gradle reaproveita o APK anterior e ja' deixou buracos/sem libunity no Forge Street
                     const string gradleOut = "Library/Bee/Android/Prj/IL2CPP/Gradle/launcher/build";
                     if (Directory.Exists(gradleOut)) Directory.Delete(gradleOut, true);
                     ResolveAndroid();
-                    EditorUserBuildSettings.buildAppBundle = false;            // APK para instalar direto no aparelho do testador
-                    PlayerSettings.Android.useCustomKeystore = false;          // chave de debug do Unity (a da Play vem depois)
+                    EditorUserBuildSettings.buildAppBundle = bundle;           // APK para o aparelho do testador; AAB so para a Play
+                    PlayerSettings.Android.useCustomKeystore = false;          // APK: chave de debug do Unity
+                    if (bundle && !UseUploadKey()) throw new System.Exception("AAB sem a chave de upload");
                     if (release) PlayerSettings.SetIl2CppCompilerConfiguration(NamedBuildTarget.Android, Il2CppCompilerConfiguration.Release);
                 }
                 r = BuildPipeline.BuildPlayer(new BuildPlayerOptions
@@ -130,6 +153,12 @@ namespace DC.EditorTools
                 Debug.Log($"BuildSummary({target}{(release ? " release" : " dev")} {Version}): result={r.summary.result} errors={r.summary.totalErrors} size={r.summary.totalSize} path={path}");
             }
             catch (System.Exception e) { Debug.LogError("DC Setup: build abortado: " + e.Message); }
+            finally
+            {
+                // o caminho do keystore nao fica no ProjectSettings (que vai para o git); as senhas o Unity nao grava
+                if (bundle) { PlayerSettings.Android.useCustomKeystore = false; PlayerSettings.Android.keystoreName = ""; PlayerSettings.Android.keyaliasName = "";
+                    EditorUserBuildSettings.buildAppBundle = false; AssetDatabase.SaveAssets(); }
+            }
             if (Application.isBatchMode) EditorApplication.Exit(r != null && r.summary.result == BuildResult.Succeeded ? 0 : 1);
         }
     }

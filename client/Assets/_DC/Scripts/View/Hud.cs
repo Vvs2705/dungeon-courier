@@ -125,7 +125,8 @@ namespace DC
             _credits = BuildCredits();
             // por cima de tudo: a janela da loja de teste e o anuncio (ou o simulador dele)
             _lojaTeste = new LojaTeste(this); _loja = CriaLoja();   // Unity IAP (Loja.cs, LojaIap.cs)
-            _ads = CriaAnuncios();                                   // LevelPlay com app key no Android; senao o simulador (Anuncios.cs)
+            _ads = CriaAnuncios();
+            Textos.AnunciosReais = !(_ads is AnunciosTeste);       // privacidade cita os anuncios so quando sao reais                                   // LevelPlay com app key no Android; senao o simulador (Anuncios.cs)
             _screens = new[] { _top, _title, _menu, _board, _cut, _result };
             var modals = new List<RectTransform> { _guild, _code, _offer, _perk, _pause, _settings, _credits, _semFim };
             foreach (Painel p in _paineis) modals.Add(p.M);

@@ -17,7 +17,7 @@ Textos da ficha da loja em pt-BR, EN, ES e ID, a política de privacidade, a cla
 | Compras no app | sim, quando o §7 entrar: Remover anúncios, Pacote inicial, roupas e pacote de evento, sempre com conteúdo fixo e listado |
 | Público-alvo | 13+ (GDD §1: 13–40). Não marcar menores de 13: isso puxa a política de Famílias, que exige SDK de anúncio certificado |
 | E-mail e site de contato | `<e-mail de contato da V-STACK>` · `<site da V-STACK>` (o Vinicius preenche) |
-| Política de privacidade (URL) | `<URL pública com o texto do §4>` (pode ser GitHub Pages ou o site da V-STACK) |
+| Política de privacidade (URL) | **https://vvs2705.github.io/dungeon-courier/** (GitHub Pages, branch `gh-pages`, 4 idiomas; já com os itens 7 e 8 do §4.5 na versão de anúncio não personalizado) |
 
 ## 2. Classificação indicativa (questionário IARC)
 
@@ -239,6 +239,8 @@ Tanpa akun dan tanpa login. Tersedia dalam bahasa Indonesia, Inggris, Portugis, 
 
 ## 4. Política de privacidade (texto simples)
 
+**Publicada em 2026-10-13** em https://vvs2705.github.io/dungeon-courier/ (branch `gh-pages`, um `index.html` com os 4 idiomas). A versão publicada já cobre o build com anúncios e compras: anúncio não personalizado para todos, sem ID de publicidade (`Setup.SemIdDePublicidade`), com o LevelPlay e o Unity Ads (§4.5) e as compras pela Google Play. O contato aponta para o e-mail de desenvolvedor da ficha da Play. Os textos abaixo são a versão sem anúncios, guardada como histórico. Mudou o jogo, mude a página: edite o `index.html` da branch `gh-pages`.
+
 Coerente com o jogo de hoje (`Textos.Privacidade`, `UI_V1.md` §4): o progresso e o diário ficam no aparelho, e **nada sai dele sem o jogador tocar em Exportar diário**. Publicar numa URL pública e colar a URL na ficha (§1).
 
 ### 4.1 pt-BR
@@ -342,4 +344,4 @@ O vídeo do YouTube da ficha pode ser o criativo 11 (`dc_11_ladrao_e_dash_<L>.mp
 - [ ] URL pública da política e e-mail de contato preenchidos (§1, dependência do Vinicius).
 - [ ] 8 capturas por idioma, tiradas com `-lang` no build de release (sem "Development Build").
 - [ ] Questionário IARC respondido como no §2.
-- [ ] AAB assinado com a chave de upload (UI_V1 §5) e Play App Signing.
+- [ ] AAB assinado com a chave de upload e Play App Signing: `-executeMethod DC.EditorTools.Setup.BuildAndroidBundle` (pela unidade curta `subst R:`, como o APK) gera `client/Builds/android/DungeonCourier-<versão>.aab`. A chave fica fora do git, em `%USERPROFILE%/.dungeoncourier/upload.jks`, e as senhas em `upload.properties`, na mesma pasta (ou no caminho de `DC_UPLOAD_PROPS`). **Guarde uma cópia dos dois fora deste PC.** Antes de subir para a faixa interna, troque `iap_google_play` para `true` no `config.json`, para as compras irem à Google Play.
