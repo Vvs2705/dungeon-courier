@@ -136,7 +136,15 @@ Tirar o LevelPlay economizou pouco no C# (a maior parte do IL2CPP é do IAP) e c
 - anúncio não personalizado para todos antes do `Init`: `LevelPlayPrivacySettings` com GDPR sem consentimento, CCPA com opt-out e COPPA desligado (público 13+);
 - `Setup.SemIdDePublicidade`, que tira do APK o `AD_ID` e as 3 permissões do Privacy Sandbox.
 
-Conferido com `aapt`. O APK fica com INTERNET, VIBRATE, ACCESS_NETWORK_STATE, BILLING e o WorkManager do SDK (WAKE_LOCK, RECEIVE_BOOT_COMPLETED, FOREGROUND_SERVICE), sem AD_ID, e tem 67,7 MiB. **Falta só o passo 3** (as 3 chaves da conta do Vinicius no `config.json`), depois o 5 na Play Console e o 6. Sem chave, o jogo segue no simulador e não chama o `Init`.
+Conferido com `aapt`. O APK fica com INTERNET, VIBRATE, ACCESS_NETWORK_STATE, BILLING e o WorkManager do SDK (WAKE_LOCK, RECEIVE_BOOT_COMPLETED, FOREGROUND_SERVICE), sem AD_ID, e tem 67,7 MiB. O passo 3 foi feito em 2026-10-14, na conta LevelPlay da V-STACK (vinicius@vstack-solutions.com.br), com o app "Dungeon Courier" (Android, "Not live yet", COPPA "Not directed"):
+
+| Chave do `config.json` | Valor | No painel |
+|---|---|---|
+| `levelplay_app_key` | `28bb8d98d` | App Key |
+| `levelplay_rewarded` | `ilah7d1mcs7v1cno` | ad unit `rewarded`, recompensa "Recompensa" ×1 (o núcleo decide o prêmio) |
+| `levelplay_interstitial` | `cepd2rejxi2ykfxw` | ad unit `interstitial` |
+
+As chaves não são segredo: vão dentro do APK. Falta o 6 (Test Suite num build de desenvolvimento, no POCO) e o 5 na Play Console. Quando o app for publicado, ligue-o à loja no painel (Apps > Dungeon Courier > Live app, package `br.com.vstack.dungeoncourier`). Sem chave, o jogo segue no simulador e não chama o `Init`.
 
 
 Já foi feito uma vez e funcionou: commit `bd10ca9`, APK de 65,4 MiB. Na ordem:
