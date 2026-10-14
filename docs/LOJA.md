@@ -13,8 +13,8 @@ Textos da ficha da loja em pt-BR, EN, ES e ID, a política de privacidade, a cla
 | App | `br.com.vstack.dungeoncourier`, gratuito |
 | Categoria | Jogos > **Ação** |
 | Tags (escolher as equivalentes na lista do Play Console, até 5) | Ação · Roguelike · Masmorra · Offline · Um jogador |
-| Contém anúncios | sim, quando o §7 do contrato entrar (o build de hoje não tem). Nunca dentro da masmorra |
-| Compras no app | sim, quando o §7 entrar: Remover anúncios, Pacote inicial, roupas e pacote de evento, sempre com conteúdo fixo e listado |
+| Contém anúncios | **sim** no build de lançamento (LevelPlay, `feat/levelplay`); o APK 1.2.0-beta não tem. Nunca dentro da masmorra |
+| Compras no app | **sim** (Unity IAP, `iap_google_play: true`): Remover anúncios, Pacote inicial, roupas e pacote de evento, sempre com conteúdo fixo e listado |
 | Público-alvo | 13+ (GDD §1: 13–40). Não marcar menores de 13: isso puxa a política de Famílias, que exige SDK de anúncio certificado |
 | E-mail e site de contato | `<e-mail de contato da V-STACK>` · `<site da V-STACK>` (o Vinicius preenche) |
 | Política de privacidade (URL) | **https://vvs2705.github.io/dungeon-courier/** (GitHub Pages, branch `gh-pages`, 4 idiomas; já com os itens 7 e 8 do §4.5 na versão de anúncio não personalizado) |
@@ -287,14 +287,11 @@ Coerente com o jogo de hoje (`Textos.Privacidade`, `UI_V1.md` §4): o progresso 
 > 5. **Cara menghapus.** Menghapus instalan game akan menghapus progres dan catatan, termasuk kode anonim.
 > 6. **Kontak.** `<email kontak V-STACK>`
 
-### 4.5 Quando os anúncios e as compras entrarem (CONTRATO_LANCAMENTO §7 e §11)
+### 4.5 Build com anúncios e compras (feito em 2026-10-13, branch `feat/levelplay`)
 
-O SDK de anúncio usa a internet e coleta dados por conta própria. **Antes de publicar o build com anúncios**, a política ganha dois itens (nos 4 idiomas), a frase 3 muda para "o jogo não envia dados para servidores da V-STACK; os anúncios usam a internet" e o formulário de segurança dos dados muda junto:
+A política publicada (§4) já tem o item 7 (anúncios **não personalizados** pelo Unity LevelPlay e pelo Unity Ads, sem ID de publicidade) e o item 8 (compras pela Google Play), nos 4 idiomas. O texto do jogo (`Textos.Privacidade`) cita os anúncios só quando o build tem anúncio real.
 
-> 7. **Anúncios.** Os anúncios são exibidos pelo Unity LevelPlay e pelas redes que ele usa (Unity Ads e, se ligada, AdMob). Eles podem coletar o identificador de publicidade do aparelho, o endereço IP e dados de interação com o anúncio, conforme a política de cada um (`<links>`). Você pode redefinir ou desativar o identificador de publicidade nas configurações do Android.
-> 8. **Compras.** As compras são processadas pela Google Play. A V-STACK recebe só a confirmação da compra, sem dados de pagamento.
-
-**O build de hoje tem só o Unity IAP** (`docs/MONETIZACAO.md` §1.3, medido no APK). O manifesto ganha só `com.android.vending.BILLING` e `ACCESS_NETWORK_STATE`, esta do `datatransport`, a telemetria do Google Play Billing (permissão normal, sem dado do jogador). O `INTERNET` já existia por causa do `config_url`. **Não há SDK de anúncio no APK, então não há `AD_ID`**, nem as permissões do Privacy Sandbox e do WorkManager. O LevelPlay está pronto no código e desligado (define `DC_LEVELPLAY`). Quando ele voltar (`MONETIZACAO.md` §4), entram o item 7 da política, a frase 3 nova, `AD_ID`, `ACCESS_ADSERVICES_*`, `WAKE_LOCK`, `RECEIVE_BOOT_COMPLETED` e `FOREGROUND_SERVICE` (Unity Ads), e a declaração de ID de publicidade passa a ser **sim**.
+**O que o manifesto do AAB tem** (medido com `aapt2` em 2026-10-14; `MONETIZACAO.md` §1.3 e §4): INTERNET, VIBRATE, ACCESS_NETWORK_STATE, `com.android.vending.BILLING` e o WorkManager do Unity Ads (WAKE_LOCK, RECEIVE_BOOT_COMPLETED, FOREGROUND_SERVICE, **sem** tipo de serviço em primeiro plano, então a Play não pede a declaração de serviço em primeiro plano). **Não tem `AD_ID` nem `ACCESS_ADSERVICES_*`**: o `Setup.SemIdDePublicidade` tira os dois. Por isso a declaração de ID de publicidade da Play Console é **não**. Requisitos técnicos da Play conferidos no mesmo AAB: targetSdk 36, bibliotecas nativas alinhadas a 16 KB, Google Play Billing 9.0.0, sem `debuggable` e sem Test Suite.
 
 **Segurança dos dados (Play Console):**
 
@@ -302,7 +299,7 @@ O SDK de anúncio usa a internet e coleta dados por conta própria. **Antes de p
 |---|---|---|---|
 | Hoje (só Unity IAP na loja falsa, simulador de anúncio) | nenhum dado | nenhum | o diário só sai por ação do jogador (exportação feita pelo usuário, que não conta como coleta). Contém anúncios: não. ID de publicidade: **não** (sem `AD_ID` no manifesto) |
 | Com compras reais (Google Play, `iap_google_play: true`) | histórico de compras, processado pela Google Play | nenhum | item 8 da política |
-| Com anúncios (LevelPlay religado, com app key) | identificadores do dispositivo (ID de publicidade), interações com o app e localização aproximada (pelo IP), coletados pelo SDK de anúncio | com o LevelPlay e as redes de anúncio (publicidade, análise e prevenção de fraude) | item 7 da política e ID de publicidade: sim. Criptografia em trânsito: a dos SDKs; pedido de exclusão: desinstalar + o canal da rede. Confira a tabela de segurança dos dados publicada pelo LevelPlay e pelo Unity Ads na versão do SDK do build |
+| Com anúncios (LevelPlay com app key; o build de lançamento) | a tabela da Unity para o SDK do Unity Ads, tudo **obrigatório** e **não efêmero**: localização aproximada (pelo IP); identificadores pessoais (finalidade: funcionalidade do app); histórico de compras; atividade no app: visualizações e toques (só dentro do anúncio) e outras atividades (só com o Acquire Optimization ligado no painel); diagnóstico do app; IDs do dispositivo ou outros IDs | os mesmos tipos, com a Unity (publicidade ou marketing, análise, funcionalidade do app, prevenção de fraude, segurança e conformidade) | criptografia em trânsito: sim; pedido de exclusão: sim (o da Unity). ID de publicidade: **não**. Fonte: [Google Play data safety section for Unity Ads](https://docs.unity.com/en-us/grow/ads/privacy/google-data-safety); confira de novo se trocar a versão do SDK ou ligar outra rede |
 
 ## 5. As 8 capturas (1080 × 1920)
 
@@ -340,7 +337,7 @@ O vídeo do YouTube da ficha pode ser o criativo 11 (`dc_11_ladrao_e_dash_<L>.mp
 ## 8. Antes de publicar (checklist)
 
 - [ ] Conferir no build final cada número da descrição (4 regiões, 72 contratos, 15 cargas, 8 chefes, eventos semanais, contrato por código, 4 idiomas).
-- [ ] Anúncios e compras: se o build tiver SDK de anúncio ou de compra, aplicar o §4.5 na política e no formulário de segurança dos dados, e marcar "Contém anúncios".
+- [ ] Anúncios e compras: formulário de segurança dos dados como no §4.5 (a política já está publicada), "Contém anúncios" = sim e declaração de ID de publicidade = **não**.
 - [ ] URL pública da política e e-mail de contato preenchidos (§1, dependência do Vinicius).
 - [ ] 8 capturas por idioma, tiradas com `-lang` no build de release (sem "Development Build").
 - [ ] Questionário IARC respondido como no §2.

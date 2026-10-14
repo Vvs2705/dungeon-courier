@@ -153,9 +153,9 @@ Já foi feito uma vez e funcionou: commit `bd10ca9`, APK de 65,4 MiB. Na ordem:
 3. **Chaves:** `levelplay_app_key`, `levelplay_rewarded` e `levelplay_interstitial` no `config.json`. Sem a chave, o jogo continua no simulador e não chama o `Init`, mas o SDK vai no APK do mesmo jeito.
 4. **Manifesto:** gerar o APK de release e conferir com `aapt dump permissions` (o `aapt.exe` fica em `.../AndroidPlayer/SDK/build-tools/36.0.0/`). Com o Unity Ads, entram as permissões da coluna do meio do §1.3. Conferir também, num aparelho, o tráfego de rede na abertura, com o *Network Inspector* do Android Studio ou um proxy.
 5. **Privacidade:**
-   - Na Play Console, marcar "Contém anúncios" e responder **sim** na declaração de ID de publicidade.
-   - Atualizar o formulário de segurança dos dados e publicar o item 7 da política (`LOJA.md` §4.5) nos 4 idiomas.
-   - Aplicar a decisão do ECA Digital (§2.4) antes do `Init`.
+   - Na Play Console, marcar "Contém anúncios" e responder **não** na declaração de ID de publicidade (o APK não tem `AD_ID`, `Setup.SemIdDePublicidade`).
+   - Preencher o formulário de segurança dos dados com a tabela do Unity Ads (`LOJA.md` §4.5). O item 7 da política já está publicado nos 4 idiomas (2026-10-13).
+   - Decisão do ECA Digital (§2.4): anúncio não personalizado para todos, já aplicado antes do `Init`.
 6. **Validar:**
    - Num build de desenvolvimento, use o Test Suite: `LevelPlay.SetMetaData("is_test_suite", "enable")` antes do `Init` e `LevelPlay.LaunchTestSuite()` no `Iniciou`. **Tire as duas linhas antes de publicar.**
    - No `adb logcat`, procure "DC LevelPlay: iniciado".

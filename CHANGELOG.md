@@ -3,6 +3,12 @@
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões em [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
+### Adicionado
+- **LevelPlay 9.5.1 + Unity Ads de volta no Android** (`DC_LEVELPLAY`): anúncio não personalizado para todos (GDPR sem consentimento, CCPA opt-out, COPPA desligado) e APK/AAB sem `AD_ID` nem Privacy Sandbox (`Setup.SemIdDePublicidade`). Sem as chaves da conta no `config.json`, segue no simulador.
+- **AAB assinado com a chave de upload** (`Setup.BuildAndroidBundle`; chave e senhas fora do git, em `%USERPROFILE%/.dungeoncourier/`). Conferido: targetSdk 36, bibliotecas nativas alinhadas a 16 KB, Google Play Billing 9.0.0.
+- **Política de privacidade pública** em https://vvs2705.github.io/dungeon-courier/ (4 idiomas); o texto de privacidade do jogo cita os anúncios só quando eles são reais.
+### Corrigido
+- Documentação da Play: a declaração de ID de publicidade é **não** (estava "sim") e o formulário de segurança dos dados segue a tabela do Unity Ads (`docs/LOJA.md` §4.5).
 
 ## [1.2.0-beta] - 2026-10-12
 ### Adicionado
