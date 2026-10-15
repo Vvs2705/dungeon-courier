@@ -26,6 +26,7 @@ namespace DC
         const float CutTime = 3.6f;
         // caixa da entrega com o sprite: centro (o da caixa procedural), lado da celula em px de referencia e centro da tampa (fracao da
         // celula acima do centro). O topo da silhueta, medido no PNG, fica a 0,375 (linha 14 de 112); a tampa de 26 px assenta nele
+        static Color CorCoracao => Art.Ui("icone_vida") != null ? Color.white : Art.Bad;
         static readonly Vector2 CratePos = new Vector2(0.5f, 0.395f), BauPos = new Vector2(0.5f, 0.31f);
         const float BauCell = 560f;   // celula de 384 px do bau_hd a ~1,46x na referencia de 1080
         const float CrateCell = 450f, CrateTop = 0.36f;
@@ -300,7 +301,7 @@ namespace DC
             if (r == null) return;
             ContractDef c = r.Def;
             _resTitle.text = Textos.Rotulo(c) + ": " + Textos.Titulo(r);
-            _resTitle.color = r.Delivered ? Art.Good : Art.Bad;
+            _resTitle.color = r.Delivered ? Art.Gold : Art.Bad;
             _resSub.text = r.Delivered ? Textos.Reacao(r) : Textos.Motivo(r);
             string[][] lines = Textos.Pagamento(r, c);
             for (int i = 0; i < _resLabel.Length; i++)
@@ -415,7 +416,7 @@ namespace DC
                 for (int i = 0; i < _hearts.Length; i++)
                 {
                     _hearts[i].gameObject.SetActive(i < _max);
-                    _hearts[i].color = i < _hp ? Art.Bad : Art.A(Art.Off, 0.9f);
+                    _hearts[i].color = i < _hp ? CorCoracao : Art.A(Art.Off, 0.9f);
                 }
             }
             if (_heartPopI >= 0 && _heartPopI < _hearts.Length)
@@ -696,12 +697,14 @@ namespace DC
             // linha A: coracoes | moedas | pausa
             RectTransform hearts = Art.Node(top, "Coracoes", new Vector2(0.02f, 0.55f), new Vector2(0.58f, 0.97f));
             _hearts = new Image[Balance.MaxHpCap];
-            for (int i = 0; i < _hearts.Length; i++) _hearts[i] = Art.Img(hearts, "Coracao", Art.Heart(), Art.Bad, Vector2.zero, Vector2.one);
+            Sprite coracao = Art.Ui("icone_vida") ?? Art.Heart();   // coracao pintado (Resources/UI); vazio = o mesmo, apagado
+            for (int i = 0; i < _hearts.Length; i++) _hearts[i] = Art.Img(hearts, "Coracao", coracao, CorCoracao, Vector2.zero, Vector2.one);
             LayoutHearts(Balance.BaseHp);
             Art.Img(top, "Moeda", Art.Moeda(), Art.MoedaCor, new Vector2(0.6f, 0.6f), new Vector2(0.67f, 0.92f));
-            _coins = Art.Outlined(Art.NewText(top, "Moedas", 52, new Vector2(0.68f, 0.55f), new Vector2(0.85f, 0.97f), TextAnchor.MiddleLeft));
-            _coins.fontStyle = FontStyle.Bold;
+            _coins = Art.Letreiro(Art.NewText(top, "Moedas", 52, new Vector2(0.68f, 0.55f), new Vector2(0.85f, 0.97f), TextAnchor.MiddleLeft), 52);
+            _coins.font = Art.Titulo();
             Image pb = Art.Panel(top, "Pausa", Art.Paper, new Vector2(0.865f, 0.56f), new Vector2(0.98f, 0.97f));
+            pb.sprite = Art.Botao(); pb.gameObject.AddComponent<Aperta>();
             Button pause = pb.gameObject.AddComponent<Button>();
             pause.targetGraphic = pb;
             pause.onClick.AddListener(() => { Audio.Play("clique"); ShowPause(false); });
@@ -881,8 +884,8 @@ namespace DC
             RectTransform m = Modal("Resultado");
             Image face = Card(m, "Cartao", new Vector2(0.03f, 0.03f), new Vector2(0.97f, 0.97f));
             Transform f = face.transform;
-            _resTitle = Art.NewText(f, "Titulo", 58, new Vector2(0.04f, 0.92f), new Vector2(0.96f, 0.99f));
-            _resTitle.fontStyle = FontStyle.Bold;
+            _resTitle = Art.Letreiro(Art.NewText(f, "Titulo", 64, new Vector2(0.04f, 0.92f), new Vector2(0.96f, 0.99f)), 64);
+            _resTitle.font = Art.Titulo();
             _resTitle.resizeTextForBestFit = true; _resTitle.resizeTextMinSize = 30; _resTitle.resizeTextMaxSize = 58;
             _resSub = Art.NewText(f, "Sub", 32, new Vector2(0.05f, 0.86f), new Vector2(0.95f, 0.92f));
             _resSub.color = Art.Tinta;

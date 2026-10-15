@@ -792,10 +792,20 @@ namespace DC
             {
                 Rect(r, "Sombra", o.C.X + 0.1f, o.C.Y - 0.1f, 2f * o.H.X, 2f * o.H.Y, Art.A(Art.Dark, 0.35f), OShadow);
                 if (BuildPillar(r, o)) continue;   // obstaculo com prop em pe da regiao (pilar, escora, lapide...) no lugar do bloco
-                Rect(r, "Face", o.C.X, o.C.Y, 2f * o.H.X, 2f * o.H.Y, tm.Block, OBlock);
                 float top = Mathf.Max(0.1f, 2f * o.H.Y - 0.3f);   // tampo em cima, face de 0,3 m embaixo
-                Rect(r, "Tampo", o.C.X, o.C.Y + o.H.Y - top / 2f, 2f * o.H.X, top, tm.BlockTop, OBlock + 1);
+                Sprite pedra = ParedeDe(tm, out Color pt);         // a textura da parede da regiao: o bloco e' de pedra, nao chapado
+                if (pedra != null)
+                {
+                    Pedra(r, "Face", pedra, Mul(pt, new Color(0.62f, 0.62f, 0.66f)), o.C.X, o.C.Y, 2f * o.H.X, 2f * o.H.Y, OBlock);
+                    Pedra(r, "Tampo", pedra, Mul(pt, new Color(1.18f, 1.18f, 1.2f)), o.C.X, o.C.Y + o.H.Y - top / 2f, 2f * o.H.X, top, OBlock + 1);
+                }
+                else
+                {
+                    Rect(r, "Face", o.C.X, o.C.Y, 2f * o.H.X, 2f * o.H.Y, tm.Block, OBlock);
+                    Rect(r, "Tampo", o.C.X, o.C.Y + o.H.Y - top / 2f, 2f * o.H.X, top, tm.BlockTop, OBlock + 1);
+                }
                 Rect(r, "Aresta", o.C.X, o.C.Y + o.H.Y - 0.03f, 2f * o.H.X, 0.06f, tm.BlockEdge, OBlock + 2);
+                Rect(r, "Contorno", o.C.X, o.C.Y - o.H.Y + 0.025f, 2f * o.H.X, 0.05f, Art.A(Art.Dark, 0.7f), OBlock + 2);   // pe do bloco
             }
             foreach (Door d in run.Doors) BuildDoor(r, up, d);
             if (run.Chest != null) PaintChest(r, run.Chest.Pos);
@@ -855,6 +865,13 @@ namespace DC
             t.rectTransform.sizeDelta = new Vector2(120f, 50f); t.horizontalOverflow = HorizontalWrapMode.Overflow;
             t.text = Textos.Num(d.ChestCoins); t.color = Art.Coin; t.fontStyle = FontStyle.Bold;
             _roomLabels.Add(t); _roomLabelPos.Add(up.TransformPoint(new Vector3(cp.x + 0.45f, _plateS, 0f)));
+        }
+
+        /// <summary>Retangulo com textura repetida (Tiled), como o piso: face e tampo dos blocos de pedra.</summary>
+        static void Pedra(Transform parent, string name, Sprite tex, Color c, float cx, float cy, float w, float h, int order)
+        {
+            SpriteRenderer s = Art.NewSprite(parent, name, tex, c, order, new Vector2(cx, cy), Vector2.one);
+            s.drawMode = SpriteDrawMode.Tiled; s.size = new Vector2(w, h);
         }
 
         SpriteRenderer Rect(Transform parent, string name, float cx, float cy, float w, float h, Color c, int order) =>
