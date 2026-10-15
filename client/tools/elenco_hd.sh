@@ -13,7 +13,12 @@ A="${ARTE:-$C/../../../../arte}"   # worktree -> arte/ do checkout principal (fo
 S="$C/Assets/_DC/Resources/Sprites"
 ESC=1.25
 HOLD="$A/mixamo/Hold.fbx"
-fbx() { ls "$A/tripo/$1/"*.fbx | head -1; }
+UNZ="${TEMP:-/tmp}/dc_tripo"   # modelo so zipado: extrai aqui (regeneravel, apagado no fim)
+fbx() {  # caminho Windows (cygpath -m): o --attach junta caminho:osso:... e o MSYS nao converte o caminho dentro dele
+    local f; f=$(ls "$A/tripo/$1/"*.fbx 2>/dev/null | head -1)
+    if [ -z "$f" ]; then mkdir -p "$UNZ/$1"; unzip -qo "$A/tripo/$1/$1.zip" -d "$UNZ/$1"; f=$(ls "$UNZ/$1/"*.fbx | head -1); fi
+    cygpath -m "$f"
+}
 
 render() {  # nome hd modelo [argumentos do render_sprites.py...]
     local n=$1 hd=$2 m=$3
@@ -48,3 +53,4 @@ job() {
 }
 
 for n in "$@"; do job "$n"; done
+rm -rf "$UNZ"
