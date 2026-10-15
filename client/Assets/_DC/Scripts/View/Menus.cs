@@ -887,7 +887,7 @@ namespace DC
             Art.Img(r, "Icone", UpgradeIcon(up, out Color tint), tint, new Vector2(0.02f, 0.2f), new Vector2(0.15f, 0.8f));
             var row = new UpRow { Dots = new Image[Balance.UpgradeMax] };
             Shrink(Loc(Ink(r, "Nome", 38, new Vector2(0.17f, 0.62f), new Vector2(0.6f, 0.95f), TextAnchor.MiddleLeft, true), () => Textos.UpNome(up)), 24);
-            Text eff = Shrink(Loc(Ink(r, "Efeito", 26, new Vector2(0.17f, 0.36f), new Vector2(0.62f, 0.62f), TextAnchor.MiddleLeft), () => Textos.UpEfeito(up)), 16);
+            Text eff = Shrink(Loc(Ink(r, "Efeito", 26, new Vector2(0.17f, 0.36f), new Vector2(0.585f, 0.62f), TextAnchor.MiddleLeft), () => Textos.UpEfeito(up)), 16);   // termina antes da moeda do preco (0,6)
             eff.color = Art.A(Art.Tinta, 0.8f);
             float dw = 0.27f / row.Dots.Length;
             for (int k = 0; k < row.Dots.Length; k++)
