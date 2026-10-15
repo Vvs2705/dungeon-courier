@@ -887,15 +887,16 @@ namespace DC
             return m;
         }
 
-        /// <summary>Cartao de papel (ART_BIBLE §10): borda de tinta, chanfro embaixo, face de papel. Devolve a face.</summary>
+        /// <summary>Cartao (ART_BIBLE §10): moldura de madeira com rebites dourados e face de pergaminho. Devolve a face; a raiz do cartao
+        /// continua 2 niveis acima dela (face.transform.parent.parent).</summary>
         static Image Card(Transform parent, string name, Vector2 min, Vector2 max)
         {
-            Image edge = Art.Panel(parent, name, Art.Tinta, min, max);
-            Image bevel = Art.Panel(edge.transform, "Chanfro", Art.PaperEdge, Vector2.zero, Vector2.one);
-            bevel.rectTransform.offsetMin = new Vector2(4f, 4f); bevel.rectTransform.offsetMax = new Vector2(-4f, -4f);
-            Image face = Art.Panel(bevel.transform, "Face", Art.Paper, Vector2.zero, Vector2.one);
-            face.rectTransform.offsetMin = new Vector2(0f, 8f);
-            bevel.raycastTarget = false;
+            Image frame = Art.Node(parent, name, min, max).gameObject.AddComponent<Image>();
+            frame.sprite = Art.Moldura(); frame.type = Image.Type.Sliced;
+            RectTransform miolo = Art.Node(frame.transform, "Miolo", Vector2.zero, Vector2.one);
+            miolo.offsetMin = new Vector2(14f, 14f); miolo.offsetMax = new Vector2(-14f, -14f);
+            Image face = Art.Node(miolo, "Face", Vector2.zero, Vector2.one).gameObject.AddComponent<Image>();
+            face.sprite = Art.Pergaminho(); face.type = Image.Type.Sliced;
             return face;
         }
 
@@ -904,7 +905,8 @@ namespace DC
         {
             Text t = Art.NewText(parent, name, size, min, max, align);
             t.color = Art.Tinta;
-            if (bold) t.fontStyle = FontStyle.Bold;
+            if (bold && size >= 44) t.font = Art.Titulo();   // titulo do cartao: Lilita One
+            else if (bold) t.fontStyle = FontStyle.Bold;
             return t;
         }
 

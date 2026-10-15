@@ -448,8 +448,8 @@ namespace DC
             _volMusT.text = Textos.Volume(Textos.Musica, Ajustes.VolMusica * 100 / Ajustes.VolMax);
             for (int k = 0; k < Ajustes.VolMax; k++)
             {
-                _barSom[k].color = k < Ajustes.VolSom ? Art.Courier : Art.A(Art.Tinta, 0.2f);
-                _barMus[k].color = k < Ajustes.VolMusica ? Art.Courier : Art.A(Art.Tinta, 0.2f);
+                _barSom[k].color = k < Ajustes.VolSom ? Art.Coin : Art.A(Art.Tinta, 0.18f);
+                _barMus[k].color = k < Ajustes.VolMusica ? Art.Coin : Art.A(Art.Tinta, 0.18f);
             }
             _vibraBtn.interactable = Ajustes.TemVibra;
             _vibraBtn.GetComponentInChildren<Text>().text = Ajustes.TemVibra ? Textos.Vibra(Ajustes.Vibra) : Textos.VibraSoCelular;
@@ -537,12 +537,12 @@ namespace DC
             Button tap = t.gameObject.AddComponent<Button>();
             tap.targetGraphic = bg; tap.transition = Selectable.Transition.None;
             tap.onClick.AddListener(() => { Audio.Play("confirmar"); ShowMenu(); });
-            Emblem(t, 0.62f, 0.86f);
-            Logo(t, 0.4f, 0.6f, 170);
-            Text slogan = Loc(Art.NewText(t, "Slogan", 44, new Vector2(0.05f, 0.335f), new Vector2(0.95f, 0.39f)), () => Textos.Slogan);
-            slogan.color = Art.Dim; slogan.fontStyle = FontStyle.Bold;
-            _tapText = Loc(Art.Outlined(Art.NewText(t, "Tocar", 52, new Vector2(0.05f, 0.2f), new Vector2(0.95f, 0.26f))), () => Textos.TocarParaComecar);
-            _tapText.fontStyle = FontStyle.Bold;
+            FundoMasmorra(t, 0.4f);
+            LogoArte(t, new Vector2(0.05f, 0.39f), new Vector2(0.95f, 0.95f));
+            Text slogan = Loc(Art.NewText(t, "Slogan", 50, new Vector2(0.05f, 0.33f), new Vector2(0.95f, 0.385f)), () => Textos.Slogan);
+            slogan.font = Art.Titulo(); slogan.color = Art.Gold; Art.Letreiro(slogan, 50);
+            _tapText = Loc(Art.Letreiro(Art.NewText(t, "Tocar", 56, new Vector2(0.05f, 0.2f), new Vector2(0.95f, 0.26f)), 56), () => Textos.TocarParaComecar);
+            _tapText.font = Art.Titulo();
             Text priv = Loc(Art.NewText(t, "Privacidade", 30, new Vector2(0.08f, 0.06f), new Vector2(0.92f, 0.145f)), () => Textos.PrivacidadeCurta);
             priv.color = Art.Dim; Shrink(priv, 20);
             Text ver = Loc(Art.NewText(t, "Versao", 28, new Vector2(0.05f, 0.012f), new Vector2(0.95f, 0.05f)), () => Textos.Versao(_g.Version));
@@ -562,47 +562,72 @@ namespace DC
             Art.Img(seal.transform, "Estrela", Art.Star(), Art.Gold, new Vector2(0.2f, 0.2f), new Vector2(0.8f, 0.8f));
         }
 
-        /// <summary>Nome do jogo em 2 linhas, negrito com contorno grosso e sombra (tipografia, sem imagem externa).</summary>
-        static void Logo(Transform parent, float y0, float y1, int size)
+        /// <summary>Logo do jogo (o courier saindo da masmorra com o letreiro; Resources/UI/logo.png, docs/PROVENIENCIA.md §4) com um halo
+        /// de tocha atras.</summary>
+        static void LogoArte(Transform parent, Vector2 min, Vector2 max)
         {
-            float mid = (y0 + y1) * 0.5f;
-            Text a = Art.NewText(parent, "Nome1", size, new Vector2(0.03f, mid), new Vector2(0.97f, y1));
-            Text b = Art.NewText(parent, "Nome2", size, new Vector2(0.03f, y0), new Vector2(0.97f, mid));
-            a.text = Textos.Nome1; b.text = Textos.Nome2;
-            a.color = Art.Ink; b.color = Art.Gold;
-            foreach (Text t in new[] { a, b })
-            {
-                t.fontStyle = FontStyle.Bold;
-                Shrink(t, size / 2);
-                Art.Outlined(t, size / 25f);
-                Shadow sh = t.gameObject.AddComponent<Shadow>();
-                sh.effectColor = Art.A(Art.Dark, 0.9f); sh.effectDistance = new Vector2(0f, -size / 14f);
-            }
+            Image glow = Art.Img(parent, "LogoBrilho", Art.Glow(), Art.A(Art.Coin, 0.18f), min, max);
+            glow.preserveAspect = false;
+            Art.Img(parent, "Logo", Art.Ui("logo"), Color.white, min, max);
+        }
+
+        /// <summary>Fundo pintado da masmorra (Resources/UI/fundo_menu.png) cobrindo a tela sem distorcer, escurecido por `escuro` para os
+        /// botoes lerem por cima. Sem o arquivo, fica a cor lisa da tela.</summary>
+        static void FundoMasmorra(Transform tela, float escuro)
+        {
+            Sprite s = Art.Ui("fundo_menu");
+            if (s == null) return;
+            RectTransform caixa = Art.Node(tela, "Fundo", Vector2.zero, Vector2.one);
+            caixa.gameObject.AddComponent<RectMask2D>();
+            caixa.SetAsFirstSibling();
+            float v = 1f - escuro;
+            Image f = Art.Img(caixa, "Masmorra", s, new Color(v, v, v * 1.06f), Vector2.zero, Vector2.one);
+            f.preserveAspect = false;
+            var fit = f.gameObject.AddComponent<AspectRatioFitter>();
+            fit.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent; fit.aspectRatio = s.rect.width / s.rect.height;
+        }
+
+        /// <summary>Icone do botao a esquerda (Resources/UI/icone_*.png) e o rotulo empurrado para a direita.</summary>
+        static void Icone(Button b, string nome)
+        {
+            Sprite s = Art.Ui("icone_" + nome);
+            if (s == null) return;
+            Art.Img(b.transform, "Icone", s, Color.white, new Vector2(0.03f, 0.12f), new Vector2(0.27f, 0.94f));
+            b.GetComponentInChildren<Text>().rectTransform.anchorMin = new Vector2(0.26f, 0f);
         }
 
         RectTransform BuildMenu()
         {
             RectTransform m = Art.Node(_safe, "Menu", Vector2.zero, Vector2.one);
             Image bg = m.gameObject.AddComponent<Image>(); bg.color = Art.Bg;
-            Logo(m, 0.835f, 0.985f, 110);
-            _menuCoins = Pill(m, Art.CoinShape(), Art.Coin, new Vector2(0.06f, 0.765f), new Vector2(0.47f, 0.825f));
-            _menuStars = Pill(m, Art.Star(), Art.Gold, new Vector2(0.53f, 0.765f), new Vector2(0.94f, 0.825f));
-            _menuNotice = Shrink(Art.NewText(m, "Aviso", 28, new Vector2(0.05f, 0.712f), new Vector2(0.95f, 0.76f)), 18);
-            _menuNotice.fontStyle = FontStyle.Bold;
-            // bau do dia (rewarded): conteudo escrito antes de assistir
-            _bau = NovoEspecial(m, new Vector2(0.06f, 0.6f), new Vector2(0.94f, 0.705f), Art.Chest, PedeBau);
+            FundoMasmorra(m, 0.5f);
+            LogoArte(m, new Vector2(0.2f, 0.795f), new Vector2(0.8f, 0.995f));
+            _menuCoins = Pill(m, Art.CoinShape(), Art.Coin, new Vector2(0.06f, 0.735f), new Vector2(0.47f, 0.79f));
+            _menuStars = Pill(m, Art.Star(), Art.Gold, new Vector2(0.53f, 0.735f), new Vector2(0.94f, 0.79f));
+            _menuNotice = Shrink(Art.Outlined(Art.NewText(m, "Aviso", 28, new Vector2(0.05f, 0.7f), new Vector2(0.95f, 0.735f))), 18);
+            // bau do dia (rewarded): conteudo escrito antes de assistir; icone pintado (Resources/UI) no lugar do contorno + silhueta
+            _bau = NovoEspecial(m, new Vector2(0.06f, 0.592f), new Vector2(0.94f, 0.697f), Art.Chest, PedeBau);
             _bau.Icon.sprite = _bau.Edge.sprite = Art.ChestShape();
             _bau.Icon.color = Art.Chest; _bau.Edge.color = Art.Coin;   // limao e so da carga (ART_BIBLE §3)
-            Btn(m, () => Textos.MenuJogar, 64, Art.Good, new Vector2(0.1f, 0.475f), new Vector2(0.9f, 0.59f), ShowBoard, "confirmar");
-            // grade 2 x 4 (cada botao ~163 px de referencia = 48 dp)
-            _menuGuild = Btn(m, () => Textos.MenuGuilda, 44, Art.Paper, new Vector2(0.06f, 0.375f), new Vector2(0.49f, 0.46f), () => ShowGuild(0));
-            _menuGuildLock = Art.Img(_menuGuild.transform, "Cadeado", Art.Lock(), Art.Tinta, new Vector2(0.04f, 0.2f), new Vector2(0.18f, 0.8f));
-            _menuLoja = Btn(m, () => Textos.LojaBotao, 44, Art.Gold, new Vector2(0.51f, 0.375f), new Vector2(0.94f, 0.46f), ShowLoja);
-            Btn(m, () => Textos.TemporadaBotao, 40, Art.Paper, new Vector2(0.06f, 0.28f), new Vector2(0.49f, 0.365f), () => Abre(_pTemporada));
-            Btn(m, () => Textos.MarcosBotao, 40, Art.Paper, new Vector2(0.51f, 0.28f), new Vector2(0.94f, 0.365f), () => Abre(_pMarcos));
-            Btn(m, () => Textos.RoupasBotao, 40, Art.PaperEdge, new Vector2(0.06f, 0.185f), new Vector2(0.49f, 0.27f), () => Abre(_pRoupas));
-            Btn(m, () => Textos.MenuConfig, 40, Art.PaperEdge, new Vector2(0.51f, 0.185f), new Vector2(0.94f, 0.27f), ShowSettings);
-            Btn(m, () => Textos.MenuCreditos, 40, Art.PaperEdge, new Vector2(0.25f, 0.09f), new Vector2(0.75f, 0.175f), ShowCredits);
+            Sprite bauArte = Art.Ui("icone_bau");
+            if (bauArte != null)
+            {
+                _bau.Edge.enabled = false;
+                _bau.Icon.sprite = bauArte; _bau.Icon.color = Color.white;
+                _bau.Icon.rectTransform.anchorMin = new Vector2(0.035f, 0.04f); _bau.Icon.rectTransform.anchorMax = new Vector2(0.15f, 0.56f);
+            }
+            Btn(m, () => Textos.MenuJogar, 72, Art.Good, new Vector2(0.1f, 0.47f), new Vector2(0.9f, 0.582f), ShowBoard, "confirmar");
+            // grade 2 x 3 + creditos (cada botao ~163 px de referencia = 48 dp), icone pintado a esquerda
+            _menuGuild = Btn(m, () => Textos.MenuGuilda, 44, Art.Paper, new Vector2(0.06f, 0.37f), new Vector2(0.49f, 0.455f), () => ShowGuild(0));
+            Icone(_menuGuild, "guilda");
+            _menuGuildLock = Art.Img(_menuGuild.transform, "Cadeado", Art.Lock(), Art.Tinta, new Vector2(0.82f, 0.22f), new Vector2(0.96f, 0.78f));
+            _menuLoja = Btn(m, () => Textos.LojaBotao, 44, Art.Gold, new Vector2(0.51f, 0.37f), new Vector2(0.94f, 0.455f), ShowLoja);
+            Icone(_menuLoja, "loja");
+            Icone(Btn(m, () => Textos.TemporadaBotao, 40, Art.Paper, new Vector2(0.06f, 0.275f), new Vector2(0.49f, 0.36f), () => Abre(_pTemporada)), "temporada");
+            Icone(Btn(m, () => Textos.MarcosBotao, 40, Art.Paper, new Vector2(0.51f, 0.275f), new Vector2(0.94f, 0.36f), () => Abre(_pMarcos)), "marcos");
+            Icone(Btn(m, () => Textos.RoupasBotao, 40, Art.PaperEdge, new Vector2(0.06f, 0.18f), new Vector2(0.49f, 0.265f), () => Abre(_pRoupas)), "roupas");
+            Icone(Btn(m, () => Textos.MenuConfig, 40, Art.PaperEdge, new Vector2(0.51f, 0.18f), new Vector2(0.94f, 0.265f), ShowSettings), "config");
+            Icone(Btn(m, () => Textos.MenuCreditos, 40, Art.PaperEdge, new Vector2(0.25f, 0.085f), new Vector2(0.75f, 0.17f), ShowCredits), "creditos");
             Text ver = Loc(Art.NewText(m, "Versao", 28, new Vector2(0.05f, 0.012f), new Vector2(0.95f, 0.05f)), () => Textos.Versao(_g.Version));
             ver.color = Art.Dim;
             return m;
@@ -611,11 +636,11 @@ namespace DC
         /// <summary>Pilula escura com icone e numero (moedas, estrelas).</summary>
         static Text Pill(Transform parent, Sprite icon, Color c, Vector2 min, Vector2 max)
         {
-            Image bg = Art.Panel(parent, "Pilula", Art.A(Art.Tinta, 0.85f), min, max);
-            bg.raycastTarget = false;
-            Art.Img(bg.transform, "Icone", icon, c, new Vector2(0.05f, 0.14f), new Vector2(0.25f, 0.86f));
-            Text t = Art.Outlined(Art.NewText(bg.transform, "Valor", 50, new Vector2(0.28f, 0f), new Vector2(0.97f, 1f), TextAnchor.MiddleLeft));
-            t.fontStyle = FontStyle.Bold;
+            Image bg = Art.Panel(parent, "Pilula", Art.Hex(0x2B2335), min, max);
+            bg.sprite = Art.Botao(); bg.raycastTarget = false;
+            Art.Img(bg.transform, "Icone", icon, c, new Vector2(0.05f, 0.18f), new Vector2(0.25f, 0.9f));
+            Text t = Art.Letreiro(Art.NewText(bg.transform, "Valor", 50, new Vector2(0.28f, 0.12f), new Vector2(0.97f, 1f), TextAnchor.MiddleLeft), 50);
+            t.font = Art.Titulo();
             return t;
         }
 
@@ -988,7 +1013,7 @@ namespace DC
             float w = 0.29f / bar.Length;
             for (int k = 0; k < bar.Length; k++)
             {
-                bar[k] = Art.Img(r, "Nivel", Art.Square(), Art.Off, new Vector2(0.525f + k * w, 0.22f), new Vector2(0.525f + (k + 0.75f) * w, 0.78f));
+                bar[k] = Art.Img(r, "Nivel", Art.Rounded(), Art.Off, new Vector2(0.525f + k * w, 0.2f), new Vector2(0.525f + (k + 0.78f) * w, 0.8f));
                 bar[k].preserveAspect = false;
             }
             Art.NewButton(r, "+", 72, Art.PaperEdge, new Vector2(0.83f, 0.03f), new Vector2(0.99f, 0.97f), () => Vol(music, +1));

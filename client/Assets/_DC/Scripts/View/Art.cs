@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using DC.Core;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Rect = UnityEngine.Rect;
 
@@ -23,7 +24,7 @@ namespace DC
         // cenario so azul-violeta-cinza.
         // interface e feedback
         public static readonly Color Ink = Hex(0xF7F3EA), Tinta = Hex(0x1B1724), Bad = Hex(0xFF3B30), Good = Hex(0x45C46B),
-            Coin = Hex(0xF5A623), Gold = Hex(0xE0B23A), Paper = Hex(0xF3E2C0), PaperEdge = Hex(0xC9A877),
+            Coin = Hex(0xF5A623), Gold = Hex(0xE0B23A), Paper = Hex(0xF3E2C0), PaperEdge = Hex(0xC48A4E),
             Bg = Hex(0x14161F), Dim = Hex(0x8A90A8), Off = Hex(0x4F5866), Dark = Hex(0x0E0F18),
             BadInk = Hex(0xA61E22);   // erro escrito sobre o papel (o #FF3B30 da 2,8:1 no papel; este da 5,8:1)
         // cenario
@@ -331,9 +332,95 @@ namespace DC
             return r;
         }
 
-        // ---------- uGUI por codigo (fonte embutida, sem TextMeshPro) ----------
-        static Font _font;
-        public static Font Font() => _font != null ? _font : (_font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"));
+        // ---------- uGUI por codigo (sem TextMeshPro) ----------
+        // Fontes = docs/ART_BIBLE.md §10 (SIL OFL 1.1, Resources/Fonts, docs/PROVENIENCIA.md): Nunito ExtraBold no texto corrido e
+        // Lilita One em titulos, botoes e numeros. Sem os arquivos, a fonte embutida do Unity.
+        static Font _font, _titulo;
+        public static Font Font()
+        {
+            if (_font == null) _font = Resources.Load<Font>("Fonts/Nunito-ExtraBold");
+            if (_font == null) _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            return _font;
+        }
+        public static Font Titulo()
+        {
+            if (_titulo == null) _titulo = Resources.Load<Font>("Fonts/LilitaOne-Regular");
+            return _titulo != null ? _titulo : Font();
+        }
+
+        /// <summary>Arte da interface em Resources/UI (logo, icones dos botoes, fundo dos menus; client/tools/ui_assets.py). null = sem o arquivo.</summary>
+        public static Sprite Ui(string nome)
+        {
+            string key = "ui/" + nome;
+            if (Cache.TryGetValue(key, out Sprite s) && s != null) return s;
+            var t = Resources.Load<Texture2D>("UI/" + nome);
+            if (t == null) return null;
+            s = Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+            Cache[key] = s;
+            return s;
+        }
+
+        /// <summary>Distancia com sinal ate a borda de um retangulo de cantos redondos que ocupa a textura s x s (negativa = dentro).</summary>
+        static float CaixaDist(float x, float y, int s, float raio)
+        {
+            float h = s * 0.5f - 0.5f, qx = Mathf.Abs(x - s * 0.5f) - (h - raio), qy = Mathf.Abs(y - s * 0.5f) - (h - raio);
+            return new Vector2(Mathf.Max(qx, 0f), Mathf.Max(qy, 0f)).magnitude + Mathf.Min(Mathf.Max(qx, qy), 0f) - raio;
+        }
+
+        /// <summary>Sprite 9-fatias s x s pintado por pixel (x, y a partir de baixo), 100 px por unidade = 1 px da referencia de 1080.</summary>
+        static Sprite Nove(string key, int s, int borda, Func<int, int, Color32> pixel)
+        {
+            if (Cache.TryGetValue(key, out Sprite sp) && sp != null) return sp;
+            var t = new Texture2D(s, s, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            var px = new Color32[s * s];
+            for (int y = 0; y < s; y++)
+                for (int x = 0; x < s; x++) px[y * s + x] = pixel(x, y);
+            t.SetPixels32(px);
+            t.Apply(false, true);
+            sp = Sprite.Create(t, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect, new Vector4(borda, borda, borda, borda));
+            Cache[key] = sp;
+            return sp;
+        }
+
+        static Color32 C32(Color c, float a) => new Color32((byte)(c.r * 255f), (byte)(c.g * 255f), (byte)(c.b * 255f), (byte)(Mathf.Clamp01(a) * 255f));
+
+        /// <summary>Botao de jogo em cinza, tingido pela cor do Image: contorno escuro de 4 px, face com degrade (a cor cheia no alto,
+        /// 16% mais escura embaixo) e aba de relevo de 12 px na base.</summary>
+        public static Sprite Botao() => Nove("botao9", 96, 36, (x, y) =>
+        {
+            float d = CaixaDist(x + 0.5f, y + 0.5f, 96, 26f), dentro = -d;
+            float v = dentro < 4f ? 0.16f : y + 0.5f < 16f ? 0.6f : Mathf.Lerp(0.84f, 1f, (y + 0.5f) / 96f);
+            return C32(new Color(v, v, v), 0.5f - d);
+        });
+
+        static readonly Color MadeiraClara = Hex(0x9C6638), MadeiraEscura = Hex(0x633B1D), MadeiraBrilho = Hex(0xC98E55),
+            MadeiraFundo = Hex(0x3F2512), Rebite = Hex(0xF2C14E), Pergaminho0 = Hex(0xF6E7C6), Pergaminho1 = Hex(0xD9BD8C);
+
+        /// <summary>Moldura de madeira dos cartoes (contorno de tinta, tabua de 11 px com fio de luz por fora e sombra por dentro, rebites
+        /// dourados nos cantos). O miolo fica coberto pelo pergaminho do cartao.</summary>
+        public static Sprite Moldura() => Nove("moldura9", 128, 40, (x, y) =>
+        {
+            float px = x + 0.5f, py = y + 0.5f, d = CaixaDist(px, py, 128, 22f), dentro = -d;
+            Color c;
+            if (dentro < 4f) c = Tinta;
+            else if (dentro < 15f)
+            {
+                c = Color.Lerp(MadeiraEscura, MadeiraClara, py / 128f);
+                if (dentro < 6f) c = MadeiraBrilho;
+                else if (dentro > 13f) c = MadeiraFundo;
+                float rx = Mathf.Min(px, 128f - px) - 14f, ry = Mathf.Min(py, 128f - py) - 14f, r2 = rx * rx + ry * ry;   // rebite no canto
+                if (r2 < 30f) c = r2 < 6f && rx < 0f && ry > 0f ? Color.Lerp(Rebite, Color.white, 0.55f) : r2 < 20f ? Rebite : Tinta;
+            }
+            else c = Pergaminho0;
+            return C32(c, 0.5f - d);
+        });
+
+        /// <summary>Face de pergaminho dos cartoes: papel claro que escurece perto da moldura (sombra por dentro).</summary>
+        public static Sprite Pergaminho() => Nove("pergaminho9", 64, 20, (x, y) =>
+        {
+            float d = CaixaDist(x + 0.5f, y + 0.5f, 64, 12f), t = Mathf.Clamp01(1f + d / 12f);
+            return C32(Color.Lerp(Pergaminho0, Pergaminho1, t * t * 0.8f), 0.5f - d);
+        });
 
         public static RectTransform Node(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax)
         {
@@ -393,14 +480,31 @@ namespace DC
         /// som = "clique" (docs/AUDIO.md §1) ou "confirmar" nos botoes principais (jogar, comprar).</summary>
         public static Button NewButton(Transform parent, string label, int size, Color color, Vector2 anchorMin, Vector2 anchorMax, Action onClick, string som = "clique")
         {
-            Image img = Panel(parent, "Btn " + label, color, anchorMin, anchorMax);
+            var img = Node(parent, "Btn " + label, anchorMin, anchorMax).gameObject.AddComponent<Image>();
+            img.sprite = Botao(); img.type = Image.Type.Sliced; img.color = color;
+            Image brilho = Node(img.transform, "Brilho", new Vector2(0f, 0.56f), Vector2.one).gameObject.AddComponent<Image>();   // verniz da metade de cima
+            brilho.sprite = Box(); brilho.type = Image.Type.Sliced; brilho.color = new Color(1f, 1f, 1f, 0.17f); brilho.raycastTarget = false;
+            brilho.rectTransform.offsetMin = new Vector2(8f, 0f); brilho.rectTransform.offsetMax = new Vector2(-8f, -7f);
             var b = img.gameObject.AddComponent<Button>();
             b.targetGraphic = img;
+            ColorBlock cores = b.colors; cores.pressedColor = new Color(0.8f, 0.8f, 0.8f); b.colors = cores;
+            img.gameObject.AddComponent<Aperta>();
             b.onClick.AddListener(() => { Audio.Play(som); onClick(); });
             Text t = NewText(img.transform, "Rotulo", size, Vector2.zero, Vector2.one);
-            t.text = label; t.color = Tinta; t.fontStyle = FontStyle.Bold;
+            t.rectTransform.offsetMin = new Vector2(10f, 14f); t.rectTransform.offsetMax = new Vector2(-10f, -4f);   // fora do contorno e da aba
+            t.text = label; t.font = Titulo(); t.color = Ink;
             t.resizeTextForBestFit = true; t.resizeTextMinSize = Mathf.Max(10, size / 2); t.resizeTextMaxSize = size;
+            Letreiro(t, size);
             return b;
+        }
+
+        /// <summary>Texto claro de botao/titulo: contorno de tinta proporcional ao corpo e sombra caida (le sobre qualquer cor de botao).</summary>
+        public static Text Letreiro(Text t, int size)
+        {
+            Outlined(t, Mathf.Max(2f, size / 16f));
+            Shadow sh = t.gameObject.AddComponent<Shadow>();
+            sh.effectColor = A(Tinta, 0.85f); sh.effectDistance = new Vector2(0f, -Mathf.Max(2f, size / 12f));
+            return t;
         }
 
         /// <summary>Aumenta a area de toque de um botao pequeno sem mudar o desenho: filho transparente que recebe o raycast (o clique
@@ -412,6 +516,19 @@ namespace DC
             hit.rectTransform.offsetMin = new Vector2(-padX, -padY); hit.rectTransform.offsetMax = new Vector2(padX, padY);
             hit.rectTransform.SetAsFirstSibling();
         }
+    }
+
+    /// <summary>Botao afunda um pouco enquanto o dedo esta em cima (resposta ao toque alem da cor; so se o botao estiver ativo).</summary>
+    public sealed class Aperta : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler
+    {
+        Selectable _s;
+        public void OnPointerDown(PointerEventData e)
+        {
+            if (_s == null) _s = GetComponent<Selectable>();
+            if (_s == null || _s.IsInteractable()) transform.localScale = new Vector3(0.95f, 0.95f, 1f);
+        }
+        public void OnPointerUp(PointerEventData e) => transform.localScale = Vector3.one;
+        public void OnPointerExit(PointerEventData e) => transform.localScale = Vector3.one;
     }
 
     /// <summary>Ajustes do jogador no PlayerPrefs, fora do save de progresso (valem no -testsession): volume de Som e de Musica (o Audio
