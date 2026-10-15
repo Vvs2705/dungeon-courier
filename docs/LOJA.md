@@ -16,7 +16,8 @@ Textos da ficha da loja em pt-BR, EN, ES e ID, a política de privacidade, a cla
 | Contém anúncios | **sim** no build de lançamento (LevelPlay, `feat/levelplay`); o APK 1.2.0-beta não tem. Nunca dentro da masmorra |
 | Compras no app | **sim** (Unity IAP, `iap_google_play: true`): Remover anúncios, Pacote inicial, roupas e pacote de evento, sempre com conteúdo fixo e listado |
 | Público-alvo | 13+ (GDD §1: 13–40). Não marcar menores de 13: isso puxa a política de Famílias, que exige SDK de anúncio certificado |
-| E-mail e site de contato | `<e-mail de contato da V-STACK>` · `<site da V-STACK>` (o Vinicius preenche) |
+| E-mail e site de contato | `vinicius@vstack-solutions.com.br` · `https://www.vstack-solutions.com.br` |
+| Conta da Play Console | **organização** ("Uma empresa ou corporação"), dona `vinicius@vstack-solutions.com.br` (não muda depois), com verificação em duas etapas. Para no passo "Perfil para pagamentos", que pede o D-U-N-S: pedido grátis na CIAL (Dunsguide, ID 215846), previsão **2026-11-25**. Dados da organização = os do formulário da CIAL: 40.204.602 VINICIUS VIEIRA DE SOUSA, CNPJ 40.204.602/0001-85, Rua Vicente Lisa, 119, Caieiras/SP, 07749-220 |
 | Política de privacidade (URL) | **https://vvs2705.github.io/dungeon-courier/** (GitHub Pages, branch `gh-pages`, 4 idiomas; já com os itens 7 e 8 do §4.5 na versão de anúncio não personalizado) |
 
 ## 2. Classificação indicativa (questionário IARC)
@@ -338,7 +339,8 @@ O vídeo do YouTube da ficha pode ser o criativo 11 (`dc_11_ladrao_e_dash_<L>.mp
 
 - [ ] Conferir no build final cada número da descrição (4 regiões, 72 contratos, 15 cargas, 8 chefes, eventos semanais, contrato por código, 4 idiomas).
 - [ ] Anúncios e compras: formulário de segurança dos dados como no §4.5 (a política já está publicada), "Contém anúncios" = sim e declaração de ID de publicidade = **não**.
-- [ ] URL pública da política e e-mail de contato preenchidos (§1, dependência do Vinicius).
+- [x] URL pública da política e e-mail de contato (§1).
+- [ ] Conta de organização na Play Console concluída com o D-U-N-S (§1, previsão 2026-11-25).
 - [ ] 8 capturas por idioma, tiradas com `-lang` no build de release (sem "Development Build").
 - [ ] Questionário IARC respondido como no §2.
 - [ ] AAB assinado com a chave de upload e Play App Signing: `-executeMethod DC.EditorTools.Setup.BuildAndroidBundle` (pela unidade curta `subst R:`, como o APK) gera `client/Builds/android/DungeonCourier-<versão>.aab`. A chave fica fora do git, em `%USERPROFILE%/.dungeoncourier/upload.jks`, e as senhas em `upload.properties`, na mesma pasta (ou no caminho de `DC_UPLOAD_PROPS`). **Guarde uma cópia dos dois fora deste PC.** Antes de subir para a faixa interna, troque `iap_google_play` para `true` no `config.json`, para as compras irem à Google Play.
