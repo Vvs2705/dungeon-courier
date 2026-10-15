@@ -179,6 +179,12 @@ namespace DC
         public static Sprite Flat() => Get("flat", (x, y) => Mathf.Abs(y + 0.2f) < 0.12f && Mathf.Abs(x) < 0.55f);
         /// <summary>Brilho suave (disco com queda): luz da porta aberta, rastro do dash.</summary>
         public static Sprite Glow() => Soft("glow", (x, y) => { float d = Mathf.Min(1f, Mathf.Sqrt(x * x + y * y)); return (1f - d) * (1f - d); });
+        /// <summary>Raios de luz (12 fachos que somem para a borda): o tesouro saindo do bau na cena da entrega.</summary>
+        public static Sprite Raios() => Soft("raios", (x, y) =>
+        {
+            float r = Mathf.Sqrt(x * x + y * y), f = Mathf.Repeat(Mathf.Atan2(y, x) / (Mathf.PI * 2f) * 12f, 1f);
+            return Mathf.Clamp01(1f - Mathf.Abs(f - 0.5f) * 4f) * Mathf.Clamp01(1f - r) * Mathf.Clamp01(r * 4f);
+        });
         /// <summary>Vinheta: so as bordas (alfa 0 no centro): flash de dano em tela cheia.</summary>
         public static Sprite Vignette() => Soft("vignette", (x, y) => Mathf.Clamp01((x * x + y * y - 0.45f) / 1.1f));
 

@@ -26,7 +26,8 @@ namespace DC
         const float CutTime = 3.6f;
         // caixa da entrega com o sprite: centro (o da caixa procedural), lado da celula em px de referencia e centro da tampa (fracao da
         // celula acima do centro). O topo da silhueta, medido no PNG, fica a 0,375 (linha 14 de 112); a tampa de 26 px assenta nele
-        static readonly Vector2 CratePos = new Vector2(0.5f, 0.395f);
+        static readonly Vector2 CratePos = new Vector2(0.5f, 0.395f), BauPos = new Vector2(0.5f, 0.31f);
+        const float BauCell = 560f;   // celula de 384 px do bau_hd a ~1,46x na referencia de 1080
         const float CrateCell = 450f, CrateTop = 0.36f;
         public enum Tela { Title, Menu, Board, Play, Cutscene, Result }
 
@@ -73,9 +74,11 @@ namespace DC
         ContractResult _res;
         float _cutT, _cutItemK = 1f;
         Vector2 _cutLidAt;
-        Image _cutMouth, _cutLid, _cutItem, _cutItemCracks, _cutClient, _cutBox, _cutStrap, _cutCrate;
+        Image _cutMouth, _cutLid, _cutItem, _cutItemCracks, _cutClient, _cutBox, _cutStrap, _cutCrate, _cutBau, _cutLuz, _cutRaios;
         GameObject _cutProc;
-        SpriteSheet _cutSheet;
+        SpriteSheet _cutSheet, _cutBauSheet;
+        readonly Image[] _cutMoedas = new Image[10];
+        bool _cutChuva;
         readonly Image[] _sparks = new Image[5];
         Text _cutText;
         Text _resTitle, _resSub, _resNote, _resCode, _resShared, _resOfferText;
@@ -235,14 +238,19 @@ namespace DC
             _cutT = 0f;
             CargoType t = r.Def != null ? r.Def.Cargo : CargoType.Box;
             // item que sobe: sprite da carga/filhote quando a folha existe (a caixa de dentro da caixa fica procedural)
-            string sheet = r.Hatched ? "filhote" : t != CargoType.Box && (int)t < WorldView.CargoSheet.Length ? WorldView.CargoSheet[(int)t] : null;
+            string sheet = r.Hatched ? "filhote" : t == CargoType.Box ? "caixa_icone" : (int)t < WorldView.CargoSheet.Length ? WorldView.CargoSheet[(int)t] : null;
             SpriteSheet item = sheet != null ? SpriteSheet.Get(sheet) : null;
             _cutItem.sprite = item != null ? item.Frame(item.Pick("Static"), 0, 0) : r.Hatched ? Art.Disc() : Art.CargoSprite(t);
             _cutItem.color = item != null ? Color.white : r.Hatched ? Art.Pet : Art.CargoColor(t);
             _cutItemK = item != null ? 1.6f : 1f;   // a celula do sprite tem margem: o objeto ocupa ~60% dela
-            // caixa da entrega: o sprite `caixa` (carga Caixa) no lugar do retangulo com cinta; a tampa procedural fica no topo dele
-            SpriteSheet crate = t == CargoType.Box ? SpriteSheet.Get("caixa") : null;
-            _cutBox.enabled = _cutStrap.enabled = crate == null;
+            // bau da entrega (client/tools/bau_abrindo.py): abre de verdade para qualquer carga. Sem a folha (-batchmode -nographics), a
+            // caixa de antes: o sprite `caixa` (carga Caixa) ou o retangulo com cinta, com a tampa procedural
+            _cutBauSheet = SpriteSheet.Get("bau_hd");
+            bool bau = _cutBauSheet != null;
+            _cutBau.enabled = bau; _cutLid.enabled = !bau;
+            _cutChuva = !r.Hatched && r.Cracks <= 1;   // moedas pulando do bau so na entrega boa
+            SpriteSheet crate = !bau && t == CargoType.Box ? SpriteSheet.Get("caixa") : null;
+            _cutBox.enabled = _cutStrap.enabled = !bau && crate == null;
             _cutCrate.enabled = crate != null;
             RectTransform lid = _cutLid.rectTransform;
             if (crate != null)
@@ -260,7 +268,7 @@ namespace DC
             }
             _cutItemCracks.enabled = !r.Hatched && r.Cracks > 0;
             if (r.Cracks > 0) _cutItemCracks.sprite = Art.Cracks(r.Cracks);
-            _cutSheet = SpriteSheet.Get("cliente");
+            _cutSheet = SpriteSheet.Get("cliente_hd") ?? SpriteSheet.Get("cliente");   // cliente_hd: 340 px em 3/4, nitido no tamanho da cena
             _cutProc.SetActive(_cutSheet == null);
             _cutClient.gameObject.SetActive(_cutSheet != null);
             _cutText.text = "";
@@ -617,11 +625,15 @@ namespace DC
         {
             _cutT += dt;
             float t = _cutT;
-            float lid = Mathf.Clamp01((t - 0.8f) / 0.5f), item = Mathf.Clamp01((t - 1.3f) / 0.6f);
-            _cutLid.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 35f * lid);
-            _cutLid.rectTransform.anchoredPosition = _cutLidAt + new Vector2(30f * lid, 70f * lid);
-            _cutItem.rectTransform.anchoredPosition = new Vector2(0f, 150f * item);
-            _cutItem.rectTransform.localScale = Vector3.one * (item * _cutItemK);
+            if (_cutBauSheet != null) TickBau(t);
+            else
+            {
+                float lid = Mathf.Clamp01((t - 0.8f) / 0.5f), item = Mathf.Clamp01((t - 1.3f) / 0.6f);
+                _cutLid.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 35f * lid);
+                _cutLid.rectTransform.anchoredPosition = _cutLidAt + new Vector2(30f * lid, 70f * lid);
+                _cutItem.rectTransform.anchoredPosition = new Vector2(0f, 150f * item);
+                _cutItem.rectTransform.localScale = Vector3.one * (item * _cutItemK);
+            }
             bool react = t >= 2f;
             bool happy = _res.Hatched || _res.Cracks <= 1;
             _cutMouth.sprite = !react ? Art.Flat() : happy ? Art.Smile() : _res.Cracks >= 3 ? Art.Frown() : Art.Flat();
@@ -640,6 +652,38 @@ namespace DC
                 if (perfect) _sparks[i].rectTransform.localScale = Vector3.one * (0.6f + 0.4f * Mathf.Abs(Mathf.Sin(t * 5f + i)));
             }
             if (t >= CutTime) ShowResult();
+        }
+
+        /// <summary>Cena do bau: entra quicando (0-0,55 s), treme, abre pela folha Open (a partir de 0,6 s), solta luz e raios girando,
+        /// moedas pulam em arco (entrega boa) e a carga sobe com sobra (0,85-1,45 s).</summary>
+        void TickBau(float t)
+        {
+            float entra = Mathf.Clamp01(t / 0.55f), sobra = 1f + 0.18f * Mathf.Sin(entra * Mathf.PI) * (1f - entra);
+            _cutBau.rectTransform.localScale = Vector3.one * (Mathf.Lerp(0.55f, 1f, 1f - (1f - entra) * (1f - entra)) * sobra);
+            _cutBau.rectTransform.localRotation = Quaternion.Euler(0f, 0f, t > 0.35f && t < 0.6f ? 4f * Mathf.Sin(t * 70f) : 0f);
+            int clip = _cutBauSheet.Pick("Open");
+            _cutBau.sprite = _cutBauSheet.Frame(clip, 0, Mathf.Max(0, _cutBauSheet.FrameAt(clip, t - 0.6f, false)));
+            float luz = Mathf.Clamp01((t - 0.75f) / 0.35f);
+            _cutLuz.color = Art.A(Art.Coin, luz * (0.55f + 0.15f * Mathf.Sin(t * 6f)));
+            _cutLuz.rectTransform.anchoredPosition = new Vector2(0f, 0.18f * BauCell);
+            _cutRaios.color = Art.A(Art.Gold, 0.5f * luz);
+            _cutRaios.rectTransform.anchoredPosition = new Vector2(0f, 0.3f * BauCell);
+            _cutRaios.rectTransform.localRotation = Quaternion.Euler(0f, 0f, t * 25f);
+            for (int i = 0; i < _cutMoedas.Length; i++)
+            {
+                float dt = t - 0.8f - i * 0.03f;
+                bool viva = _cutChuva && dt > 0f && dt < 1.6f;
+                _cutMoedas[i].enabled = viva;
+                if (!viva) continue;
+                float ang = Mathf.Lerp(-62f, 62f, i / (float)(_cutMoedas.Length - 1)) * Mathf.Deg2Rad, vel = 1150f + 160f * ((i * 7) % 3);
+                _cutMoedas[i].rectTransform.anchoredPosition = new Vector2(Mathf.Sin(ang) * vel * dt, 0.2f * BauCell + Mathf.Cos(ang) * vel * dt - 1300f * dt * dt);
+                _cutMoedas[i].rectTransform.localRotation = Quaternion.Euler(0f, 0f, dt * 540f * (i % 2 == 0 ? 1f : -1f));
+            }
+            float sobe = Mathf.Clamp01((t - 0.85f) / 0.6f), volta = 1f + 2.2f * (sobe - 1f) * (sobe - 1f) * sobe;   // sobe com sobra
+            RectTransform it = _cutItem.rectTransform;
+            it.anchorMin = it.anchorMax = BauPos; it.sizeDelta = Vector2.one * 150f;
+            it.anchoredPosition = new Vector2(0f, 0.1f * BauCell + 190f * Mathf.Min(1.08f, sobe * volta) + 8f * Mathf.Sin(t * 4f) * sobe);
+            it.localScale = Vector3.one * (sobe * _cutItemK);
         }
 
         // ------------------------------------------------------------------ construcao: faixa do contrato
@@ -782,6 +826,9 @@ namespace DC
             Button skip = c.gameObject.AddComponent<Button>();
             skip.targetGraphic = dim; skip.transition = Selectable.Transition.None;
             skip.onClick.AddListener(() => { if (Current == Tela.Cutscene) ShowResult(); });
+            FundoMasmorra(c, 0.6f);
+            Image palco = Art.Img(c, "Palco", Art.Glow(), Art.A(Art.Coin, 0.22f), new Vector2(-0.1f, 0.12f), new Vector2(1.1f, 0.62f));
+            palco.preserveAspect = false;
             for (int i = 0; i < _sparks.Length; i++)
             {
                 float a = i * Mathf.PI * 2f / _sparks.Length;
@@ -795,7 +842,20 @@ namespace DC
             Art.Img(p0, "Chapeu", Art.Triangle(), Art.Gold, new Vector2(0.36f, 0.71f), new Vector2(0.64f, 0.8f));
             Art.Img(p0, "Olhos", Art.Eyes(), Art.Tinta, new Vector2(0.4f, 0.63f), new Vector2(0.6f, 0.68f));
             _cutMouth = Art.Img(p0, "Boca", Art.Flat(), Art.Tinta, new Vector2(0.43f, 0.565f), new Vector2(0.57f, 0.615f));
-            _cutClient = Art.Img(c, "ClienteSprite", Art.Disc(), Color.white, new Vector2(0.22f, 0.44f), new Vector2(0.78f, 0.86f));
+            _cutClient = Art.Img(c, "ClienteSprite", Art.Disc(), Color.white, new Vector2(0.2f, 0.47f), new Vector2(0.8f, 0.9f));
+            _cutRaios = Art.Img(c, "Raios", Art.Raios(), Art.A(Art.Gold, 0f), BauPos, BauPos);
+            _cutRaios.rectTransform.sizeDelta = Vector2.one * 900f;
+            _cutBau = Art.Img(c, "Bau", null, Color.white, BauPos, BauPos);
+            _cutBau.rectTransform.sizeDelta = Vector2.one * BauCell;
+            _cutBau.enabled = false;
+            _cutLuz = Art.Img(c, "LuzDoBau", Art.Glow(), Art.A(Art.Coin, 0f), BauPos, BauPos);
+            _cutLuz.rectTransform.sizeDelta = new Vector2(520f, 380f); _cutLuz.preserveAspect = false;
+            for (int i = 0; i < _cutMoedas.Length; i++)
+            {
+                _cutMoedas[i] = Art.Img(c, "Moeda", Art.Moeda(), Art.MoedaCor, BauPos, BauPos);
+                _cutMoedas[i].rectTransform.sizeDelta = Vector2.one * 64f;
+                _cutMoedas[i].enabled = false;
+            }
             _cutItem = Art.Img(c, "Item", Art.Rounded(), Color.white, new Vector2(0.43f, 0.4f), new Vector2(0.57f, 0.47f));
             _cutItemCracks = Art.Img(_cutItem.transform, "Rachaduras", Art.Cracks(1), Art.Crack, Vector2.zero, Vector2.one);
             _cutBox = Art.Img(c, "Caixa", Art.Rounded(), Art.CargoColor(CargoType.Box), new Vector2(0.37f, 0.33f), new Vector2(0.63f, 0.46f));
@@ -809,8 +869,8 @@ namespace DC
             _cutCrate.enabled = false;
             _cutLid = Art.Img(c, "Tampa", Art.Square(), Art.Hex(0x8A5A32), new Vector2(0.36f, 0.455f), new Vector2(0.64f, 0.48f));
             _cutLid.preserveAspect = false;
-            _cutText = Art.Outlined(Art.NewText(c, "Reacao", 50, new Vector2(0.04f, 0.18f), new Vector2(0.96f, 0.29f)), 3f);
-            _cutText.fontStyle = FontStyle.Bold;
+            _cutText = Art.Letreiro(Art.NewText(c, "Reacao", 56, new Vector2(0.04f, 0.16f), new Vector2(0.96f, 0.27f)), 56);
+            _cutText.font = Art.Titulo(); _cutText.color = Art.Gold;
             Text hint = Art.NewText(c, "Pular", 30, new Vector2(0.05f, 0.05f), new Vector2(0.95f, 0.1f));
             Loc(hint, () => Textos.Pular); hint.color = Art.Dim;
             return c;

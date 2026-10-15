@@ -172,6 +172,7 @@ namespace DC
                 case "anuncio": ShowMenu(); _ads.Recompensado(Textos.PremioBau(Sim.DailyChestCoins(_g.Hoje), S.DailyChestBlueprint(_g.Hoje)), _ => { }); break;
                 case "intersticial": ShowMenu(); _ads.Intersticial(_ => { }); break;
                 case "oferta": DevResultado(false); break;
+                case "cena": ShowEnd(ResultadoDev(true)); break;   // cena da entrega (bau abrindo)
                 case "bonus": DevResultado(true); break;
             }
         }
@@ -179,6 +180,13 @@ namespace DC
         /// <summary>-tela oferta|bonus: resultado de exemplo (falha na 2a sala / entrega com bonus) com a oferta de rewarded forcada, so para a
         /// foto (o Core so oferece de verdade depois de um contrato jogado).</summary>
         void DevResultado(bool entregue)
+        {
+            _res = ResultadoDev(entregue);
+            _devOferta = true;
+            ShowResult();
+        }
+
+        ContractResult ResultadoDev(bool entregue)
         {
             ContractDef c = Sim.Contracts[Mathf.Clamp(S.Reputation, 0, Sim.Contracts.Length - 1)];
             var r = new ContractResult
@@ -189,8 +197,7 @@ namespace DC
             };
             if (entregue) { r.Payment = (int)(c.Pay * 1.2f); r.Bonus = r.Payment - c.Pay; }
             r.Total = r.Payment + r.ChestCoins;
-            _devOferta = true; _res = r;
-            ShowResult();
+            return r;
         }
 
         // ------------------------------------------------------------------ atualizar
