@@ -165,6 +165,6 @@ Já foi feito uma vez e funcionou: commit `bd10ca9`, APK de 65,4 MiB. Na ordem:
    - Preencher o formulário de segurança dos dados com a tabela do Unity Ads (`LOJA.md` §4.5). O item 7 da política já está publicado nos 4 idiomas (2026-10-13).
    - Decisão do ECA Digital (§2.4): anúncio não personalizado para todos, já aplicado antes do `Init`.
 6. **Validar:**
-   - Num build de desenvolvimento, use o Test Suite: `LevelPlay.SetMetaData("is_test_suite", "enable")` antes do `Init` e `LevelPlay.LaunchTestSuite()` no `Iniciou`. **Tire as duas linhas antes de publicar.**
+   - Test Suite: build de desenvolvimento (`Setup.BuildAndroidDev`) aberto com `adb shell am start -S -n br.com.vstack.dungeoncourier/<activity> -e unity "-adtestsuite"`. O `AnunciosLevelPlay` chama `LevelPlay.SetMetaData("is_test_suite", "enable")` antes do `Init` e `LevelPlay.LaunchTestSuite()` no `Iniciou` só com `Debug.isDebugBuild` e a flag; o release nunca abre o Test Suite, então não há o que tirar antes de publicar.
    - No `adb logcat`, procure "DC LevelPlay: iniciado".
    - Em modo avião, o rewarded deve mostrar "Nenhum anúncio disponível agora" e o CONTINUAR deve seguir sem interstitial.

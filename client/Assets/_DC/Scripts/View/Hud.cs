@@ -126,7 +126,8 @@ namespace DC
             // por cima de tudo: a janela da loja de teste e o anuncio (ou o simulador dele)
             _lojaTeste = new LojaTeste(this); _loja = CriaLoja();   // Unity IAP (Loja.cs, LojaIap.cs)
             _ads = CriaAnuncios();
-            Textos.AnunciosReais = !(_ads is AnunciosTeste);       // privacidade cita os anuncios so quando sao reais                                   // LevelPlay com app key no Android; senao o simulador (Anuncios.cs)
+            Textos.AnunciosReais = !(_ads is AnunciosTeste);       // LevelPlay com app key no Android; senao o simulador (Anuncios.cs)
+            ReaplicaTextos();   // a privacidade (titulo, ajustes, creditos) ja foi escrita antes do anuncio nascer: passa a citar os anuncios reais
             _screens = new[] { _top, _title, _menu, _board, _cut, _result };
             var modals = new List<RectTransform> { _guild, _code, _offer, _perk, _pause, _settings, _credits, _semFim };
             foreach (Painel p in _paineis) modals.Add(p.M);
@@ -160,10 +161,12 @@ namespace DC
             return b;
         }
 
+        void ReaplicaTextos() { for (int i = 0; i < _locT.Count; i++) _locT[i].text = _locF[i](); }
+
         /// <summary>Idioma trocado: rele todos os textos fixos e redesenha a tela aberta.</summary>
         public void Relocalizar()
         {
-            for (int i = 0; i < _locT.Count; i++) _locT[i].text = _locF[i]();
+            ReaplicaTextos();
             _hintShown = null; _eggShown = -1; _floorShown = -1; _statKey = int.MinValue;
             RefreshMenu(); RefreshBoard(); RefreshGuild(); RefreshSettings(); RefreshPaineis();
             if (_perk.gameObject.activeSelf && S.Run != null && S.Run.PerkOffer != null) ShowPerk(S.Run.PerkOffer);

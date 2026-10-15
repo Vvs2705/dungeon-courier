@@ -27,6 +27,7 @@ namespace DC
             LevelPlayInterstitialAd _it;
             Action<bool> _fimR, _fimI;
             bool _mostrando, _ganhou;
+            readonly bool _testSuite;
             float _esperaT = -1f, _fechouT = -1f, _rwDeNovo = -1f, _itDeNovo = -1f;
 
             public AnunciosLevelPlay(Hud h, string appKey, string rewarded, string interstitial)
@@ -44,12 +45,16 @@ namespace DC
                 LevelPlayPrivacySettings.SetGDPRConsent(false);
                 LevelPlayPrivacySettings.SetCCPA(true);
                 LevelPlayPrivacySettings.SetCOPPA(false);
+                // Test Suite do LevelPlay: so build de desenvolvimento com -adtestsuite (no Android, -e unity "-adtestsuite"); o release nunca abre
+                _testSuite = Debug.isDebugBuild && Array.IndexOf(Environment.GetCommandLineArgs(), "-adtestsuite") >= 0;
+                if (_testSuite) LevelPlay.SetMetaData("is_test_suite", "enable");
                 LevelPlay.Init(appKey);
             }
 
             void Iniciou(LevelPlayConfiguration _)
             {
                 Debug.Log("DC LevelPlay: iniciado");
+                if (_testSuite) LevelPlay.LaunchTestSuite();
                 if (!string.IsNullOrEmpty(_rwId))
                 {
                     _rw = new LevelPlayRewardedAd(_rwId);
