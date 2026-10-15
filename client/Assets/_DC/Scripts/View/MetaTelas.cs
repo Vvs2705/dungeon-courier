@@ -119,7 +119,7 @@ namespace DC
             l.Bar.preserveAspect = false; l.Bar.type = Image.Type.Filled; l.Bar.fillMethod = Image.FillMethod.Horizontal;
             for (int k = 0; k < l.Pips.Length; k++)
                 l.Pips[k] = Art.Img(f, "Ponto", Art.Disc(), Art.Off, new Vector2(0.15f + k * 0.04f, 0.04f), new Vector2(0.18f + k * 0.04f, 0.18f));
-            l.Coin = Art.Img(f, "Moeda", Art.CoinShape(), Art.Coin, new Vector2(0.69f, 0.6f), new Vector2(0.74f, 0.92f));
+            l.Coin = Art.Img(f, "Moeda", Art.Moeda(), Art.MoedaCor, new Vector2(0.69f, 0.6f), new Vector2(0.74f, 0.92f));
             l.Value = Shrink(Ink(f, "Valor", 32, new Vector2(0.745f, 0.55f), new Vector2(0.985f, 0.97f), TextAnchor.MiddleLeft, true), 15);
             l.Badge = Art.Panel(f, "Selo", Art.Good, new Vector2(0.69f, 0.07f), new Vector2(0.985f, 0.52f));
             l.Badge.raycastTarget = false;
@@ -212,6 +212,8 @@ namespace DC
 
         static Sprite GearIcon(Gear g, out Color c)
         {
+            Sprite arte = Art.Ui(g == Gear.Smoke ? "icone_fumaca" : g == Gear.Hook ? "icone_gancho" : g == Gear.Trap ? "icone_armadilha" : "icone_botas");
+            if (arte != null) { c = Color.white; return arte; }
             switch (g)
             {
                 case Gear.Smoke: c = Art.Dim; return Art.Glow();

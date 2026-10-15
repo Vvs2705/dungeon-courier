@@ -654,7 +654,7 @@ namespace DC
             _hearts = new Image[Balance.MaxHpCap];
             for (int i = 0; i < _hearts.Length; i++) _hearts[i] = Art.Img(hearts, "Coracao", Art.Heart(), Art.Bad, Vector2.zero, Vector2.one);
             LayoutHearts(Balance.BaseHp);
-            Art.Img(top, "Moeda", Art.CoinShape(), Art.Coin, new Vector2(0.6f, 0.6f), new Vector2(0.67f, 0.92f));
+            Art.Img(top, "Moeda", Art.Moeda(), Art.MoedaCor, new Vector2(0.6f, 0.6f), new Vector2(0.67f, 0.92f));
             _coins = Art.Outlined(Art.NewText(top, "Moedas", 52, new Vector2(0.68f, 0.55f), new Vector2(0.85f, 0.97f), TextAnchor.MiddleLeft));
             _coins.fontStyle = FontStyle.Bold;
             Image pb = Art.Panel(top, "Pausa", Art.Paper, new Vector2(0.865f, 0.56f), new Vector2(0.98f, 0.97f));

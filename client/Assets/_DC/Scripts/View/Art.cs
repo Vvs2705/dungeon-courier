@@ -360,6 +360,10 @@ namespace DC
             return s;
         }
 
+        /// <summary>Moeda da interface: o icone pintado (Resources/UI/icone_moeda) ou, sem ele, a silhueta procedural na cor da moeda.</summary>
+        public static Sprite Moeda() => Ui("icone_moeda") ?? CoinShape();
+        public static Color MoedaCor => Ui("icone_moeda") != null ? Color.white : Coin;
+
         /// <summary>Distancia com sinal ate a borda de um retangulo de cantos redondos que ocupa a textura s x s (negativa = dentro).</summary>
         static float CaixaDist(float x, float y, int s, float raio)
         {
