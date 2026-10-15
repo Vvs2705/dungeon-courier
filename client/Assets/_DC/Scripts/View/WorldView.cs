@@ -567,7 +567,7 @@ namespace DC
                 // vida: so depois do 1o golpe (sempre em quem tranca a porta); com sprite, acima da cabeca. Maximo com o nivel do contrato
                 // (Balance.HpMul): sem ele a barra passava de 100% do C4 em diante
                 int max = MaxHp(e, run);
-                float headY = v.Anim != null ? Lift * At(EnemyH, (int)e.Type, 1f) : d.Radius;
+                float headY = v.Anim != null ? Lift * At(EnemyH, (int)e.Type, 1f) * v.Anim.Sheet.Escala : d.Radius;   // ator maior (escala da folha): barra acima da cabeca
                 bool bar = e.Hp < max || d.Locks;
                 v.HpBg.enabled = v.HpFill.enabled = bar;
                 if (bar)

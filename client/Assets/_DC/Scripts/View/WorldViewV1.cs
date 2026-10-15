@@ -71,7 +71,7 @@ namespace DC
         static int First(SpriteSheet s, string[] names) { foreach (string n in names) { int k = s.Clip(n); if (k >= 0) return k; } return -1; }
         /// <summary>Angulo de tela (graus, desenho apontando para +Y) da direcao d da Sim: o y encolhe pela projecao.</summary>
         static float ScreenAngle(V2 d) => Mathf.Atan2(Tilt * d.Y, d.X) * Mathf.Rad2Deg - 90f;
-        float CourierHeadY => _courier.Anim != null ? Lift * 1.3f : 0.45f;
+        float CourierHeadY => _courier.Anim != null ? Lift * 1.3f * _courier.Anim.Sheet.Escala : 0.45f;
 
         Text NewLabel(int size)
         {

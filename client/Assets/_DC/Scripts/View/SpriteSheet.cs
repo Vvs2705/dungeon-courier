@@ -20,7 +20,7 @@ namespace DC
 
         /// <summary>Teto e piso do ritmo da locomocao pela passada (teto 2,3x = receita do COE; piso: corrida travada na parede nao congela).</summary>
         public const float MaxRate = 2.3f, MinRate = 0.5f;
-        [Serializable] public sealed class Meta { public int size, dirs, rows; public bool mirror; public float ppu; public float[] pivot, pivot_px; public List<ClipMeta> clips; }
+        [Serializable] public sealed class Meta { public int size, dirs, rows; public bool mirror; public float ppu, escala; public float[] pivot, pivot_px; public List<ClipMeta> clips; }
 
         static readonly Dictionary<string, SpriteSheet> Cache = new Dictionary<string, SpriteSheet>();
 
@@ -28,7 +28,7 @@ namespace DC
         public readonly int Dirs, Rows;
         public readonly bool Mirror;
         /// <summary>px por metro da textura (1 unidade = 1 m, sem fator por personagem).</summary>
-        public readonly float Ppu;
+        public readonly float Ppu, Escala;
         /// <summary>Pivo normalizado (pe do modelo; origem no canto inferior esquerdo da celula).</summary>
         public readonly Vector2 Pivot;
         /// <summary>Centro da celula relativo ao pivo (m): props sao centrados na celula pelo render, entao e o centro do objeto.</summary>
@@ -42,7 +42,8 @@ namespace DC
 
         SpriteSheet(Meta m, Texture2D[] tex)
         {
-            Dirs = m.dirs; Rows = m.rows; Mirror = m.mirror; Ppu = m.ppu; _size = m.size;
+            Escala = m.escala > 0f ? m.escala : 1f;   // ator mostrado N vezes maior (render_sprites.py --escala): sprite e ancoras pelo mesmo ppu
+            Dirs = m.dirs; Rows = m.rows; Mirror = m.mirror; Ppu = m.ppu / Escala; _size = m.size;
             Pivot = m.pivot != null && m.pivot.Length >= 2 ? new Vector2(m.pivot[0], m.pivot[1]) : new Vector2(0.5f, 0f);
             _pivotPx = m.pivot_px != null && m.pivot_px.Length >= 2 ? new Vector2(m.pivot_px[0], m.pivot_px[1]) : Pivot * m.size;
             Center = new Vector2((0.5f - Pivot.x) * m.size / m.ppu, (0.5f - Pivot.y) * m.size / m.ppu);
