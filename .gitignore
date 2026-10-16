@@ -1,6 +1,8 @@
 # arte-fonte crua (licença Mixamo/Tripo + tamanho); registrar SHA-256 em docs/PROVENIENCIA.md quando houver
 arte/tripo/
 arte/mixamo/
+# .blend com o modelo do Tripo e o rig do Mixamo dentro (roupas_courier.py, saco_ladrao.py): mesma licenca; regeneraveis
+arte/roupas/
 # segredos / SO / IDE (o client/.gitignore cuida do Unity e dos builds)
 .env
 .env.*
