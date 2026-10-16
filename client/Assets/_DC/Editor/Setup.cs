@@ -1,5 +1,6 @@
 using System.IO;
 using UnityEditor;
+using UnityEditor.Android;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
@@ -81,8 +82,32 @@ namespace DC.EditorTools
                 EditorSceneManager.SaveScene(EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single), Scene);
             }
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(Scene, true) };
+            Icones();
             AssetDatabase.SaveAssets();
             Debug.Log("DC Setup: ok (" + AppId + " " + Version + " code " + VersionCode(Version) + ", retrato, Android ARM64 IL2CPP API 26+, Input System)");
+        }
+
+        /// <summary>Icone do app (client/tools/icone_app.py): adaptativo do Android (fundo + frente; com API 26+ o Unity 6 so usa ele, o
+        /// redondo e o legado sao obsoletos) e o icone padrao (Windows). As texturas vao sem compressao nem mipmap: o Unity gera os tamanhos de cada densidade.</summary>
+        static void Icones()
+        {
+            Texture2D T(string nome)
+            {
+                string p = "Assets/_DC/Icon/" + nome + ".png";
+                if (AssetImporter.GetAtPath(p) is TextureImporter ti && (ti.textureCompression != TextureImporterCompression.Uncompressed || ti.mipmapEnabled))
+                {
+                    ti.textureCompression = TextureImporterCompression.Uncompressed;
+                    ti.mipmapEnabled = false;
+                    ti.SaveAndReimport();
+                }
+                return AssetDatabase.LoadAssetAtPath<Texture2D>(p);
+            }
+            Texture2D fundo = T("icone_fundo"), frente = T("icone_frente"), padrao = T("icone");
+            if (fundo == null || frente == null || padrao == null) { Debug.LogWarning("DC Setup: icone do app faltando (rode client/tools/icone_app.py)"); return; }
+            PlatformIcon[] icones = PlayerSettings.GetPlatformIcons(NamedBuildTarget.Android, AndroidPlatformIconKind.Adaptive);
+            foreach (PlatformIcon ic in icones) ic.SetTextures(fundo, frente);   // camada 0 = fundo, 1 = frente
+            PlayerSettings.SetPlatformIcons(NamedBuildTarget.Android, AndroidPlatformIconKind.Adaptive, icones);
+            PlayerSettings.SetIcons(NamedBuildTarget.Unknown, new[] { padrao }, IconKind.Any);
         }
 
         public static void BuildWindows() => Build(BuildTarget.StandaloneWindows64, "Builds/win/DungeonCourier.exe", false);
