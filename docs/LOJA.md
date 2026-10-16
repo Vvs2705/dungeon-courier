@@ -240,7 +240,7 @@ Tanpa akun dan tanpa login. Tersedia dalam bahasa Indonesia, Inggris, Portugis, 
 
 ## 4. Política de privacidade (texto simples)
 
-**Publicada em 2026-10-13** em https://vvs2705.github.io/dungeon-courier/ (branch `gh-pages`, um `index.html` com os 4 idiomas). A versão publicada já cobre o build com anúncios e compras: anúncio não personalizado para todos, sem ID de publicidade (`Setup.SemIdDePublicidade`), com o LevelPlay e o Unity Ads (§4.5) e as compras pela Google Play. O contato aponta para o e-mail de desenvolvedor da ficha da Play. Os textos abaixo são a versão sem anúncios, guardada como histórico. Mudou o jogo, mude a página: edite o `index.html` da branch `gh-pages`.
+**Publicada em 2026-10-13** em https://vvs2705.github.io/dungeon-courier/ (branch `gh-pages`, um `index.html` com os 4 idiomas). A versão publicada já cobre o build com anúncios e compras: anúncio não personalizado para todos, sem ID de publicidade (`Setup.SemIdDePublicidade`), com o LevelPlay e as redes Unity Ads e ironSource Ads (§4.5; o ironSource Ads entrou em 2026-10-16) e as compras pela Google Play. O contato aponta para o e-mail de desenvolvedor da ficha da Play. Os textos abaixo são a versão sem anúncios, guardada como histórico. Mudou o jogo, mude a página: edite o `index.html` da branch `gh-pages`.
 
 Coerente com o jogo de hoje (`Textos.Privacidade`, `UI_V1.md` §4): o progresso e o diário ficam no aparelho, e **nada sai dele sem o jogador tocar em Exportar diário**. Publicar numa URL pública e colar a URL na ficha (§1).
 
