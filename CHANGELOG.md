@@ -3,6 +3,8 @@
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões em [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
+### Adicionado
+- **Tutorial guiado** (`View/Tour.cs`): a tela congela, só o alvo fica aceso (seta, anel e contorno dourado) e um cartão diz o que é, quando e por quê. Na 1ª partida: você, arrastar, vida, carga e pausa; na 1ª vez de cada coisa: pousar para lutar, ladrão, dash, portas, baú e cliente; nos menus: JOGAR, o 1º contrato, estrelas, vantagem, guilda e o giro pelo menu. Passo de botão: só o botão aceso responde. ENTENDI, Pular tutorial e REVER TUTORIAL nas configurações. Desligado no `-testsession` (fotos, gravações) e no `-bot`; `-tutorial` liga.
 
 ## [1.3.0-beta] - 2026-10-16
 ### Adicionado

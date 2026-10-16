@@ -1360,6 +1360,8 @@ namespace DC
 
         /// <summary>Ponto em m da sala -> px de tela (passa pela projecao do _root).</summary>
         Vector3 ToScreen(Vector3 room) => _cam.WorldToScreenPoint(_root.TransformPoint(room));
+        /// <summary>Ponto da sala (m) subindo `alto` m de tela (o corpo em pe) -> px de tela: os alvos do tour (Hud, Tour.cs).</summary>
+        public Vector2 NaTela(V2 sala, float alto = 0f) => ToScreen(new Vector3(sala.X, sala.Y + alto / Tilt, 0f));
 
         void HideLabels()
         {
