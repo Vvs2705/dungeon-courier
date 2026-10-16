@@ -13,7 +13,7 @@ Textos da ficha da loja em pt-BR, EN, ES e ID, a política de privacidade, a cla
 | App | `br.com.vstack.dungeoncourier`, gratuito |
 | Categoria | Jogos > **Ação** |
 | Tags (escolher as equivalentes na lista do Play Console, até 5) | Ação · Roguelike · Masmorra · Offline · Um jogador |
-| Contém anúncios | **sim** no build de lançamento (LevelPlay, `feat/levelplay`); o APK 1.2.0-beta não tem. Nunca dentro da masmorra |
+| Contém anúncios | **sim** (LevelPlay + Unity Ads desde a 1.3.0-beta). Nunca dentro da masmorra |
 | Compras no app | **sim** (Unity IAP, `iap_google_play: true`): Remover anúncios, Pacote inicial, roupas e pacote de evento, sempre com conteúdo fixo e listado |
 | Público-alvo | 13+ (GDD §1: 13–40). Não marcar menores de 13: isso puxa a política de Famílias, que exige SDK de anúncio certificado |
 | E-mail e site de contato | `vinicius@vstack-solutions.com.br` · `https://www.vstack-solutions.com.br` |
@@ -319,16 +319,16 @@ Base de todo comando: `client/Builds/win-release/DungeonCourier.exe -screen-widt
 | 07 | `07_quadro_de_contratos` | quadro de contratos (72 na campanha) | `-dev-desbloqueia -tela quadro -shot <fotos>/tela_quadro_L.png -shotdelay 1.5` | — |
 | 08 | `08_guilda_sem_energia` | guilda: melhorias compradas com moedas do jogo, sem energia | `-dev-desbloqueia -tela guilda -shot <fotos>/tela_guilda_L.png -shotdelay 1.5` | — |
 
-- Quadros escolhidos em 2026-10-12 com o build da `feat/leva-c` (1.2.0-beta). Se o Core mudar, grave o pt de novo e confira o quadro antes dos outros idiomas.
-- O logo do CTA e do feature graphic sai de `tela_titulo.png` (`-dev-desbloqueia -tela titulo -shot`).
+- Quadros escolhidos em 2026-10-12 com o build da `feat/leva-c` (1.2.0-beta); refeitos em 2026-10-16 com a arte v2 (1.3.0-beta) pelo `client/tools/loja_fotos.sh [pt en es id]`, que roda a tabela acima. Se o Core mudar, grave o pt de novo e confira o quadro antes dos outros idiomas.
+- O logo do CTA e do feature graphic é o da interface (`Resources/UI/logo.png`, do `ui_assets.py`).
 - O ícone (512 × 512) e o feature graphic (1024 × 500) saem do mesmo script (`icone_512.png`, `feature_1024x500.png`), só com sprites e fotos do jogo. O pacote da loja vai como anexo da pré-release no GitHub.
 
 ## 6. Artes (resumo)
 
 | Arquivo | Tamanho | Fonte | Limite da Play |
 |---|---|---|---|
-| `icone_512.png` | 512 × 512, sem transparência | courier com a caixa (parado, de costas para NW: a caixa aparece inteira) sobre o piso do jogo, contorno limão na carga | PNG 32 bits, até 1 MB |
-| `feature_1024x500.png` | 1024 × 500 | logo da tela de título + Ogro, ladrão, morcego e courier com a caixa sobre o piso | JPG ou PNG 24 bits, sem texto pequeno |
+| `icone_512.png` | 512 × 512, sem transparência | o ícone do app (`client/Assets/_DC/Icon/icone.png`, do `icone_app.py`): o mascote do logo no arco da masmorra; a loja e o aparelho mostram o mesmo | PNG 32 bits, até 1 MB |
+| `feature_1024x500.png` | 1024 × 500 | logo da interface + Dragão Ancião, ladrão e courier com a caixa sobre o piso | JPG ou PNG 24 bits, sem texto pequeno |
 | `capturas/*.png` | 1080 × 1920 | fotos `-shot` ampliadas | 2 a 8 por tipo de aparelho, 9:16 |
 
 ## 7. Vídeo da ficha (opcional)
@@ -341,6 +341,6 @@ O vídeo do YouTube da ficha pode ser o criativo 11 (`dc_11_ladrao_e_dash_<L>.mp
 - [ ] Anúncios e compras: formulário de segurança dos dados como no §4.5 (a política já está publicada), "Contém anúncios" = sim e declaração de ID de publicidade = **não**.
 - [x] URL pública da política e e-mail de contato (§1).
 - [ ] Conta de organização na Play Console concluída com o D-U-N-S (§1, previsão 2026-11-25).
-- [ ] 8 capturas por idioma, tiradas com `-lang` no build de release (sem "Development Build").
+- [x] 8 capturas por idioma, tiradas com `-lang` no build de release (sem "Development Build"): refeitas com a arte v2 em 2026-10-16.
 - [ ] Questionário IARC respondido como no §2.
 - [ ] AAB assinado com a chave de upload e Play App Signing: `-executeMethod DC.EditorTools.Setup.BuildAndroidBundle` (pela unidade curta `subst R:`, como o APK) gera `client/Builds/android/DungeonCourier-<versão>.aab`. A chave fica fora do git, em `%USERPROFILE%/.dungeoncourier/upload.jks`, e as senhas em `upload.properties`, na mesma pasta (ou no caminho de `DC_UPLOAD_PROPS`). **Guarde uma cópia dos dois fora deste PC.** Antes de subir para a faixa interna, troque `iap_google_play` para `true` no `config.json`, para as compras irem à Google Play.
