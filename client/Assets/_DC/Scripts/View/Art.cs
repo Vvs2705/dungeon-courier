@@ -410,6 +410,13 @@ namespace DC
             return C32(Color.white, Mathf.Max(Mathf.Clamp01(1f - Mathf.Abs(d) / 3.5f), 0.35f * Mathf.Clamp01(1f - Mathf.Abs(d) / 9f)));
         });
 
+        /// <summary>Balao de fala do tour (cartao do cliente): branco com contorno de tinta de 4 px e cantos de 26 px; tingido pelo Image.</summary>
+        public static Sprite Balao() => Nove("balao9", 96, 34, (x, y) =>
+        {
+            float dd = CaixaDist(x + 0.5f, y + 0.5f, 96, 26f), dentro = -dd;
+            return C32(dentro < 4f ? Tinta : Color.white, 0.5f - dd);
+        });
+
         /// <summary>Seta do tour apontando para baixo (cabeca triangular embaixo, haste em cima); o Tour gira 180 graus quando o alvo esta
         /// acima do cartao.</summary>
         public static Sprite Seta() => Soft("seta", (x, y) =>

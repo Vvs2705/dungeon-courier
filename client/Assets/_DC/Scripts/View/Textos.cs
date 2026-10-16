@@ -732,11 +732,16 @@ namespace DC
         public static string TourRevisto => L("O tutorial vai aparecer de novo.", "The tutorial will show again.", "El tutorial se mostrará de nuevo.", "Tutorial akan muncul lagi.");
         public static string TourConta(int n, int total) => n.ToString(Inv) + "/" + total.ToString(Inv);
 
-        public static string TourVoceT => L("Você é o courier", "You are the courier", "Eres el mensajero", "Kamu si kurir");
-        public static string TourVoce => L("Sua missão: levar a carga até o cliente, que espera no fim da masmorra. Entregue a carga inteira para ganhar mais.",
-            "Your job: carry the cargo to the client waiting at the end of the dungeon. Deliver it intact to earn more.",
-            "Tu misión: llevar la carga hasta el cliente, que espera al final de la mazmorra. Entrégala intacta para ganar más.",
-            "Tugasmu: bawa paket ke klien yang menunggu di ujung dungeon. Antar paket utuh untuk dapat lebih banyak.");
+        public static string TourVoceT => L("Você é o courier", "You are the courier", "Eres el courier", "Kamu si kurir");
+        public static string TourVoce => L("O entregador da Guilda. Leve a carga até o cliente, que espera no fim da masmorra. Entregue inteira para ganhar mais moedas.",
+            "The Guild's delivery runner. Carry the cargo to the client waiting at the end of the dungeon. Deliver it intact to earn more coins.",
+            "El mensajero del Gremio. Lleva la carga hasta el cliente, que espera al final de la mazmorra. Entrégala intacta para ganar más monedas.",
+            "Pengantar dari Guild. Bawa paket ke klien yang menunggu di ujung dungeon. Antar dalam keadaan utuh untuk dapat lebih banyak koin.");
+        public static string TourClienteNome => L("O cliente", "The client", "El cliente", "Klien");
+        public static string TourClienteFala => L("Você é o novo entregador da Guilda? Preciso desta caixa do outro lado da masmorra. Inteira, por favor!",
+            "Are you the Guild's new courier? I need this box on the other side of the dungeon. In one piece, please!",
+            "¿Eres el nuevo mensajero del Gremio? Necesito esta caja al otro lado de la mazmorra. ¡Entera, por favor!",
+            "Kamu kurir baru dari Guild? Aku butuh kotak ini sampai di sisi lain dungeon. Utuh, ya!");
         public static string TourArrastarT => L("Arraste para andar", "Drag to move", "Arrastra para moverte", "Geser untuk berjalan");
         public static string TourArrastar => L("Arraste o dedo em qualquer lugar da tela: o courier anda com a caixa nas mãos. Solte o dedo e ele pousa a caixa no chão.",
             "Drag your finger anywhere on the screen: the courier walks with the box in hand. Lift your finger and he sets the box down.",

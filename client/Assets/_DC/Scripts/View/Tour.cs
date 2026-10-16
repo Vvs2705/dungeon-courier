@@ -27,7 +27,11 @@ namespace DC
             public Func<bool> Feito;           // acao: termina sozinho quando for verdade; null = explicacao (ENTENDI)
             public bool Arrastar;              // mostra o dedo arrastando de um lado para o outro no alvo
             public Tela Tela;                  // a tela em que o passo nasceu (Enfileira)
+            public Func<string> Fala;          // balao de quem fala (cartao do cliente no 1o contrato); null = sem retrato
         }
+
+        /// <summary>Altura do retrato + balao acima do cartao (unidades da referencia de 1080).</summary>
+        const float FalaH = 330f;
 
         /// <summary>Game: tour ligado (desligado no -testsession sem -tutorial, no -bot e na gravacao).</summary>
         public bool TourLigado { get; set; }
@@ -41,7 +45,8 @@ namespace DC
         int _passoN, _passoTotal;
         float _passoT, _tourEspera;
         Tela _tourTela;
-        RectTransform _tour, _tourCard, _tourDedo;
+        RectTransform _tour, _tourCard, _tourDedo, _tourFala;
+        Text _tourFalaTexto;
         readonly Image[] _tourVeu = new Image[4];
         Image _tourBorda, _tourTampa, _tourSeta, _tourAnel;
         Text _tourTitulo, _tourTexto, _tourConta;
@@ -81,6 +86,29 @@ namespace DC
             Button pular = Art.NewButton(f, "", 28, Art.PaperEdge, new Vector2(0.04f, 0.04f), new Vector2(0.44f, 0.24f), TourPula);
             Loc(pular.GetComponentInChildren<Text>(), () => Textos.TourPular);
             _tourOk = Btn(f, () => Textos.TourOk, 40, Art.Good, new Vector2(0.56f, 0.03f), new Vector2(0.96f, 0.25f), TourOk, "confirmar");
+
+            // cartao do cliente (pedido do Vinicius, 2026-10-16): quem contratou e o que pede, sem cutscene. Retrato do cliente_hd acenando
+            // em cima do cartao, a esquerda; balao de fala a direita; etiqueta com o nome nos pes dele. Filho do cartao: anda junto
+            _tourFala = Art.Node(_tourCard, "Fala", new Vector2(0f, 1f), new Vector2(1f, 1f));
+            _tourFala.pivot = new Vector2(0.5f, 0f);
+            _tourFala.sizeDelta = new Vector2(0f, FalaH); _tourFala.anchoredPosition = new Vector2(0f, -40f);   // os pes entram 40 no cartao
+            // retrato pintado (Resources/UI/cliente_retrato.png) ou, sem ele, o quadro da folha do cliente acenando
+            SpriteSheet cli = SpriteSheet.Get("cliente_hd") ?? SpriteSheet.Get("cliente");
+            Sprite pintado = Art.Ui("cliente_retrato");
+            Image ret = Art.Img(_tourFala, "Retrato", pintado ?? (cli != null ? cli.Retrato(cli.Pick("Waving", "Idle"), 0, 0.5f, 0.52f, 0.95f) : Art.Disc()),
+                pintado != null || cli != null ? Color.white : Art.Good, new Vector2(0.02f, 0.04f), new Vector2(0.38f, 1f));
+            ret.preserveAspect = true;
+            Image tag = Art.Img(_tourFala, "Nome", Art.Botao(), Art.Good, new Vector2(0.05f, -0.06f), new Vector2(0.36f, 0.1f));
+            tag.type = Image.Type.Sliced; tag.preserveAspect = false;
+            Text nome = Loc(Art.Letreiro(Art.NewText(tag.transform, "Texto", 30, Vector2.zero, Vector2.one), 30), () => Textos.TourClienteNome);
+            nome.font = Art.Titulo();
+            Image cauda = Art.Img(_tourFala, "Cauda", Art.Seta(), Color.white, new Vector2(0.33f, 0.3f), new Vector2(0.42f, 0.48f));
+            cauda.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -90f);   // a seta desenhada aponta para baixo: girada, aponta para o cliente
+            Image bal = Art.Img(_tourFala, "Balao", Art.Balao(), Color.white, new Vector2(0.38f, 0.16f), new Vector2(1f, 1f));
+            bal.type = Image.Type.Sliced; bal.preserveAspect = false;
+            _tourFalaTexto = Shrink(Art.NewText(bal.transform, "Fala", 34, new Vector2(0.07f, 0.08f), new Vector2(0.93f, 0.92f), TextAnchor.MiddleLeft), 20);
+            _tourFalaTexto.color = Art.Tinta;
+            _tourFala.gameObject.SetActive(false);
             _tour.gameObject.SetActive(false);
         }
 
@@ -122,6 +150,8 @@ namespace DC
             _tourConta.text = _passoTotal > 1 ? Textos.TourConta(_passoN, _passoTotal) : "";
             _tourOk.gameObject.SetActive(_passo.Feito == null);
             _tourTampa.gameObject.SetActive(_passo.Feito == null);
+            _tourFala.gameObject.SetActive(_passo.Fala != null);
+            if (_passo.Fala != null) _tourFalaTexto.text = _passo.Fala();
             Audio.Play("clique");
             DesenhaPasso();
         }
@@ -198,9 +228,9 @@ namespace DC
 
             // cartao do lado com mais espaco; a seta aponta do cartao para o alvo
             bool cartaoEmCima = !tem || b.center.y < tela.center.y;
-            float ch = tela.height * 0.25f, cw = tela.width * 0.9f, margem = 40f;
-            float cy = !tem ? tela.center.y
-                : cartaoEmCima ? Mathf.Min(b.yMax + margem + 90f + ch / 2f, tela.yMax - 60f - ch / 2f)
+            float ch = tela.height * 0.25f, cw = tela.width * 0.9f, margem = 40f, fala = _passo.Fala != null ? FalaH : 0f;
+            float cy = !tem ? tela.center.y - fala / 2f
+                : cartaoEmCima ? Mathf.Min(b.yMax + margem + 90f + ch / 2f, tela.yMax - 60f - ch / 2f - fala)
                 : Mathf.Max(b.yMin - margem - 90f - ch / 2f, tela.yMin + 60f + ch / 2f);
             Poe(_tourCard, new Rect(tela.center.x - cw / 2f, cy - ch / 2f, cw, ch));
 
@@ -346,7 +376,9 @@ namespace DC
             }
             if (!Visto("jogo_voce"))
             {
-                Enfileira(Explica("jogo_voce", () => Mundo(r.Courier.Pos, 2.2f, 2.4f), () => Textos.TourVoceT, () => Textos.TourVoce),
+                Passo voce = Explica("jogo_voce", () => Mundo(r.Courier.Pos, 2.2f, 2.4f), () => Textos.TourVoceT, () => Textos.TourVoce);
+                voce.Fala = () => Textos.TourClienteFala;   // o cartao do cliente: quem contratou e o que pede
+                Enfileira(voce,
                     new Passo { Id = "jogo_arrastar", Alvo = () => Mundo(r.Courier.Pos, 7f, 3f, 0.2f), Titulo = () => Textos.TourArrastarT, Texto = () => Textos.TourArrastar, Arrastar = true },
                     Explica("jogo_vida", () => Ui(_hearts[0].transform.parent), () => Textos.TourVidaT, () => Textos.TourVida),
                     Explica("jogo_carga", () => Junta(Ui(_cargoEdge), Ui(_pips[2].transform.parent)), () => Textos.TourCargaT, () => Textos.TourCarga),
