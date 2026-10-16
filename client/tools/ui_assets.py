@@ -5,6 +5,7 @@ Entradas cruas (geradas no Tripo, Nano Banana 2 sobre fundo azul-marinho liso; f
   arte/ui/icones_folha.png        -> UI/icone_<nome>.png (grade 4 x 2, na ordem de ICONES: botoes do menu)
   arte/ui/icones_guilda_folha.png -> UI/icone_<nome>.png (grade 4 x 3, na ordem de ICONES_GUILDA: melhorias, armas, equipamento, moeda)
   arte/ui/fundo_masmorra.png      -> UI/fundo_menu.png (copia; o escurecimento e' feito no jogo)
+  arte/retratos/<fonte>.png       -> UI/<nome>.png (RETRATOS: cliente do cartao do tutorial e chefes do mapa; ate 640 px)
 O fundo liso sai pela cor mediana da borda: so a regiao parecida com ela que toca a borda (ilhas como as estrelinhas ficam),
 com alfa suave pela distancia de cor e a cor do fundo descontada do pixel meio transparente. Uso: python client/tools/ui_assets.py
 """
@@ -16,6 +17,9 @@ from scipy import ndimage
 
 T0, T1, MARGEM = 14.0, 40.0, 12   # distancia de cor: ate T0 = fundo puro; a partir de T1 = opaco
 ICONES = ["guilda", "loja", "temporada", "marcos", "roupas", "config", "creditos", "bau"]
+# retratos pintados no estilo do logo (2026-10-16): o cliente do cartao do tutorial e os 4 chefes de regiao (mapa, sem fim, temporada)
+RETRATOS = {"cliente": "cliente_retrato", "chefe_ogro": "chefe_ogro", "chefe_golem": "chefe_golem", "chefe_necromante": "chefe_necromante",
+            "chefe_dragao": "chefe_dragao"}
 ICONES_GUILDA = ["vida", "dash", "bolsa", "mochila", "estilingue", "bumerangue", "bomba", "fumaca", "gancho", "armadilha", "botas", "moeda"]
 
 
@@ -64,6 +68,11 @@ if __name__ == "__main__":
         for i, nome in enumerate(nomes):
             cel = folha[(i // 4) * h:(i // 4 + 1) * h, (i % 4) * w:(i % 4 + 1) * w]
             salva(apara(recorta(cel), 4), os.path.join(saida, "icone_" + nome + ".png"))
+
+    for fonte, nome in RETRATOS.items():
+        im = Image.fromarray(apara(recorta(le(os.path.join(arte, "retratos", fonte + ".png")))), "RGBA")
+        im.thumbnail((640, 640), Image.LANCZOS)
+        salva(np.asarray(im), os.path.join(saida, nome + ".png"))
 
     Image.open(os.path.join(arte, "ui", "fundo_masmorra.png")).convert("RGB").save(os.path.join(saida, "fundo_menu.png"))
     print(os.path.join(saida, "fundo_menu.png"))
