@@ -196,12 +196,16 @@ def parse_args():
     p.add_argument("--aa", help="OFF|FXAA|5|8|11|16|32")
     p.add_argument("--max-frames", type=int, help="teto de quadros por clipe (largura da folha)")
     p.add_argument("--outline", type=int, help="px de contorno de tinta (0 = sem)")
+    p.add_argument("--hd", type=float, default=1.0, help="multiplica --size, --scale e --outline (mais pixels por metro, mesmo tamanho no mundo)")
+    p.add_argument("--escala", type=float, default=1.0, help="vai ao meta.json: a View mostra o ator N vezes maior (a SpriteSheet divide o ppu)")
     p.add_argument("--align-arms", action="store_true", default=None,
                    help="rig em pose A: os ossos do braco partem do repouso do clipe (T), nao do proprio")
     a = p.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
     for k, v in dict(BASE, **PRESETS.get(a.preset, {})).items():
         if getattr(a, k, None) is None:
             setattr(a, k, v)
+    if a.hd != 1.0:  # 2026-10-15: elenco nitido e 25% maior (HD + escala); celula par para o pivo cair no pixel
+        a.size, a.scale, a.outline = int(round(a.size * a.hd / 2.0)) * 2, a.scale * a.hd, int(round(a.outline * a.hd))
     return a
 
 
@@ -625,7 +629,7 @@ def main():
             "row0": "top", "elev": a.elev, "yaw": a.yaw, "ppu": round(ppu, 2), "pivot_px": [a.size / 2.0, round(pivot_y, 1)],
             "pivot": [0.5, round(pivot_y / a.size, 4)], "light": a.light, "outline_px": a.outline, "src_fps": a.src_fps,
             "preset": a.preset or "", "model_scale": round(k_model, 4), "hold": os.path.basename(a.hold) if hold else "",
-            "attach": [os.path.basename(s) for s in a.attach], "align_arms": bool(a.align_arms or ALIGN_SEEN), "clips": []}  # listas planas: JsonUtility nao le lista de listas
+            "attach": [os.path.basename(s) for s in a.attach], "align_arms": bool(a.align_arms or ALIGN_SEEN), "escala": a.escala, "clips": []}  # listas planas: JsonUtility nao le lista de listas
     keep = []
     for name, act, frames in clips:
         t0 = time.time()

@@ -8,9 +8,9 @@ Uso (da raiz do repositorio):
   python -I client/tools/loja_assets.py --autoteste      (fotos sinteticas numa pasta temporaria; confere tamanhos e formatos)
 
 Saida em client/Builds/loja/ (fora do git):
-  icone_512.png          courier com a caixa nas maos sobre o piso do jogo; a carga com o contorno limao (a marca da carga no jogo)
-  feature_1024x500.png   logo da tela de titulo + Ogro, ladrao, morcego e o courier com a caixa (sem texto pequeno)
-  logo.png               logo recortado da foto da tela de titulo, borda esfumada (o fundo da tela e o Bg); o criativos.py usa no CTA
+  icone_512.png          o icone do app (client/Assets/_DC/Icon/icone.png, do icone_app.py): a loja e o aparelho mostram o mesmo
+  feature_1024x500.png   logo + Dragao Anciao, ladrao e o courier com a caixa sobre o piso (sem texto pequeno)
+  logo.png               o logo da interface (Resources/UI/logo.png, recortado sem fundo); o criativos.py usa no CTA
   capturas/NN_<nome>_<lang>.png   as 8 capturas de docs/LOJA.md sec. 5 em 1080x1920 RGB. Foto: <foto>_<lang>.png; sem ela,
                          <foto>.png (a do pt de hoje). Foto que falta e avisada (FALTA) e o resto sai.
 """
@@ -37,8 +37,8 @@ CAPTURAS = [
     ("07_quadro_de_contratos", ("tela_quadro",)),
     ("08_guilda_sem_energia", ("tela_guilda",)),
 ]
-# logo na foto da tela de titulo, em fracao da foto (icone + DUNGEON COURIER, sem o slogan, que muda com o idioma)
-LOGO_BOX = (0.04, 0.13, 0.96, 0.605)
+ICONE_APP = os.path.join(CLIENT, "Assets", "_DC", "Icon", "icone.png")   # icone_app.py
+LOGO_UI = os.path.join(RES, "UI", "logo.png")                           # ui_assets.py
 
 
 # ------------------------------------------------------------------ sprites
@@ -116,7 +116,10 @@ def piso(w, h, claro=0.55):
 # ------------------------------------------------------------------ artes
 
 def icone():
-    """512x512 sem transparencia (a Play aplica a mascara): piso com vinheta, courier com a caixa grande no centro."""
+    """512x512 sem transparencia (a Play aplica a mascara): o icone do app (icone_app.py), para a loja e o aparelho mostrarem o
+    mesmo; sem ele, o de antes (piso com vinheta e o courier com a caixa)."""
+    if os.path.isfile(ICONE_APP):
+        return Image.open(ICONE_APP).convert("RGB").resize((512, 512), Image.LANCZOS)
     W = 512
     fundo = piso(W, W)
     vinheta = Image.radial_gradient("L").resize((W, W)).point(lambda v: int(v * 0.85))
@@ -130,19 +133,9 @@ def icone():
     return fundo
 
 
-def logo(fotos):
-    """Logo da foto da tela de titulo (-tela titulo): icone + DUNGEON COURIER, borda esfumada para sumir sobre fundo Bg."""
-    f, _ = foto(fotos, ("tela_titulo",), "pt")
-    if not f:
-        return None
-    im = Image.open(f).convert("RGB")
-    W, H = im.size
-    lg = im.crop(tuple(round(v * (W if j % 2 == 0 else H)) for j, v in enumerate(LOGO_BOX))).convert("RGBA")
-    F = max(4, lg.width // 22)
-    a = Image.new("L", lg.size, 0)
-    ImageDraw.Draw(a).rectangle((F, F, lg.width - F - 1, lg.height - F - 1), fill=255)
-    lg.putalpha(a.filter(ImageFilter.GaussianBlur(F / 2)))
-    return lg
+def logo(fotos=None):
+    """O logo da interface (mascote + DUNGEON COURIER, ja sem fundo); None sem o arquivo."""
+    return Image.open(LOGO_UI).convert("RGBA") if os.path.isfile(LOGO_UI) else None
 
 
 def feature(lg):
@@ -155,8 +148,8 @@ def feature(lg):
     fundo = Image.composite(Image.new("RGB", (W, H), BG), fundo, grad)
     dragao, pe, _, _ = ator("dragao", "Roar", 0, 3)
     cola(fundo, *escala(dragao, pe, 0.85), (880, 300), sombra=230)
-    ladrao, pe, _, _ = ator("ladrao", "Run", 2, 0)                     # linha W: corre para a esquerda, atras da carga
-    cola(fundo, *escala(ladrao, pe, 1.6), (975, 482), sombra=70)
+    ladrao, pe, _, m = ator("ladrao", "Run", 2, 0)                     # linha W: corre para a esquerda, atras da carga
+    cola(fundo, *escala(ladrao, pe, 1.6 * 160 / m["size"]), (975, 482), sombra=70)   # 1,6 na folha de 160 px; a HD tem mais px
     courier, pe = courier_com_caixa()
     cola(fundo, *escala(courier, pe, 0.70), (625, 468), sombra=120)
     if lg is not None:
@@ -192,7 +185,7 @@ def gerar(fotos, saida):
     icone().save(os.path.join(saida, "icone_512.png"))
     lg = logo(fotos)
     if lg is None:
-        falta.append("tela_titulo")
+        falta.append("logo da interface (Resources/UI/logo.png)")
     else:
         lg.save(os.path.join(saida, "logo.png"))
     feature(lg).save(os.path.join(saida, "feature_1024x500.png"))
@@ -229,9 +222,6 @@ def autoteste():
     try:
         fotos, saida = os.path.join(tmp, "fotos"), os.path.join(tmp, "loja")
         os.makedirs(fotos)
-        t = Image.new("RGB", (540, 960), BG)
-        ImageDraw.Draw(t).rectangle((60, 150, 480, 560), fill=(243, 226, 192))   # "logo" no meio do recorte
-        t.save(os.path.join(fotos, "tela_titulo.png"))
         for j, (_, nomes) in enumerate(CAPTURAS[:-1]):          # a ultima falta de proposito; so a foto de hoje (a ultima da lista)
             Image.new("RGB", (540, 960), (40 + j * 20, 60, 90)).save(os.path.join(fotos, nomes[-1] + ".png"))
         Image.new("RGB", (600, 900), (200, 60, 60)).save(os.path.join(fotos, CAPTURAS[0][1][0] + "_en.png"))   # fora de 9:16
@@ -244,10 +234,7 @@ def autoteste():
         ic = abre(os.path.join(saida, "icone_512.png"))
         assert ic.size == (512, 512) and ic.mode == "RGB", (ic.size, ic.mode)
         assert os.path.getsize(os.path.join(saida, "icone_512.png")) < 1024 * 1024, "icone > 1 MB (limite da Play)"
-        px = ic.load()
-        limao = sum(1 for y in range(60, 452, 2) for x in range(60, 452, 2) if px[x, y][0] > 230 and px[x, y][1] > 200 and px[x, y][2] < 140)
-        assert limao > 50, "sem o contorno limao da carga no icone (%d px)" % limao
-        assert px[0, 0] == px[511, 511] or max(px[0, 0]) < 60, "canto do icone devia ser o fundo escuro"
+        assert max(ic.getpixel((0, 0))) < 90, "canto do icone devia ser o azul-marinho escuro do fundo"
 
         fg = abre(os.path.join(saida, "feature_1024x500.png"))
         assert fg.size == (1024, 500) and fg.mode == "RGB", (fg.size, fg.mode)

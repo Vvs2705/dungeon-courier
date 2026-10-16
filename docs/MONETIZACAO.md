@@ -144,7 +144,7 @@ Conferido com `aapt`. O APK fica com INTERNET, VIBRATE, ACCESS_NETWORK_STATE, BI
 | `levelplay_rewarded` | `ilah7d1mcs7v1cno` | ad unit `rewarded`, recompensa "Recompensa" ×1 (o núcleo decide o prêmio) |
 | `levelplay_interstitial` | `cepd2rejxi2ykfxw` | ad unit `interstitial` |
 
-As chaves não são segredo: vão dentro do APK. Falta o 6 (Test Suite num build de desenvolvimento, no POCO) e o 5 na Play Console. Quando o app for publicado, ligue-o à loja no painel (Apps > Dungeon Courier > Live app, package `br.com.vstack.dungeoncourier`). Sem chave, o jogo segue no simulador e não chama o `Init`.
+Em 2026-10-16, a conta Unity Ads da mesma organização (Unity, core ID `4674267143380`) foi ligada ao LevelPlay em *Connect your account > Unity Ads*, com a chave da Monetization Stats API, que o Vinicius criou e colou (a chave fica fora do repositório). O painel mostra a receita de "ironSource Ads and Unity Ads". As chaves do `config.json` não são segredo: vão dentro do APK. Falta o 6 (Test Suite num build de desenvolvimento, no POCO) e o 5 na Play Console. Quando o app for publicado, ligue-o à loja no painel (Apps > Dungeon Courier > Live app, package `br.com.vstack.dungeoncourier`). Sem chave, o jogo segue no simulador e não chama o `Init`.
 
 
 Já foi feito uma vez e funcionou: commit `bd10ca9`, APK de 65,4 MiB. Na ordem:
@@ -162,7 +162,7 @@ Já foi feito uma vez e funcionou: commit `bd10ca9`, APK de 65,4 MiB. Na ordem:
 4. **Manifesto:** gerar o APK de release e conferir com `aapt dump permissions` (o `aapt.exe` fica em `.../AndroidPlayer/SDK/build-tools/36.0.0/`). Com o Unity Ads, entram as permissões da coluna do meio do §1.3. Conferir também, num aparelho, o tráfego de rede na abertura, com o *Network Inspector* do Android Studio ou um proxy.
 5. **Privacidade:**
    - Na Play Console, marcar "Contém anúncios" e responder **não** na declaração de ID de publicidade (o APK não tem `AD_ID`, `Setup.SemIdDePublicidade`).
-   - Preencher o formulário de segurança dos dados com a tabela do Unity Ads (`LOJA.md` §4.5). O item 7 da política já está publicado nos 4 idiomas (2026-10-13).
+   - Preencher o formulário de segurança dos dados com a tabela do Unity Ads (`LOJA.md` §4.5). O item 7 da política já está publicado nos 4 idiomas (2026-10-13; em 2026-10-16 passou a citar também a rede ironSource Ads).
    - Decisão do ECA Digital (§2.4): anúncio não personalizado para todos, já aplicado antes do `Init`.
 6. **Validar:**
    - Test Suite: build de desenvolvimento (`Setup.BuildAndroidDev`) aberto com `adb shell am start -S -n br.com.vstack.dungeoncourier/<activity> -e unity "-adtestsuite"`. O `AnunciosLevelPlay` chama `LevelPlay.SetMetaData("is_test_suite", "enable")` antes do `Init` e `LevelPlay.LaunchTestSuite()` no `Iniciou` só com `Debug.isDebugBuild` e a flag; o release nunca abre o Test Suite, então não há o que tirar antes de publicar.

@@ -55,7 +55,6 @@ namespace DC
         public static string Versao(string v) => F("versão {0}", "version {0}", "versión {0}", "versi {0}", v);
 
         // ------------------------------------------------------------------ titulo e menu
-        public const string Nome1 = "DUNGEON", Nome2 = "COURIER";   // nome do jogo: igual em todas as linguas
         public static string Slogan => L("Entregas pela masmorra", "Deliveries through the dungeon", "Entregas por la mazmorra", "Antar paket menembus dungeon");
         public static string TocarParaComecar => L("toque para começar", "tap to start", "toca para empezar", "ketuk untuk mulai");
         /// <summary>O Hud liga quando o anuncio real (LevelPlay, com app key) nasceu: os textos de privacidade passam a citar os anuncios

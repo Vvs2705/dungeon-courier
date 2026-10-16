@@ -3,10 +3,20 @@
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões em [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
+
+## [1.3.0-beta] - 2026-10-16
 ### Adicionado
 - **LevelPlay 9.5.1 + Unity Ads de volta no Android** (`DC_LEVELPLAY`): anúncio não personalizado para todos (GDPR sem consentimento, CCPA opt-out, COPPA desligado) e APK/AAB sem `AD_ID` nem Privacy Sandbox (`Setup.SemIdDePublicidade`). Sem as chaves da conta no `config.json`, segue no simulador.
 - **AAB assinado com a chave de upload** (`Setup.BuildAndroidBundle`; chave e senhas fora do git, em `%USERPROFILE%/.dungeoncourier/`). Conferido: targetSdk 36, bibliotecas nativas alinhadas a 16 KB, Google Play Billing 9.0.0.
-- **Política de privacidade pública** em https://vvs2705.github.io/dungeon-courier/ (4 idiomas); o texto de privacidade do jogo cita os anúncios só quando eles são reais.
+- **Interface v2:** logo novo (Tripo), fundo de masmorra, ícones pintados no menu e na guilda, fontes Lilita One + Nunito ExtraBold (SIL OFL), botões com relevo, cartões com moldura de madeira e pergaminho, HUD da partida no estilo novo e blocos de obstáculo com a pedra da região.
+- **Ícone do app no celular** (antes, o ícone padrão do Unity): adaptativo do Android com o mascote do logo no arco da masmorra, e o ícone da loja igual (`client/tools/icone_app.py`, `Setup.Icones`).
+- **Cena da entrega nova:** o baú do Tripo abre de verdade (10 quadros), com luz, raios, moedas pulando e a carga subindo; cliente nítido em 3/4. Tela de teste `-testsession -tela cena`.
+- **Elenco maior e nítido:** 30 folhas re-renderizadas com mais pixels por metro e mostradas 25% maiores (`meta.json` `escala`; `SpriteSheet.Escala` divide o ppu, então sprite, âncoras e barra de vida acompanham). Aba do chapéu do courier menor (×0,78), saco do ladrão menor e as 6 roupas por troca de cor direto na folha (`roupas_2d.py`). Comandos em `client/tools/elenco_hd.sh`.
+- **Política de privacidade pública** em https://vvs2705.github.io/dungeon-courier/ (4 idiomas; Unity LevelPlay, Unity Ads e ironSource Ads); o texto de privacidade do jogo cita os anúncios só quando eles são reais. Conta Unity Ads ligada ao LevelPlay (2026-10-16).
+- **Telas de meta no estilo novo:** vantagens com ícones pintados, roupas pelo retrato da folha, mapa com o chefe de cada região (silhueta enquanto fechada), Dragão no desafio sem fim, temporada e marcos com ícones do que pedem; fora da sala, nas telas 20:9, a pedra da região continua até a borda.
+- **Página da loja e 13 criativos refeitos com a arte nova:** 8 capturas × 4 idiomas (`client/tools/loja_fotos.sh`), ícone 512 igual ao do aparelho, feature graphic com o logo novo.
+### Mudado
+- APK de release: 83,0 MiB (era 67,7) por causa das folhas HD. No POCO F4 (peças paralelas) o fps fica em 29–38 até no menu: medir num aparelho original.
 ### Corrigido
 - Documentação da Play: a declaração de ID de publicidade é **não** (estava "sim") e o formulário de segurança dos dados segue a tabela do Unity Ads (`docs/LOJA.md` §4.5).
 

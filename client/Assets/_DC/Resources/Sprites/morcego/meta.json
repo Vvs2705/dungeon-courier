@@ -1,5 +1,5 @@
 {
- "size": 112,
+ "size": 168,
  "fps": 12.0,
  "dirs": 1,
  "rows": 1,
@@ -10,23 +10,24 @@
  "row0": "top",
  "elev": 60.0,
  "yaw": 0.0,
- "ppu": 120.0,
+ "ppu": 180.0,
  "pivot_px": [
-  56.0,
-  45.4
+  84.0,
+  68.1
  ],
  "pivot": [
   0.5,
   0.4051
  ],
  "light": "flat",
- "outline_px": 3,
+ "outline_px": 4,
  "src_fps": 30,
  "preset": "morcego",
  "model_scale": 0.7133,
  "hold": "",
  "attach": [],
  "align_arms": false,
+ "escala": 1.25,
  "clips": [
   {
    "name": "Static",

@@ -1,5 +1,5 @@
 {
- "size": 112,
+ "size": 168,
  "fps": 12.0,
  "dirs": 1,
  "rows": 1,
@@ -10,23 +10,24 @@
  "row0": "top",
  "elev": 60.0,
  "yaw": 0.0,
- "ppu": 120.0,
+ "ppu": 180.0,
  "pivot_px": [
-  56.0,
-  42.8
+  84.0,
+  64.3
  ],
  "pivot": [
   0.5,
   0.3825
  ],
  "light": "flat",
- "outline_px": 3,
+ "outline_px": 4,
  "src_fps": 30,
  "preset": "besouro",
  "model_scale": 0.6116,
  "hold": "",
  "attach": [],
  "align_arms": false,
+ "escala": 1.25,
  "clips": [
   {
    "name": "Static",
