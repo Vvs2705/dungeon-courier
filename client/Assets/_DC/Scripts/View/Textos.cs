@@ -724,6 +724,139 @@ namespace DC
         public static string VibraSoCelular => L("Vibração: só no celular", "Vibration: phone only", "Vibración: solo en el celular", "Getar: khusus ponsel");
         public static string Idioma => L("Idioma", "Language", "Idioma", "Bahasa");
         public static string ExportarDiario => L("EXPORTAR DIÁRIO", "EXPORT LOG", "EXPORTAR REGISTRO", "EKSPOR CATATAN");
+
+        // ------------------------------------------------------------------ tour guiado (Tour.cs): o que e, quando e por que
+        public static string TourOk => L("ENTENDI", "GOT IT", "ENTENDIDO", "MENGERTI");
+        public static string TourPular => L("Pular tutorial", "Skip tutorial", "Saltar tutorial", "Lewati tutorial");
+        public static string TourRever => L("REVER TUTORIAL", "REPLAY TUTORIAL", "VER TUTORIAL", "ULANG TUTORIAL");
+        public static string TourRevisto => L("O tutorial vai aparecer de novo.", "The tutorial will show again.", "El tutorial se mostrará de nuevo.", "Tutorial akan muncul lagi.");
+        public static string TourConta(int n, int total) => n.ToString(Inv) + "/" + total.ToString(Inv);
+
+        public static string TourVoceT => L("Você é o courier", "You are the courier", "Eres el courier", "Kamu si kurir");
+        public static string TourVoce => L("O entregador da Guilda. Leve a carga até o cliente, que espera no fim da masmorra. Entregue inteira para ganhar mais moedas.",
+            "The Guild's delivery runner. Carry the cargo to the client waiting at the end of the dungeon. Deliver it intact to earn more coins.",
+            "El mensajero del Gremio. Lleva la carga hasta el cliente, que espera al final de la mazmorra. Entrégala intacta para ganar más monedas.",
+            "Pengantar dari Guild. Bawa paket ke klien yang menunggu di ujung dungeon. Antar dalam keadaan utuh untuk dapat lebih banyak koin.");
+        public static string TourClienteNome => L("O cliente", "The client", "El cliente", "Klien");
+        public static string TourClienteFala => L("Você é o novo entregador da Guilda? Preciso desta caixa do outro lado da masmorra. Inteira, por favor!",
+            "Are you the Guild's new courier? I need this box on the other side of the dungeon. In one piece, please!",
+            "¿Eres el nuevo mensajero del Gremio? Necesito esta caja al otro lado de la mazmorra. ¡Entera, por favor!",
+            "Kamu kurir baru dari Guild? Aku butuh kotak ini sampai di sisi lain dungeon. Utuh, ya!");
+        public static string TourArrastarT => L("Arraste para andar", "Drag to move", "Arrastra para moverte", "Geser untuk berjalan");
+        public static string TourArrastar => L("Arraste o dedo em qualquer lugar da tela: o courier anda com a caixa nas mãos. Solte o dedo e ele pousa a caixa no chão.",
+            "Drag your finger anywhere on the screen: the courier walks with the box in hand. Lift your finger and he sets the box down.",
+            "Arrastra el dedo en cualquier lugar de la pantalla: el mensajero camina con la caja en las manos. Suelta el dedo y deja la caja en el suelo.",
+            "Geser jarimu di mana saja di layar: kurir berjalan sambil membawa kotak. Angkat jarimu dan ia menaruh kotak di lantai.");
+        public static string TourVidaT => L("Sua vida", "Your health", "Tu vida", "Nyawamu");
+        public static string TourVida => L("Cada golpe tira um coração. Se acabarem, você cai e a carga fica na sala, esperando o resgate no próximo contrato.",
+            "Each hit takes a heart. If they run out, you fall and the cargo stays in the room, waiting for a rescue on your next contract.",
+            "Cada golpe quita un corazón. Si se acaban, caes y la carga se queda en la sala, esperando el rescate en el próximo contrato.",
+            "Setiap serangan mengurangi satu hati. Jika habis, kamu jatuh dan paket tertinggal di ruangan, menunggu diselamatkan di kontrak berikutnya.");
+        public static string TourCargaT => L("A carga", "The cargo", "La carga", "Paket");
+        public static string TourCarga => L("Golpes na carga viram rachaduras. Com 3 rachaduras ela quebra. Menos rachaduras, mais moedas na entrega.",
+            "Hits on the cargo become cracks. At 3 cracks it breaks. Fewer cracks, more coins on delivery.",
+            "Los golpes a la carga se vuelven grietas. Con 3 grietas se rompe. Menos grietas, más monedas en la entrega.",
+            "Serangan ke paket menjadi retakan. Dengan 3 retakan paket hancur. Makin sedikit retakan, makin banyak koin saat diantar.");
+        public static string TourPausaT => L("Pausa", "Pause", "Pausa", "Jeda");
+        public static string TourPausa => L("Toque aqui para pausar o contrato, mudar o som e o idioma ou desistir.",
+            "Tap here to pause the contract, change sound and language, or give up.",
+            "Toca aquí para pausar el contrato, cambiar el sonido y el idioma o rendirte.",
+            "Ketuk di sini untuk menjeda kontrak, mengubah suara dan bahasa, atau menyerah.");
+        public static string TourPousarT => L("Pouse para lutar", "Set down to fight", "Suelta para pelear", "Taruh untuk bertarung");
+        public static string TourPousar => L("Com a caixa nas mãos você não ataca. Solte o dedo: o courier pousa a caixa e atira sozinho no inimigo mais perto. Depois arraste de novo para pegar a caixa.",
+            "With the box in hand you can't attack. Lift your finger: the courier sets the box down and shoots the nearest enemy on his own. Then drag again to pick the box up.",
+            "Con la caja en las manos no atacas. Suelta el dedo: el mensajero deja la caja y dispara solo al enemigo más cercano. Después arrastra otra vez para recoger la caja.",
+            "Saat membawa kotak kamu tidak bisa menyerang. Angkat jarimu: kurir menaruh kotak dan otomatis menembak musuh terdekat. Lalu geser lagi untuk mengambil kotak.");
+        public static string TourLadraoT => L("Ladrão!", "Thief!", "¡Ladrón!", "Pencuri!");
+        public static string TourLadrao => L("Ele corre para a carga pousada e foge com ela. Fique perto da caixa ou leve-a com você. Se ele pegar, acerte-o para a caixa cair.",
+            "He runs for cargo left on the floor and flees with it. Stay near the box or carry it. If he grabs it, hit him to make him drop it.",
+            "Corre hacia la carga en el suelo y huye con ella. Quédate cerca de la caja o llévala contigo. Si la toma, golpéalo para que la suelte.",
+            "Ia berlari ke paket yang ditaruh dan kabur membawanya. Tetap dekat kotak atau bawa kotaknya. Jika ia mengambilnya, serang dia agar kotaknya jatuh.");
+        public static string TourDashT => L("Dash", "Dash", "Dash", "Dash");
+        public static string TourDash => L("Um toque rápido na tela é o dash: um impulso que desvia do golpe e empurra o inimigo. O anel mostra quando ele recarrega.",
+            "A quick tap on the screen is a dash: a burst that dodges the hit and pushes the enemy back. The ring shows when it recharges.",
+            "Un toque rápido en la pantalla es el dash: un impulso que esquiva el golpe y empuja al enemigo. El anillo muestra cuándo se recarga.",
+            "Ketuk cepat di layar untuk dash: dorongan yang menghindari serangan dan mendorong musuh. Lingkaran menunjukkan kapan dash terisi lagi.");
+        public static string TourPortasT => L("Escolha a porta", "Pick a door", "Elige la puerta", "Pilih pintu");
+        public static string TourPortas => L("As caveiras mostram o perigo da sala seguinte e o ícone mostra o que tem lá dentro, como baú ou ladrão. Leve a carga até a porta para passar.",
+            "Skulls show how dangerous the next room is and the icon shows what's inside, like a chest or a thief. Bring the cargo to the door to go through.",
+            "Las calaveras muestran el peligro de la sala siguiente y el icono muestra lo que hay dentro, como un cofre o un ladrón. Lleva la carga hasta la puerta para pasar.",
+            "Tengkorak menunjukkan bahaya ruangan berikutnya dan ikonnya menunjukkan isinya, seperti peti atau pencuri. Bawa paket ke pintu untuk lewat.");
+        public static string TourBauT => L("Baú", "Chest", "Cofre", "Peti");
+        public static string TourBau => L("Fique parado ao lado do baú para abrir. As moedas pagam as melhorias da guilda.",
+            "Stand still next to the chest to open it. Coins pay for guild upgrades.",
+            "Quédate quieto junto al cofre para abrirlo. Las monedas pagan las mejoras del gremio.",
+            "Diam di samping peti untuk membukanya. Koin dipakai untuk peningkatan guild.");
+        public static string TourEntregaT => L("O cliente", "The client", "El cliente", "Klien");
+        public static string TourEntrega => L("Leve a carga até o círculo do cliente para entregar. Quanto mais inteira a carga, maior o pagamento.",
+            "Bring the cargo into the client's circle to deliver. The more intact the cargo, the bigger the pay.",
+            "Lleva la carga al círculo del cliente para entregarla. Cuanto más intacta, mayor el pago.",
+            "Bawa paket ke lingkaran klien untuk mengantar. Makin utuh paketnya, makin besar bayarannya.");
+        public static string TourJogarT => L("Comece aqui", "Start here", "Empieza aquí", "Mulai di sini");
+        public static string TourJogar => L("Toque em JOGAR para ver o quadro de contratos da guilda.",
+            "Tap PLAY to see the guild's contract board.",
+            "Toca JUGAR para ver el tablón de contratos del gremio.",
+            "Ketuk MAIN untuk melihat papan kontrak guild.");
+        public static string TourC1T => L("Seu primeiro contrato", "Your first contract", "Tu primer contrato", "Kontrak pertamamu");
+        public static string TourC1 => L("Cada contrato pede uma carga e um caminho. A moeda mostra o pagamento e as estrelas, os desafios. Toque no contrato para começar.",
+            "Each contract asks for a cargo and a route. The coin shows the pay and the stars show the challenges. Tap the contract to start.",
+            "Cada contrato pide una carga y un camino. La moneda muestra el pago y las estrellas, los desafíos. Toca el contrato para empezar.",
+            "Setiap kontrak meminta satu paket dan satu rute. Koin menunjukkan bayaran dan bintang menunjukkan tantangan. Ketuk kontrak untuk mulai.");
+        public static string TourEstrelasT => L("Estrelas", "Stars", "Estrellas", "Bintang");
+        public static string TourEstrelas => L("Cada contrato dá até 3 estrelas: entregar, carga intacta e sem cair, dentro do tempo-alvo. As estrelas abrem novas regiões e prêmios.",
+            "Each contract gives up to 3 stars: deliver, intact cargo, and no fall within the target time. Stars unlock new regions and rewards.",
+            "Cada contrato da hasta 3 estrellas: entregar, carga intacta y sin caer, dentro del tiempo objetivo. Las estrellas abren nuevas regiones y premios.",
+            "Setiap kontrak memberi hingga 3 bintang: antar, paket utuh, dan tidak jatuh dalam waktu target. Bintang membuka wilayah dan hadiah baru.");
+        public static string TourPerkT => L("Vantagem", "Perk", "Ventaja", "Keuntungan");
+        public static string TourPerk => L("Escolha uma vantagem para este contrato. Ela vale até a entrega.",
+            "Pick a perk for this contract. It lasts until the delivery.",
+            "Elige una ventaja para este contrato. Dura hasta la entrega.",
+            "Pilih satu keuntungan untuk kontrak ini. Berlaku sampai paket diantar.");
+        public static string TourGuildaT => L("A guilda abriu!", "The guild is open!", "¡El gremio abrió!", "Guild sudah buka!");
+        public static string TourGuilda => L("Gaste as moedas dos contratos em melhorias permanentes: vida, dash, bolsa e mochila. Toque em GUILDA.",
+            "Spend contract coins on permanent upgrades: health, dash, purse and backpack. Tap GUILD.",
+            "Gasta las monedas de los contratos en mejoras permanentes: vida, dash, bolsa y mochila. Toca GREMIO.",
+            "Pakai koin kontrak untuk peningkatan permanen: nyawa, dash, kantong, dan ransel. Ketuk GUILD.");
+        public static string TourGuildaComprarT => L("Melhorias", "Upgrades", "Mejoras", "Peningkatan");
+        public static string TourGuildaComprar => L("Cada melhoria tem 8 níveis e vale para sempre. Comece pela vida: +1 coração em todos os contratos.",
+            "Each upgrade has 8 levels and lasts forever. Start with health: +1 heart on every contract.",
+            "Cada mejora tiene 8 niveles y dura para siempre. Empieza por la vida: +1 corazón en todos los contratos.",
+            "Setiap peningkatan punya 8 level dan berlaku selamanya. Mulai dari nyawa: +1 hati di setiap kontrak.");
+        public static string TourBauDiaT => L("Baú do dia", "Daily chest", "Cofre del día", "Peti harian");
+        public static string TourBauDia => L("Uma vez por dia: assista a um anúncio e ganhe moedas. É opcional.",
+            "Once a day: watch an ad and get coins. It's optional.",
+            "Una vez al día: mira un anuncio y gana monedas. Es opcional.",
+            "Sekali sehari: tonton iklan dan dapatkan koin. Ini opsional.");
+        public static string TourTemporadaT => L("Temporada", "Season", "Temporada", "Musim");
+        public static string TourTemporada => L("Objetivos de 28 dias com prêmios fixos. Sem passe pago.",
+            "28-day goals with fixed rewards. No paid pass.",
+            "Objetivos de 28 días con premios fijos. Sin pase de pago.",
+            "Target 28 hari dengan hadiah tetap. Tanpa pass berbayar.");
+        public static string TourMarcosT => L("Marcos e maestria", "Milestones and mastery", "Hitos y maestría", "Pencapaian dan keahlian");
+        public static string TourMarcos => L("As estrelas somadas dão moedas e uma roupa. Entregar a mesma carga várias vezes aumenta o pagamento dela.",
+            "Your total stars give coins and an outfit. Delivering the same cargo many times raises its pay.",
+            "Las estrellas sumadas dan monedas y un traje. Entregar la misma carga muchas veces sube su pago.",
+            "Total bintangmu memberi koin dan satu kostum. Mengantar paket yang sama berkali-kali menaikkan bayarannya.");
+        public static string TourRoupasT => L("Roupas", "Outfits", "Trajes", "Kostum");
+        public static string TourRoupas => L("Visuais para o courier. Só aparência: não mudam o jogo.",
+            "Looks for the courier. Cosmetic only: they don't change the game.",
+            "Aspectos para el mensajero. Solo apariencia: no cambian el juego.",
+            "Tampilan untuk kurir. Hanya kosmetik: tidak mengubah permainan.");
+        public static string TourLojaT => L("Loja", "Shop", "Tienda", "Toko");
+        public static string TourLoja => L("Remover anúncios, pacotes e roupas. Tudo com conteúdo fixo, nada aleatório.",
+            "Remove ads, packs and outfits. Everything has fixed contents, nothing random.",
+            "Quitar anuncios, paquetes y trajes. Todo con contenido fijo, nada aleatorio.",
+            "Hapus iklan, paket, dan kostum. Semua isinya tetap, tidak ada yang acak.");
+        public static string TourConfigT => L("Configurações", "Settings", "Ajustes", "Pengaturan");
+        public static string TourConfig => L("Som, música, vibração, idioma e o botão para rever este tutorial.",
+            "Sound, music, vibration, language and the button to replay this tutorial.",
+            "Sonido, música, vibración, idioma y el botón para ver este tutorial otra vez.",
+            "Suara, musik, getar, bahasa, dan tombol untuk mengulang tutorial ini.");
+        public static string TourNovidadesT => L("Novidades no quadro", "New on the board", "Novedades en el tablón", "Baru di papan");
+        public static string TourNovidades => L("Agora abrem o contrato do dia, o contrato raro, os eventos, o desafio sem fim e o código para jogar o contrato de um amigo.",
+            "The daily contract, rare contract, events, endless challenge and the code to play a friend's contract are now open.",
+            "Ahora se abren el contrato del día, el contrato raro, los eventos, el desafío sin fin y el código para jugar el contrato de un amigo.",
+            "Sekarang terbuka kontrak harian, kontrak langka, event, tantangan tanpa akhir, dan kode untuk memainkan kontrak teman.");
         public static string ExportarAjuda => L("O diário (CSV) registra eventos do jogo para o teste, sem dados pessoais. Só sai do aparelho se você exportar.",
             "The log (CSV) records game events for the playtest, with no personal data. It only leaves the device if you export it.",
             "El registro (CSV) guarda eventos del juego para la prueba, sin datos personales. Solo sale del dispositivo si lo exportas.",

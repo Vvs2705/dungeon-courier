@@ -653,17 +653,17 @@ namespace DC
                 _bau.Icon.sprite = bauArte; _bau.Icon.color = Color.white;
                 _bau.Icon.rectTransform.anchorMin = new Vector2(0.035f, 0.04f); _bau.Icon.rectTransform.anchorMax = new Vector2(0.15f, 0.56f);
             }
-            Btn(m, () => Textos.MenuJogar, 72, Art.Good, new Vector2(0.1f, 0.47f), new Vector2(0.9f, 0.582f), ShowBoard, "confirmar");
+            _menuJogar = Btn(m, () => Textos.MenuJogar, 72, Art.Good, new Vector2(0.1f, 0.47f), new Vector2(0.9f, 0.582f), ShowBoard, "confirmar");
             // grade 2 x 3 + creditos (cada botao ~163 px de referencia = 48 dp), icone pintado a esquerda
             _menuGuild = Btn(m, () => Textos.MenuGuilda, 44, Art.Paper, new Vector2(0.06f, 0.37f), new Vector2(0.49f, 0.455f), () => ShowGuild(0));
             Icone(_menuGuild, "guilda");
             _menuGuildLock = Art.Img(_menuGuild.transform, "Cadeado", Art.Lock(), Art.Tinta, new Vector2(0.82f, 0.22f), new Vector2(0.96f, 0.78f));
             _menuLoja = Btn(m, () => Textos.LojaBotao, 44, Art.Gold, new Vector2(0.51f, 0.37f), new Vector2(0.94f, 0.455f), ShowLoja);
             Icone(_menuLoja, "loja");
-            Icone(Btn(m, () => Textos.TemporadaBotao, 40, Art.Paper, new Vector2(0.06f, 0.275f), new Vector2(0.49f, 0.36f), () => Abre(_pTemporada)), "temporada");
-            Icone(Btn(m, () => Textos.MarcosBotao, 40, Art.Paper, new Vector2(0.51f, 0.275f), new Vector2(0.94f, 0.36f), () => Abre(_pMarcos)), "marcos");
-            Icone(Btn(m, () => Textos.RoupasBotao, 40, Art.PaperEdge, new Vector2(0.06f, 0.18f), new Vector2(0.49f, 0.265f), () => Abre(_pRoupas)), "roupas");
-            Icone(Btn(m, () => Textos.MenuConfig, 40, Art.PaperEdge, new Vector2(0.51f, 0.18f), new Vector2(0.94f, 0.265f), ShowSettings), "config");
+            Icone(_menuTemporada = Btn(m, () => Textos.TemporadaBotao, 40, Art.Paper, new Vector2(0.06f, 0.275f), new Vector2(0.49f, 0.36f), () => Abre(_pTemporada)), "temporada");
+            Icone(_menuMarcos = Btn(m, () => Textos.MarcosBotao, 40, Art.Paper, new Vector2(0.51f, 0.275f), new Vector2(0.94f, 0.36f), () => Abre(_pMarcos)), "marcos");
+            Icone(_menuRoupas = Btn(m, () => Textos.RoupasBotao, 40, Art.PaperEdge, new Vector2(0.06f, 0.18f), new Vector2(0.49f, 0.265f), () => Abre(_pRoupas)), "roupas");
+            Icone(_menuConfig = Btn(m, () => Textos.MenuConfig, 40, Art.PaperEdge, new Vector2(0.51f, 0.18f), new Vector2(0.94f, 0.265f), ShowSettings), "config");
             Icone(Btn(m, () => Textos.MenuCreditos, 40, Art.PaperEdge, new Vector2(0.25f, 0.085f), new Vector2(0.75f, 0.17f), ShowCredits), "creditos");
             Text ver = Loc(Art.NewText(m, "Versao", 28, new Vector2(0.05f, 0.012f), new Vector2(0.95f, 0.05f)), () => Textos.Versao(_g.Version));
             ver.color = Art.Dim;
@@ -1040,7 +1040,8 @@ namespace DC
                 label.anchorMin = new Vector2(0.18f, 0f); label.anchorMax = new Vector2(0.97f, 1f);   // o visto fica a esquerda, fora do texto
                 _langCheck[i] = Art.Img(_langBtn[i].transform, "Visto", Art.Check(), Art.Tinta, new Vector2(0.03f, 0.22f), new Vector2(0.17f, 0.78f));
             }
-            Btn(f, () => Textos.ExportarDiario, 42, Art.Gold, new Vector2(0.04f, 0.323f), new Vector2(0.96f, 0.405f), Export);
+            Btn(f, () => Textos.ExportarDiario, 34, Art.Gold, new Vector2(0.04f, 0.323f), new Vector2(0.49f, 0.405f), Export);
+            Btn(f, () => Textos.TourRever, 34, Art.PaperEdge, new Vector2(0.51f, 0.323f), new Vector2(0.96f, 0.405f), ReverTour);   // Tour.cs
             Text help = Shrink(Loc(Ink(f, "Ajuda", 26, new Vector2(0.05f, 0.27f), new Vector2(0.95f, 0.32f)), () => Textos.ExportarAjuda), 18);
             help.color = Art.A(Art.Tinta, 0.82f);
             _exportStatus = Shrink(Ink(f, "Status", 28, new Vector2(0.05f, 0.237f), new Vector2(0.95f, 0.27f), TextAnchor.MiddleCenter, true), 18);

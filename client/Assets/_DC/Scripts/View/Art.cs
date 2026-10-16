@@ -403,6 +403,29 @@ namespace DC
             return C32(new Color(v, v, v), 0.5f - d);
         });
 
+        /// <summary>Destaque do tour (Tour.cs): contorno arredondado de ~7 px com brilho suave dos dois lados, tingido pelo Image.</summary>
+        public static Sprite Contorno() => Nove("contorno9", 64, 26, (x, y) =>
+        {
+            float d = CaixaDist(x + 0.5f, y + 0.5f, 64, 22f) + 9f;   // 0 = o meio do traco, a 9 px da borda
+            return C32(Color.white, Mathf.Max(Mathf.Clamp01(1f - Mathf.Abs(d) / 3.5f), 0.35f * Mathf.Clamp01(1f - Mathf.Abs(d) / 9f)));
+        });
+
+        /// <summary>Balao de fala do tour (cartao do cliente): branco com contorno de tinta de 4 px e cantos de 26 px; tingido pelo Image.</summary>
+        public static Sprite Balao() => Nove("balao9", 96, 34, (x, y) =>
+        {
+            float dd = CaixaDist(x + 0.5f, y + 0.5f, 96, 26f), dentro = -dd;
+            return C32(dentro < 4f ? Tinta : Color.white, 0.5f - dd);
+        });
+
+        /// <summary>Seta do tour apontando para baixo (cabeca triangular embaixo, haste em cima); o Tour gira 180 graus quando o alvo esta
+        /// acima do cartao.</summary>
+        public static Sprite Seta() => Soft("seta", (x, y) =>
+        {
+            float cabeca = Mathf.Clamp01(((y + 0.95f) * 0.95f - Mathf.Abs(x)) * 12f) * Mathf.Clamp01((0.1f - y) * 12f);
+            float haste = Mathf.Clamp01((0.24f - Mathf.Abs(x)) * 12f) * Mathf.Clamp01((y + 0.05f) * 12f) * Mathf.Clamp01((0.95f - y) * 12f);
+            return Mathf.Max(cabeca, haste);
+        });
+
         static readonly Color MadeiraClara = Hex(0x9C6638), MadeiraEscura = Hex(0x633B1D), MadeiraBrilho = Hex(0xC98E55),
             MadeiraFundo = Hex(0x3F2512), Rebite = Hex(0xF2C14E), Pergaminho0 = Hex(0xF6E7C6), Pergaminho1 = Hex(0xD9BD8C);
 

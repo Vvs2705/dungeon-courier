@@ -324,10 +324,13 @@ namespace DC
         static readonly (string folha, int linha, float x, float y, float lado)[] RetratoChefe =
             { ("ogro", 0, 0.505f, 0.56f, 0.62f), ("golem", 0, 0.5f, 0.52f, 0.62f), ("necromante", 0, 0.475f, 0.525f, 0.54f), ("dragao", 1, 0.5f, 0.525f, 0.76f) };
 
-        /// <summary>Retrato do chefe da regiao (1-based); null sem a folha (-nographics).</summary>
+        /// <summary>Retrato do chefe da regiao (1-based): o pintado no estilo do logo (Resources/UI/chefe_&lt;folha&gt;.png, ui_assets.py) ou, sem
+        /// ele, o quadro recortado da folha; null sem nenhum dos dois (-nographics).</summary>
         internal static Sprite ChefeRetrato(int regiao)
         {
             var (folha, linha, x, y, lado) = RetratoChefe[Mathf.Clamp(regiao - 1, 0, RetratoChefe.Length - 1)];
+            Sprite pintado = Art.Ui("chefe_" + folha);
+            if (pintado != null) return pintado;
             SpriteSheet s = SpriteSheet.Get(folha);
             return s?.Retrato(s.Pick("Idle"), linha, x, y, lado);
         }

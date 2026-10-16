@@ -40,7 +40,8 @@ namespace DC
         public float TopPx { get; private set; }
         /// <summary>Tela por cima do contrato que segura o jogo (pausa, configuracoes, escolha de perk, anuncio, loja de teste): sem Tick e
         /// sem joystick.</summary>
-        public bool Blocking => _pause.gameObject.activeSelf || _settings.gameObject.activeSelf || _perk.gameObject.activeSelf || _ads.Aberto || _lojaTeste.Aberto;
+        public bool Blocking => _pause.gameObject.activeSelf || _settings.gameObject.activeSelf || _perk.gameObject.activeSelf || _ads.Aberto || _lojaTeste.Aberto
+            || (TourAberto && Current == Tela.Play);   // passo do tour no contrato: a tela congela (Tour.cs)
         /// <summary>Segundos na tela atual (o -bot avanca sozinho por ele).</summary>
         public float TimeInScreen { get; private set; }
 
@@ -136,6 +137,7 @@ namespace DC
             var modals = new List<RectTransform> { _guild, _code, _offer, _perk, _pause, _settings, _credits, _semFim };
             foreach (Painel p in _paineis) modals.Add(p.M);
             _modals = modals.ToArray();
+            BuildTour(canvas);   // por cima de tudo (Tour.cs)
             DevDesbloqueia();   // so -testsession -dev-desbloqueia (fotos)
             Fit();
             ShowTitle();
@@ -349,6 +351,7 @@ namespace DC
         /// sai; no contrato sem nada aberto: o Game abre a pausa).</summary>
         public bool Back()
         {
+            if (TourAberto) { TourOk(); return true; }   // voltar = ENTENDI (no passo de acao, pula so aquele passo)
             if (_ads.Voltar() || _lojaTeste.Voltar()) return true;   // anuncio e loja falsa ficam por cima de tudo
             if (Close(_credits) || Close(_settings) || Close(_code)) return true;
             if (_pLoja.M.gameObject.activeSelf) { Fecha(_pLoja); return true; }
@@ -403,6 +406,7 @@ namespace DC
                 case Tela.Title: TickTitle(); break;
                 case Tela.Menu: PulseGuild(); break;
             }
+            TickTour(dt);
         }
 
         void RefreshTop(Run r, float dt)
@@ -705,7 +709,7 @@ namespace DC
             _coins.font = Art.Titulo();
             Image pb = Art.Panel(top, "Pausa", Art.Paper, new Vector2(0.865f, 0.56f), new Vector2(0.98f, 0.97f));
             pb.sprite = Art.Botao(); pb.gameObject.AddComponent<Aperta>();
-            Button pause = pb.gameObject.AddComponent<Button>();
+            Button pause = _pauseBtn = pb.gameObject.AddComponent<Button>();
             pause.targetGraphic = pb;
             pause.onClick.AddListener(() => { Audio.Play("clique"); ShowPause(false); });
             Art.Img(pb.transform, "Icone", Art.Pause(), Art.Tinta, new Vector2(0.2f, 0.2f), new Vector2(0.8f, 0.8f));

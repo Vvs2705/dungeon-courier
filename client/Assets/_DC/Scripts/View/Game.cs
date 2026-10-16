@@ -66,6 +66,8 @@ namespace DC
         public string InstallId { get; private set; } = "-";
         public string InstallShort => InstallId.Length > 8 ? InstallId.Substring(0, 8) : InstallId;
         public bool BotDrive => _botDrive;
+        /// <summary>O mundo desenhado (alvos do tour na tela: Hud, Tour.cs).</summary>
+        internal WorldView Mundo => _view;
         /// <summary>Data local AAAAMMDD do contrato do dia (o Core nao le relogio; voltar o relogio nao repete: sim.SeeDate).</summary>
         public int Hoje { get { DateTime d = DateTime.Now; return d.Year * 10000 + d.Month * 100 + d.Day; } }
         /// <summary>Instante em segundos Unix (sessao, contrato raro, interstitial: o Core nao le relogio).</summary>
@@ -117,7 +119,7 @@ namespace DC
             Audio.Init(gameObject);
             Ajustes.Init();   // idioma e volumes antes de montar as telas
             if (_test && Textos.DeCodigo(Arg("-lang")) is Textos.Lingua lang) Textos.Lang = lang;   // dev: fotos por idioma, sem gravar
-            if (!_test && Arg("-reset") != null) { PlayerPrefs.DeleteKey(SaveKey); PlayerPrefs.Save(); }
+            if (!_test && Arg("-reset") != null) { PlayerPrefs.DeleteKey(SaveKey); PlayerPrefs.DeleteKey(Hud.TourKey); PlayerPrefs.Save(); }
             string saved = _test ? "" : PlayerPrefs.GetString(SaveKey, "");
             // jogador novo: semente aleatoria (variedade entre jogadores); -testsession: semente 1 (fotos repetiveis)
             Sim = string.IsNullOrEmpty(saved) ? new Sim(_test ? 1 : UnityEngine.Random.Range(1, int.MaxValue)) : Sim.Load(saved);
@@ -149,6 +151,10 @@ namespace DC
         {
             if (_headless) { Autoplay(); return; }
             _botDrive = Arg("-bot") != null;   // antes do 1o Log: partida do bot nao entra no diario do playtest
+            // tour guiado: so para gente (as fotos, gravacoes e o bot rodam no -testsession). -tutorial liga em qualquer modo, sem gravar no
+            // -testsession; com o -bot, o ENTENDI se aperta sozinho em 2 s (foto e gravacao do tutorial)
+            _hud.TourLigado = Arg("-tutorial") != null || (!_test && !_botDrive && _recFps == 0);
+            _hud.TourGrava = !_test;
             // privacidade (TESTE_JOGADORES): faixa de RAM em vez do modelo do aparelho (modelo raro identificaria o testador)
             int ram = SystemInfo.systemMemorySize;
             Log("session_start", ram <= 0 ? "ram?" : ram <= 3072 ? "ram<=3GB" : ram <= 6144 ? "ram3-6GB" : "ram>6GB", Application.platform.ToString());
