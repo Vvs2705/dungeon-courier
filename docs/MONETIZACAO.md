@@ -130,6 +130,23 @@ Tirar o LevelPlay economizou pouco no C# (a maior parte do IL2CPP é do IAP) e c
 
 ## 4. Religar o LevelPlay (quando houver conta e decisão do §2.4)
 
+**Estado em 2026-10-12: a branch `feat/levelplay` já tem os passos 1, 2 e a privacidade do 5.** Ela traz:
+- o pacote 9.5.1 com o Unity Ads e o resolver;
+- o define `DC_LEVELPLAY` no Android e o `Unity.LevelPlay` no asmdef e no viewcheck;
+- anúncio não personalizado para todos antes do `Init`: `LevelPlayPrivacySettings` com GDPR sem consentimento, CCPA com opt-out e COPPA desligado (público 13+);
+- `Setup.SemIdDePublicidade`, que tira do APK o `AD_ID` e as 3 permissões do Privacy Sandbox.
+
+Conferido com `aapt`. O APK fica com INTERNET, VIBRATE, ACCESS_NETWORK_STATE, BILLING e o WorkManager do SDK (WAKE_LOCK, RECEIVE_BOOT_COMPLETED, FOREGROUND_SERVICE), sem AD_ID, e tem 67,7 MiB. O passo 3 foi feito em 2026-10-14, na conta LevelPlay da V-STACK (vinicius@vstack-solutions.com.br), com o app "Dungeon Courier" (Android, "Not live yet", COPPA "Not directed"):
+
+| Chave do `config.json` | Valor | No painel |
+|---|---|---|
+| `levelplay_app_key` | `28bb8d98d` | App Key |
+| `levelplay_rewarded` | `ilah7d1mcs7v1cno` | ad unit `rewarded`, recompensa "Recompensa" ×1 (o núcleo decide o prêmio) |
+| `levelplay_interstitial` | `cepd2rejxi2ykfxw` | ad unit `interstitial` |
+
+Em 2026-10-16, a conta Unity Ads da mesma organização (Unity, core ID `4674267143380`) foi ligada ao LevelPlay em *Connect your account > Unity Ads*, com a chave da Monetization Stats API, que o Vinicius criou e colou (a chave fica fora do repositório). O painel mostra a receita de "ironSource Ads and Unity Ads". As chaves do `config.json` não são segredo: vão dentro do APK. Falta o 6 (Test Suite num build de desenvolvimento, no POCO) e o 5 na Play Console. Quando o app for publicado, ligue-o à loja no painel (Apps > Dungeon Courier > Live app, package `br.com.vstack.dungeoncourier`). Sem chave, o jogo segue no simulador e não chama o `Init`.
+
+
 Já foi feito uma vez e funcionou: commit `bd10ca9`, APK de 65,4 MiB. Na ordem:
 
 1. **Pacote:** em *Window > Package Manager*, instalar o **Ads Mediation** (`com.unity.services.levelplay`; o testado foi o 9.5.1) e aceitar o **Import** do Mobile Dependency Resolver.
@@ -144,10 +161,10 @@ Já foi feito uma vez e funcionou: commit `bd10ca9`, APK de 65,4 MiB. Na ordem:
 3. **Chaves:** `levelplay_app_key`, `levelplay_rewarded` e `levelplay_interstitial` no `config.json`. Sem a chave, o jogo continua no simulador e não chama o `Init`, mas o SDK vai no APK do mesmo jeito.
 4. **Manifesto:** gerar o APK de release e conferir com `aapt dump permissions` (o `aapt.exe` fica em `.../AndroidPlayer/SDK/build-tools/36.0.0/`). Com o Unity Ads, entram as permissões da coluna do meio do §1.3. Conferir também, num aparelho, o tráfego de rede na abertura, com o *Network Inspector* do Android Studio ou um proxy.
 5. **Privacidade:**
-   - Na Play Console, marcar "Contém anúncios" e responder **sim** na declaração de ID de publicidade.
-   - Atualizar o formulário de segurança dos dados e publicar o item 7 da política (`LOJA.md` §4.5) nos 4 idiomas.
-   - Aplicar a decisão do ECA Digital (§2.4) antes do `Init`.
+   - Na Play Console, marcar "Contém anúncios" e responder **não** na declaração de ID de publicidade (o APK não tem `AD_ID`, `Setup.SemIdDePublicidade`).
+   - Preencher o formulário de segurança dos dados com a tabela do Unity Ads (`LOJA.md` §4.5). O item 7 da política já está publicado nos 4 idiomas (2026-10-13; em 2026-10-16 passou a citar também a rede ironSource Ads).
+   - Decisão do ECA Digital (§2.4): anúncio não personalizado para todos, já aplicado antes do `Init`.
 6. **Validar:**
-   - Num build de desenvolvimento, use o Test Suite: `LevelPlay.SetMetaData("is_test_suite", "enable")` antes do `Init` e `LevelPlay.LaunchTestSuite()` no `Iniciou`. **Tire as duas linhas antes de publicar.**
+   - Test Suite: build de desenvolvimento (`Setup.BuildAndroidDev`) aberto com `adb shell am start -S -n br.com.vstack.dungeoncourier/<activity> -e unity "-adtestsuite"`. O `AnunciosLevelPlay` chama `LevelPlay.SetMetaData("is_test_suite", "enable")` antes do `Init` e `LevelPlay.LaunchTestSuite()` no `Iniciou` só com `Debug.isDebugBuild` e a flag; o release nunca abre o Test Suite, então não há o que tirar antes de publicar.
    - No `adb logcat`, procure "DC LevelPlay: iniciado".
    - Em modo avião, o rewarded deve mostrar "Nenhum anúncio disponível agora" e o CONTINUAR deve seguir sem interstitial.

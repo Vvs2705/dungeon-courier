@@ -641,7 +641,7 @@ namespace DC
                 {
                     R2Foe f = run.R2Of(e);
                     V2 front = f != null ? f.Dir : new V2(0f, -1f);
-                    float h = (v.Anim != null ? Lift * At(EnemyH, (int)t, 2.6f) : e.Def.Radius) * 0.62f;
+                    float h = (v.Anim != null ? Lift * At(EnemyH, (int)t, 2.6f) * v.Anim.Sheet.Escala : e.Def.Radius) * 0.62f;
                     v.Weak.transform.localPosition = new Vector3(-front.X * 0.45f, h - front.Y * 0.25f, 0f);
                     v.Weak.sortingOrder = front.Y < 0f ? OEnemy - 1 : OEnemy + 1;
                 }

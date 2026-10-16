@@ -13,11 +13,11 @@
  "ppu": 320.0,
  "pivot_px": [
   256.0,
-  105.3
+  108.5
  ],
  "pivot": [
   0.5,
-  0.2056
+  0.2119
  ],
  "light": "flat",
  "outline_px": 6,
@@ -27,6 +27,7 @@
  "hold": "Hold.fbx",
  "attach": [],
  "align_arms": false,
+ "escala": 1.0,
  "clips": [
   {
    "name": "CarryIdle",
@@ -42,7 +43,7 @@
    ],
    "hands": [
     195.5,
-    268.2,
+    271.5,
     1
    ]
   }

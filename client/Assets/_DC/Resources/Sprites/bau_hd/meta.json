@@ -1,0 +1,50 @@
+{
+ "size": 384,
+ "fps": 14.0,
+ "dirs": 1,
+ "rows": 1,
+ "dir_order": [
+  "S"
+ ],
+ "mirror": false,
+ "row0": "top",
+ "elev": 32.0,
+ "yaw": -35.0,
+ "ppu": 207.9,
+ "pivot_px": [
+  192.0,
+  70.2
+ ],
+ "pivot": [
+  0.5,
+  0.1828
+ ],
+ "light": "studio",
+ "outline_px": 5,
+ "src_fps": 30,
+ "preset": "bau_hd",
+ "model_scale": 1.0,
+ "hold": "",
+ "attach": [],
+ "align_arms": false,
+ "clips": [
+  {
+   "name": "Static",
+   "file": "Static.png",
+   "frames": 1,
+   "loop": false,
+   "fps": 30.0,
+   "duration_s": 0.033,
+   "src_frames": 0
+  },
+  {
+   "name": "Open",
+   "file": "Open.png",
+   "frames": 10,
+   "loop": false,
+   "fps": 14.0,
+   "duration_s": 0.714,
+   "src_frames": 0
+  }
+ ]
+}

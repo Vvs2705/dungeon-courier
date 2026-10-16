@@ -20,7 +20,7 @@ namespace DC
 
         /// <summary>Teto e piso do ritmo da locomocao pela passada (teto 2,3x = receita do COE; piso: corrida travada na parede nao congela).</summary>
         public const float MaxRate = 2.3f, MinRate = 0.5f;
-        [Serializable] public sealed class Meta { public int size, dirs, rows; public bool mirror; public float ppu; public float[] pivot, pivot_px; public List<ClipMeta> clips; }
+        [Serializable] public sealed class Meta { public int size, dirs, rows; public bool mirror; public float ppu, escala; public float[] pivot, pivot_px; public List<ClipMeta> clips; }
 
         static readonly Dictionary<string, SpriteSheet> Cache = new Dictionary<string, SpriteSheet>();
 
@@ -28,7 +28,7 @@ namespace DC
         public readonly int Dirs, Rows;
         public readonly bool Mirror;
         /// <summary>px por metro da textura (1 unidade = 1 m, sem fator por personagem).</summary>
-        public readonly float Ppu;
+        public readonly float Ppu, Escala;
         /// <summary>Pivo normalizado (pe do modelo; origem no canto inferior esquerdo da celula).</summary>
         public readonly Vector2 Pivot;
         /// <summary>Centro da celula relativo ao pivo (m): props sao centrados na celula pelo render, entao e o centro do objeto.</summary>
@@ -42,7 +42,8 @@ namespace DC
 
         SpriteSheet(Meta m, Texture2D[] tex)
         {
-            Dirs = m.dirs; Rows = m.rows; Mirror = m.mirror; Ppu = m.ppu; _size = m.size;
+            Escala = m.escala > 0f ? m.escala : 1f;   // ator mostrado N vezes maior (render_sprites.py --escala): sprite e ancoras pelo mesmo ppu
+            Dirs = m.dirs; Rows = m.rows; Mirror = m.mirror; Ppu = m.ppu / Escala; _size = m.size;
             Pivot = m.pivot != null && m.pivot.Length >= 2 ? new Vector2(m.pivot[0], m.pivot[1]) : new Vector2(0.5f, 0f);
             _pivotPx = m.pivot_px != null && m.pivot_px.Length >= 2 ? new Vector2(m.pivot_px[0], m.pivot_px[1]) : Pivot * m.size;
             Center = new Vector2((0.5f - Pivot.x) * m.size / m.ppu, (0.5f - Pivot.y) * m.size / m.ppu);
@@ -125,6 +126,20 @@ namespace DC
             int n = _clips[clip].frames, f = Mathf.Max(0, (int)(t * Fps(clip)));
             return _clips[clip].loop || forceLoop ? f % n : Mathf.Min(f, n - 1);
         }
+
+        /// <summary>Quadro 0 recortado em volta do ator, para icone da interface (roupa, chefe do mapa): cx, cy = centro em fracao da celula
+        /// a partir do canto de cima; lado = fracao da celula (as medidas saem do contact sheet; o ator nao enche a celula).</summary>
+        public Sprite Retrato(int clip, int row, float cx, float cy, float lado)
+        {
+            row = Mathf.Clamp(row, 0, Rows - 1);
+            int k = clip * 64 + row;
+            if (_retratos.TryGetValue(k, out Sprite s)) return s;
+            Texture2D t = _tex[clip];
+            float cw = t.width / (float)_clips[clip].frames, ch = t.height / (float)Rows, w = lado * cw, h = lado * ch;
+            var r = new Rect(Mathf.Clamp(cx * cw - w / 2f, 0f, cw - w), (Rows - 1 - row) * ch + Mathf.Clamp((1f - cy) * ch - h / 2f, 0f, ch - h), w, h);
+            return _retratos[k] = Sprite.Create(t, r, new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+        }
+        readonly Dictionary<int, Sprite> _retratos = new Dictionary<int, Sprite>();
 
         public Sprite Frame(int clip, int row, int frame)
         {

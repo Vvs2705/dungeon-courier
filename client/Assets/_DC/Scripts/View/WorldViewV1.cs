@@ -71,7 +71,7 @@ namespace DC
         static int First(SpriteSheet s, string[] names) { foreach (string n in names) { int k = s.Clip(n); if (k >= 0) return k; } return -1; }
         /// <summary>Angulo de tela (graus, desenho apontando para +Y) da direcao d da Sim: o y encolhe pela projecao.</summary>
         static float ScreenAngle(V2 d) => Mathf.Atan2(Tilt * d.Y, d.X) * Mathf.Rad2Deg - 90f;
-        float CourierHeadY => _courier.Anim != null ? Lift * 1.3f : 0.45f;
+        float CourierHeadY => _courier.Anim != null ? Lift * 1.3f * _courier.Anim.Sheet.Escala : 0.45f;
 
         Text NewLabel(int size)
         {
@@ -429,6 +429,13 @@ namespace DC
             float W = Balance.RoomW, y0 = Tilt * Balance.RoomH, h = BackWallH, w = W + 2f * WallT;
             Sprite ws = ParedeDe(_tema, out Color wt);   // textura da regiao (ou a da regiao 1 tingida), ou a face lisa
             bool tex = ws != null;
+            // fora da sala (telas 20:9: faixa entre a HUD e a parede de fundo, e abaixo da sala): a pedra da regiao continua escura ate a
+            // borda da tela, atras do piso, no lugar da cor lisa do fundo da camera
+            if (tex)
+            {
+                SpriteRenderer fora = Art.NewSprite(up, "Masmorra", ws, Mul(wt, new Color(0.3f, 0.3f, 0.34f)), OFloor - 1, new Vector2(W / 2f, y0 / 2f), Vector2.one);
+                fora.drawMode = SpriteDrawMode.Tiled; fora.size = new Vector2(w + 16f, y0 + 24f);
+            }
             // abaixo das paredes laterais (OWall): elas cobrem os cantos de baixo da parede de fundo
             SpriteRenderer wall = Art.NewSprite(up, "ParedeFundo", tex ? ws : Art.Square(), tex ? wt : _tema.Wall, OWall - 1, new Vector2(W / 2f, y0 + h / 2f), tex ? Vector2.one : new Vector2(w, h));
             if (tex) { wall.drawMode = SpriteDrawMode.Tiled; wall.size = new Vector2(w, h); }

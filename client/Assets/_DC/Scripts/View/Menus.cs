@@ -58,7 +58,7 @@ namespace DC
         int _guildTab;
 
         // perk
-        readonly Image[] _perkIcon = new Image[3];
+        readonly Image[] _perkIcon = new Image[3], _perkDisc = new Image[3];
         readonly Text[] _perkName = new Text[3], _perkEff = new Text[3];
         readonly GameObject[] _perkCard = new GameObject[3];
 
@@ -126,6 +126,9 @@ namespace DC
                 if (!on) continue;
                 Perk p = offer[i];
                 _perkIcon[i].sprite = PerkIcon(p, out Color c); _perkIcon[i].color = c;
+                bool arte = c == Color.white;   // pintado: medalhao claro e maior
+                _perkDisc[i].color = arte ? Medalhao : Art.Tinta;
+                _perkIcon[i].rectTransform.anchorMin = Vector2.one * (arte ? 0.04f : 0.2f); _perkIcon[i].rectTransform.anchorMax = Vector2.one * (arte ? 0.96f : 0.8f);
                 _perkName[i].text = Textos.PerkNome(p);
                 _perkEff[i].text = Textos.PerkEfeito(p);
             }
@@ -172,6 +175,7 @@ namespace DC
                 case "anuncio": ShowMenu(); _ads.Recompensado(Textos.PremioBau(Sim.DailyChestCoins(_g.Hoje), S.DailyChestBlueprint(_g.Hoje)), _ => { }); break;
                 case "intersticial": ShowMenu(); _ads.Intersticial(_ => { }); break;
                 case "oferta": DevResultado(false); break;
+                case "cena": ShowEnd(ResultadoDev(true)); break;   // cena da entrega (bau abrindo)
                 case "bonus": DevResultado(true); break;
             }
         }
@@ -179,6 +183,13 @@ namespace DC
         /// <summary>-tela oferta|bonus: resultado de exemplo (falha na 2a sala / entrega com bonus) com a oferta de rewarded forcada, so para a
         /// foto (o Core so oferece de verdade depois de um contrato jogado).</summary>
         void DevResultado(bool entregue)
+        {
+            _res = ResultadoDev(entregue);
+            _devOferta = true;
+            ShowResult();
+        }
+
+        ContractResult ResultadoDev(bool entregue)
         {
             ContractDef c = Sim.Contracts[Mathf.Clamp(S.Reputation, 0, Sim.Contracts.Length - 1)];
             var r = new ContractResult
@@ -189,8 +200,7 @@ namespace DC
             };
             if (entregue) { r.Payment = (int)(c.Pay * 1.2f); r.Bonus = r.Payment - c.Pay; }
             r.Total = r.Payment + r.ChestCoins;
-            _devOferta = true; _res = r;
-            ShowResult();
+            return r;
         }
 
         // ------------------------------------------------------------------ atualizar
@@ -318,8 +328,10 @@ namespace DC
         {
             e.Icon.enabled = e.Edge.enabled = c != null;
             if (c == null) return;
-            e.Icon.sprite = e.Edge.sprite = Art.CargoSprite(c.Cargo);
-            e.Icon.color = Art.CargoColor(c.Cargo);
+            e.Icon.sprite = CargaIcone(c.Cargo, out Color cor);
+            e.Icon.color = cor;
+            e.Edge.sprite = Art.CargoSprite(c.Cargo);
+            e.Edge.enabled = cor != Color.white;   // o quadro renderizado ja tem contorno proprio
         }
 
         /// <summary>Estado do cartao: jogavel (verde), feito (dourado + visto), fechado (cadeado, apagado) ou so aviso.</summary>
@@ -448,8 +460,8 @@ namespace DC
             _volMusT.text = Textos.Volume(Textos.Musica, Ajustes.VolMusica * 100 / Ajustes.VolMax);
             for (int k = 0; k < Ajustes.VolMax; k++)
             {
-                _barSom[k].color = k < Ajustes.VolSom ? Art.Courier : Art.A(Art.Tinta, 0.2f);
-                _barMus[k].color = k < Ajustes.VolMusica ? Art.Courier : Art.A(Art.Tinta, 0.2f);
+                _barSom[k].color = k < Ajustes.VolSom ? Art.Coin : Art.A(Art.Tinta, 0.18f);
+                _barMus[k].color = k < Ajustes.VolMusica ? Art.Coin : Art.A(Art.Tinta, 0.18f);
             }
             _vibraBtn.interactable = Ajustes.TemVibra;
             _vibraBtn.GetComponentInChildren<Text>().text = Ajustes.TemVibra ? Textos.Vibra(Ajustes.Vibra) : Textos.VibraSoCelular;
@@ -499,6 +511,8 @@ namespace DC
 
         static Sprite PerkIcon(Perk p, out Color c)
         {
+            Sprite arte = Art.Ui(PerkArte(p));   // pintado (Resources/UI) quando o efeito tem icone que conta a mesma coisa
+            if (arte != null) { c = Color.white; return arte; }
             switch (p)
             {
                 case Perk.LightStep: c = Art.Shot; return Art.Chevrons();
@@ -515,10 +529,33 @@ namespace DC
             }
         }
 
-        static Sprite WeaponIcon(Weapon w) => w == Weapon.Boomerang ? Art.Boomerang() : w == Weapon.Bomb ? Art.Bomb() : Art.Sling();
+        static string PerkArte(Perk p)
+        {
+            switch (p)
+            {
+                case Perk.LightStep: case Perk.IronBoot: case Perk.SureFoot: case Perk.Runner: return "icone_botas";
+                case Perk.DoubleDash: case Perk.Spring: case Perk.FirmGrip: return "icone_dash";
+                case Perk.QuickHand: case Perk.Counter: return "icone_estilingue";
+                case Perk.Magnet: case Perk.ChestSense: return "icone_bau";
+                case Perk.ExtraHeart: case Perk.SecondWind: case Perk.FirstAid: case Perk.ThickSkin: return "icone_vida";
+                case Perk.ChestLuck: case Perk.Hunter: return "icone_moeda";
+                case Perk.Padded: case Perk.CargoShield: return "icone_mochila";
+                default: return null;
+            }
+        }
+
+        /// <summary>Icone da arma: o pintado (Resources/UI) ou, sem ele, a silhueta procedural na cor do projetil.</summary>
+        static Sprite WeaponIcon(Weapon w, out Color c)
+        {
+            Sprite arte = Art.Ui(w == Weapon.Boomerang ? "icone_bumerangue" : w == Weapon.Bomb ? "icone_bomba" : "icone_estilingue");
+            c = arte != null ? Color.white : Art.Shot;
+            return arte ?? (w == Weapon.Boomerang ? Art.Boomerang() : w == Weapon.Bomb ? Art.Bomb() : Art.Sling());
+        }
 
         static Sprite UpgradeIcon(Upgrade u, out Color c)
         {
+            Sprite arte = Art.Ui(u == Upgrade.Life ? "icone_vida" : u == Upgrade.Dash ? "icone_dash" : u == Upgrade.Bag ? "icone_bolsa" : "icone_mochila");
+            if (arte != null) { c = Color.white; return arte; }
             switch (u)
             {
                 case Upgrade.Life: c = Art.Bad; return Art.Heart();
@@ -537,12 +574,12 @@ namespace DC
             Button tap = t.gameObject.AddComponent<Button>();
             tap.targetGraphic = bg; tap.transition = Selectable.Transition.None;
             tap.onClick.AddListener(() => { Audio.Play("confirmar"); ShowMenu(); });
-            Emblem(t, 0.62f, 0.86f);
-            Logo(t, 0.4f, 0.6f, 170);
-            Text slogan = Loc(Art.NewText(t, "Slogan", 44, new Vector2(0.05f, 0.335f), new Vector2(0.95f, 0.39f)), () => Textos.Slogan);
-            slogan.color = Art.Dim; slogan.fontStyle = FontStyle.Bold;
-            _tapText = Loc(Art.Outlined(Art.NewText(t, "Tocar", 52, new Vector2(0.05f, 0.2f), new Vector2(0.95f, 0.26f))), () => Textos.TocarParaComecar);
-            _tapText.fontStyle = FontStyle.Bold;
+            FundoMasmorra(t, 0.4f);
+            LogoArte(t, new Vector2(0.05f, 0.39f), new Vector2(0.95f, 0.95f));
+            Text slogan = Loc(Art.NewText(t, "Slogan", 50, new Vector2(0.05f, 0.33f), new Vector2(0.95f, 0.385f)), () => Textos.Slogan);
+            slogan.font = Art.Titulo(); slogan.color = Art.Gold; Art.Letreiro(slogan, 50);
+            _tapText = Loc(Art.Letreiro(Art.NewText(t, "Tocar", 56, new Vector2(0.05f, 0.2f), new Vector2(0.95f, 0.26f)), 56), () => Textos.TocarParaComecar);
+            _tapText.font = Art.Titulo();
             Text priv = Loc(Art.NewText(t, "Privacidade", 30, new Vector2(0.08f, 0.06f), new Vector2(0.92f, 0.145f)), () => Textos.PrivacidadeCurta);
             priv.color = Art.Dim; Shrink(priv, 20);
             Text ver = Loc(Art.NewText(t, "Versao", 28, new Vector2(0.05f, 0.012f), new Vector2(0.95f, 0.05f)), () => Textos.Versao(_g.Version));
@@ -562,47 +599,72 @@ namespace DC
             Art.Img(seal.transform, "Estrela", Art.Star(), Art.Gold, new Vector2(0.2f, 0.2f), new Vector2(0.8f, 0.8f));
         }
 
-        /// <summary>Nome do jogo em 2 linhas, negrito com contorno grosso e sombra (tipografia, sem imagem externa).</summary>
-        static void Logo(Transform parent, float y0, float y1, int size)
+        /// <summary>Logo do jogo (o courier saindo da masmorra com o letreiro; Resources/UI/logo.png, docs/PROVENIENCIA.md §4) com um halo
+        /// de tocha atras.</summary>
+        static void LogoArte(Transform parent, Vector2 min, Vector2 max)
         {
-            float mid = (y0 + y1) * 0.5f;
-            Text a = Art.NewText(parent, "Nome1", size, new Vector2(0.03f, mid), new Vector2(0.97f, y1));
-            Text b = Art.NewText(parent, "Nome2", size, new Vector2(0.03f, y0), new Vector2(0.97f, mid));
-            a.text = Textos.Nome1; b.text = Textos.Nome2;
-            a.color = Art.Ink; b.color = Art.Gold;
-            foreach (Text t in new[] { a, b })
-            {
-                t.fontStyle = FontStyle.Bold;
-                Shrink(t, size / 2);
-                Art.Outlined(t, size / 25f);
-                Shadow sh = t.gameObject.AddComponent<Shadow>();
-                sh.effectColor = Art.A(Art.Dark, 0.9f); sh.effectDistance = new Vector2(0f, -size / 14f);
-            }
+            Image glow = Art.Img(parent, "LogoBrilho", Art.Glow(), Art.A(Art.Coin, 0.18f), min, max);
+            glow.preserveAspect = false;
+            Art.Img(parent, "Logo", Art.Ui("logo"), Color.white, min, max);
+        }
+
+        /// <summary>Fundo pintado da masmorra (Resources/UI/fundo_menu.png) cobrindo a tela sem distorcer, escurecido por `escuro` para os
+        /// botoes lerem por cima. Sem o arquivo, fica a cor lisa da tela.</summary>
+        static void FundoMasmorra(Transform tela, float escuro)
+        {
+            Sprite s = Art.Ui("fundo_menu");
+            if (s == null) return;
+            RectTransform caixa = Art.Node(tela, "Fundo", Vector2.zero, Vector2.one);
+            caixa.gameObject.AddComponent<RectMask2D>();
+            caixa.SetAsFirstSibling();
+            float v = 1f - escuro;
+            Image f = Art.Img(caixa, "Masmorra", s, new Color(v, v, v * 1.06f), Vector2.zero, Vector2.one);
+            f.preserveAspect = false;
+            var fit = f.gameObject.AddComponent<AspectRatioFitter>();
+            fit.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent; fit.aspectRatio = s.rect.width / s.rect.height;
+        }
+
+        /// <summary>Icone do botao a esquerda (Resources/UI/icone_*.png) e o rotulo empurrado para a direita.</summary>
+        static void Icone(Button b, string nome)
+        {
+            Sprite s = Art.Ui("icone_" + nome);
+            if (s == null) return;
+            Art.Img(b.transform, "Icone", s, Color.white, new Vector2(0.03f, 0.12f), new Vector2(0.27f, 0.94f));
+            b.GetComponentInChildren<Text>().rectTransform.anchorMin = new Vector2(0.26f, 0f);
         }
 
         RectTransform BuildMenu()
         {
             RectTransform m = Art.Node(_safe, "Menu", Vector2.zero, Vector2.one);
             Image bg = m.gameObject.AddComponent<Image>(); bg.color = Art.Bg;
-            Logo(m, 0.835f, 0.985f, 110);
-            _menuCoins = Pill(m, Art.CoinShape(), Art.Coin, new Vector2(0.06f, 0.765f), new Vector2(0.47f, 0.825f));
-            _menuStars = Pill(m, Art.Star(), Art.Gold, new Vector2(0.53f, 0.765f), new Vector2(0.94f, 0.825f));
-            _menuNotice = Shrink(Art.NewText(m, "Aviso", 28, new Vector2(0.05f, 0.712f), new Vector2(0.95f, 0.76f)), 18);
-            _menuNotice.fontStyle = FontStyle.Bold;
-            // bau do dia (rewarded): conteudo escrito antes de assistir
-            _bau = NovoEspecial(m, new Vector2(0.06f, 0.6f), new Vector2(0.94f, 0.705f), Art.Chest, PedeBau);
+            FundoMasmorra(m, 0.5f);
+            LogoArte(m, new Vector2(0.2f, 0.795f), new Vector2(0.8f, 0.995f));
+            _menuCoins = Pill(m, Art.Moeda(), Art.MoedaCor, new Vector2(0.06f, 0.735f), new Vector2(0.47f, 0.79f));
+            _menuStars = Pill(m, Art.Star(), Art.Gold, new Vector2(0.53f, 0.735f), new Vector2(0.94f, 0.79f));
+            _menuNotice = Shrink(Art.Outlined(Art.NewText(m, "Aviso", 28, new Vector2(0.05f, 0.7f), new Vector2(0.95f, 0.735f))), 18);
+            // bau do dia (rewarded): conteudo escrito antes de assistir; icone pintado (Resources/UI) no lugar do contorno + silhueta
+            _bau = NovoEspecial(m, new Vector2(0.06f, 0.592f), new Vector2(0.94f, 0.697f), Art.Chest, PedeBau);
             _bau.Icon.sprite = _bau.Edge.sprite = Art.ChestShape();
             _bau.Icon.color = Art.Chest; _bau.Edge.color = Art.Coin;   // limao e so da carga (ART_BIBLE §3)
-            Btn(m, () => Textos.MenuJogar, 64, Art.Good, new Vector2(0.1f, 0.475f), new Vector2(0.9f, 0.59f), ShowBoard, "confirmar");
-            // grade 2 x 4 (cada botao ~163 px de referencia = 48 dp)
-            _menuGuild = Btn(m, () => Textos.MenuGuilda, 44, Art.Paper, new Vector2(0.06f, 0.375f), new Vector2(0.49f, 0.46f), () => ShowGuild(0));
-            _menuGuildLock = Art.Img(_menuGuild.transform, "Cadeado", Art.Lock(), Art.Tinta, new Vector2(0.04f, 0.2f), new Vector2(0.18f, 0.8f));
-            _menuLoja = Btn(m, () => Textos.LojaBotao, 44, Art.Gold, new Vector2(0.51f, 0.375f), new Vector2(0.94f, 0.46f), ShowLoja);
-            Btn(m, () => Textos.TemporadaBotao, 40, Art.Paper, new Vector2(0.06f, 0.28f), new Vector2(0.49f, 0.365f), () => Abre(_pTemporada));
-            Btn(m, () => Textos.MarcosBotao, 40, Art.Paper, new Vector2(0.51f, 0.28f), new Vector2(0.94f, 0.365f), () => Abre(_pMarcos));
-            Btn(m, () => Textos.RoupasBotao, 40, Art.PaperEdge, new Vector2(0.06f, 0.185f), new Vector2(0.49f, 0.27f), () => Abre(_pRoupas));
-            Btn(m, () => Textos.MenuConfig, 40, Art.PaperEdge, new Vector2(0.51f, 0.185f), new Vector2(0.94f, 0.27f), ShowSettings);
-            Btn(m, () => Textos.MenuCreditos, 40, Art.PaperEdge, new Vector2(0.25f, 0.09f), new Vector2(0.75f, 0.175f), ShowCredits);
+            Sprite bauArte = Art.Ui("icone_bau");
+            if (bauArte != null)
+            {
+                _bau.Edge.enabled = false;
+                _bau.Icon.sprite = bauArte; _bau.Icon.color = Color.white;
+                _bau.Icon.rectTransform.anchorMin = new Vector2(0.035f, 0.04f); _bau.Icon.rectTransform.anchorMax = new Vector2(0.15f, 0.56f);
+            }
+            Btn(m, () => Textos.MenuJogar, 72, Art.Good, new Vector2(0.1f, 0.47f), new Vector2(0.9f, 0.582f), ShowBoard, "confirmar");
+            // grade 2 x 3 + creditos (cada botao ~163 px de referencia = 48 dp), icone pintado a esquerda
+            _menuGuild = Btn(m, () => Textos.MenuGuilda, 44, Art.Paper, new Vector2(0.06f, 0.37f), new Vector2(0.49f, 0.455f), () => ShowGuild(0));
+            Icone(_menuGuild, "guilda");
+            _menuGuildLock = Art.Img(_menuGuild.transform, "Cadeado", Art.Lock(), Art.Tinta, new Vector2(0.82f, 0.22f), new Vector2(0.96f, 0.78f));
+            _menuLoja = Btn(m, () => Textos.LojaBotao, 44, Art.Gold, new Vector2(0.51f, 0.37f), new Vector2(0.94f, 0.455f), ShowLoja);
+            Icone(_menuLoja, "loja");
+            Icone(Btn(m, () => Textos.TemporadaBotao, 40, Art.Paper, new Vector2(0.06f, 0.275f), new Vector2(0.49f, 0.36f), () => Abre(_pTemporada)), "temporada");
+            Icone(Btn(m, () => Textos.MarcosBotao, 40, Art.Paper, new Vector2(0.51f, 0.275f), new Vector2(0.94f, 0.36f), () => Abre(_pMarcos)), "marcos");
+            Icone(Btn(m, () => Textos.RoupasBotao, 40, Art.PaperEdge, new Vector2(0.06f, 0.18f), new Vector2(0.49f, 0.265f), () => Abre(_pRoupas)), "roupas");
+            Icone(Btn(m, () => Textos.MenuConfig, 40, Art.PaperEdge, new Vector2(0.51f, 0.18f), new Vector2(0.94f, 0.265f), ShowSettings), "config");
+            Icone(Btn(m, () => Textos.MenuCreditos, 40, Art.PaperEdge, new Vector2(0.25f, 0.085f), new Vector2(0.75f, 0.17f), ShowCredits), "creditos");
             Text ver = Loc(Art.NewText(m, "Versao", 28, new Vector2(0.05f, 0.012f), new Vector2(0.95f, 0.05f)), () => Textos.Versao(_g.Version));
             ver.color = Art.Dim;
             return m;
@@ -611,11 +673,11 @@ namespace DC
         /// <summary>Pilula escura com icone e numero (moedas, estrelas).</summary>
         static Text Pill(Transform parent, Sprite icon, Color c, Vector2 min, Vector2 max)
         {
-            Image bg = Art.Panel(parent, "Pilula", Art.A(Art.Tinta, 0.85f), min, max);
-            bg.raycastTarget = false;
-            Art.Img(bg.transform, "Icone", icon, c, new Vector2(0.05f, 0.14f), new Vector2(0.25f, 0.86f));
-            Text t = Art.Outlined(Art.NewText(bg.transform, "Valor", 50, new Vector2(0.28f, 0f), new Vector2(0.97f, 1f), TextAnchor.MiddleLeft));
-            t.fontStyle = FontStyle.Bold;
+            Image bg = Art.Panel(parent, "Pilula", Art.Hex(0x2B2335), min, max);
+            bg.sprite = Art.Botao(); bg.raycastTarget = false;
+            Art.Img(bg.transform, "Icone", icon, c, new Vector2(0.05f, 0.18f), new Vector2(0.25f, 0.9f));
+            Text t = Art.Letreiro(Art.NewText(bg.transform, "Valor", 50, new Vector2(0.28f, 0.12f), new Vector2(0.97f, 1f), TextAnchor.MiddleLeft), 50);
+            t.font = Art.Titulo();
             return t;
         }
 
@@ -625,13 +687,14 @@ namespace DC
         {
             RectTransform b = Art.Node(_safe, "Quadro", Vector2.zero, Vector2.one);
             Image bg = b.gameObject.AddComponent<Image>(); bg.color = Art.Bg;
+            FundoMasmorra(b, 0.62f);
             Btn(b, () => Textos.Voltar, 40, Art.PaperEdge, new Vector2(0.02f, 0.92f), new Vector2(0.25f, 0.996f), ShowMenu);
             // titulo = regiao do quadro; tocar abre o mapa das regioes (bandeira = mapa)
             Button region = Art.NewButton(b, "", 40, Art.Paper, new Vector2(0.265f, 0.92f), new Vector2(0.73f, 0.996f), () => Abre(_pMapa));
             Art.Img(region.transform, "Mapa", Art.Flag(), Art.Tinta, new Vector2(0.03f, 0.2f), new Vector2(0.16f, 0.8f));
             _regionT = region.GetComponentInChildren<Text>();
             _regionT.rectTransform.anchorMin = new Vector2(0.16f, 0f);
-            Art.Img(b, "Moeda", Art.CoinShape(), Art.Coin, new Vector2(0.745f, 0.937f), new Vector2(0.795f, 0.98f));
+            Art.Img(b, "Moeda", Art.Moeda(), Art.MoedaCor, new Vector2(0.745f, 0.937f), new Vector2(0.795f, 0.98f));
             _boardCoins = Art.Outlined(Art.NewText(b, "Moedas", 46, new Vector2(0.8f, 0.92f), new Vector2(0.99f, 0.996f), TextAnchor.MiddleLeft));
             _boardCoins.fontStyle = FontStyle.Bold;
             Art.Img(b, "Estrela", Art.Star(), Art.Gold, new Vector2(0.03f, 0.881f), new Vector2(0.085f, 0.914f));
@@ -692,8 +755,10 @@ namespace DC
             foreach (int[] layer in c.Layers) { RoomDef r = Content.Rooms[layer[0]]; boss |= r.Boss; mini |= r.Mini; }
             if (boss || mini)   // icone do chefe (ART_BIBLE §10): chifres dourados (chefe) ou roxos (Capitao Ladrao)
                 Art.Img(f, "Chefe", Art.Horns(), boss ? Art.Gold : Art.Role(EnemyType.Captain), new Vector2(0.02f, 0.68f), new Vector2(0.105f, 0.98f));
-            Art.Img(f, "CargaContorno", Art.CargoSprite(c.Cargo), Art.Cargo, new Vector2(0.12f, 0.12f), new Vector2(0.22f, 0.88f));
-            Art.Img(f, "Carga", Art.CargoSprite(c.Cargo), Art.CargoColor(c.Cargo), new Vector2(0.13f, 0.2f), new Vector2(0.21f, 0.8f));
+            Sprite carga = CargaIcone(c.Cargo, out Color corCarga);   // quadro renderizado da carga; sem a folha, a forma com contorno limao
+            if (corCarga != Color.white) Art.Img(f, "CargaContorno", carga, Art.Cargo, new Vector2(0.12f, 0.12f), new Vector2(0.22f, 0.88f));
+            Art.Img(f, "Carga", carga, corCarga, corCarga == Color.white ? new Vector2(0.115f, 0.04f) : new Vector2(0.13f, 0.2f),
+                corCarga == Color.white ? new Vector2(0.225f, 0.96f) : new Vector2(0.21f, 0.8f));
             // selo de maestria da carga (nivel 1-5; some no 0)
             row.Seal = Art.Img(f, "Maestria", Art.Disc(), Art.Gold, new Vector2(0.185f, 0.6f), new Vector2(0.235f, 0.97f));
             row.SealText = Ink(row.Seal.transform, "Nivel", 24, Vector2.zero, Vector2.one, TextAnchor.MiddleCenter, true);
@@ -702,12 +767,10 @@ namespace DC
                 () => Textos.Carga(c.Cargo) + " · " + Textos.Salas(c)), 20);
             Text l2 = Shrink(Loc(Ink(f, "Linha2", 30, new Vector2(0.235f, 0.04f), new Vector2(0.66f, 0.5f), TextAnchor.MiddleLeft), () => Textos.Verbo(c)), 18);
             l2.color = Art.A(Art.Tinta, 0.78f);
-            Art.Img(f, "Moeda", Art.CoinShape(), Art.Coin, new Vector2(0.665f, 0.28f), new Vector2(0.715f, 0.72f));
+            Art.Img(f, "Moeda", Art.Moeda(), Art.MoedaCor, new Vector2(0.665f, 0.28f), new Vector2(0.715f, 0.72f));
             Text pay = Ink(f, "Pagamento", 36, new Vector2(0.72f, 0f), new Vector2(0.81f, 1f), TextAnchor.MiddleLeft, true);
             pay.text = Textos.Num(c.Pay);
-            row.Badge = Art.Panel(f, "Selo", Art.Good, new Vector2(0.815f, 0.42f), new Vector2(0.99f, 0.93f));
-            row.Badge.raycastTarget = false;
-            row.BadgeText = Shrink(Ink(row.Badge.transform, "Rotulo", 26, Vector2.zero, Vector2.one, TextAnchor.MiddleCenter, true), 14);
+            row.Badge = Selo(f, new Vector2(0.815f, 0.42f), new Vector2(0.99f, 0.93f), 26, 14, out row.BadgeText);
             row.Lock = Art.Img(row.Badge.transform, "Cadeado", Art.Lock(), Art.Ink, new Vector2(0.25f, 0.12f), new Vector2(0.75f, 0.88f));
             for (int s = 0; s < 3; s++)
                 row.Stars[s] = Art.Img(f, "Estrela", Art.StarHollow(), Art.Tinta, new Vector2(0.82f + s * 0.057f, 0.06f), new Vector2(0.872f + s * 0.057f, 0.38f));
@@ -731,12 +794,22 @@ namespace DC
             e.Edge = Art.Img(f, "CargaContorno", Art.Rounded(), Art.Cargo, new Vector2(0.045f, 0.06f), new Vector2(0.14f, 0.52f));
             e.Icon = Art.Img(f, "Carga", Art.Rounded(), Color.white, new Vector2(0.058f, 0.12f), new Vector2(0.127f, 0.46f));
             e.Line = Shrink(Ink(f, "Linha", 28, new Vector2(0.15f, 0.04f), new Vector2(0.75f, 0.55f), TextAnchor.MiddleLeft), 16);
-            e.Badge = Art.Panel(f, "Selo", Art.Good, new Vector2(0.76f, 0.2f), new Vector2(0.98f, 0.8f));
-            e.Badge.raycastTarget = false;
-            e.BadgeT = Shrink(Ink(e.Badge.transform, "Rotulo", 28, Vector2.zero, Vector2.one, TextAnchor.MiddleCenter, true), 13);
+            e.Badge = Selo(f, new Vector2(0.76f, 0.2f), new Vector2(0.98f, 0.8f), 28, 13, out e.BadgeT);
             e.Lock = Art.Img(e.Badge.transform, "Cadeado", Art.Lock(), Art.Ink, new Vector2(0.25f, 0.12f), new Vector2(0.75f, 0.88f));
             e.Check = Art.Img(e.Badge.transform, "Visto", Art.Check(), Art.Tinta, new Vector2(0.04f, 0.2f), new Vector2(0.3f, 0.8f));
             return e;
+        }
+
+        /// <summary>Selo de estado dos cartoes (JOGAR, REPETIR, VER ANUNCIO, cadeado): mesmo relevo dos botoes, rotulo claro com contorno.
+        /// A cor vem do refresh.</summary>
+        static Image Selo(Transform f, Vector2 min, Vector2 max, int size, int minSize, out Text rotulo)
+        {
+            Image b = Art.Panel(f, "Selo", Art.Good, min, max);
+            b.sprite = Art.Botao(); b.raycastTarget = false;
+            rotulo = Shrink(Art.Letreiro(Art.NewText(b.transform, "Rotulo", size, Vector2.zero, Vector2.one), size), minSize);
+            rotulo.font = Art.Titulo();
+            rotulo.rectTransform.offsetMin = new Vector2(6f, 12f); rotulo.rectTransform.offsetMax = new Vector2(-6f, -3f);
+            return b;
         }
 
         /// <summary>TROCAR em cima, moeda + preco embaixo.</summary>
@@ -745,7 +818,7 @@ namespace DC
             Button b = Btn(parent, () => Textos.Trocar, 30, Art.Paper, min, max, () => Reroll(rare));
             b.GetComponentInChildren<Text>().rectTransform.anchorMin = new Vector2(0f, 0.5f);
             var t = new Troca { B = b };
-            t.Coin = Art.Img(b.transform, "Moeda", Art.CoinShape(), Art.Coin, new Vector2(0.1f, 0.12f), new Vector2(0.36f, 0.48f));
+            t.Coin = Art.Img(b.transform, "Moeda", Art.Moeda(), Art.MoedaCor, new Vector2(0.1f, 0.12f), new Vector2(0.36f, 0.48f));
             t.Cost = Ink(b.transform, "Preco", 30, new Vector2(0.38f, 0.04f), new Vector2(0.97f, 0.52f), TextAnchor.MiddleLeft, true);
             return t;
         }
@@ -793,7 +866,7 @@ namespace DC
             Image face = Card(m, "Cartao", new Vector2(0.03f, 0.03f), new Vector2(0.97f, 0.97f));
             Transform f = face.transform;
             Loc(Ink(f, "Titulo", 56, new Vector2(0.05f, 0.925f), new Vector2(0.95f, 0.99f), TextAnchor.MiddleCenter, true), () => Textos.Guilda);
-            Art.Img(f, "Moeda", Art.CoinShape(), Art.Coin, new Vector2(0.2f, 0.873f), new Vector2(0.26f, 0.915f));
+            Art.Img(f, "Moeda", Art.Moeda(), Art.MoedaCor, new Vector2(0.2f, 0.873f), new Vector2(0.26f, 0.915f));
             _guildCoins = Ink(f, "Moedas", 42, new Vector2(0.27f, 0.865f), new Vector2(0.48f, 0.923f), TextAnchor.MiddleLeft, true);
             Art.Img(f, "Estrela", Art.Star(), Art.Gold, new Vector2(0.54f, 0.873f), new Vector2(0.6f, 0.915f));
             _guildStars = Ink(f, "Estrelas", 42, new Vector2(0.61f, 0.865f), new Vector2(0.85f, 0.923f), TextAnchor.MiddleLeft, true);
@@ -834,14 +907,14 @@ namespace DC
             Art.Img(r, "Icone", UpgradeIcon(up, out Color tint), tint, new Vector2(0.02f, 0.2f), new Vector2(0.15f, 0.8f));
             var row = new UpRow { Dots = new Image[Balance.UpgradeMax] };
             Shrink(Loc(Ink(r, "Nome", 38, new Vector2(0.17f, 0.62f), new Vector2(0.6f, 0.95f), TextAnchor.MiddleLeft, true), () => Textos.UpNome(up)), 24);
-            Text eff = Shrink(Loc(Ink(r, "Efeito", 26, new Vector2(0.17f, 0.36f), new Vector2(0.62f, 0.62f), TextAnchor.MiddleLeft), () => Textos.UpEfeito(up)), 16);
+            Text eff = Shrink(Loc(Ink(r, "Efeito", 26, new Vector2(0.17f, 0.36f), new Vector2(0.585f, 0.62f), TextAnchor.MiddleLeft), () => Textos.UpEfeito(up)), 16);   // termina antes da moeda do preco (0,6)
             eff.color = Art.A(Art.Tinta, 0.8f);
             float dw = 0.27f / row.Dots.Length;
             for (int k = 0; k < row.Dots.Length; k++)
                 row.Dots[k] = Art.Img(r, "Nivel", Art.Disc(), Art.Off, new Vector2(0.17f + k * dw, 0.08f), new Vector2(0.17f + (k + 0.8f) * dw, 0.3f));
             row.Level = Shrink(Ink(r, "NivelTexto", 24, new Vector2(0.45f, 0.04f), new Vector2(0.62f, 0.34f), TextAnchor.MiddleLeft), 16);
             row.Level.color = Art.A(Art.Tinta, 0.75f);
-            row.CostCoin = Art.Img(r, "Moeda", Art.CoinShape(), Art.Coin, new Vector2(0.6f, 0.3f), new Vector2(0.66f, 0.7f));
+            row.CostCoin = Art.Img(r, "Moeda", Art.Moeda(), Art.MoedaCor, new Vector2(0.6f, 0.3f), new Vector2(0.66f, 0.7f));
             row.Cost = Ink(r, "Custo", 36, new Vector2(0.665f, 0f), new Vector2(0.77f, 1f), TextAnchor.MiddleLeft, true);
             row.Buy = Art.NewButton(r, "", 30, Art.Good, new Vector2(0.77f, 0.14f), new Vector2(0.99f, 0.86f), () => _g.Buy(up), "confirmar");
             row.BuyText = row.Buy.GetComponentInChildren<Text>();
@@ -856,7 +929,7 @@ namespace DC
             Weapon wp = (Weapon)w;
             var row = new WRow { G = r.gameObject.AddComponent<CanvasGroup>(), Dots = new Image[WeaponDef.MaxLevel] };
             Image disc = Art.Img(r, "Fundo", Art.Disc(), Art.Tinta, new Vector2(0.02f, 0.25f), new Vector2(0.15f, 0.75f));
-            Art.Img(disc.transform, "Icone", WeaponIcon(wp), Art.Shot, new Vector2(0.15f, 0.15f), new Vector2(0.85f, 0.85f));
+            Art.Img(disc.transform, "Icone", WeaponIcon(wp, out Color wc), wc, new Vector2(0.06f, 0.06f), new Vector2(0.94f, 0.94f));
             row.Lock = Art.Img(r, "Cadeado", Art.Lock(), Art.Tinta, new Vector2(0.1f, 0.15f), new Vector2(0.17f, 0.42f));
             Shrink(Loc(Ink(r, "Nome", 40, new Vector2(0.17f, 0.66f), new Vector2(0.63f, 0.96f), TextAnchor.MiddleLeft, true), () => Textos.ArmaNome(wp)), 24);
             Text eff = Shrink(Loc(Ink(r, "Efeito", 26, new Vector2(0.17f, 0.36f), new Vector2(0.63f, 0.66f), TextAnchor.MiddleLeft), () => Textos.ArmaEfeito(wp)), 16);
@@ -873,7 +946,7 @@ namespace DC
             row.Up = Art.NewButton(r, "", 30, Art.Good, new Vector2(0.65f, 0.05f), new Vector2(0.99f, 0.47f), () => _g.UpgradeWeapon(wp), "confirmar");
             row.UpText = row.Up.GetComponentInChildren<Text>();
             row.UpText.rectTransform.anchorMax = new Vector2(0.62f, 1f);
-            row.UpCoin = Art.Img(row.Up.transform, "Moeda", Art.CoinShape(), Art.Coin, new Vector2(0.62f, 0.25f), new Vector2(0.74f, 0.75f));
+            row.UpCoin = Art.Img(row.Up.transform, "Moeda", Art.Moeda(), Art.MoedaCor, new Vector2(0.62f, 0.25f), new Vector2(0.74f, 0.75f));
             row.Cost = Ink(row.Up.transform, "Custo", 32, new Vector2(0.75f, 0f), new Vector2(0.98f, 1f), TextAnchor.MiddleLeft, true);
             return row;
         }
@@ -888,7 +961,7 @@ namespace DC
             Image sep = Art.Panel(r, "Fundo", Art.A(Art.PaperEdge, 0.35f), Vector2.zero, Vector2.one); sep.raycastTarget = false;
             var row = new WRow { G = r.gameObject.AddComponent<CanvasGroup>(), Dots = new Image[Balance.GearMaxLevel] };
             Image disc = Art.Img(r, "Fundo", Art.Disc(), Art.Tinta, new Vector2(0.015f, 0.27f), new Vector2(0.155f, 0.73f));
-            Art.Img(disc.transform, "Icone", GearIcon(g, out Color c), c, new Vector2(0.15f, 0.15f), new Vector2(0.85f, 0.85f));
+            Art.Img(disc.transform, "Icone", GearIcon(g, out Color c), c, new Vector2(0.06f, 0.06f), new Vector2(0.94f, 0.94f));
             row.Lock = Art.Img(r, "Cadeado", Art.Lock(), Art.Tinta, new Vector2(0.1f, 0.15f), new Vector2(0.17f, 0.42f));
             Shrink(Loc(Ink(r, "Nome", 36, new Vector2(0.17f, 0.69f), new Vector2(0.59f, 0.97f), TextAnchor.MiddleLeft, true), () => Textos.GearNome(g)), 20);
             Text eff = Shrink(Loc(Ink(r, "Efeito", 24, new Vector2(0.17f, 0.32f), new Vector2(0.59f, 0.69f), TextAnchor.MiddleLeft), () => Textos.GearEfeito(g)), 14);
@@ -904,7 +977,7 @@ namespace DC
             row.Up = Art.NewButton(r, "", 28, Art.Good, new Vector2(0.8f, 0.1f), new Vector2(0.99f, 0.9f), () => UpGear(g), "confirmar");
             row.UpText = row.Up.GetComponentInChildren<Text>();
             row.UpText.rectTransform.anchorMin = new Vector2(0f, 0.5f);
-            row.UpCoin = Art.Img(row.Up.transform, "Moeda", Art.CoinShape(), Art.Coin, new Vector2(0.06f, 0.12f), new Vector2(0.34f, 0.46f));
+            row.UpCoin = Art.Img(row.Up.transform, "Moeda", Art.Moeda(), Art.MoedaCor, new Vector2(0.06f, 0.12f), new Vector2(0.34f, 0.46f));
             row.Cost = Ink(row.Up.transform, "Custo", 28, new Vector2(0.36f, 0.04f), new Vector2(0.98f, 0.5f), TextAnchor.MiddleLeft, true);
             return row;
         }
@@ -937,7 +1010,7 @@ namespace DC
                 b.targetGraphic = face;
                 int k = i;
                 b.onClick.AddListener(() => { _perk.gameObject.SetActive(false); _g.PickPerk(k); });   // som: "perk" no Ev.PerkPick
-                Image disc = Art.Img(face.transform, "Fundo", Art.Disc(), Art.Tinta, new Vector2(0.03f, 0.15f), new Vector2(0.25f, 0.85f));
+                Image disc = _perkDisc[i] = Art.Img(face.transform, "Fundo", Art.Disc(), Art.Tinta, new Vector2(0.03f, 0.15f), new Vector2(0.25f, 0.85f));
                 _perkIcon[i] = Art.Img(disc.transform, "Icone", Art.Star(), Art.Ink, new Vector2(0.2f, 0.2f), new Vector2(0.8f, 0.8f));
                 _perkName[i] = Shrink(Ink(face.transform, "Nome", 56, new Vector2(0.28f, 0.5f), new Vector2(0.97f, 0.92f), TextAnchor.MiddleLeft, true), 30);
                 _perkEff[i] = Shrink(Ink(face.transform, "Efeito", 36, new Vector2(0.28f, 0.08f), new Vector2(0.97f, 0.5f), TextAnchor.MiddleLeft), 22);
@@ -988,7 +1061,7 @@ namespace DC
             float w = 0.29f / bar.Length;
             for (int k = 0; k < bar.Length; k++)
             {
-                bar[k] = Art.Img(r, "Nivel", Art.Square(), Art.Off, new Vector2(0.525f + k * w, 0.22f), new Vector2(0.525f + (k + 0.75f) * w, 0.78f));
+                bar[k] = Art.Img(r, "Nivel", Art.Rounded(), Art.Off, new Vector2(0.525f + k * w, 0.2f), new Vector2(0.525f + (k + 0.78f) * w, 0.8f));
                 bar[k].preserveAspect = false;
             }
             Art.NewButton(r, "+", 72, Art.PaperEdge, new Vector2(0.83f, 0.03f), new Vector2(0.99f, 0.97f), () => Vol(music, +1));

@@ -22,7 +22,7 @@ namespace DC
         sealed class Linha
         {
             public RectTransform R; public CanvasGroup G; public Button B; public Action Click;
-            public Image Icon, Lock, Check, Coin, Bar, BarBg, Badge; public Text Title, Sub, Value, BadgeT; public Image[] Pips;
+            public Image Disc, Icon, Lock, Check, Coin, Bar, BarBg, Badge; public Text Title, Sub, Value, BadgeT; public Image[] Pips;
         }
 
         sealed class Painel
@@ -108,7 +108,7 @@ namespace DC
             l.B.targetGraphic = face;
             l.B.onClick.AddListener(() => { if (l.Click == null) return; Audio.Play("clique"); l.Click(); });
             Transform f = face.transform;
-            Image disc = Art.Img(f, "Fundo", Art.Disc(), Art.Tinta, new Vector2(0.012f, 0.1f), new Vector2(0.138f, 0.9f));
+            Image disc = l.Disc = Art.Img(f, "Fundo", Art.Disc(), Art.Tinta, new Vector2(0.012f, 0.1f), new Vector2(0.138f, 0.9f));
             l.Icon = Art.Img(disc.transform, "Icone", Art.Star(), Art.Ink, new Vector2(0.14f, 0.14f), new Vector2(0.86f, 0.86f));
             l.Title = Shrink(Ink(f, "Titulo", 32, new Vector2(0.15f, 0.54f), new Vector2(0.68f, 0.97f), TextAnchor.MiddleLeft, true), 18);
             l.Sub = Shrink(Ink(f, "Linha", 26, new Vector2(0.15f, 0.19f), new Vector2(0.68f, 0.55f), TextAnchor.MiddleLeft), 15);
@@ -119,7 +119,7 @@ namespace DC
             l.Bar.preserveAspect = false; l.Bar.type = Image.Type.Filled; l.Bar.fillMethod = Image.FillMethod.Horizontal;
             for (int k = 0; k < l.Pips.Length; k++)
                 l.Pips[k] = Art.Img(f, "Ponto", Art.Disc(), Art.Off, new Vector2(0.15f + k * 0.04f, 0.04f), new Vector2(0.18f + k * 0.04f, 0.18f));
-            l.Coin = Art.Img(f, "Moeda", Art.CoinShape(), Art.Coin, new Vector2(0.69f, 0.6f), new Vector2(0.74f, 0.92f));
+            l.Coin = Art.Img(f, "Moeda", Art.Moeda(), Art.MoedaCor, new Vector2(0.69f, 0.6f), new Vector2(0.74f, 0.92f));
             l.Value = Shrink(Ink(f, "Valor", 32, new Vector2(0.745f, 0.55f), new Vector2(0.985f, 0.97f), TextAnchor.MiddleLeft, true), 15);
             l.Badge = Art.Panel(f, "Selo", Art.Good, new Vector2(0.69f, 0.07f), new Vector2(0.985f, 0.52f));
             l.Badge.raycastTarget = false;
@@ -135,6 +135,9 @@ namespace DC
                           bool check, Action click)
         {
             l.Icon.sprite = icon; l.Icon.color = ic;
+            bool arte = ic.r > 0.99f && ic.g > 0.99f && ic.b > 0.99f;   // pintado (Resources/UI) ou retrato da folha: medalhao claro
+            l.Disc.color = arte ? Medalhao : Art.Tinta;
+            l.Icon.rectTransform.anchorMin = Vector2.one * (arte ? 0.05f : 0.14f); l.Icon.rectTransform.anchorMax = Vector2.one * (arte ? 0.95f : 0.86f);
             l.Title.text = title; l.Sub.text = sub ?? "";
             l.Value.text = value ?? "";
             bool c = coin && !string.IsNullOrEmpty(value);
@@ -150,6 +153,9 @@ namespace DC
             l.BarBg.gameObject.SetActive(false);
             for (int k = 0; k < l.Pips.Length; k++) l.Pips[k].enabled = false;
         }
+
+        /// <summary>Fundo do icone pintado ou do retrato: couro claro sobre o pergaminho (o disco escuro so para as silhuetas procedurais).</summary>
+        internal static readonly Color Medalhao = new Color(0.77f, 0.54f, 0.31f, 0.42f);
 
         static void Barra(Linha l, float frac, Color c)
         {
@@ -201,17 +207,22 @@ namespace DC
         // ------------------------------------------------------------------ icones
 
         /// <summary>Icone da carga: o quadro estatico da folha (Resources/Sprites, WorldView.CargoSheet) ou o desenho procedural.</summary>
+        // fracao da celula que a carga ocupa (contact sheet, ordem do WorldView.CargoSheet; todas centradas): o icone recorta em volta
+        static readonly float[] CargaLado = { 0.73f, 0.54f, 0.92f, 0.73f, 0.67f, 0.80f, 0.73f, 0.58f, 0.73f, 0.56f, 0.48f, 0.48f, 0.69f, 0.53f, 0.60f };
+
         static Sprite CargaIcone(CargoType t, out Color c)
         {
             string sheet = (int)t >= 0 && (int)t < WorldView.CargoSheet.Length ? WorldView.CargoSheet[(int)t] : null;
             SpriteSheet s = sheet != null ? SpriteSheet.Get(sheet) : null;
-            if (s != null) { c = Color.white; return s.Frame(s.Pick("Static"), 0, 0); }
+            if (s != null) { c = Color.white; return s.Retrato(s.Pick("Static"), 0, 0.5f, 0.5f, Mathf.Min(1f, CargaLado[(int)t] + 0.08f)); }
             c = Art.CargoColor(t);
             return Art.CargoSprite(t);
         }
 
         static Sprite GearIcon(Gear g, out Color c)
         {
+            Sprite arte = Art.Ui(g == Gear.Smoke ? "icone_fumaca" : g == Gear.Hook ? "icone_gancho" : g == Gear.Trap ? "icone_armadilha" : "icone_botas");
+            if (arte != null) { c = Color.white; return arte; }
             switch (g)
             {
                 case Gear.Smoke: c = Art.Dim; return Art.Glow();
@@ -268,7 +279,7 @@ namespace DC
             SpriteSheet s = SpriteSheet.Get(FolhaRoupa(o));
             bool tinta = s == null;
             if (tinta) s = SpriteSheet.Get("courier");
-            if (s != null) { c = tinta ? TintaRoupa(o) : CorComFolha(o); return s.Frame(s.Pick("Idle"), 0, 0); }
+            if (s != null) { c = tinta ? TintaRoupa(o) : CorComFolha(o); return s.Retrato(s.Pick("Idle"), 0, 0.5f, 0.49f, 0.56f); }
             c = Art.Courier * TintaRoupa(o);
             return Art.Disc();
         }
@@ -309,6 +320,17 @@ namespace DC
 
         /// <summary>Chefe que fecha cada regiao (o da anterior destrava a seguinte).</summary>
         static readonly EnemyType[] ChefeDaRegiao = { EnemyType.Ogre, EnemyType.StoneGolem, EnemyType.Necromancer, EnemyType.ElderDragon };
+        // retrato do chefe de cada regiao no mapa: folha, linha (direcao) e recorte medido no contact sheet (centro x, y e lado da celula)
+        static readonly (string folha, int linha, float x, float y, float lado)[] RetratoChefe =
+            { ("ogro", 0, 0.505f, 0.56f, 0.62f), ("golem", 0, 0.5f, 0.52f, 0.62f), ("necromante", 0, 0.475f, 0.525f, 0.54f), ("dragao", 1, 0.5f, 0.525f, 0.76f) };
+
+        /// <summary>Retrato do chefe da regiao (1-based); null sem a folha (-nographics).</summary>
+        internal static Sprite ChefeRetrato(int regiao)
+        {
+            var (folha, linha, x, y, lado) = RetratoChefe[Mathf.Clamp(regiao - 1, 0, RetratoChefe.Length - 1)];
+            SpriteSheet s = SpriteSheet.Get(folha);
+            return s?.Retrato(s.Pick("Idle"), linha, x, y, lado);
+        }
 
         void RefreshMapa(Painel p)
         {
@@ -325,9 +347,11 @@ namespace DC
                     : Textos.RegiaoTrava(r.Stars, Textos.Inimigo(ChefeDaRegiao[Mathf.Clamp(r.Id - 2, 0, ChefeDaRegiao.Length - 1)]));
                 bool beaten = r.BossAt >= 0 && S.Reputation > r.BossAt;
                 int id = r.Id;
-                Pinta(p.Rows[i], Art.Horns(), beaten ? Art.Gold : open ? Art.Ink : Art.Off, Textos.NomeRegiao(r.Id), sub, null, false,
+                Sprite chefe = ChefeRetrato(r.Id);
+                Pinta(p.Rows[i], chefe ?? Art.Horns(), chefe != null ? Color.white : beaten ? Art.Gold : open ? Art.Ink : Art.Off, Textos.NomeRegiao(r.Id), sub, null, false,
                     sel ? Textos.NoQuadro : open ? Textos.Ver : "", sel ? Art.Gold : open ? Art.Good : Art.Off, !open, sel,
                     () => { _boardRegion = id; Fecha(p); RefreshBoard(); RolaQuadro(); });
+                if (chefe != null && !open) p.Rows[i].Icon.color = new Color(0.16f, 0.13f, 0.12f, 0.85f);   // fechada: silhueta do chefe
             }
             Mostra(p, n);
         }
@@ -416,13 +440,32 @@ namespace DC
                 bool claimed = S.SeasonClaimed(i), ready = S.SeasonReady(i);
                 string premio = g.Blueprint != Gear.None ? Textos.PremioProjeto(g.Blueprint) : g.Outfit != Outfit.Classic ? Textos.PremioRoupa(g.Outfit) : null;
                 Color ic = Art.Gold;
-                Sprite icon = g.Blueprint != Gear.None ? GearIcon(g.Blueprint, out ic) : g.Outfit != Outfit.Classic ? RoupaIcone(g.Outfit, out ic) : Art.Star();
+                Sprite icon = g.Blueprint != Gear.None ? GearIcon(g.Blueprint, out ic) : g.Outfit != Outfit.Classic ? RoupaIcone(g.Outfit, out ic) : ObjetivoIcone(g, out ic);
                 Pinta(p.Rows[i], icon, ic, Textos.ObjetivoTemporada(g), premio, g.Coins > 0 ? "+" + g.Coins : null, true,
                     claimed ? Textos.Coletado : ready ? Textos.Coletar : Textos.Progresso(prog, g.Target), claimed ? Art.Gold : ready ? Art.Good : Art.PaperEdge,
                     false, claimed, ready ? (Action)(() => { if (S.ClaimSeason(k)) _g.AfterMeta(); }) : null);
                 Barra(p.Rows[i], prog / (float)Math.Max(1, g.Target), prog >= g.Target ? Art.Gold : Art.Good);
             }
             Mostra(p, n);
+        }
+
+        /// <summary>Icone do objetivo da temporada pelo que ele pede: a carga, o bau, o chefe, a arma, o gancho do resgate; a estrela dourada
+        /// fica para as estrelas, as salas secretas e o evento.</summary>
+        static Sprite ObjetivoIcone(GoalDef g, out Color c)
+        {
+            Sprite s = null;
+            switch (g.Kind)
+            {
+                case Goal.Deliver: case Goal.Daily: case Goal.Code: case Goal.Rare: case Goal.WithModifier: case Goal.Intact: return CargaIcone(CargoType.Box, out c);
+                case Goal.DeliverCargo: return CargaIcone(g.Cargo, out c);
+                case Goal.Hatched: return CargaIcone(CargoType.Egg, out c);
+                case Goal.Chests: s = Art.Ui("icone_bau"); break;
+                case Goal.Kills: s = Art.Ui("icone_estilingue"); break;
+                case Goal.Rescue: s = Art.Ui("icone_gancho"); break;
+                case Goal.BossClean: s = ChefeRetrato(1); break;
+            }
+            c = s != null ? Color.white : Art.Gold;
+            return s ?? Art.Star();
         }
 
         // ------------------------------------------------------------------ marcos (estrelas) e maestria (por carga)
@@ -440,7 +483,8 @@ namespace DC
                     int need = Balance.Milestones[i], k = i;
                     bool claimed = S.MilestoneClaimed(i), ready = S.MilestoneReady(i);
                     string sub = i == Balance.MilestoneOutfit ? Textos.VoceTem(stars) + " · " + Textos.PremioRoupa(Outfit.Ghost) : Textos.VoceTem(stars);
-                    Pinta(p.Rows[i], Art.Star(), claimed || ready ? Art.Gold : Art.Ink, Textos.MarcoNome(need), sub, "+" + Balance.MilestoneCoins[i], true,
+                    Sprite trofeu = Art.Ui("icone_marcos");
+                    Pinta(p.Rows[i], trofeu ?? Art.Star(), trofeu != null ? Color.white : claimed || ready ? Art.Gold : Art.Ink, Textos.MarcoNome(need), sub, "+" + Balance.MilestoneCoins[i], true,
                         claimed ? Textos.Coletado : ready ? Textos.Coletar : Textos.Progresso(Math.Min(stars, need), need),
                         claimed ? Art.Gold : ready ? Art.Good : Art.PaperEdge, false, claimed,
                         ready ? (Action)(() => { if (S.ClaimMilestone(k)) _g.AfterMeta(); }) : null);
@@ -469,8 +513,10 @@ namespace DC
             Image face = Card(m, "Cartao", new Vector2(0.05f, 0.18f), new Vector2(0.95f, 0.82f));
             Transform f = face.transform;
             Shrink(Loc(Ink(f, "Titulo", 52, new Vector2(0.05f, 0.87f), new Vector2(0.95f, 0.97f), TextAnchor.MiddleCenter, true), () => Textos.SemFim), 28);
-            Art.Img(f, "Icone", Art.Horns(), Art.Gold, new Vector2(0.4f, 0.72f), new Vector2(0.6f, 0.86f));
-            _sfBody = Shrink(Ink(f, "Corpo", 30, new Vector2(0.06f, 0.22f), new Vector2(0.94f, 0.71f)), 17);
+            Sprite dragao = ChefeRetrato(RetratoChefe.Length);   // o chefe da ultima regiao: o sem fim abre depois dele
+            Art.Img(f, "Medalhao", Art.Disc(), Medalhao, new Vector2(0.33f, 0.6f), new Vector2(0.67f, 0.87f));
+            Art.Img(f, "Icone", dragao ?? Art.Horns(), dragao != null ? Color.white : Art.Gold, new Vector2(0.3f, 0.585f), new Vector2(0.7f, 0.885f));
+            _sfBody = Shrink(Ink(f, "Corpo", 30, new Vector2(0.06f, 0.21f), new Vector2(0.94f, 0.585f)), 17);
             _sfPlay = Btn(f, () => Textos.Jogar, 44, Art.Good, new Vector2(0.05f, 0.04f), new Vector2(0.6f, 0.19f), () => { m.gameObject.SetActive(false); _g.PlayEndless(); }, "confirmar");
             _sfLock = Art.Img(_sfPlay.transform, "Cadeado", Art.Lock(), Art.Tinta, new Vector2(0.05f, 0.2f), new Vector2(0.2f, 0.8f));
             Btn(f, () => Textos.Voltar, 40, Art.PaperEdge, new Vector2(0.63f, 0.04f), new Vector2(0.95f, 0.19f), () => m.gameObject.SetActive(false));
