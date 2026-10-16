@@ -429,6 +429,13 @@ namespace DC
             float W = Balance.RoomW, y0 = Tilt * Balance.RoomH, h = BackWallH, w = W + 2f * WallT;
             Sprite ws = ParedeDe(_tema, out Color wt);   // textura da regiao (ou a da regiao 1 tingida), ou a face lisa
             bool tex = ws != null;
+            // fora da sala (telas 20:9: faixa entre a HUD e a parede de fundo, e abaixo da sala): a pedra da regiao continua escura ate a
+            // borda da tela, atras do piso, no lugar da cor lisa do fundo da camera
+            if (tex)
+            {
+                SpriteRenderer fora = Art.NewSprite(up, "Masmorra", ws, Mul(wt, new Color(0.3f, 0.3f, 0.34f)), OFloor - 1, new Vector2(W / 2f, y0 / 2f), Vector2.one);
+                fora.drawMode = SpriteDrawMode.Tiled; fora.size = new Vector2(w + 16f, y0 + 24f);
+            }
             // abaixo das paredes laterais (OWall): elas cobrem os cantos de baixo da parede de fundo
             SpriteRenderer wall = Art.NewSprite(up, "ParedeFundo", tex ? ws : Art.Square(), tex ? wt : _tema.Wall, OWall - 1, new Vector2(W / 2f, y0 + h / 2f), tex ? Vector2.one : new Vector2(w, h));
             if (tex) { wall.drawMode = SpriteDrawMode.Tiled; wall.size = new Vector2(w, h); }
