@@ -555,6 +555,11 @@ Os FBX de entrada são cópias de `arte/tripo/` em `%TEMP%\dc_in\` (caminho curt
 | `frasco`, `chicote`, `salamandra`, `planta` (+ `_aberta`), `mapa`, `bigorna`, `braseiro`, `respiro`, `corrente` | `2e9fa021…dc0a`, `cc445c79…7e46`, `e8349af2…0b39`, `62288371…0f4e`, `84108118…e8f8`, `e81ac179…cb8d`, `e68b5500…61bf`, `6a178f51…5974`, `0c41697c…6eff` | Static 1 | `-Nome <prop>` (`planta_aberta`: `-Model planta_aberta.blend`) | `<prop>_folhas.png` |
 | `courier_noturno`, `courier_real`, `courier_explorador`, `courier_forja`, `courier_fantasma`; depois `courier_mineiro` e `courier_coveiro` (roupas da raia E) | courier `21b7bafc…8f9b` → `roupas_courier.py` | os 7 clipes do courier (CarryIdle 12, CarryRun 8, Dash 6, Hit 6, Idle 12, Run 8, Throw 10) | `-Nome courier_<roupa> -Preset courier -Model courier_<roupa>.blend -Anims mixamo\courier -Hold mixamo\Hold.fbx` | `courier_<roupa>.png` |
 
+**Re-render "elenco maior e nítido" (2026-10-15/16, aprovado pelo Vinicius), 0 crédito.** Mesmas entradas do §2 e clipes do §3; muda só a resolução: `render_sprites.py --hd K --escala 1.25` (K = min(1,5; 4096 / (quadros × célula)), para a folha não passar de 4096 px; ppu 180, ou 159,6 no esqueleto e na múmia e 127,2 no `courier_fim`). O `meta.json` grava `escala` 1,25 e a View mostra o ator 25% maior. Os chefes ficaram como estavam. Os comandos de cada folha estão em `client/tools/elenco_hd.sh`; o modelo que só existe zipado é extraído em `%TEMP%\dc_tripo` e apagado no fim.
+- `courier` e `courier_mineiro`: `roupas_courier.py -- <courier.fbx> arte/roupas classico,mineiro 0.78`, com a aba do chapéu ×0,78 no repouso do rig (`arte/roupas/courier_<roupa>.blend`, fora do git).
+- As outras 5 roupas (noturno, real, explorador, forja, fantasma) e o coveiro: `roupas_2d.py`, a mesma troca de matiz (`roupas_cor.recolor`) aplicada direto na folha nova do `courier`, porque o render é de luz flat.
+- `ladrao`: `saco_ladrao.py -- <ladrao.fbx> arte/roupas/ladrao_saco.blend 0.7`. O saco de estopa (vértices com cor de estopa atrás do tronco) se aproxima das costas ×0,7 (feedback "o saco do ladrão domina").
+
 O SHA dos PNG não é reprodutível bit a bit, porque o AA do Workbench varia alguns níveis entre renders (Forge §6). Registre o SHA da entrada e o do script.
 
 ## 6. Modelo de bloco por peça (copiar quando a linha do §2 não bastar)

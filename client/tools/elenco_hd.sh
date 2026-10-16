@@ -3,6 +3,7 @@
 # e --escala 1.25 (a View mostra o ator 25% maior; SpriteSheet.Escala). K = min(1,5; 4096 / (quadros x celula)): a folha nao passa
 # de 4096 px (teto seguro no celular). Os chefes ficam como estao (ja grandes). Comandos de origem: docs/PROVENIENCIA.md sec. 5.
 # O courier sai do .blend com a aba do chapeu menor: roupas_courier.py -- <courier.fbx> <arte>/roupas classico,mineiro 0.78
+# O ladrao sai do .blend com o saco menor: saco_ladrao.py -- <ladrao.fbx> <arte>/roupas/ladrao_saco.blend 0.7
 # Um render por vez (PC de 7,7 GB). Log de cada folha em $TEMP/dc_hd_<nome>.log; imprime OK ou FALHOU.
 set -u
 B="${BLENDER:-/c/Program Files/Blender Foundation/Blender 5.2/blender.exe}"
@@ -34,7 +35,7 @@ job() {
         courier) render courier 1.5 "$A/roupas/courier_classico.blend" --preset courier --anims "$A/mixamo/courier" --hold "$HOLD" ;;
         courier_mineiro) render courier_mineiro 1.5 "$A/roupas/courier_mineiro.blend" --preset courier --anims "$A/mixamo/courier" --hold "$HOLD" ;;
         courier_fim) render courier_fim 1.06 "$A/roupas/courier_classico.blend" --preset courier_fim --anims "$A/mixamo/courier_fim" ;;
-        ladrao) render ladrao 1.5 "$(fbx ladrao)" --preset ladrao --anims "$A/mixamo/ladrao" --hold "$HOLD" ;;
+        ladrao) render ladrao 1.5 "$A/roupas/ladrao_saco.blend" --preset ladrao --anims "$A/mixamo/ladrao" --hold "$HOLD" ;;
         guarda) render guarda 1.5 "$(fbx guarda)" --preset guarda --anims "$A/mixamo/guarda" --attach "$(fbx escudo):LeftForeArm:0.09,0,0.06:90,180,0:0.75" ;;
         cliente) render cliente 1.5 "$(fbx cliente)" --preset cliente --anims "$A/mixamo/cliente" ;;
         arqueiro) render arqueiro 1.5 "$(fbx arqueiro)" --preset arqueiro --anims "$A/mixamo/arqueiro" --attach "$(fbx arcoflecha):LeftHand:-0.06,0,-0.015:90,180,0:0.8" ;;
