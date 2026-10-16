@@ -58,7 +58,7 @@ namespace DC
         int _guildTab;
 
         // perk
-        readonly Image[] _perkIcon = new Image[3];
+        readonly Image[] _perkIcon = new Image[3], _perkDisc = new Image[3];
         readonly Text[] _perkName = new Text[3], _perkEff = new Text[3];
         readonly GameObject[] _perkCard = new GameObject[3];
 
@@ -126,6 +126,9 @@ namespace DC
                 if (!on) continue;
                 Perk p = offer[i];
                 _perkIcon[i].sprite = PerkIcon(p, out Color c); _perkIcon[i].color = c;
+                bool arte = c == Color.white;   // pintado: medalhao claro e maior
+                _perkDisc[i].color = arte ? Medalhao : Art.Tinta;
+                _perkIcon[i].rectTransform.anchorMin = Vector2.one * (arte ? 0.04f : 0.2f); _perkIcon[i].rectTransform.anchorMax = Vector2.one * (arte ? 0.96f : 0.8f);
                 _perkName[i].text = Textos.PerkNome(p);
                 _perkEff[i].text = Textos.PerkEfeito(p);
             }
@@ -508,6 +511,8 @@ namespace DC
 
         static Sprite PerkIcon(Perk p, out Color c)
         {
+            Sprite arte = Art.Ui(PerkArte(p));   // pintado (Resources/UI) quando o efeito tem icone que conta a mesma coisa
+            if (arte != null) { c = Color.white; return arte; }
             switch (p)
             {
                 case Perk.LightStep: c = Art.Shot; return Art.Chevrons();
@@ -521,6 +526,21 @@ namespace DC
                 case Perk.IronBoot: c = Art.Steel; return Art.Fists();
                 case Perk.ChestLuck: c = Art.Coin; return Art.ChestShape();
                 default: c = Art.Ink; return Art.Star();
+            }
+        }
+
+        static string PerkArte(Perk p)
+        {
+            switch (p)
+            {
+                case Perk.LightStep: case Perk.IronBoot: case Perk.SureFoot: case Perk.Runner: return "icone_botas";
+                case Perk.DoubleDash: case Perk.Spring: case Perk.FirmGrip: return "icone_dash";
+                case Perk.QuickHand: case Perk.Counter: return "icone_estilingue";
+                case Perk.Magnet: case Perk.ChestSense: return "icone_bau";
+                case Perk.ExtraHeart: case Perk.SecondWind: case Perk.FirstAid: case Perk.ThickSkin: return "icone_vida";
+                case Perk.ChestLuck: case Perk.Hunter: return "icone_moeda";
+                case Perk.Padded: case Perk.CargoShield: return "icone_mochila";
+                default: return null;
             }
         }
 
@@ -990,7 +1010,7 @@ namespace DC
                 b.targetGraphic = face;
                 int k = i;
                 b.onClick.AddListener(() => { _perk.gameObject.SetActive(false); _g.PickPerk(k); });   // som: "perk" no Ev.PerkPick
-                Image disc = Art.Img(face.transform, "Fundo", Art.Disc(), Art.Tinta, new Vector2(0.03f, 0.15f), new Vector2(0.25f, 0.85f));
+                Image disc = _perkDisc[i] = Art.Img(face.transform, "Fundo", Art.Disc(), Art.Tinta, new Vector2(0.03f, 0.15f), new Vector2(0.25f, 0.85f));
                 _perkIcon[i] = Art.Img(disc.transform, "Icone", Art.Star(), Art.Ink, new Vector2(0.2f, 0.2f), new Vector2(0.8f, 0.8f));
                 _perkName[i] = Shrink(Ink(face.transform, "Nome", 56, new Vector2(0.28f, 0.5f), new Vector2(0.97f, 0.92f), TextAnchor.MiddleLeft, true), 30);
                 _perkEff[i] = Shrink(Ink(face.transform, "Efeito", 36, new Vector2(0.28f, 0.08f), new Vector2(0.97f, 0.5f), TextAnchor.MiddleLeft), 22);

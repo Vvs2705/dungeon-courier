@@ -127,6 +127,20 @@ namespace DC
             return _clips[clip].loop || forceLoop ? f % n : Mathf.Min(f, n - 1);
         }
 
+        /// <summary>Quadro 0 recortado em volta do ator, para icone da interface (roupa, chefe do mapa): cx, cy = centro em fracao da celula
+        /// a partir do canto de cima; lado = fracao da celula (as medidas saem do contact sheet; o ator nao enche a celula).</summary>
+        public Sprite Retrato(int clip, int row, float cx, float cy, float lado)
+        {
+            row = Mathf.Clamp(row, 0, Rows - 1);
+            int k = clip * 64 + row;
+            if (_retratos.TryGetValue(k, out Sprite s)) return s;
+            Texture2D t = _tex[clip];
+            float cw = t.width / (float)_clips[clip].frames, ch = t.height / (float)Rows, w = lado * cw, h = lado * ch;
+            var r = new Rect(Mathf.Clamp(cx * cw - w / 2f, 0f, cw - w), (Rows - 1 - row) * ch + Mathf.Clamp((1f - cy) * ch - h / 2f, 0f, ch - h), w, h);
+            return _retratos[k] = Sprite.Create(t, r, new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+        }
+        readonly Dictionary<int, Sprite> _retratos = new Dictionary<int, Sprite>();
+
         public Sprite Frame(int clip, int row, int frame)
         {
             ClipMeta c = _clips[clip];
