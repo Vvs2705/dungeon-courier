@@ -218,6 +218,7 @@ namespace DC
 
             bool playing = _mode == Mode.Play && !_hud.Blocking && !_paused;
             _joy.Blocked = !playing || _botDrive;
+            _joy.Visivel = Ajustes.Joystick;
             _joy.TopPx = _hud.TopPx;
             _joy.Tick();
             if (playing)

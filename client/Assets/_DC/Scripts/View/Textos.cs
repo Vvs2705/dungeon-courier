@@ -721,6 +721,8 @@ namespace DC
         public static string Volume(string nome, int pct) => string.Format(Inv, "{0}: {1}%", nome, pct);
         public static string Vibra(bool on) => on ? L("Vibração: ligada", "Vibration: on", "Vibración: activada", "Getar: aktif")
             : L("Vibração: desligada", "Vibration: off", "Vibración: desactivada", "Getar: mati");
+        public static string JoystickAjuste(bool visivel) => visivel ? L("Controle na tela: visível", "On-screen stick: shown", "Control en pantalla: visible", "Kontrol layar: tampil")
+            : L("Controle na tela: escondido", "On-screen stick: hidden", "Control en pantalla: oculto", "Kontrol layar: sembunyi");
         public static string VibraSoCelular => L("Vibração: só no celular", "Vibration: phone only", "Vibración: solo en el celular", "Getar: khusus ponsel");
         public static string Idioma => L("Idioma", "Language", "Idioma", "Bahasa");
         public static string ExportarDiario => L("EXPORTAR DIÁRIO", "EXPORT LOG", "EXPORTAR REGISTRO", "EKSPOR CATATAN");

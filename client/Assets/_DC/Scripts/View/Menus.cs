@@ -65,7 +65,7 @@ namespace DC
         // configuracoes
         Text _volSomT, _volMusT, _exportStatus, _versionT;
         readonly Image[] _barSom = new Image[Ajustes.VolMax], _barMus = new Image[Ajustes.VolMax];
-        Button _vibraBtn;
+        Button _vibraBtn, _joyBtn;
         readonly Button[] _langBtn = new Button[4];   // ordem de Textos.Lingua: Português, English / Español, Bahasa Indonesia
         readonly Image[] _langCheck = new Image[4];
 
@@ -465,6 +465,7 @@ namespace DC
             }
             _vibraBtn.interactable = Ajustes.TemVibra;
             _vibraBtn.GetComponentInChildren<Text>().text = Ajustes.TemVibra ? Textos.Vibra(Ajustes.Vibra) : Textos.VibraSoCelular;
+            _joyBtn.GetComponentInChildren<Text>().text = Textos.JoystickAjuste(Ajustes.Joystick);
             for (int i = 0; i < _langBtn.Length; i++)
             {
                 bool on = (int)Ajustes.Idioma == i;
@@ -490,6 +491,14 @@ namespace DC
             if (music) Ajustes.VolMusica += d; else Ajustes.VolSom += d;
             RefreshSettings();
             _g.Log("settings", music ? "musica" : "som", Textos.Num(music ? Ajustes.VolMusica : Ajustes.VolSom));
+        }
+
+        /// <summary>Joystick desenhado no dedo: liga/desliga (o controle e o mesmo).</summary>
+        void ToggleJoystick()
+        {
+            Ajustes.Joystick = !Ajustes.Joystick;
+            RefreshSettings();
+            _g.Log("settings", "joystick", Ajustes.Joystick ? "1" : "0");
         }
 
         void ToggleVibra()
@@ -1028,7 +1037,8 @@ namespace DC
             Loc(Ink(f, "Titulo", 56, new Vector2(0.05f, 0.925f), new Vector2(0.95f, 0.99f), TextAnchor.MiddleCenter, true), () => Textos.Config);
             _volSomT = VolRow(f, false, 0.828f, 0.918f, _barSom);
             _volMusT = VolRow(f, true, 0.73f, 0.82f, _barMus);
-            _vibraBtn = Art.NewButton(f, "", 40, Art.PaperEdge, new Vector2(0.04f, 0.632f), new Vector2(0.96f, 0.722f), ToggleVibra);
+            _vibraBtn = Art.NewButton(f, "", 34, Art.PaperEdge, new Vector2(0.04f, 0.632f), new Vector2(0.49f, 0.722f), ToggleVibra);
+            _joyBtn = Art.NewButton(f, "", 34, Art.PaperEdge, new Vector2(0.51f, 0.632f), new Vector2(0.96f, 0.722f), ToggleJoystick);
             Loc(Ink(f, "Idioma", 34, new Vector2(0.05f, 0.59f), new Vector2(0.95f, 0.628f), TextAnchor.MiddleLeft, true), () => Textos.Idioma);
             // 4 idiomas em grade 2x2, cada um no proprio idioma; linhas de 0,082 do cartao = ~147 px de referencia (alvo de 48 dp)
             for (int i = 0; i < _langBtn.Length; i++)
