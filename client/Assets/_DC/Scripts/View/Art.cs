@@ -570,7 +570,7 @@ namespace DC
     /// indonesio ou, nos outros, ingles).</summary>
     public static class Ajustes
     {
-        const string VibraKey = "dc_vibra", IdiomaKey = "dc_idioma", SomV01 = "dc_som";
+        const string VibraKey = "dc_vibra", IdiomaKey = "dc_idioma", SomV01 = "dc_som", JoystickKey = "dc_joystick";
         public const int VolMax = 10;
         public static readonly bool TemVibra = Application.platform == RuntimePlatform.Android;
         static int _vibra = -1;
@@ -609,6 +609,14 @@ namespace DC
         {
             Audio.SetVolumes(Mathf.Clamp(som, 0, VolMax) / (float)VolMax, Mathf.Clamp(musica, 0, VolMax) / (float)VolMax);
             PlayerPrefs.Save();   // o Audio.SetVolumes nao grava sozinho
+        }
+
+        static int _joystick = -1;
+        /// <summary>Joystick desenhado no dedo (Configuracoes). Padrao: escondido, porque ele tampava o courier; o controle e o mesmo.</summary>
+        public static bool Joystick
+        {
+            get { if (_joystick < 0) _joystick = PlayerPrefs.GetInt(JoystickKey, 0); return _joystick == 1; }
+            set { _joystick = value ? 1 : 0; PlayerPrefs.SetInt(JoystickKey, _joystick); PlayerPrefs.Save(); }
         }
 
         public static bool Vibra

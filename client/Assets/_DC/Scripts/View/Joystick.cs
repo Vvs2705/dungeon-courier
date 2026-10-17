@@ -42,6 +42,9 @@ namespace DC
         public bool Blocked;
         /// <summary>Base da faixa da HUD (px de tela): toque que COMECA acima disto nao e do joystick.</summary>
         public float TopPx = float.MaxValue;
+        /// <summary>Desenha o joystick (base + miolo) no dedo. Desligado = o mesmo controle, sem nada na tela (padrao: o desenho tampava o
+        /// courier; Ajustes.Joystick, nas Configuracoes).</summary>
+        public bool Visivel;
 
         readonly JoystickLogica _logic = new JoystickLogica(DeadDp / RadiusDp, 1f);
         readonly RectTransform _base, _knob;
@@ -85,7 +88,7 @@ namespace DC
             }
             Vector2 d = pos - _anchor;
             float r = Dp.Px(RadiusDp);
-            if (!_drag && d.magnitude > Dp.Px(DeadDp)) { _drag = true; _base.gameObject.SetActive(true); }
+            if (!_drag && d.magnitude > Dp.Px(DeadDp)) { _drag = true; _base.gameObject.SetActive(Visivel); }
             Direction = _drag ? _logic.Direcao(d, r) : Vector2.zero;
             _knob.anchoredPosition = Vector2.ClampMagnitude(d, r);
         }
