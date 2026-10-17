@@ -3,6 +3,9 @@
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões em [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
+### Adicionado
+- **Portão em um comando:** `client/tools/verify.sh quick|full` (núcleo, viewcheck, EditMode, build Windows e `-autoplay 30`), com logs em `client/Builds/verify/` e só OK ou o erro na saída; mesmo nome e uso do Forge Street.
+- **Mapa do código** (`docs/MAPA_CODIGO.md`): para quê e pontos de entrada de cada arquivo do Core, da View, do Editor, dos testes e das ferramentas, para ler o trecho certo em vez do arquivo inteiro.
 
 ## [1.4.1-beta] - 2026-10-16
 ### Mudado
