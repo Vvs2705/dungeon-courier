@@ -224,7 +224,8 @@ namespace DC
         /// para, e o enchimento largo a 25% crescendo com o TeleProgress.</summary>
         void DrawAim(Run run, Ent v, Enemy e)
         {
-            float r0 = e.Def.Radius, len = Mathf.Max(r0 + 0.1f, AimLen(run.Room, e.Pos, e.Aim)), full = len - r0;
+            float r0 = e.Def.Radius, max = e.Type == EnemyType.Guard ? Balance.GuardChargeLen + r0 : Balance.ArrowRange;
+            float len = Mathf.Max(r0 + 0.1f, AimLen(run.Room, e.Pos, e.Aim, max)), full = len - r0;
             Vector2 dir = V(e.Aim);
             float ang = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
             Line(v.AimLine, dir, r0, full, 0.06f, ang);
@@ -241,15 +242,15 @@ namespace DC
         }
 
         /// <summary>Distancia (m) ate a flecha parar: obstaculo, parede ou Balance.ArrowRange (passo de 0,2 m, como o Run.UpdateArrows).</summary>
-        static float AimLen(RoomDef room, V2 from, V2 dir)
+        static float AimLen(RoomDef room, V2 from, V2 dir, float max = Balance.ArrowRange)
         {
             const float step = 0.2f;
-            for (float t = step; t < Balance.ArrowRange; t += step)
+            for (float t = step; t < max; t += step)
             {
                 V2 p = from + dir * t;
                 if (p.X < 0f || p.Y < 0f || p.X > Balance.RoomW || p.Y > Balance.RoomH || Run.Blocked(room, p, Balance.ArrowR)) return t;
             }
-            return Balance.ArrowRange;
+            return max;
         }
 
         /// <summary>Inimigo do reforco: nasce pequeno e cresce (0,35 s) numa fumaca com anel na cor do papel.</summary>

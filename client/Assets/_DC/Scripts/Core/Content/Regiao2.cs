@@ -35,7 +35,7 @@ namespace DC.Core
         const RoomTrigger Half = RoomTrigger.Half, Down = RoomTrigger.CargoDown;
 
         // Ameaca (caveiras) = terco do dano medio por visita do bot (BALANCE_REGIAO2.md; teste IconeDeAmeaca_Regiao2_AcompanhaODanoMedido):
-        // 1 = R2-1, R2-5, R2-8 · 2 = R2-2, R2-4, R2-6, R2-7 · 3 = R2-3, R2-9, R2-10. Mudou do desenho: R2-3 1->3 (o bau ao lado de quem dorme
+        // 1 = R2-1, R2-8 · 2 = R2-2, R2-4, R2-5, R2-6, R2-7 · 3 = R2-3, R2-9, R2-10 (2026-10-21: R2-5 1->2, a lingua do sapo no courier foi a 4,4 m). Mudou do desenho: R2-3 1->3 (o bau ao lado de quem dorme
         // acorda a mina), R2-6 3->2 (o besouro se evita abrindo distancia), R2-5 e R2-8 2->1.
         // Regras de desenho (CoreTestsRegiao2.LevelDesign_Regioes_*): as da regiao 1 + agua a 1,2 m+ da entrada; trilho em 4 <= y <= 11,5 sem
         // obstaculo em cima; nenhum spawn, bau, bau enterrado ou resgate a menos de 1 m de um trilho; vagonete numa ponta de cada trilho.
@@ -60,7 +60,7 @@ namespace DC.Core
                 new[] { S(Mole, 4.5f, 10.0f), S(Mole, 1.5f, 11.5f), S(Bat, 7.5f, 11.5f) }, P(1.5f, 3.0f), P(0.8f, 9.5f), 35,
                 wave: new[] { S(Mole, 8.0f, 12.0f) }, trigger: Down)
             { Water = new[] { O(6.8f, 4.6f, 1.4f, 1.1f) }, Buried = new[] { Bc(8.2f, 12.0f, 30) }, Blueprint = Gear.Boots },
-            new RoomDef(R5, "R2-5", "Lodaçal do Sapo", "o sapo puxa a carga do chão a até 3 m (linha de aviso 0,7 s): pouse fora do anel dele e abata-o de 3 a 5 m", 1,
+            new RoomDef(R5, "R2-5", "Lodaçal do Sapo", "o sapo puxa a carga do chão a até 3 m e lambe o courier a até 4,4 m (linha de aviso 0,7 s): pouse fora do anel e saia da linha da língua", 2,
                 new[] { O(4.5f, 5.0f, 0.6f, 0.6f), O(4.5f, 10.6f, 0.6f, 0.6f) },
                 new[] { S(BogFrog, 2.0f, 9.5f), S(BogFrog, 7.0f, 7.0f), S(Thief, 8.0f, 11.5f) }, P(2.0f, 3.0f), P(0.8f, 6.0f), 35,
                 wave: new[] { S(Slime, 0.8f, 3.6f) }, trigger: Half)

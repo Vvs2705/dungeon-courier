@@ -66,7 +66,7 @@ namespace DC.Core
         /// <summary>Mumia: agarrado leva 1 a cada 1,2 s; solta com dash ou 2 golpes nela.</summary>
         public const float MummyTick = 1.2f; public const int MummyHits = 2;
         /// <summary>Gargula: faixa de 6 x 0,9 m, mergulho a 9 m/s, 2,5 s empoleirada (vulneravel), 1,5 s voltando (intocavel).</summary>
-        public const float GargLen = 6f, GargWidth = 0.9f, GargSpeed = 9f, GargPerch = 2.5f, GargBack = 1.5f; public const int GargEnemyDamage = 2;
+        public const float GargLen = 6f, GargWidth = 0.9f, GargSpeed = 9f, GargPerch = 3f, GargBack = 1.5f; public const int GargEnemyDamage = 2;
         /// <summary>Viuva: leque de 3 cuspes (-20, 0, +20 graus) a cada 6 s (aviso 0,8 s); fio ate 7 m (aviso 1 s) puxa a 2,5 m/s (2 golpes, o dash
         /// cruzando ou pegar cortam; recarga 4 s); casulo leva 1,5 s para pegar; fase 2 (50%): teto 3 s + circulo de 1,3 m por 1,2 s a cada 8 s;
         /// chama 2 aranhas a 50% e a 25%.</summary>
@@ -77,7 +77,7 @@ namespace DC.Core
         /// <summary>Necromante: raio 9 x 0,6 m (dispara 0,3 s; fase 2 duplo a +-15 graus); ergue 3 (fase 2: 4) a cada 15 s com runa de 1 s, no
         /// maximo 4 esqueletos; salta com o courier a 3 m (fumaca 0,5 s, recarga 3 s); fase 3 (20%) salta a cada 4 s e a luz do courier perde
         /// 1 m e a das tochas 0,5 m. Raio refletido: 6 e atordoa 1 s.</summary>
-        public const float NecroRayWidth = 0.6f, NecroRayFire = 0.3f, NecroTwinCos = 0.96592583f, NecroTwinSin = 0.25881905f, NecroFirstRaise = 5f,
+        public const float NecroRayWidth = 0.6f, NecroRayFire = 0.3f, NecroTwinCos = 0.99254615f, NecroTwinSin = 0.12186934f, NecroFirstRaise = 5f,
                            NecroRaiseEvery = 15f, NecroRune = 1f, NecroBlinkNear = 3f, NecroSmoke = 0.5f, NecroBlinkCd = 3f, NecroBlinkEvery = 4f,
                            NecroLightCut = 1f, NecroTorchCut = 0.5f, NecroReflectStun = 1f;
         public const int NecroRaise = 3, NecroRaise2 = 4, NecroMaxSkeletons = 4, NecroReflectDamage = 6;

@@ -457,12 +457,18 @@ namespace DC.Core
             var c = Courier; const float dt = Balance.Step;
             if (c.State == CourierState.Dead) return;
             V2 p0 = e.Pos;
+            if (e.State == EnemyState.Telegraph)   // aviso do corte: para de circular e encara o courier
+            {
+                e.Tele -= dt;
+                if (e.Tele <= 1e-4f) { e.State = EnemyState.Chase; e.Tele = Balance.SalamanderCut; Emit(Ev.Strike, e.Id, (int)e.Type, e.Pos); }
+                return;
+            }
             if (e.State != EnemyState.Chase && e.State != EnemyState.Lurk) { e.State = EnemyState.Lurk; e.Tele = Balance.SalamanderCircle; }
             e.Tele -= dt;
             V2 to = e.Pos - c.Pos; float d = to.Len; V2 radial = d > 0.01f ? to * (1f / d) : V2.Up;
             if (e.State == EnemyState.Chase)
             {
-                MoveWalker(e, c.Pos, e.Def.Speed);
+                MoveWalker(e, ChaseTarget(e), e.Def.Speed);
                 if (e.Tele <= 1e-4f) { e.State = EnemyState.Lurk; e.Tele = Balance.SalamanderCircle; }
             }
             else
@@ -471,7 +477,7 @@ namespace DC.Core
                 V2 dir = (tan + radial * ((Balance.SalamanderOrbit - d) * 1.2f)).Norm;
                 e.Pos = e.Pos + dir * (e.Def.Speed * dt);
                 Collide(Room, ref e.Pos, e.Def.Radius);
-                if (e.Tele <= 1e-4f && e.Cd <= 0f) { e.State = EnemyState.Chase; e.Tele = Balance.SalamanderCut; Emit(Ev.Strike, e.Id, (int)e.Type, e.Pos); }
+                if (e.Tele <= 1e-4f && e.Cd <= 0f) { e.State = EnemyState.Telegraph; e.Tele = Balance.SalamanderAim; e.Aim = (c.Pos - e.Pos).Norm; Emit(Ev.Telegraph, e.Id, (int)e.Type, e.Pos); }
             }
             if (e.Cd <= 0f && V2.Dist(e.Pos, c.Pos) <= e.Def.Radius + Balance.CourierR)
             {
@@ -542,8 +548,7 @@ namespace DC.Core
             }
             if (c.State == CourierState.Dead) return;
             float d = V2.Dist(e.Pos, c.Pos), edge = d - Balance.CourierR;
-            if (d < Balance.KoboldKeep) { e.State = EnemyState.Flee; MoveWalker(e, e.Pos + (e.Pos - c.Pos).Norm * 1.5f, e.Def.Speed); return; }
-            if (e.Cd <= 0f && edge <= e.Def.Trigger)
+            if (e.Cd <= 0f && edge <= e.Def.Trigger)   // arremessa antes de fugir: colado nele deixava de ser seguro
             {
                 e.State = EnemyState.Telegraph; e.Tele = e.Def.Tele;
                 ForgeMark m = Mark4(ForgeMarkKind.Flask, e, c.Pos, Balance.FlaskR, e.Def.Tele, true);
@@ -551,6 +556,7 @@ namespace DC.Core
                 Emit(Ev.Telegraph, e.Id, (int)e.Type, e.Pos);
                 return;
             }
+            if (d < Balance.KoboldKeep) { e.State = EnemyState.Flee; MoveWalker(e, e.Pos + (e.Pos - c.Pos).Norm * 1.5f, e.Def.Speed); return; }
             if (edge > e.Def.Trigger) { e.State = EnemyState.Chase; MoveWalker(e, c.Pos, e.Def.Speed); }
             else e.State = e.Cd > 0f ? EnemyState.Recover : EnemyState.Idle;
         }
@@ -831,9 +837,9 @@ namespace DC.Core
         /// <summary>Courier no fogo do chao: o 1o dano depois de FireGrace s dentro (atravessar rapido nao queima), depois 1 por segundo.</summary>
         public const float FireGrace = 0.5f;
         /// <summary>Salamandra: circula a 2,5 m por 3 s, corta por ate 1,5 s; rastro de fogo de 0,45 m por 3 s a cada 0,5 s andando.</summary>
-        public const float SalamanderOrbit = 2.5f, SalamanderCircle = 3f, SalamanderCut = 1.5f, SalamanderTrail = 0.5f, TrailR = 0.45f, TrailTime = 3f;
+        public const float SalamanderOrbit = 2.5f, SalamanderCircle = 3f, SalamanderCut = 1.5f, SalamanderAim = 0.35f, SalamanderTrail = 0.5f, TrailR = 0.45f, TrailTime = 3f;
         /// <summary>Diabrete: 4-7 m do courier; some e surge 1 m atras dele (aviso 0,5 s, recarga 3 s); golpe no redemoinho atordoa 0,5 s.</summary>
-        public const float ImpNear = 4f, ImpFar = 7f, ImpBlinkTele = 0.5f, ImpBlinkCd = 3f, ImpBehind = 1f, ImpHitStun = 0.5f;
+        public const float ImpNear = 4f, ImpFar = 7f, ImpBlinkTele = 0.7f, ImpBlinkCd = 3f, ImpBehind = 1f, ImpHitStun = 0.5f;
         /// <summary>Kobold: fica a 3,5 m+; frasco de 1 m que vira poca de fogo por 4 s. Elemental: 2 brasas a +-0,8 m.</summary>
         public const float KoboldKeep = 3.5f, FlaskR = 1f, FlaskPool = 4f, ShardSpread = 0.8f;
         /// <summary>Capataz: chicote 3 x 0,6 m puxa a carga 1,5 m; giro de 3 m (aviso 1 s, fase 2); frasco de 1,2 m a cada 5 s (3,5 na fase 2);

@@ -51,8 +51,11 @@ namespace DC.Core
         public bool Wave;
         /// <summary>Dormindo (zZ, Spawn.Asleep): nao age ate acordar; WakeT = tempo com vizinho acordado perto.</summary>
         public bool Asleep; public float WakeT;
+        /// <summary>Guarda: posto (onde nasceu) e coleira em m (0 = nao sai do posto: o guarda avulso dos testes); ChargeT = investida restante (s);
+        /// AlertT = alerta restante (s): o courier parou para atirar perto do posto.</summary>
+        public V2 Home; public float Leash, ChargeT, AlertT;
         public bool Alive => Hp > 0;
-        public float TeleProgress => State == EnemyState.Telegraph && Def.Tele > 0f ? 1f - Tele / Def.Tele : 0f;
+        public float TeleProgress => State == EnemyState.Telegraph && Def.Tele > 0f ? Math.Max(0f, 1f - Tele / Def.Tele) : 0f;   // investida mira mais que Def.Tele
     }
 
     /// <summary>Projetil do courier. Estilingue: persegue Target. Bumerangue: vai em Dir ate o alcance e volta ao courier, atravessando
@@ -190,7 +193,7 @@ namespace DC.Core
         /// <summary>Condicao da porta e da entrega: carga do contrato nas maos (ou, chocado, o filhote a ate 3 m).</summary>
         public bool CarryOk => Hatched ? Pet != null && V2.Dist(Pet.Pos, Courier.Pos) <= Balance.PetRange : Main.State == CargoState.Held;
 
-        float acc; bool dashQueued; Rng rng = new Rng(1); Nav nav; int nextId, lastBlocked = -1; float summonT, downT; bool warned, msgDoor;
+        float acc; bool dashQueued; Rng rng = new Rng(1); Nav nav; readonly Dictionary<float, Nav> navBig = new Dictionary<float, Nav>(); float touchUntil; int nextId, lastBlocked = -1; float summonT, downT; bool warned, msgDoor;
         static readonly Predicate<Enemy> IsDead = e => e.Hp <= 0;
 
         internal Run(Sim sim, ContractDef contract, int seed, int hp)
@@ -223,7 +226,7 @@ namespace DC.Core
         {
             Room = Content.Rooms[roomId];
             rng = new Rng(Rng.Hash(Seed, Layer * 64 + roomId));
-            nav = new Nav(Room);
+            nav = new Nav(Room); navBig.Clear();
             Enemies.Clear(); Shots.Clear(); Doors.Clear(); Arrows.Clear(); Puddles.Clear();
             FoughtHere = false; summonT = 0f; lastBlocked = -1; Waves = 0; downT = 0f; msgDoor = false; pending.Clear(); pendT = 0f;
             gripUsed = false; shieldUsed = false; roomDamage = 0; huntRoom = 0; SafeDoor = -1; Dark = Room.Dark || Contract.Event == LiveEvent.Midnight;
@@ -235,7 +238,9 @@ namespace DC.Core
             foreach (Spawn s in Room.Spawns)
             {
                 bool fixedSpot = EnemyDef.All[(int)s.Type].Locks;   // Guarda/Ogro/Capitao no lugar exato; o resto varia +-0,4 m por semente
-                Spawn(s.Type, fixedSpot ? s.Pos : s.Pos + new V2(rng.Range(-0.4f, 0.4f), rng.Range(-0.4f, 0.4f))).Asleep = s.Asleep;
+                Enemy n = Spawn(s.Type, fixedSpot ? s.Pos : s.Pos + new V2(rng.Range(-0.4f, 0.4f), rng.Range(-0.4f, 0.4f)));
+                n.Asleep = s.Asleep;
+                if (s.Type == EnemyType.Guard) { n.Leash = Balance.GuardLeash; n.Cd = 1.5f + 2f * n.Phase; }   // a sentinela da sala; 2 guardas nao investem juntos
             }
             if (Has(Modifier.Horde) && !Room.Delivery) Spawn(HordeType(Room.Region), new V2(4.5f, 12f));   // Horda: +1 perseguidor da regiao
             bool scout = Has(Perk.Scout), sense = Has(Perk.ChestSense);
@@ -274,7 +279,8 @@ namespace DC.Core
 
         /// <summary>Perseguidores frageis ficam fora da vida por nivel (morcego, limo, besouro, fantasma, salamandra, brasa, ovo de salamandra).</summary>
         static bool FlatHp(EnemyType t) => t == EnemyType.Bat || t == EnemyType.Slime || t == EnemyType.BombBeetle || t == EnemyType.Ghost
-                                            || t == EnemyType.Salamander || t == EnemyType.MagmaShard || t == EnemyType.SalamanderEgg || t == EnemyType.Minecart;
+                                            || t == EnemyType.Salamander || t == EnemyType.MagmaShard || t == EnemyType.SalamanderEgg || t == EnemyType.Minecart
+                                            || t == EnemyType.Gargoyle || t == EnemyType.Mole;   // so vulneraveis em janelas curtas: com x2-4 de vida ficavam imbativeis
 
         /// <summary>Poe um inimigo na sala (usado pelos spawns, reforcos, ladroes chamados e pelos testes).</summary>
         public Enemy Spawn(EnemyType type, V2 pos)
@@ -282,6 +288,7 @@ namespace DC.Core
             EnemyDef d = EnemyDef.All[(int)type];
             var e = new Enemy { Id = ++nextId, Type = type, Def = d, Pos = pos, Hp = FlatHp(type) ? d.Hp : Math.Max(1, (int)Math.Round(d.Hp * Balance.HpMul(Tier))), State = EnemyState.Idle, Phase = rng.Float() };
             if (type == EnemyType.Bat) ClampRoom(ref e.Pos, d.Radius); else e.Pos = FreeNear(Room, e.Pos, d.Radius);
+            e.Home = e.Pos;
             Enemies.Add(e);
             return e;
         }
@@ -600,7 +607,7 @@ namespace DC.Core
             bool iron = Has(Perk.IronBoot);
             foreach (Enemy e in Enemies)
             {
-                if (!e.Alive || (e.Def.Locks && e.Type != EnemyType.Captain) || e.PushedDash == c.DashCount) continue;
+                if (!e.Alive || e.Def.Hazard || (e.Def.Locks && e.Type != EnemyType.Captain) || e.PushedDash == c.DashCount) continue;   // o vagonete segue o trilho (a Bota de ferro o congelava)
                 if (V2.Dist(e.Pos, c.Pos) > e.Def.Radius + Balance.CourierR + Balance.DashPushReach) continue;
                 V2 away = (e.Pos - c.Pos).Norm;
                 if (away.Len < 0.5f) away = c.DashDir;
@@ -609,7 +616,7 @@ namespace DC.Core
                 e.PushedDash = c.DashCount;
                 if (e.Carry != null) { if (Has(Perk.Counter)) DropFromThief(e, 2); else Knock(e); }   // o dash e um golpe: o ladrao derruba (o Capitao conta 1; Contragolpe: derruba ja)
                 if (e.State == EnemyState.Grab) { e.GrabT = 0f; e.State = EnemyState.Chase; }
-                if (e.State == EnemyState.Telegraph) { e.State = EnemyState.Recover; e.Cd = e.Def.Cooldown * 0.5f; }
+                if (e.State == EnemyState.Telegraph) { e.State = EnemyState.Recover; e.Cd = e.Def.Cooldown * 0.5f; CancelR2(e); }
                 if (iron) { e.Stun = Balance.PerkIronStun; Emit(Ev.Stun, e.Id, 0, e.Pos); }
             }
         }
@@ -624,7 +631,7 @@ namespace DC.Core
             foreach (Enemy e in Enemies)
             {
                 if (!e.Alive || !CanHit(e)) continue;
-                float d = V2.Dist(e.Pos, c.Pos);
+                float d = V2.Dist(e.Pos, c.Pos) - (e.Carry != null ? 99f : 0f);   // quem foge com a carga primeiro (antes o morcego mais perto roubava a mira)
                 if (d <= bd) { bd = d; best = e; }
             }
             if (best == null) return;
@@ -691,6 +698,7 @@ namespace DC.Core
             if (e.Asleep) { dmg *= Balance.SleepHitMul; Wake(e); }   // 1o golpe num dormindo: dano x2
             e.Hp -= dmg;
             Emit(Ev.EnemyHit, e.Id, Math.Max(0, e.Hp), e.Pos);
+            if (e.Leash > 0f && !msgDoor) e.AlertT = Balance.GuardAlert;   // guarda sentinela atacado: sai do posto (a mensagem abriu a porta: deixa passar)
             if (e.Carry != null) { if (e.Hp <= 0) DropFromThief(e, 2); else Knock(e); }
             if (e.Hp <= 0)
             {
@@ -808,6 +816,7 @@ namespace DC.Core
                     case EnemyType.Captain: Thief(e); break;
                     case EnemyType.Archer: Archer(e); break;
                     case EnemyType.Slime: Slime(e); break;
+                    case EnemyType.Guard: Guard(e); break;
                     default:   // inimigos das regioes 2-4: o gancho da regiao trata; sem comportamento ainda = persegue e golpeia
                         bool handled = false;
                         EnemyR2(e, ref handled); if (!handled) EnemyR3(e, ref handled); if (!handled) EnemyR4(e, ref handled);
@@ -852,6 +861,8 @@ namespace DC.Core
             var c = Courier;
             if (c.State != CourierState.Dead && V2.Dist(e.Pos, c.Pos) <= e.Def.Radius + Balance.CourierR)
             {
+                if (Time < touchUntil) return;   // toques nao empilham: 4 morcegos juntos tiravam 4 de vida no mesmo passo, sem reacao possivel
+                touchUntil = Time + Balance.TouchGuard;
                 e.Cd = e.Def.Cooldown;
                 if (e.Type == EnemyType.Slime) { V2 away = (e.Pos - c.Pos).Norm; e.Pos = e.Pos + (away.Len < 0.5f ? V2.Up : away) * Balance.SlimeRecoil; Collide(Room, ref e.Pos, e.Def.Radius); }   // rebote
                 DamageCourier(e.Def.Damage);
@@ -1019,6 +1030,70 @@ namespace DC.Core
             else e.State = e.Cd > 0f ? EnemyState.Recover : EnemyState.Idle;
         }
 
+        /// <summary>Guarda sentinela: golpe de perto como o Melee; com o courier perto do posto anda atras dele ate a coleira; fora dos
+        /// tutoriais, a media distancia mira (Aim fixa) e investe (Balance.GuardCharge*). Coleira 0 (guarda avulso) = parado no posto.</summary>
+        void Guard(Enemy e)
+        {
+            EnemyDef d = e.Def; var c = Courier;
+            if (e.ChargeT > 0f) { GuardCharge(e); return; }
+            if (e.State == EnemyState.Telegraph)
+            {
+                e.Tele -= Balance.Step;
+                if (e.Tele > 1e-4f) return;
+                if (e.Aim.Len > 0.5f) { e.ChargeT = Balance.GuardChargeLen / Balance.GuardChargeSpeed; e.State = EnemyState.Flee; return; }   // fim da mira: corre
+                Strike(e); e.State = EnemyState.Recover; e.Cd = d.Cooldown;
+                return;
+            }
+            if (c.State == CourierState.Dead) return;
+            float edge = V2.Dist(e.Pos, c.Pos) - Balance.CourierR;
+            if (e.Cd <= 0f && edge <= d.Trigger)
+            {
+                e.State = EnemyState.Telegraph; e.Tele = d.Tele; e.Aim = V2.Zero;
+                Emit(Ev.Telegraph, e.Id, (int)e.Type, e.Pos);
+                return;
+            }
+            // alerta quando leva tiro (Hit): quem o ataca de longe e perseguido; quem passa andando ou luta com os outros perto dele encara o
+            // guarda no posto, como antes (alerta por proximidade arrastava a luta para cima dos limos e a reliquia quebrava em 80% do C5/C8)
+            e.AlertT = Math.Max(0f, e.AlertT - Balance.Step);
+            bool alerta = e.AlertT > 0f;
+            // a investida pune quem fica parado atirando de longe (o exploit do guarda parado); andando, ele so segue na coleira
+            if (alerta && Contract.Waves && c.State == CourierState.Planted && e.Cd <= 0f && edge >= Balance.GuardChargeFrom && edge <= Balance.GuardChargeTo && nav.Clear(e.Pos, c.Pos, d.Radius))
+            {
+                e.Aim = (c.Pos - e.Pos).Norm; e.State = EnemyState.Telegraph; e.Tele = Balance.GuardChargeTele;
+                Emit(Ev.Telegraph, e.Id, (int)e.Type, e.Pos);
+                return;
+            }
+            V2 off = c.Pos - e.Home;
+            V2 goal = !alerta ? e.Home : off.Len > e.Leash ? e.Home + off.Norm * e.Leash : c.Pos;
+            if (V2.Dist(e.Pos, goal) > 0.15f && (!alerta || edge > d.Trigger * 0.7f)) { e.State = EnemyState.Chase; MoveWalker(e, goal, alerta ? d.Speed : Balance.GuardBack); }
+            else e.State = e.Cd > 0f ? EnemyState.Recover : EnemyState.Idle;
+        }
+
+        void GuardCharge(Enemy e)
+        {
+            EnemyDef d = e.Def; var c = Courier; float r = d.Radius;
+            e.State = EnemyState.Flee;
+            V2 next = e.Pos + e.Aim * (Balance.GuardChargeSpeed * Balance.Step);
+            if (c.State != CourierState.Dead && V2.Dist(next, c.Pos) <= r + Balance.CourierR)
+            {
+                DamageCourier(d.Damage, true);   // empurrao de escudo: tira vida e empurra; a carga nas maos nao racha (a reliquia quebrava 80%)
+                if (!Running) return;
+                c.Pos = c.Pos + e.Aim * Balance.GuardChargePush; Collide(Room, ref c.Pos, Balance.CourierR);
+                EndCharge(e, 0f);
+                return;
+            }
+            if (Blocked(Room, next, r * 0.9f) || next.X < r || next.Y < r || next.X > Balance.RoomW - r || next.Y > Balance.RoomH - r) { EndCharge(e, Balance.GuardChargeStun); return; }
+            e.Pos = next;
+            e.ChargeT -= Balance.Step;
+            if (e.ChargeT <= 1e-4f) EndCharge(e, Balance.GuardChargeStun);   // errou: atordoado, tiro livre
+        }
+
+        void EndCharge(Enemy e, float stun)
+        {
+            e.ChargeT = 0f; e.Aim = V2.Zero; e.Cd = Balance.GuardChargeCd; e.State = EnemyState.Recover;
+            if (stun > 0f) { e.Stun = stun; Emit(Ev.Stun, e.Id, 0, e.Pos); }
+        }
+
         void Strike(Enemy e)
         {
             EnemyDef d = e.Def; var c = Courier;
@@ -1028,7 +1103,7 @@ namespace DC.Core
                 // golpe do Bruto pelas costas com a carga nas maos acerta tambem a carga
                 bool back = e.Type == EnemyType.Brute && V2.Dot(c.Facing, e.Pos - c.Pos) < 0f;
                 if (back) foreach (Cargo g in Cargos) if (g.State == CargoState.Held) Crack(g);
-                DamageCourier(d.Damage, back);
+                DamageCourier(d.Damage, back || e.Type == EnemyType.Guard);   // o guarda bate com o escudo: tira vida, a carga nas maos nao racha
             }
             if (e.Type == EnemyType.Brute || e.Type == EnemyType.Ogre)   // Bruto e Ogro acertam a carga no chao dentro do alcance
                 foreach (Cargo g in Cargos) if (g.State == CargoState.Ground && V2.Dist(e.Pos, g.Pos) <= d.Reach) Crack(g);
@@ -1045,7 +1120,7 @@ namespace DC.Core
             else
             {
                 if (!e.Def.Boss && InWater(e.Pos)) step *= Balance.WaterSlow;   // agua freia (chefes nao)
-                e.Pos = e.Pos + nav.Dir(e.Pos, goal) * step;
+                e.Pos = e.Pos + NavFor(e.Def.Radius).Dir(e.Pos, goal) * step;
             }
             Collide(Room, ref e.Pos, e.Def.Radius);
         }
@@ -1065,6 +1140,7 @@ namespace DC.Core
                 Spawn sp = pending[0]; pending.RemoveAt(0);
                 Enemy w = Spawn(sp.Type, sp.Pos + new V2(rng.Range(-0.3f, 0.3f), rng.Range(-0.2f, 0f)));
                 w.Wave = true; pendT = Balance.WaveGap;
+                if (w.Type == EnemyType.Guard) w.Leash = Balance.GuardLeash;
                 return;
             }
             if (WaveDone || Room.WaveTrigger == RoomTrigger.None || !Contract.Waves) return;
@@ -1368,11 +1444,21 @@ namespace DC.Core
         /// grito da gaiola: R2). Sem regiao = o courier (regiao 1 igual).</summary>
         internal V2 ChaseTarget(Enemy e) { V2 t = Courier.Pos; TargetR2(e, ref t); TargetR3(e, ref t); TargetR4(e, ref t); return t; }
         partial void TargetR2(Enemy e, ref V2 t); partial void TargetR3(Enemy e, ref V2 t); partial void TargetR4(Enemy e, ref V2 t);
+        /// <summary>O dash cancela o aviso: a regiao 2 guarda a acao no R2Foe (sem isto o Mineiro e o Sapo voltavam ao aviso e o golpe caia).</summary>
+        partial void CancelR2(Enemy e);
 
         // ------------------------------------------------------------------ geometria e navegacao
 
         /// <summary>Direcao (unitaria) para ir de `from` ate `to` contornando obstaculos (linha reta se livre; senao campo de fluxo).</summary>
         public V2 PathDir(V2 from, V2 to) => nav.Dir(from, to);
+
+        /// <summary>Grade do tamanho do corpo: a do courier ate Nav.BaseR; maior, uma por raio, criada na 1a vez na sala (poucas por sala).</summary>
+        Nav NavFor(float r)
+        {
+            if (r <= Nav.BaseR) return nav;
+            if (!navBig.TryGetValue(r, out Nav n)) navBig[r] = n = new Nav(Room, r);
+            return n;
+        }
         /// <summary>Segmento a-b livre de obstaculos para um circulo de raio r (linha de visada da flecha: r = Balance.ArrowR).</summary>
         public bool LineClear(V2 a, V2 b, float r) => nav.ShotClear(a, b, r);
 
@@ -1391,7 +1477,7 @@ namespace DC.Core
             return false;
         }
 
-        static void ClampRoom(ref V2 p, float r)
+        internal static void ClampRoom(ref V2 p, float r)
         {
             p.X = Math.Max(r, Math.Min(Balance.RoomW - r, p.X));
             p.Y = Math.Max(r, Math.Min(Balance.RoomH - r, p.Y));
@@ -1442,16 +1528,25 @@ namespace DC.Core
     public sealed class Nav
     {
         public const float Cell = 0.5f; public const int W = 18, H = 28;
-        const float Inflate = 0.45f;
+        /// <summary>Corpo ate este raio usa a grade do courier (centro da celula a 0,45 do obstaculo; a parede fica fora).</summary>
+        public const float BaseR = 0.45f;
         readonly RoomDef room;
         readonly bool[] blocked = new bool[W * H];
         readonly int[] queue = new int[W * H];
         readonly Dictionary<int, int[]> cache = new Dictionary<int, int[]>();
+        // corpo grande (Bruto, Ogro, Golem, Dragao...): a celula so e livre se o corpo inteiro cabe nela, contando a parede; antes a grade do
+        // courier mandava o Bruto (1,1 m) pela fresta de 1 m entre o bloco e a parede e ele ficava preso na quina
+        readonly bool big; readonly float body;
 
-        public Nav(RoomDef r)
+        public Nav(RoomDef r, float radius = BaseR)
         {
-            room = r;
-            for (int i = 0; i < blocked.Length; i++) blocked[i] = Run.Blocked(r, Center(i), Inflate);
+            room = r; big = radius > BaseR; body = radius;
+            for (int i = 0; i < blocked.Length; i++)
+            {
+                V2 c = Center(i);
+                if (big) Run.ClampRoom(ref c, radius);
+                blocked[i] = Run.Blocked(r, c, big ? radius + 0.05f : BaseR);
+            }
         }
 
         static V2 Center(int i) => new V2((i % W + 0.5f) * Cell, (i / W + 0.5f) * Cell);
@@ -1477,9 +1572,23 @@ namespace DC.Core
             return true;
         }
 
+        /// <summary>Linha reta livre para o corpo desta grade (corpo grande: a amostra presa a sala, para a parede contar).</summary>
+        bool Walkable(V2 a, V2 b)
+        {
+            if (!big) return Clear(a, b, 0.4f);
+            V2 d = b - a; int n = (int)(d.Len / 0.25f) + 1;
+            for (int i = 1; i <= n; i++)
+            {
+                V2 q = a + d * ((float)i / n);
+                Run.ClampRoom(ref q, body);
+                if (Run.Blocked(room, q, body - 0.01f)) return false;
+            }
+            return true;
+        }
+
         public V2 Dir(V2 from, V2 to)
         {
-            if (Clear(from, to, 0.4f)) return (to - from).Norm;
+            if (Walkable(from, to)) return (to - from).Norm;
             int[] f = Field(CellOf(to));
             int c = CellOf(from), cx = c % W, cy = c / W, best = -1, bv = f[c];
             for (int dy = -1; dy <= 1; dy++)

@@ -400,7 +400,7 @@ namespace DC.Tests
             Sim sim = InRoomWith(C4(15), 4, Room4(Regiao4.B), CargoType.Box);
             Run r = sim.Run; r.Courier.Hp = 99;
             Enemy d = null; foreach (Enemy e in r.Enemies) if (e.Type == EnemyType.ElderDragon) d = e;
-            Assert.AreEqual((int)System.Math.Round(48 * Balance.HpMul(31)), d.Hp, "221 de vida no M4-16");
+            Assert.AreEqual((int)System.Math.Round(42 * Balance.HpMul(31)), d.Hp, "193 de vida no M4-16 (revisao 2026-10-21: 39% de morte do bot com 221)");
             Assert.IsTrue(r.Doors.Count == 1 && r.Doors[0].Locked);
             // sopro: aviso de 1,4 s em cone para onde o courier estava; 3 de dano
             Steps(sim, 1, Up); r.Courier.Pos = new V2(4.5f, 4.7f);

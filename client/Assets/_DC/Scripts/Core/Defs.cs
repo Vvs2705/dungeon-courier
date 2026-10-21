@@ -339,7 +339,14 @@ namespace DC.Core
         public const float PuddleTime = 4f, PuddleR = 1.0f, PuddleSlow = 0.4f;              // limo: poca de 4 s, -40% de velocidade
         /// <summary>O limo rebate 1,5 m depois de cada toque (recarga 1,6 s): 1 de dano a cada ~1,6 s em vez de grudar; parado da para atirar.</summary>
         public const float SlimeRecoil = 1.5f;
+        /// <summary>Depois de um toque (morcego, limo, mumia...), outro toque so tira vida passados TouchGuard s.</summary>
+        public const float TouchGuard = 0.5f;
         public const float CaptainFlee = 1.9f; public const int CaptainDropHits = 2, CaptainCalls = 2;
+        /// <summary>Guarda sentinela (revisao de 2026-10-21: parado, morria sem reagir a 5 m do tiro): levou tiro, fica alerta GuardAlert s
+        /// e anda ate GuardLeash m do posto atras do courier; fora dos tutoriais, de GuardChargeFrom (logo alem do golpe: sem faixa segura na ponta da coleira) a GuardChargeTo m mira GuardChargeTele s e
+        /// investe GuardChargeLen m (1 de dano e empurra); errou ou bateu: atordoado GuardChargeStun s (tiro livre). Volta ao posto a GuardBack.</summary>
+        public const float GuardLeash = 3f, GuardAlert = 2.5f, GuardBack = 2f, GuardChargeFrom = 1.3f, GuardChargeTo = 5f, GuardChargeTele = 1.1f,
+                           GuardChargeLen = 4.5f, GuardChargeSpeed = 7f, GuardChargeStun = 1.2f, GuardChargeCd = 7f, GuardChargePush = 1f;
         // eventos de sala (reforco com teto)
         public const int MaxAlive = 10; public const float WaveDownTime = 3f;
         /// <summary>Parede rachada: so atravessa empurrando contra ela (componente do movimento para a parede >= 0,7), nao passando rente.</summary>
@@ -436,7 +443,7 @@ namespace DC.Core
         {
             new EnemyDef(EnemyType.Bat,     "Morcego",        2,  2.4f, 0.30f, 1, 0f,   0f,   0f,   1.0f, false),
             new EnemyDef(EnemyType.Thief,   "Ladrão",         3,  2.0f, 0.35f, 0, 0f,   0f,   0f,   0f,   false),
-            new EnemyDef(EnemyType.Guard,   "Guarda",         16, 0f,   0.45f, 1, 1.2f, 1.2f, 0.5f, 1.0f, true),
+            new EnemyDef(EnemyType.Guard,   "Guarda",         16, 1.1f, 0.45f, 1, 1.2f, 1.2f, 0.5f, 1.0f, true),   // anda so na coleira do posto (Run.Guard)
             new EnemyDef(EnemyType.Brute,   "Bruto",          6,  1.6f, 0.55f, 2, 1.2f, 1.0f, 0.6f, 1.2f, false),
             new EnemyDef(EnemyType.Ogre,    "Ogro",           45, 1.2f, 0.90f, 3, 2.0f, 1.6f, 1.0f, 2.0f, true, B),
             new EnemyDef(EnemyType.Archer,  "Arqueiro",       3,  1.4f, 0.35f, 1, 7.0f, 7.0f, 0.8f, 2.2f, false),
@@ -456,9 +463,9 @@ namespace DC.Core
             // da mordida (cuspe em Balance.Spit*); gargula: velocidade 0 (mergulho Balance.GargSpeed), alcance = faixa, gatilho com a carga
             new EnemyDef(EnemyType.Ghost,          "Fantasma",           3,  1.8f, 0.35f, 1, 0.5f, 0f,   0.6f, 1.5f, false, false, Th) { Region = 3 },
             new EnemyDef(EnemyType.Skeleton,       "Esqueleto",          5,  1.5f, 0.40f, 1, 1.0f, 0.9f, 0.5f, 1.2f, false, false, No) { Region = 3 },
-            new EnemyDef(EnemyType.Spider,         "Aranha",             3,  2.0f, 0.35f, 1, 0.8f, 0.7f, 0.4f, 1.4f, false, false, No) { Region = 3 },
+            new EnemyDef(EnemyType.Spider,         "Aranha",             3,  2.0f, 0.35f, 1, 0.8f, 0.7f, 0.5f, 1.4f, false, false, No) { Region = 3 },
             new EnemyDef(EnemyType.Mummy,          "Múmia",              9,  1.0f, 0.45f, 1, 0.9f, 0.8f, 0.6f, 2.0f, false, false, No) { Region = 3 },
-            new EnemyDef(EnemyType.Gargoyle,       "Gárgula",            8,  0f,   0.50f, 2, 6.0f, 3.0f, 0.9f, 4.0f, false, false, Sm) { Region = 3 },
+            new EnemyDef(EnemyType.Gargoyle,       "Gárgula",            6,  0f,   0.50f, 2, 6.0f, 3.0f, 0.9f, 4.0f, false, false, Sm) { Region = 3 },
             // regiao 4 (CONTEUDO_REGIOES §5; comportamento em Run.Regiao4.cs)
             new EnemyDef(EnemyType.Salamander,     "Salamandra",         4,  2.4f, 0.35f, 1, 0f,   0f,   0f,   1.2f, false, false, Sm) { Region = 4 },
             new EnemyDef(EnemyType.Imp,            "Diabrete",           3,  2.0f, 0.30f, 1, 0.8f, 0.7f, 1.0f, 5.0f, false, false, Th) { Region = 4 },
@@ -472,7 +479,7 @@ namespace DC.Core
             new EnemyDef(EnemyType.SpiderWidow,    "Viúva Aranha",       20, 1.8f, 0.70f, 2, 1.1f, 1.0f, 0.6f, 1.5f, L, B, Th) { Region = 3 },
             new EnemyDef(EnemyType.Necromancer,    "Necromante",         36, 0f,   0.50f, 2, 9.0f, 9.0f, 1.2f, 3.0f, L, B, Ar) { Region = 3 },
             new EnemyDef(EnemyType.KoboldForeman,  "Capataz Kobold",     18, 1.8f, 0.55f, 2, 3.0f, 2.6f, 0.7f, 1.8f, L, B, Ar | Th) { Region = 4 },
-            new EnemyDef(EnemyType.ElderDragon,    "Dragão Ancião",      48, 0.8f, 1.30f, 3, 6.0f, 6.0f, 1.4f, 3.0f, L, B, Sm) { Region = 4 },
+            new EnemyDef(EnemyType.ElderDragon,    "Dragão Ancião",      42, 0.8f, 1.30f, 3, 6.0f, 6.0f, 1.4f, 3.0f, L, B, Sm) { Region = 4 },
             new EnemyDef(EnemyType.MagmaShard,     "Brasa de magma",     4,  1.8f, 0.40f, 1, 0.8f, 0.7f, 0.5f, 1.2f, false, false, No) { Region = 4 },
             new EnemyDef(EnemyType.SalamanderEgg,  "Ovo de salamandra",  2,  0f,   0.30f, 0, 0f,   0f,   6.0f, 0f,   false, false, No) { Region = 4 },
         };

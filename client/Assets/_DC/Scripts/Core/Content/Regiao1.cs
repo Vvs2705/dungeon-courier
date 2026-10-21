@@ -20,7 +20,8 @@ namespace DC.Core
         const RoomTrigger Half = RoomTrigger.Half, Down = RoomTrigger.CargoDown;
 
         // Icone de ameaca (Threat) = terco do dano medio por visita do bot na campanha (BalanceTests.IconeDeAmeaca_AcompanhaODanoMedido):
-        // 1 = R3, R7, R12, R13 · 2 = R1, R2, R5, R6, R9, R10, R14, R15 · 3 = R4, R8, R11, R16. B1/M1 = 3 (chefes, porta unica).
+        // 1 = R3, R7, R13 · 2 = R1, R2, R5, R6, R8, R9, R10, R12, R14, R15 · 3 = R4, R11, R16 (revisao de combate 2026-10-21: o guarda
+        // sentinela pesou R12 e o intervalo entre toques aliviou os morcegos de R8; R15 em 3 o bot evitava e o dano dela caia a 1). B1/M1 = 3 (chefes, porta unica).
         // Risk (icone de risco da carga) sai dos inimigos da sala e do reforco: ladrao em R2, R3, R6, R9, R10, R13, R16 (+B1, M1, S2);
         // sem risco: R1, R4, R8, R12, R14.
         // Reforco de "metade da sala" sem emboscada chega POR TRAS (cantos de baixo): quem corre para a porta escapa (lutar e escolha, H1);
@@ -65,7 +66,7 @@ namespace DC.Core
                 new[] { O(2.5f, 5.0f, 0.6f, 0.6f), O(6.5f, 5.0f, 0.6f, 0.6f), O(2.5f, 8.5f, 0.6f, 0.6f), O(6.5f, 8.5f, 0.6f, 0.6f) },
                 new[] { S(Archer, 4.5f, 11.2f), S(Bat, 1.5f, 10.5f) }, P(1.5f, 2.5f),
                 wave: new[] { S(Archer, 8.2f, 3.2f), S(Bat, 0.8f, 3.2f) }, trigger: Half),
-            new RoomDef(R8, "R8", "Poça de Limo", "o limo morto deixa poça que atrasa: não pouse em cima dela", 3,
+            new RoomDef(R8, "R8", "Poça de Limo", "o limo morto deixa poça que atrasa: não pouse em cima dela", 2,
                 new[] { O(4.5f, 6.5f, 2.0f, 0.4f) },
                 new[] { S(Slime, 2.5f, 9.5f), S(Slime, 6.5f, 9.5f) }, P(1.5f, 2.5f), P(8.2f, 4.0f), 30,
                 wave: new[] { S(Slime, 0.8f, 3.5f), S(Slime, 8.2f, 3.5f) }, trigger: Half),
@@ -81,7 +82,7 @@ namespace DC.Core
                 new[] { O(4.5f, 7.5f, 0.8f, 0.8f), O(1.5f, 10.0f, 0.5f, 0.5f) },
                 new[] { S(Brute, 4.5f, 10.5f), S(Archer, 7.5f, 12.0f) }, P(2.0f, 2.5f), P(0.8f, 7.5f), 40,
                 wave: new[] { S(Bat, 0.8f, 3.5f), S(Slime, 8.2f, 3.5f) }, trigger: Half),
-            new RoomDef(R12, "R12", "Guarda das Poças", "luta obrigatória entre limos: escolha onde pousar", 1,
+            new RoomDef(R12, "R12", "Guarda das Poças", "luta obrigatória entre limos: escolha onde pousar", 2,
                 new[] { O(2.5f, 5.5f, 0.5f, 0.5f), O(6.5f, 5.5f, 0.5f, 0.5f) },
                 new[] { S(Guard, 4.5f, 12.4f), S(Slime, 2.0f, 9.0f) }, P(2.0f, 2.5f),
                 wave: new[] { S(Slime, 7.0f, 12.0f) }, trigger: Down),

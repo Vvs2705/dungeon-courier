@@ -59,7 +59,7 @@ namespace DC.Tests
             Run r = sim.Run;
             r.Enemies.Clear(); r.Courier.Hp = 1;
             r.Spawn(EnemyType.Bat, r.Courier.Pos);
-            Steps(sim, 2, V2.Zero);
+            Steps(sim, 2 + StepsFor(Balance.TouchGuard), V2.Zero);   // toques nao empilham (o Segundo folego acaba de levar um)
             Assert.IsFalse(sim.InContract, "nao morreu");
         }
 
