@@ -789,6 +789,71 @@ namespace DC
             "Stand still next to the chest to open it. Coins pay for guild upgrades.",
             "Quédate quieto junto al cofre para abrirlo. Las monedas pagan las mejoras del gremio.",
             "Diam di samping peti untuk membukanya. Koin dipakai untuk peningkatan guild.");
+        /// <summary>Cartao da carga nova (1o contrato com ela; titulo = Carga(t)). Regras conferidas no Run (CargoDef.Verb e os ganchos).</summary>
+        public static string TourCargaNova(ContractDef c)
+        {
+            switch (c.Cargo)
+            {
+                case CargoType.Relic: return L("Frágil: cada golpe racha, e o dash derruba a relíquia, o que racha também. Pouse com calma antes de lutar. Com 3 rachaduras, quebra.",
+                    "Fragile: every hit cracks it, and a dash drops the relic, which cracks it too. Set it down calmly before fighting. 3 cracks and it breaks.",
+                    "Frágil: cada golpe la agrieta, y el dash tira la reliquia, lo que también la agrieta. Déjala con calma antes de pelear. Con 3 grietas, se rompe.",
+                    "Rapuh: tiap pukulan membuatnya retak, dan dash menjatuhkan relik, itu juga retak. Letakkan dengan tenang sebelum bertarung. 3 retakan = pecah.");
+                case CargoType.Egg: return F("Choca em {0} s. Entregue antes e ganhe mais moedas. Se chocar, o filhote segue você: proteja-o até o cliente. Explosão perto racha o ovo.",
+                    "Hatches in {0} s. Deliver it before that for more coins. If it hatches, the chick follows you: keep it safe all the way to the client. Nearby explosions crack the egg.",
+                    "Eclosiona en {0} s. Entrégalo antes y gana más monedas. Si eclosiona, la cría te sigue: protégela hasta el cliente. Las explosiones cerca agrietan el huevo.",
+                    "Menetas dalam {0} dtk. Antar sebelum itu untuk koin lebih banyak. Jika menetas, anaknya mengikutimu: lindungi sampai ke klien. Ledakan di dekatnya membuat telur retak.",
+                    c.EggTarget.ToString("0", Inv));
+                case CargoType.Cake: return L("O bolo não aguenta dash: o toque rápido só faz ele balançar. Desvie andando e pouse para lutar.",
+                    "The cake can't take a dash: a quick tap only makes it wobble. Dodge by walking and set it down to fight.",
+                    "El pastel no aguanta el dash: el toque rápido solo lo hace tambalear. Esquiva caminando y déjalo para pelear.",
+                    "Kue tidak tahan dash: ketuk cepat hanya membuatnya bergoyang. Menghindarlah sambil berjalan dan letakkan untuk bertarung.");
+                case CargoType.Message: return L("Contra o relógio: entregue antes do tempo acabar. Com ela nas mãos, a porta dos guardas abre sem luta.",
+                    "Against the clock: deliver before time runs out. With it in your hands, the guards' door opens without a fight.",
+                    "Contra reloj: entrégalo antes de que se acabe el tiempo. Con él en las manos, la puerta de los guardias se abre sin pelear.",
+                    "Lawan waktu: antar sebelum waktu habis. Selama dibawa, pintu penjaga terbuka tanpa bertarung.");
+                case CargoType.Heavy: return L("-25% de velocidade carregando, e pegar e pousar demoram mais. Planeje a rota antes de sair.",
+                    "-25% speed while carrying, and picking it up and setting it down take longer. Plan your route before you go.",
+                    "-25% de velocidad con la carga, y recogerla y dejarla tarda más. Planea la ruta antes de salir.",
+                    "-25% kecepatan saat membawa, dan mengambil serta meletakkannya lebih lama. Rencanakan rute sebelum berangkat.");
+                case CargoType.Barrel: return L("No chão por 3 s, explode. Pousou para lutar? Pegue de volta antes que o pavio acabe.",
+                    "Explodes after 3 s on the ground. Set it down to fight? Pick it back up before the fuse runs out.",
+                    "3 s en el suelo y explota. ¿Lo dejaste para pelear? Recógelo antes de que se acabe la mecha.",
+                    "3 dtk di lantai, meledak. Meletakkannya untuk bertarung? Ambil lagi sebelum sumbunya habis.");
+                case CargoType.ArcaneHeart: return L("Atrai moedas e inimigos num raio de 4 m. Bom para juntar moedas, perigoso em sala cheia.",
+                    "Attracts coins and enemies within 4 m. Great for gathering coins, risky in a crowded room.",
+                    "Atrae monedas y enemigos en un radio de 4 m. Bueno para juntar monedas, peligroso en una sala llena.",
+                    "Menarik koin dan musuh dalam radius 4 m. Bagus untuk mengumpulkan koin, berbahaya di ruangan yang ramai.");
+                case CargoType.IceCrystal: return L("Derrete com o tempo: não demore. Passe pela água para recongelar; a lava derrete mais rápido.",
+                    "Melts over time: don't dawdle. Walk through water to refreeze it; lava melts it faster.",
+                    "Se derrite con el tiempo: no tardes. Pasa por el agua para recongelarlo; la lava lo derrite más rápido.",
+                    "Mencair seiring waktu: jangan berlama-lama. Lewati air untuk membekukannya lagi; lava membuatnya mencair lebih cepat.");
+                case CargoType.GriffinCage: return L("O grifinho grita a cada 6 s e atrai inimigos. Um dash na hora certa acalma o grito.",
+                    "The griffin chick screams every 6 s and draws enemies. A well-timed dash calms it down.",
+                    "El grifo bebé grita cada 6 s y atrae enemigos. Un dash a tiempo calma el grito.",
+                    "Anak grifon menjerit tiap 6 dtk dan menarik musuh. Dash di saat yang tepat menenangkannya.");
+                case CargoType.Lantern: return L("Ilumina as salas escuras: no escuro só se mira o que está na luz. Se cair, apaga e só reacende numa tocha.",
+                    "Lights up dark rooms: in the dark you can only aim at what's in the light. If dropped, it goes out and only relights at a torch.",
+                    "Ilumina las salas oscuras: en la oscuridad solo se apunta a lo que está en la luz. Si cae, se apaga y solo se enciende en una antorcha.",
+                    "Menerangi ruangan gelap: dalam gelap kamu hanya bisa membidik yang terkena cahaya. Jika jatuh, padam dan hanya menyala lagi di obor.");
+                case CargoType.Mirror: return L("Reflete flechas, teias e raios que vêm de frente. Cada reflexo racha: com 3, quebra.",
+                    "Reflects arrows, webs and beams coming from the front. Each reflection cracks it: 3 and it breaks.",
+                    "Refleja flechas, telarañas y rayos que llegan de frente. Cada reflejo lo agrieta: con 3, se rompe.",
+                    "Memantulkan panah, jaring, dan sinar dari depan. Tiap pantulan membuatnya retak: 3 kali, pecah.");
+                case CargoType.Balloon: return L("+15% de velocidade e o ladrão não alcança. No chão, escapa em 4 s: pegue logo de volta.",
+                    "+15% speed and thieves can't reach it. On the ground it floats off in 4 s: grab it back quickly.",
+                    "+15% de velocidad y el ladrón no lo alcanza. En el suelo escapa en 4 s: recógelo pronto.",
+                    "+15% kecepatan dan pencuri tidak bisa meraihnya. Di lantai lepas dalam 4 dtk: segera ambil lagi.");
+                case CargoType.Flytrap: return L("No chão, morde os inimigos por perto. Mas também morde você se ficar parado ao lado dela.",
+                    "On the ground it bites nearby enemies. But it bites you too if you stand still next to it.",
+                    "En el suelo muerde a los enemigos cercanos. Pero también te muerde si te quedas quieto a su lado.",
+                    "Di lantai menggigit musuh di dekatnya. Tapi juga menggigitmu kalau kamu diam di sampingnya.");
+                case CargoType.TreasureMap: return L("Revela os baús e as paredes rachadas. Os ladrões preferem o mapa: fique de olho.",
+                    "Reveals chests and cracked walls. Thieves go for the map first: keep an eye on it.",
+                    "Revela los cofres y las paredes agrietadas. Los ladrones prefieren el mapa: vigílalo.",
+                    "Menunjukkan peti dan dinding retak. Pencuri mengincar peta lebih dulu: awasi baik-baik.");
+                default: return Verbo(c);
+            }
+        }
         public static string TourEntregaT => L("O cliente", "The client", "El cliente", "Klien");
         public static string TourEntrega => L("Leve a carga até o círculo do cliente para entregar. Quanto mais inteira a carga, maior o pagamento.",
             "Bring the cargo into the client's circle to deliver. The more intact the cargo, the bigger the pay.",

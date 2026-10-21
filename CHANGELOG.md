@@ -4,6 +4,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões e
 
 ## [Unreleased]
 ### Adicionado
+- **Cartão da carga nova no tutorial:** no 1º contrato com cada carga (relíquia, ovo, bolo, mensagem, caixa pesada, barril e as 8 das regiões 2-4) a tela congela sobre a carga e um cartão explica a regra dela e o que fazer (4 idiomas). Antes, só a faixa de dica e a linha do quadro explicavam. Pular tutorial também pula esses cartões; REVER TUTORIAL mostra de novo.
 - **Portão em um comando:** `client/tools/verify.sh quick|full` (núcleo, viewcheck, EditMode, build Windows e `-autoplay 30`), com logs em `client/Builds/verify/` e só OK ou o erro na saída; mesmo nome e uso do Forge Street.
 - **Mapa do código** (`docs/MAPA_CODIGO.md`): para quê e pontos de entrada de cada arquivo do Core, da View, do Editor, dos testes e das ferramentas, para ler o trecho certo em vez do arquivo inteiro.
 
