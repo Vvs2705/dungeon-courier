@@ -179,6 +179,7 @@ namespace DC
         void TourPula()
         {
             foreach (string id in TodosPassos) _vistos.Add(id);
+            foreach (CargoType t in Enum.GetValues(typeof(CargoType))) _vistos.Add(CargaPasso(t));
             if (_passo != null) _g.Log("tour", _passo.Id, "pular");
             GravaTour();
             _fila.Clear(); _passo = null; _passoTotal = 0;
@@ -315,6 +316,9 @@ namespace DC
 
         bool Visto(string id) => _vistos.Contains(id);
 
+        /// <summary>Id do passo da carga nova (vai para o PlayerPrefs dc_tour): pelo nome do enum, que nao muda.</summary>
+        static string CargaPasso(CargoType t) => "carga_" + t;
+
         bool AlgumModal()
         {
             foreach (RectTransform m in _modals) if (m.gameObject.activeSelf) return true;
@@ -383,6 +387,13 @@ namespace DC
                     Explica("jogo_vida", () => Ui(_hearts[0].transform.parent), () => Textos.TourVidaT, () => Textos.TourVida),
                     Explica("jogo_carga", () => Junta(Ui(_cargoEdge), Ui(_pips[2].transform.parent)), () => Textos.TourCargaT, () => Textos.TourCarga),
                     Explica("jogo_pausa", () => Ui(_pauseBtn), () => Textos.TourPausaT, () => Textos.TourPausa));
+                return;
+            }
+            // carga nova: a regra dela na 1a vez que aparece (a caixa ja tem o jogo_carga); antes so a faixa e a linha do quadro explicavam
+            CargoType ct = r.Contract.Cargo;
+            if (ct != CargoType.Box && !Visto(CargaPasso(ct)))
+            {
+                Enfileira(Explica(CargaPasso(ct), () => Mundo(r.Main.Pos, 1.8f, 1.8f, 0.4f), () => Textos.Carga(ct), () => Textos.TourCargaNova(r.Contract)));
                 return;
             }
             if (r.Hint == Hint.PlantToFight && !Visto("jogo_pousar"))
