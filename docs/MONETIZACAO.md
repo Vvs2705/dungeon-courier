@@ -136,6 +136,12 @@ Tirar o LevelPlay economizou pouco no C# (a maior parte do IL2CPP é do IAP) e c
 - anúncio não personalizado para todos antes do `Init`: `LevelPlayPrivacySettings` com GDPR sem consentimento, CCPA com opt-out e COPPA desligado (público 13+);
 - `Setup.SemIdDePublicidade`, que tira do APK o `AD_ID` e as 3 permissões do Privacy Sandbox.
 
+**Atualização de 2026-10-22** (pedido do Vinicius: usar a versão nova em vez de desfazer a atualização automática do LevelPlay a cada abertura do Unity):
+- SDK do ironSource 9.6.2 → 9.7.0 (Android `mediation-sdk` 9.7.0);
+- adaptador do Unity Ads 5.15 → 5.16 (Android `unityads-adapter` 5.15.0, que já traz o Unity Ads; saiu a dependência `unity-ads` 4.21.0 separada).
+- Foi pelo mesmo instalador do *Update all* da tela do LevelPlay (`SdkInstaller`; o painel só compila com `LEVELPLAY_DEPENDENCIES_INSTALLED`).
+- A conta (*Connect your account*) e as chaves não mudam com isso. Se o painel pedir de novo, refaça como em 2026-10-16.
+
 Conferido com `aapt`. O APK fica com INTERNET, VIBRATE, ACCESS_NETWORK_STATE, BILLING e o WorkManager do SDK (WAKE_LOCK, RECEIVE_BOOT_COMPLETED, FOREGROUND_SERVICE), sem AD_ID, e tem 67,7 MiB. O passo 3 foi feito em 2026-10-14, na conta LevelPlay da V-STACK (vinicius@vstack-solutions.com.br), com o app "Dungeon Courier" (Android, "Not live yet", COPPA "Not directed"):
 
 | Chave do `config.json` | Valor | No painel |
