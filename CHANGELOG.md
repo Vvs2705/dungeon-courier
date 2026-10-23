@@ -3,6 +3,8 @@
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões em [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
+
+## [1.4.3-beta] - 2026-10-22
 ### Corrigido
 - **Inimigo grande preso na quina da sala** (feedback do Vinicius no celular): o mapa de caminhos era do tamanho do courier e mandava o Bruto (1,1 m) por frestas de 1 m entre bloco e parede. Agora cada tamanho de corpo tem o seu (`Run.NavFor`), e um teste confere todas as salas. Valia também para o Ogro, o Golem e o Dragão nas salas de chefe.
 - O dash cancela o aviso do Mineiro e do Sapo (antes o golpe caía mesmo assim). A Bota de ferro não congela mais o vagonete.
@@ -16,6 +18,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões e
 - Salamandra para e encara antes do corte (era sem aviso). Aranha e Diabrete avisam um pouco antes.
 - Gárgula com 6 de vida e mais tempo pousada; Gárgula e Toupeira sem escala de vida por nível (só ficam vulneráveis em janelas curtas). Dragão com 42 de vida (era o chefe que mais matava).
 - Caveiras das portas refeitas pelo dano medido: R8 3 → 2, R12 1 → 2, R2-5 1 → 2.
+- **Anúncios:** SDK do ironSource 9.7.0 e adaptador do Unity Ads 5.16 no LevelPlay (antes 9.6.2 e 5.15).
 
 ## [1.4.2-beta] - 2026-10-21
 ### Adicionado
