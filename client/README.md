@@ -1,6 +1,6 @@
 # client/ — projeto Unity de Dungeon Courier
 
-Unity **6000.3.23f1**, Built-in RP, Input System, uGUI por código, retrato. `client/` é a raiz do projeto (`Assets/`, `Packages/`, `ProjectSettings/`).
+Unity **6000.3.27f1** (LTS; até 2026-10-22, 6000.3.23f1), Built-in RP, Input System, uGUI por código, retrato. `client/` é a raiz do projeto (`Assets/`, `Packages/`, `ProjectSettings/`).
 
 - `Assets/_DC/Scripts/Core/` — `DC.Core`, C# puro e determinístico (regras, conteúdo, save, bot). Testes em `Assets/_DC/Tests/EditMode/`, que rodam também fora do Unity: `dotnet test client/tools/coretests`. Portão inteiro num comando: `client/tools/verify.sh quick` (sem o Unity) ou `full` (com EditMode, build Windows e `-autoplay 30`). `Assets/_DC/Tests/PlayMode/` (`DC.PlayTests`): o caminho do dinheiro da loja (só com `-testsession`; `docs/MONETIZACAO.md` §3).
 - `Assets/_DC/Scripts/View/` — `DC`: o único MonoBehaviour de fluxo (`Game`), mundo, HUD, entrada de um dedo, sprites. Compila sem o Unity: `dotnet build client/tools/viewcheck/view`.

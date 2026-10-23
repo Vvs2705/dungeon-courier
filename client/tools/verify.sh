@@ -10,7 +10,7 @@ set -uo pipefail
 export MSYS_NO_PATHCONV=1 DOTNET_CLI_UI_LANGUAGE=en   # caminhos do Windows passam intactos; saída do dotnet em inglês para o grep
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd -W)"; CLIENT="$ROOT/client"; OUT="$CLIENT/Builds/verify"
-UNITY="${UNITY_EXE:-C:/Program Files/Unity/Hub/Editor/6000.3.23f1/Editor/Unity.exe}"
+UNITY="${UNITY_EXE:-C:/Program Files/Unity/Hub/Editor/6000.3.27f1/Editor/Unity.exe}"
 T0=$SECONDS
 
 ok()   { echo "OK   $* [$((SECONDS - T0)) s]"; }

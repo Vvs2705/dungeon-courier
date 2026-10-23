@@ -3,6 +3,8 @@
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões em [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
+### Mudado
+- **Unity 6000.3.27f1 LTS** (era 6000.3.23f1), com o Input System 1.20.1 que vem junto. `verify.sh` e o viewcheck apontam para o editor novo. No PC ficou um Unity Hub só, o do site da Unity, que tem linha de comando para instalar editores.
 
 ## [1.4.3-beta] - 2026-10-22
 ### Corrigido
