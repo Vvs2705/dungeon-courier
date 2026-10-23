@@ -1,5 +1,24 @@
 # Balance — medição do bot
 
+# Revisão de combate (2026-10-21, feedback do Vinicius no celular)
+
+Queixas: o Bruto preso na quina da sala e o Guarda parado ("extremamente fácil matar ele"). Análise de toda a lógica de ataque e defesa nas 4 regiões; o que mudou:
+
+- **Nav por tamanho de corpo** (`Run.NavFor`, `Nav(room, raio)`): corpo maior que 0,45 m usa uma grade em que a célula só é livre se o corpo inteiro cabe, contando a parede. Antes o Bruto (1,1 m) ia pela fresta de 1 m da R5 e travava na quina; também R11, R2-10, R4-10 e os chefes B1, B2 e B4. Teste: `AndadorGrande_ChegaAoCourierEmTodoCanto` (todas as salas).
+- **Guarda sentinela** (`Run.Guard`): levou tiro, fica alerta 2,5 s e anda até 3 m do posto atrás do courier. Fora dos tutoriais, com o courier parado a 1,3–5 m, mira 1,1 s e investe 4,5 m (1 de dano e empurrão). Errou ou bateu, fica atordoado 1,2 s (tiro livre). Recarga de 7 s; depois volta ao posto. Os golpes dele são de escudo: tiram vida, mas não racham a carga na mão. Quem passa andando ou luta com os outros perto dele encara o guarda no posto, como antes; depois que a mensagem abre a porta, ele deixa passar.
+- **Toques não empilham** (`Balance.TouchGuard` 0,5 s): 4 morcegos juntos tiravam 4 de vida no mesmo passo.
+- **Mira automática**: quem foge com a carga é o 1º alvo (antes o morcego mais perto roubava a mira).
+- **Regiões 2-4**: o dash cancela o aviso do Mineiro e do Sapo. Mineiro e Kobold arremessam antes de fugir (colado deixou de ser seguro). Língua do Sapo no courier vai a 4,4 m (era 3: o tiro de 5 m matava de graça). Raios gêmeos do Necromante a ±7° (a ±15° a fase 2 errava quem ficava parado). Gárgula 6 de vida, 3 s pousada, e Gárgula e Toupeira sem escala de vida (só vulneráveis em janelas curtas). Salamandra para e encara 0,35 s antes do corte (era sem aviso) e o corte segue a isca do coração. Aranha avisa em 0,5 s; Diabrete, em 0,7 s. Dragão com 42 de vida (39% de morte do bot com 48). A Bota de ferro não congela mais o vagonete.
+- **Testado e descartado:** investida a cada 2,5–5 s, alerta por proximidade (courier parado perto da porta) e seguir quem passa andando. Com a relíquia na mão, cada toque de morcego ou limo durante o desvio racha a carga: ela quebrava em 80% do C5 e do C8 e em 89% do C21. Medido por rachadura, os golpes no courier com a carga na mão somavam 296, contra 20 do ladrão. Com o guarda parado, o C21 voltava a 52%, o que confirmou que a causa era o desvio forçado.
+
+Bot, 6 guildas × 20 sementes (`Bot.MeasureCampaignTable`), % de entregas antes → depois:
+
+- Relíquia: C5 59 → 67, C8 71 → 59, C15 67 → 53, C21 46 → 43; a relíquia quebrada sobe um pouco, e as mortes caem.
+- Mensagem: C10 98 → 98, C16 80 → 95, C22 98 → 99.
+- Ícones refeitos pelo dano medido:
+  - Região 1: R8 3 → 2 (o intervalo entre toques aliviou os morcegos), R12 1 → 2 (guarda sentinela). A R15 com 3 caveiras o bot evitava, e o dano medido nela caía para 1,06; ficou com 2.
+  - Região 2: R2-5 1 → 2 (a língua do sapo no courier foi a 4,4 m; o dano por visita passou de 0,52 para 0,98).
+
 # Economia da campanha (Leva C, raia E, 2026-10-11)
 
 As raias R2, R3 e R4 mediram cada região partindo de uma **estimativa** do fim da anterior e todas acharam o mesmo problema: moedas paradas (~3,7 mil no fim da região 2, ~14 mil na 3, ~21,6 mil na 4) contra o alvo do desenho de "no máximo 1 nível de equipamento sobrando" (`CONTEUDO_REGIOES.md` §10.3). Aqui a campanha inteira é medida **numa rodada só**, do zero.

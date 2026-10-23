@@ -573,6 +573,13 @@ CLIPS.update({
                (10, pose(CONTACT_R, mirror(FIST_FWD_R), mirror(FIST_BACK_L), **RUN_LEAN), "io"),
                (15, pose(PASS_R, ARMS_HANG, **RUN_LEAN), "io"),
                (20, pose(CONTACT_L, FIST_FWD_R, FIST_BACK_L, **RUN_LEAN), "io")],
+    # guarda sentinela andando (2026-10-21): o escudo fica firme a frente (o Walking do arqueiro balancava o escudo ate a
+    # horizontal); laco de 2 passos: 24 = 0; no lugar, a Sim move
+    "GuardWalk": [(0, pose(GUARD_ARMS, CONTACT_L, Spine=R(("X", 6))), "io"),
+                  (6, pose(GUARD_ARMS, PASS_L, Spine=R(("X", 6))), "io"),
+                  (12, pose(GUARD_ARMS, CONTACT_R, Spine=R(("X", 6))), "io"),
+                  (18, pose(GUARD_ARMS, PASS_R, Spine=R(("X", 6))), "io"),
+                  (24, pose(GUARD_ARMS, CONTACT_L, Spine=R(("X", 6))), "io")],
     # golem atordoado, sentado, a cabeca rodando (laco: 40 = 0)
     "Stun": [(0, pose(GOLEM_SIT, GOLEM_LIMP, Spine=R(("X", 10), ("Z", 5)), Spine1=R(("X", 8)), Neck=R(("X", 8), ("Z", 12))), "io"),
              (10, pose(GOLEM_SIT, GOLEM_LIMP, Spine=R(("X", 12)), Spine1=R(("X", 8)), Neck=R(("X", 18))), "io"),

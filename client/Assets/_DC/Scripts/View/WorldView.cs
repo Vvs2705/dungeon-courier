@@ -546,7 +546,7 @@ namespace DC
                 // telegraph (ART_BIBLE §7): circulo de raio Reach no chao; enchimento a 25% crescendo com TeleProgress; borda a 90%, branca no
                 // ultimo 0,1 s. Arqueiro: a mesma regra numa LINHA de mira ate a parede/obstaculo (o circulo de 7 m cobriria a sala)
                 // Regioes 2-4: forma propria (circulo no alvo, faixa, cone, linha; o vagonete avisa no trilho) em TeleRegiao
-                bool aim = tele && e.Type == EnemyType.Archer;
+                bool aim = tele && (e.Type == EnemyType.Archer || (e.Type == EnemyType.Guard && e.Aim.Len > 0.5f));   // guarda: a linha da investida
                 if (!TeleRegiao(run, v, e, p, tele))
                 {
                     v.Ring.enabled = v.Fill.enabled = tele && !aim;
@@ -663,6 +663,11 @@ namespace DC
                     else if (e.State == EnemyState.Flee) { clip = s.Pick("Walk", "Run"); face = cp - p; }   // recua de frente para o courier
                     else { clip = s.Pick("Idle"); face = cp - p; }
                     break;
+                case EnemyType.Guard:   // sentinela: Walk na coleira, voltando e na investida (passada no ritmo da velocidade); mirando, parado de frente
+                    speed = Mathf.Max(e.Def.Speed, vel.magnitude);
+                    if (e.ChargeT > 0f) { clip = s.Pick("Walk", "Idle"); face = V(e.Aim); break; }
+                    if (tele && e.Aim.Len > 0.5f) { clip = s.Pick("Idle"); face = V(e.Aim); break; }
+                    goto default;
                 default:
                     if (AnimRegiao(v, e, ref s, p, vel, cp, tele, impact, ref face, ref speed, out clip, out frame)) break;   // regioes 2-4
                     clip = tele || v.StrikeT > 0f ? s.Clip(At(AttackClip, (int)e.Type, null) ?? "Attack") : -1;

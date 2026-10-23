@@ -430,7 +430,8 @@ namespace DC.Tests
             r3.Courier.Hp = 99; r3.Courier.Pos = new V2(4.5f, 3f);
             r3.Spawn(EnemyType.Bat, r3.Courier.Pos); Steps(s3, 2, Left);
             Assert.AreEqual(0, r3.Main.Cracks, "o 1o golpe na carga devia ser ignorado"); Assert.IsTrue(r3.PadUsed);
-            r3.Enemies.Clear(); r3.Spawn(EnemyType.Bat, r3.Courier.Pos); Steps(s3, 2, Left);
+            r3.Enemies.Clear(); Steps(s3, StepsFor(Balance.TouchGuard), Left);   // toques nao empilham (Balance.TouchGuard)
+            r3.Spawn(EnemyType.Bat, r3.Courier.Pos); Steps(s3, 2, Left);
             Assert.AreEqual(1, r3.Main.Cracks, "so o 1o");
 
             var s4 = NewSim(); Run r4 = Start(s4, 0); r4.Perks.Add(Perk.QuickHand);   // Mao rapida

@@ -4,6 +4,22 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões e
 
 ## [Unreleased]
 
+## [1.4.3-beta] - 2026-10-22
+### Corrigido
+- **Inimigo grande preso na quina da sala** (feedback do Vinicius no celular): o mapa de caminhos era do tamanho do courier e mandava o Bruto (1,1 m) por frestas de 1 m entre bloco e parede. Agora cada tamanho de corpo tem o seu (`Run.NavFor`), e um teste confere todas as salas. Valia também para o Ogro, o Golem e o Dragão nas salas de chefe.
+- O dash cancela o aviso do Mineiro e do Sapo (antes o golpe caía mesmo assim). A Bota de ferro não congela mais o vagonete.
+- A mira automática atira primeiro em quem foge com a carga.
+- Toques não empilham: depois de um toque (morcego, limo), outro só tira vida 0,5 s depois. Quatro morcegos juntos tiravam 4 de vida de uma vez.
+- O Necromante na fase 2 errava quem ficava parado (raios gêmeos abertos demais); agora fecham a ±7°.
+
+### Mudado
+- **Guarda sentinela:** em vez de ficar parado esperando morrer, o guarda que leva tiro sai do posto atrás do courier e, fora dos tutoriais, avisa e investe (empurrão de escudo). Errou, fica atordoado: é a hora de atirar. Quem só passa andando encara o guarda no posto, como antes. Animação de marcha nova com o escudo firme.
+- Mineiro e Kobold arremessam antes de fugir: ficar colado neles deixou de ser seguro. A língua do Sapo alcança o courier a 4,4 m.
+- Salamandra para e encara antes do corte (era sem aviso). Aranha e Diabrete avisam um pouco antes.
+- Gárgula com 6 de vida e mais tempo pousada; Gárgula e Toupeira sem escala de vida por nível (só ficam vulneráveis em janelas curtas). Dragão com 42 de vida (era o chefe que mais matava).
+- Caveiras das portas refeitas pelo dano medido: R8 3 → 2, R12 1 → 2, R2-5 1 → 2.
+- **Anúncios:** SDK do ironSource 9.7.0 e adaptador do Unity Ads 5.16 no LevelPlay (antes 9.6.2 e 5.15).
+
 ## [1.4.2-beta] - 2026-10-21
 ### Adicionado
 - **Cartão da carga nova no tutorial:** no 1º contrato com cada carga (relíquia, ovo, bolo, mensagem, caixa pesada, barril e as 8 das regiões 2-4) a tela congela sobre a carga e um cartão explica a regra dela e o que fazer (4 idiomas). Antes, só a faixa de dica e a linha do quadro explicavam. Pular tutorial também pula esses cartões; REVER TUTORIAL mostra de novo.

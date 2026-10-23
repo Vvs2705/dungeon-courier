@@ -214,11 +214,14 @@ namespace DC.Tests
             Assert.AreEqual(1, r2.Main.Cracks, "a picareta racha a carga no chao no circulo");
             // recua com o courier a 3 m
             Sim s3 = R2At("R2-1"); Run r3 = s3.Run; r3.Enemies.Clear();
-            Enemy m3 = r3.Spawn(EnemyType.GoblinMiner, new V2(2.0f, 3.0f)); m3.Hp = 99;
+            Enemy m3 = r3.Spawn(EnemyType.GoblinMiner, new V2(2.0f, 3.0f)); m3.Hp = 99; m3.Cd = 99f;   // ja arremessou: recarregando, recua
             r3.Courier.Pos = new V2(2.0f, 1.2f);
             float d0 = V2.Dist(m3.Pos, r3.Courier.Pos);
             Steps(s3, StepsFor(0.5f), V2.Zero);
             Assert.AreEqual(EnemyState.Flee, m3.State); Assert.Greater(V2.Dist(m3.Pos, r3.Courier.Pos), d0 + 0.4f, "recua");
+            m3.Cd = 0f; r3.Courier.Pos = m3.Pos + new V2(0f, -1.8f);
+            Steps(s3, 1, V2.Zero);
+            Assert.AreEqual(EnemyState.Telegraph, m3.State, "colado e recarregado: arremessa antes de fugir");
         }
 
         [Test]

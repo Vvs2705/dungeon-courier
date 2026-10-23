@@ -150,6 +150,9 @@ namespace DC.Core
         void Go(V2 to) { stop = false; goal = to; }
 
         /// <summary>Reliquia nas maos: golpe no courier racha e o dash a larga (racha).</summary>
+        /// <summary>Vem atras do courier? O Guarda sentinela so sai do posto em alerta (courier parado atirando perto da porta).</summary>
+        static bool Chases(Enemy e) => e.Def.Speed > 0f && (e.Type != EnemyType.Guard || e.AlertT > 0f);
+
         static bool HoldsFragile(Run r) => r.Holds(CargoType.Relic);
 
         /// <summary>Melhor ponto a 3 m entre 8 direcoes: longe da ameaca e longe das paredes (nao se encurralar).</summary>
@@ -198,13 +201,18 @@ namespace DC.Core
                 Go(Escape(r, c.Pos, e.Pos));
                 return e.Tele < 0.3f && c.DashReady && !HoldsFragile(r) && !r.Holds(CargoType.Cake);   // o dash larga a reliquia (racha) e o bolo nao deixa: so anda
             }
-            // 1b) arqueiro mirando no courier: sair da linha para o lado
+            // 1b) arqueiro mirando ou guarda prestes a investir no courier: sair da linha para o lado
             foreach (Enemy e in r.Enemies)
             {
-                if (!e.Alive || e.Type != EnemyType.Archer || e.State != EnemyState.Telegraph) continue;
-                if (V2.SegDist(c.Pos, e.Pos, e.Pos + e.Aim * Balance.ArrowRange) > Balance.CourierR + 0.35f) continue;
+                bool investida = e.Type == EnemyType.Guard && e.Aim.Len > 0.5f;
+                if (!e.Alive || (e.Type != EnemyType.Archer && !investida) || e.State != EnemyState.Telegraph) continue;
+                float linha = investida ? Balance.GuardChargeLen + e.Def.Radius : Balance.ArrowRange, folga = investida ? e.Def.Radius : 0f;
+                if (V2.SegDist(c.Pos, e.Pos, e.Pos + e.Aim * linha) > Balance.CourierR + 0.35f + folga) continue;
                 V2 side = e.Aim.Right;
                 if (V2.Dot(c.Pos - e.Pos, side) < 0f) side = side * -1f;
+                // investida com a carga fragil no chao: desvia para o lado contrario a ela (passar por cima a pega e o proximo toque racha)
+                if (investida) foreach (Cargo g in r.Cargos)
+                        if (g.State == CargoState.Ground && g.Type == CargoType.Relic && V2.Dist(g.Pos, c.Pos) <= r.Sim.PickupRange + 1f && V2.Dot(g.Pos - c.Pos, side) > 0f) side = side * -1f;
                 Go(Run.FreeNear(r.Room, c.Pos + side * 1.5f, Balance.CourierR));
                 return false;
             }
@@ -234,7 +242,9 @@ namespace DC.Core
                 bool atChest = wantChest && r.Chest != null && !r.Chest.Opened && V2.Dist(c.Pos, r.Chest.Pos) <= Balance.ChestRange;
                 if (atChest && c.State == CourierState.Planted && Nearest(r, ground.Pos, true) == null && ground.Type != CargoType.Barrel) { stop = true; return false; }
                 bool fight = locker != null || fightRoom || (!bored && ground.Type == CargoType.Relic) || Nearest(r, ground.Pos, true) != null;
-                if (c.State == CourierState.Planted && fight && nearD <= Balance.ShotRange && V2.Dist(c.Pos, ground.Pos) <= r.Sim.PickupRange) { stop = true; return false; }
+                // reliquia: guarda de perto sem pisar nela (voltar para cima a pega, e o toque seguinte, no meio da luta, racha)
+                float junto = r.Sim.PickupRange + (ground.Type == CargoType.Relic ? 1.5f : 0f);
+                if (c.State == CourierState.Planted && fight && nearD <= Balance.ShotRange && V2.Dist(c.Pos, ground.Pos) <= junto) { stop = true; return false; }
                 Go(ground.Pos);
                 return false;
             }
@@ -243,7 +253,7 @@ namespace DC.Core
             if (locker != null && !(msg && !locker.Def.Boss))
             {
                 float want = Math.Min(Balance.ShotRange - 0.8f, locker.Def.Reach + 1.8f);
-                if (locker.Def.Speed > 0f && V2.Dist(c.Pos, locker.Pos) < want - 1f) { Go(Escape(r, c.Pos, locker.Pos)); return false; }   // chefe chegando: abrir distancia
+                if (Chases(locker) && V2.Dist(c.Pos, locker.Pos) < want - 1f) { Go(Escape(r, c.Pos, locker.Pos)); return false; }   // chefe chegando: abrir distancia
                 if (V2.Dist(c.Pos, locker.Pos) <= want + 0.3f) { stop = true; return false; }
                 Go(Run.FreeNear(r.Room, locker.Pos + (c.Pos - locker.Pos).Norm * want, Balance.CourierR));
                 return false;
@@ -261,10 +271,10 @@ namespace DC.Core
             // bot escolheu lutar (agressividade) ou depois que a carga ja rachou ("agora tomo cuidado"). Com a mensagem, nao luta.
             bool fragile = HoldsFragile(r) && !bored, careful = fragile && (fightRoom || r.Main.Cracks > 0);
             // perseguido de perto (morcego/limo/Bruto): qualquer um para e atira; com a mensagem, so isso
-            bool chased = defend && near != null && near.Def.Speed > 0f && near.Type != EnemyType.Thief && near.Type != EnemyType.Archer && nearD <= 1.6f;
+            bool chased = defend && near != null && Chases(near) && near.Type != EnemyType.Thief && near.Type != EnemyType.Archer && nearD <= 1.6f;
             if ((chased || (!msg && (fightRoom || fragile))) && near != null && (near.Type != EnemyType.Thief || careful) && nearD <= Balance.ShotRange - 0.3f)
             {
-                if (near.Def.Speed > 0f && near.Def.Reach > 0f && near.Def.Reach < 3f && nearD < near.Def.Trigger + Balance.CourierR + 0.8f) Go(Escape(r, c.Pos, near.Pos));   // Bruto colado: recuar antes de pousar
+                if (Chases(near) && near.Def.Reach > 0f && near.Def.Reach < 3f && nearD < near.Def.Trigger + Balance.CourierR + 0.8f) Go(Escape(r, c.Pos, near.Pos));   // Bruto colado: recuar antes de pousar
                 else stop = true;
                 return false;
             }

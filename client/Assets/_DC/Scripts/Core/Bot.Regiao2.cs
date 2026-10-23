@@ -27,7 +27,7 @@ namespace DC.Core
                     case R2Act.Swipe: case R2Act.Slam: hit = V2.Dist(e.Pos, c.Pos) - Balance.CourierR <= e.Def.Reach + 0.4f; break;
                     case R2Act.Fuse: hit = V2.Dist(e.Pos, c.Pos) - Balance.CourierR <= e.Def.Reach + 0.5f; break;
                     case R2Act.ChargeAim: case R2Act.Charge: side = true; hit = V2.SegDist(c.Pos, e.Pos, lane) <= e.Def.Radius + Balance.CourierR + 0.5f; break;
-                    case R2Act.Tongue: side = true; lane = e.Pos + f.Dir * e.Def.Reach; hit = f.Target == null && V2.SegDist(c.Pos, e.Pos, lane) <= Balance.CourierR + 0.35f; break;   // lingua no courier
+                    case R2Act.Tongue: side = true; lane = e.Pos + f.Dir * Balance.FrogLash; hit = f.Target == null && V2.SegDist(c.Pos, e.Pos, lane) <= Balance.CourierR + 0.35f; break;   // lingua no courier
                 }
                 if (!hit) continue;
                 if (side)

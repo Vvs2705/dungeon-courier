@@ -46,6 +46,8 @@ namespace DC.Core
         public const int QueenCallEvery = 2, QueenCalls = 2, QueenMoles = 3;
         /// <summary>Sapo: puxa a carga ate 0,8 m dele (nao puxa o que ja esta a 1,2 m).</summary>
         public const float FrogPull = 0.8f, FrogNear = 1.2f;
+        /// <summary>Lingua no courier (a carga segue no alcance de 3 m): com 3 m o tiro de 5 m matava o sapo de graca.</summary>
+        public const float FrogLash = 4.4f;
         /// <summary>Besouro: explosao fere inimigos em 4 (o courier leva EnemyDef.Damage).</summary>
         public const int BeetleEnemyDamage = 4;
         /// <summary>Vagonete: tunel 2 s (EnemyDef.Cooldown), sino 1,2 s (Tele), passa a 6 m/s (Speed): 4,7 s por sentido num trilho de 9 m.
@@ -248,6 +250,12 @@ namespace DC.Core
 
         /// <summary>Goblin mineiro: persegue ate ter o courier a 6 m; aviso 0,9 s no circulo de 0,8 m onde o courier estava (a picareta vai em
         /// arco: sem linha de visada); acerta courier, carga no chao e filhote no circulo; recua com o courier a 3 m.</summary>
+        partial void CancelR2(Enemy e)
+        {
+            R2Foe f = R2Of(e);
+            if (f != null && (f.Act == R2Act.Throw || f.Act == R2Act.Tongue)) { f.Act = R2Act.None; f.Target = null; }
+        }
+
         void Miner(Enemy e)
         {
             R2Foe f = Foe(e); var c = Courier; const float dt = Balance.Step;
@@ -265,15 +273,15 @@ namespace DC.Core
             }
             if (c.State == CourierState.Dead) return;
             float dc = V2.Dist(e.Pos, c.Pos);
-            if (dc < Balance.MinerKeep) { e.State = EnemyState.Flee; MoveWalker(e, e.Pos + (e.Pos - c.Pos).Norm * 1.5f, e.Def.Speed); return; }
-            if (e.Cd > 0f) { e.State = EnemyState.Recover; return; }
-            if (dc - Balance.CourierR <= e.Def.Trigger)
+            if (e.Cd <= 0f && dc - Balance.CourierR <= e.Def.Trigger)   // arremessa antes de fugir: colado nele deixava de ser seguro
             {
                 f.Act = R2Act.Throw; f.T = e.Def.Tele; f.Spot = c.Pos; f.Radius = Balance.MinerCircle; e.Aim = (c.Pos - e.Pos).Norm;
                 e.State = EnemyState.Telegraph; e.Tele = e.Def.Tele;
                 Emit(Ev.Telegraph, e.Id, (int)e.Type, f.Spot);
                 return;
             }
+            if (dc < Balance.MinerKeep) { e.State = EnemyState.Flee; MoveWalker(e, e.Pos + (e.Pos - c.Pos).Norm * 1.5f, e.Def.Speed); return; }
+            if (e.Cd > 0f) { e.State = EnemyState.Recover; return; }
             e.State = EnemyState.Chase;
             MoveWalker(e, ChaseTarget(e), e.Def.Speed);
         }
@@ -460,7 +468,7 @@ namespace DC.Core
                     }
                     return;
                 }
-                if (c.State != CourierState.Dead && V2.SegDist(c.Pos, e.Pos, e.Pos + f.Dir * e.Def.Reach) <= Balance.CourierR + 0.15f) DamageCourier(e.Def.Damage);
+                if (c.State != CourierState.Dead && V2.SegDist(c.Pos, e.Pos, e.Pos + f.Dir * Balance.FrogLash) <= Balance.CourierR + 0.15f) DamageCourier(e.Def.Damage);
                 return;
             }
             if (e.Cd > 0f) { e.State = EnemyState.Recover; return; }
@@ -474,7 +482,7 @@ namespace DC.Core
             }
             V2 at;
             if (t != null) at = t.Pos;
-            else if (c.State != CourierState.Dead && V2.Dist(e.Pos, c.Pos) - Balance.CourierR <= e.Def.Reach && nav.ShotClear(e.Pos, c.Pos, 0.1f)) at = c.Pos;
+            else if (c.State != CourierState.Dead && V2.Dist(e.Pos, c.Pos) - Balance.CourierR <= Balance.FrogLash && nav.ShotClear(e.Pos, c.Pos, 0.1f)) at = c.Pos;
             else return;
             f.Act = R2Act.Tongue; f.T = e.Def.Tele; f.Target = t; f.Spot = at; f.Dir = (at - e.Pos).Norm; e.Aim = f.Dir;
             e.State = EnemyState.Telegraph; e.Tele = e.Def.Tele;

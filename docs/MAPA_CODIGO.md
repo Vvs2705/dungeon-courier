@@ -11,7 +11,7 @@ Mantenha este mapa no mesmo PR que cria, move ou divide arquivo. Contagem de lin
 | MetaDefs.cs (250) | Defs da meta: equipamento, roupa, produto IAP, temporada, Config | `Gear`, `Product`, `Season`, `Config.Parse` |
 | Sim.cs (811) | Sim: meta, contratos, estrelas, armas, save/load (API que a View chama) | `Sim.StartContract`, `Sim.Tick`, `Sim.Save`, `Sim.Load` |
 | Meta.cs (710) | Partial de Sim: sessão, eventos, raro, equipamento, IAP, rewarded, sem fim | `Sim.Purchase`, `Sim.GrantReward`, `Sim.StartEvent`, `Sim.Log` |
-| Run.cs (1533) | O contrato em curso: salas, courier, carga, inimigos da região 1, dano, Nav | `Run.Tick`, `Run.Step`, `Run.EnterRoom`, `Run.DamageCourier` |
+| Run.cs (1640) | O contrato em curso: salas, courier, carga, inimigos da região 1, dano, Nav | `Run.Tick`, `Run.Step`, `Run.EnterRoom`, `Run.DamageCourier`, `Run.Guard`, `Run.NavFor` |
 | Run.Regiao2.cs (829), Run.Regiao3.cs (913), Run.Regiao4.cs (856) | Partials de Run: R2 minas (água, trilho, gelo), R3 cripta (escuro), R4 forja (lava) | `Run.R2Of`, `Run.R3Of`, `Run.Forge`, ganchos `EnemyR2/R3/R4` |
 | Bot.cs (621) | Jogador heurístico determinístico e medição de balanceamento | `Bot.Act`, `Bot.Play`, `Bot.Measure`, `Bot.PlayCampaign` |
 | Bot.Regiao2.cs (178), Bot.Regiao3.cs (147), Bot.Regiao4.cs (222) | Partials de Bot: regras e medição da região (R3: save inicial, R4: save fim R3) | `PlanR2/R3/R4`, `Bot.PlayRegion3`, `Bot.MeasureRegion4` |
@@ -64,6 +64,7 @@ Ids de sala e de contrato vão para o save: só crescem no fim do array.
 | EditMode/CoreTestsRevisao.cs (67) | Regressões do caminho do dinheiro (compra, rewarded, interstitial) | `CoreTestsRevisaoCompra` |
 | EditMode/CoreTestsRevisaoExploits.cs (98) | Exploits do GDD §28 nas regiões 2-4 | `CoreTestsRevisaoExploits` |
 | EditMode/CoreTestsRevisaoSave.cs (96) | Regressões do save v3, migração e datas | `CoreTestsRevisaoSave` |
+| EditMode/CoreTestsCombate.cs (170) | Revisão de combate: corpo grande não trava em fresta (todas as salas), Guarda sentinela | `CoreTestsCombate` |
 | EditMode/BalanceTests.cs (252) | Medição do bot (faixas largas); tabela do BALANCE.md sai no log | `BalanceTests` |
 | PlayMode/LojaIapTests.cs (45) | Compra da roupa com Game real e loja falsa do IAP (`-testsession`) | `LojaIapTests` |
 

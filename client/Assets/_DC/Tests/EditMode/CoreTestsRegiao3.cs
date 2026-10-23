@@ -82,7 +82,7 @@ namespace DC.Tests
             Assert.AreEqual(5, sk.Hp); Assert.AreEqual(1.5f, sk.Speed); Assert.AreEqual(CargoRisk.None, sk.Risk);
             Assert.AreEqual(3, sp.Hp); Assert.AreEqual(2.0f, sp.Speed); Assert.AreEqual(CargoRisk.None, sp.Risk);
             Assert.AreEqual(9, mu.Hp); Assert.AreEqual(1.0f, mu.Speed); Assert.AreEqual(CargoRisk.None, mu.Risk);
-            Assert.AreEqual(8, ga.Hp); Assert.AreEqual(0f, ga.Speed); Assert.AreEqual(2, ga.Damage); Assert.AreEqual(CargoRisk.Smash, ga.Risk);
+            Assert.AreEqual(6, ga.Hp); Assert.AreEqual(0f, ga.Speed); Assert.AreEqual(2, ga.Damage); Assert.AreEqual(CargoRisk.Smash, ga.Risk);
             Assert.AreEqual(20, wi.Hp); Assert.IsTrue(wi.Locks && wi.Boss && wi.Mini); Assert.AreEqual(CargoRisk.Thief, wi.Risk);
             Assert.AreEqual(36, ne.Hp); Assert.IsTrue(ne.Locks && ne.Boss && !ne.Mini); Assert.AreEqual(CargoRisk.Archer, ne.Risk);
             CargoDef la = CargoDef.All[(int)CargoType.Lantern], mi = CargoDef.All[(int)CargoType.Mirror], ba = CargoDef.All[(int)CargoType.Balloon];
