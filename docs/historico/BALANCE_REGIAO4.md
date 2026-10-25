@@ -2,7 +2,62 @@
 
 Fonte do desenho: [`CONTEUDO_REGIOES.md`](CONTEUDO_REGIOES.md) §1.1 (lava, respiro, fogo no chão), §4 (salas e contratos), §5 (inimigos e chefes), §6 (planta e mapa), §10 (destrave e economia). Código: `Core/Content/Regiao4.cs` (salas e contratos), `Core/Run.Regiao4.cs` (comportamento e números em `Balance`), `Core/Bot.Regiao4.cs` (bot e medição). Testes: `Tests/EditMode/CoreTestsRegiao4.cs`.
 
-**Status:** medido pelo bot com o estado **estimado** do fim da região 3 (as raias R2 e R3 mediam em paralelo). Quando as regiões 2–3 fecharem a medição delas, refazer esta tabela partindo do save real do fim da região 3.
+**Status:** remedido em 2026-10-25 a partir do save real do fim da região 3 (seção logo abaixo). As seções seguintes são a medição original da raia R4, com o save estimado, guardadas como registro.
+
+## Remedição com o save real (2026-10-25)
+
+A tabela abaixo substitui a de baixo, que partia de um save **estimado** (`Bot.Regiao3EndSave`). Agora cada contrato da região 4 é medido a partir do save que cada uma das **16 campanhas completas do zero** (C1 → M4-16, sementes 8000–8015, as mesmas do `EconomiaTests`) tinha antes da 1ª tentativa dele, com 10 sementes do bot = **160 tentativas por contrato**. Mesmo bot, mesmas compras (`Bot.BuyAll`). Nenhum número do jogo mudou: só a medição.
+
+Reproduzir: `dotnet test client/tools/coretests --filter Name~TabelasRegioes3e4 --logger "console;verbosity=detailed"` (`[Explicit]`, ~1 min; imprime as duas regiões).
+
+**Entrada real** (média das 16): 2.491 moedas · 148,2 estrelas; a semente 8000 entra com guilda 8/8/8/8 · armas 3/3/3 · Fumaça 4 (3 proj.) · Gancho 4 (3 proj.) · Armadilha 0 (0 proj.) · Botas 5 (3 proj.)
+
+**Diferença para o save estimado:** o estimado entrava com 13.900 moedas, 132 estrelas, Fumaça e Botas no nível 5 e o Gancho com 2 projetos; o real entra com ~2.500 moedas, ~148 estrelas, Fumaça 4, Gancho 4 (completo na região 3), Botas 5 e a Armadilha ainda sem projeto. Mudou: **M4-4 relíquia 65 → 41%** (falha de carga 35 → 59%; 2,6 tentativas na campanha), **M4-16 Dragão 61 → 73%** (morte 39 → 26%), **M4-14 planta 78 → 86%**; o resto ficou a ±5 pontos. As moedas paradas de 21.600 no fim deixaram de existir (a economia já foi resolvida no `BALANCE.md`): a região ganha ~22.000 e gasta ~21.300.
+
+| Contrato | Carga | Salas | % concluído | % morte | % falha de carga | duração média (s) | mediana (s) | % salas com luta | moedas médias | estrelas | 3 estrelas % | rachaduras |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| M4-1 | Caixa | 3 | 100 | 0 | 0 | 23 | 22 | 78 | 970 | 2.96 | 96 | 0.00 |
+| M4-2 | Planta carnívora | 4 | 100 | 0 | 0 | 44 | 43 | 66 | 1248 | 2.88 | 88 | 0.02 |
+| M4-3 | Mapa do tesouro | 4 | 100 | 0 | 0 | 38 | 36 | 59 | 1280 | 2.96 | 96 | 0.00 |
+| M4-4 | Relíquia frágil | 6 | 41 | 0 | 59 | 45 | 44 | 89 | 627 | 1.08 | 27 | 1.95 |
+| M4-5 | Cristal de gelo | 6 | 98 | 0 | 3 | 63 | 63 | 72 | 1239 | 2.07 | 12 | 1.03 |
+| M4-6 | Balão de gás | 7 | 93 | 0 | 7 | 92 | 93 | 71 | 1262 | 2.66 | 79 | 0.17 |
+| M4-7 | Planta carnívora | 6 | 79 | 21 | 0 | 111 | 110 | 67 | 972 | 2.16 | 60 | 0.34 |
+| M4-8 | Caixa | 7 | 99 | 0 | 1 | 107 | 106 | 76 | 1227 | 2.75 | 78 | 0.26 |
+| M4-9 | Ovo | 7 | 98 | 0 | 3 | 65 | 64 | 62 | 1278 | 2.71 | 77 | 0.24 |
+| M4-10 | Mapa do tesouro | 7 | 99 | 0 | 1 | 85 | 84 | 61 | 1564 | 2.79 | 80 | 0.30 |
+| M4-11 | Barril de pólvora | 7 | 96 | 3 | 1 | 114 | 112 | 73 | 1407 | 2.66 | 73 | 0.38 |
+| M4-12 | Mensagem urgente | 7 | 99 | 0 | 1 | 34 | 34 | 35 | 1163 | 2.83 | 84 | 0.18 |
+| M4-13 | Caixa pesada | 7 | 92 | 6 | 2 | 93 | 93 | 75 | 1668 | 2.60 | 79 | 0.09 |
+| M4-14 | Planta carnívora | 7 | 86 | 14 | 0 | 104 | 103 | 72 | 1259 | 2.29 | 58 | 0.45 |
+| M4-15 | Bolo de casamento | 7 | 91 | 9 | 0 | 109 | 112 | 73 | 1182 | 2.12 | 31 | 1.14 |
+| M4-16 | Caixa | 6 | 73 | 26 | 1 | 228 | 248 | 79 | 917 | 1.73 | 28 | 1.24 |
+
+**H1** (agressividade 0,5): 69% das salas com luta escolhida
+
+| Sala | Ícone | Risco da carga | Visitas | Dano por visita | Tempo por visita (s) | % luta |
+|---|---|---|---|---|---|---|
+| R4-1 Ponte de Basalto | 1 | Archer, Smash | 2271 | 0.72 | 14.6 | 76 |
+| R4-2 Respiros | 2 | Smash | 1753 | 1.61 | 9.7 | 88 |
+| R4-3 Ninho de Salamandras | 2 | Thief, Smash | 1902 | 1.04 | 8.8 | 70 |
+| R4-4 Oficina do Diabrete | 2 | Thief, Smash | 1306 | 0.84 | 11.2 | 83 |
+| R4-5 Bancada dos Kobolds | 1 | Thief, Archer, Smash | 1548 | 1.05 | 13.8 | 43 |
+| R4-6 Fundição | 2 | Smash | 1412 | 1.76 | 19.5 | 90 |
+| R4-7 Guarda da Forja | 3 | Thief, Archer, Smash | 369 | 3.14 | 40.3 | 73 |
+| R4-8 Emboscada de Brasa | 3 | Thief, Archer, Smash | 158 | 3.18 | 56.6 | 99 |
+| R4-9 Sala das Correntes | 1 | Thief | 1339 | 0.09 | 5.4 | 10 |
+| R4-10 Coração da Forja | 3 | Thief, Archer, Smash | 359 | 6.10 | 55.3 | 95 |
+| S4-1 Cofre do Ferreiro | 1 | Thief | 1049 | 0.12 | 7.0 | — |
+| M4 Pátio do Capataz | 3 | Thief, Archer, Smash | 158 | 2.70 | 47.2 | — |
+| B4 Ninho do Dragão | 3 | Smash | 134 | 3.97 | 110.7 | — |
+
+Médias por ícone: 0,62 → 1,31 → 4,14 (folga ≥ 0,3) e nenhuma sala passa da média do ícone vizinho (R4-5, ícone 1, tira 1,05; a média do ícone 2 é 1,31): os ícones continuam certos com o save real.
+
+**Campanha (a região 4 dentro das 16 completas):** tentativas 19,1 · tempo de jogo do bot 26,9 min · moedas ganhas 22.008 · gastas 21.313 · estrelas da região 43,4/48
+
+Tentativas · tempo da entrega (s): M4-1 1,00·25 · M4-2 1,00·43 · M4-3 1,00·33 · M4-4 2,56·48 · M4-5 1,06·57 · M4-6 1,00·94 · M4-7 1,25·122 · M4-8 1,06·105 · M4-9 1,00·66 · M4-10 1,00·85 · M4-11 1,06·102 · M4-12 1,00·35 · M4-13 1,06·94 · M4-14 1,06·107 · M4-15 1,06·113 · M4-16 1,88·257.
+
+Os testes da região (`CoreTestsRegiao4.cs`) continuam partindo do save estimado: são rápidos e conferem o comportamento; o número de referência passa a ser este.
 
 ## Como medir
 
@@ -111,7 +166,7 @@ Fonte do desenho: [`CONTEUDO_REGIOES.md`](CONTEUDO_REGIOES.md) §1.1 (lava, resp
 
 - **Moedas paradas: ~21.600 no fim da região 4** (13.900 estimadas na entrada + 21.300 ganhas − 13.600 do Gancho e da Armadilha). O alvo do desenho (§10.3) era sobrar no máximo 1 nível de equipamento (~3.000). As alavancas do desenho, em ordem: (1) pagamento das regiões 3–4 −10% (aqui tira ~2.100); (2) baú −20% (~900 na região); (3) um ralo novo — **decisão do coordenador**. A região 4 sozinha deixa ~7.700 (ganha 21.300, só tem 13.600 para gastar).
 - **Leva C (raia E), resolvido em `BALANCE.md`, "Economia da campanha":** equipamento a 12.500 por peça; o 3º projeto do Gancho foi para a R3-5 (o Gancho de reserva fica na R4-1) e a Armadilha ganhou um baú de reserva na R4-4. A campanha completa, do zero, termina com ~2.600 moedas (máx. 4.900).
-- **Ponto de partida estimado:** guilda e armas no máximo, Fumaça e Botas no nível 5 e 13.900 moedas são hipótese; refazer com o save real do fim da região 3 quando a R3 medir.
+- ~~**Ponto de partida estimado**~~ **refeito em 2026-10-25** com o save real do fim da região 3 (seção "Remedição com o save real" no topo). A M4-4 relíquia caiu para 41% por tentativa: é a pior da região agora.
 - **Mais duras por tentativa:** M4-16 (61%), M4-4 relíquia (65%), M4-14 e M4-7 planta (78–80%), M4-15 bolo (88%). A campanha fecha com ≤ 1,8 tentativa em cada.
 - **Duração:** 5 contratos do 4º em diante abaixo de 90 s (60–89 s). Alavanca, se o coordenador quiser: nível (vida) da região, que hoje sobe 16→31 (×2,8→×4,6) — subir mais aumenta a morte no M4-16.
 - **H1 = 70%** com agressividade 0,5, no limite: a região tem muito perseguidor rápido (salamandra cortando, diabrete surgindo atrás, brasas) e o "pare e atire" de defesa conta como luta.

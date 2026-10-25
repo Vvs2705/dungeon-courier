@@ -204,15 +204,76 @@ namespace DC.Tests
         }
 
         /// <summary>Tabela da regiao 2 a partir do save que cada campanha completa tinha antes da 1a tentativa de cada contrato.</summary>
-        static Bot.Stats[] R2Table()
+        static Bot.Stats[] R2Table() => r2 ?? (r2 = RegionTable(2, R2Seeds));
+
+        /// <summary>Tabela da regiao `region`: cada contrato medido `seeds` vezes a partir do save de cada campanha completa antes da 1a tentativa dele.</summary>
+        public static Bot.Stats[] RegionTable(int region, int seeds)
         {
-            if (r2 != null) return r2;
-            RegionDef g = RegionDef.Of(2);
-            r2 = new Bot.Stats[g.Contracts.Length];
-            for (int c = 0; c < r2.Length; c++) r2[c] = new Bot.Stats { Contract = g.First + c };
+            RegionDef g = RegionDef.Of(region);
+            var t = new Bot.Stats[g.Contracts.Length];
+            for (int c = 0; c < t.Length; c++) t[c] = new Bot.Stats { Contract = g.First + c };
             for (int k = 0; k < Seeds; k++)
-                for (int c = 0; c < r2.Length; c++) Bot.MeasureFrom(Full()[k].Before[g.First + c], g.First + c, R2Seeds, 1000 + 100 * k, 0.5f, r2[c]);
-            return r2;
+                for (int c = 0; c < t.Length; c++) Bot.MeasureFrom(Full()[k].Before[g.First + c], g.First + c, seeds, 1000 + 100 * k, 0.5f, t[c]);
+            return t;
+        }
+
+        /// <summary>Imprime as tabelas dos docs/historico/BALANCE_REGIAO3.md e BALANCE_REGIAO4.md a partir dos saves reais da campanha completa
+        /// (16 campanhas x 10 sementes = 160 tentativas por contrato), no formato das tabelas da regiao 3:
+        /// dotnet test client/tools/coretests --filter Name~TabelasRegioes3e4 --logger "console;verbosity=detailed" (alguns minutos).</summary>
+        [Test, Explicit("medicao: so imprime as tabelas")]
+        public void TabelasRegioes3e4_DoSaveReal_ParaBalanceMd()
+        {
+            var ci = CultureInfo.InvariantCulture;
+            foreach (int region in new[] { 3, 4 })
+            {
+                RegionDef reg = RegionDef.Of(region); Bot.Stats[] t = RegionTable(region, 10); Bot.Campaign[] cs = Full();
+                var sb = new StringBuilder("Regiao " + region + "\n");
+                sb.AppendLine("| Contrato | Carga | Salas | % concluído | % morte | % falha de carga | duração média (s) | mediana (s) | % salas com luta | moedas médias | estrelas | 3 estrelas % | rachaduras |");
+                sb.AppendLine("|---|---|---|---|---|---|---|---|---|---|---|---|---|");
+                int fought = 0, normal = 0;
+                foreach (Bot.Stats s in t)
+                {
+                    ContractDef d = Sim.Contracts[s.Contract];
+                    fought += s.RoomsFought; normal += s.RoomsNormal;
+                    Assert.AreEqual(0, s.Timeout, d.Code + ": bot preso");
+                    sb.AppendLine(string.Format(ci, "| {0} | {1} | {2} | {3:0} | {4:0} | {5:0} | {6:0} | {7:0} | {8:0} | {9:0} | {10:0.00} | {11:0} | {12:0.00} |",
+                        d.Code, CargoDef.All[(int)d.Cargo].Name, d.Rooms, s.Pct(s.Delivered), s.Pct(s.Died), s.Pct(s.CargoFail),
+                        s.AvgTime, s.MedianTime, s.FightPct, s.AvgCoins, s.AvgStars, s.Pct(s.ThreeStars), s.AvgCracks));
+                }
+                sb.AppendLine(string.Format(ci, "H1 (agressividade 0,5): {0:0}% das salas com luta escolhida", normal == 0 ? 0 : 100.0 * fought / normal));
+                var dmg = new double[Content.Rooms.Length]; var vis = new int[Content.Rooms.Length]; var tim = new double[Content.Rooms.Length]; var fi = new int[Content.Rooms.Length];
+                foreach (Bot.Stats s in t) for (int r = 0; r < dmg.Length; r++) { dmg[r] += s.RoomDamage[r]; vis[r] += s.RoomVisits[r]; tim[r] += s.RoomTime[r]; fi[r] += s.RoomFights[r]; }
+                sb.AppendLine("| Sala | Ícone | Risco da carga | Visitas | Dano por visita | Tempo por visita (s) | % luta |");
+                sb.AppendLine("|---|---|---|---|---|---|---|");
+                foreach (int id in reg.Rooms)
+                {
+                    RoomDef room = Content.Rooms[id];
+                    if (vis[id] > 0 && !room.Delivery)
+                        sb.AppendLine(string.Format(ci, "| {0} {1} | {2} | {3} | {4} | {5:0.00} | {6:0.0} | {7:0} |", room.Code, room.Name, room.Threat, room.Risk, vis[id],
+                            dmg[id] / vis[id], tim[id] / vis[id], room.Normal ? 100.0 * fi[id] / vis[id] : 0));
+                }
+                // a regiao dentro da campanha completa: do save de entrada (Before do 1o contrato) ao fim dela
+                int last = reg.First + reg.Contracts.Length - 1; double att = 0, tm = 0, earn = 0, spent = 0, inCoins = 0, inStars = 0, endStars = 0;
+                var per = new double[reg.Contracts.Length]; var tper = new double[reg.Contracts.Length];
+                foreach (Bot.Campaign cp in cs)
+                {
+                    Sim a = Sim.Load(cp.Before[reg.First]); inCoins += a.Coins; inStars += a.Stars; endStars += EndOf(cp, region).Stars;
+                    tm += cp.ClockAt[last] - cp.ClockAt[reg.First - 1];
+                    for (int i = 0; i < per.Length; i++) { int c = reg.First + i; att += cp.AttemptsPer[c]; earn += cp.EarnedPer[c]; spent += cp.SpentPer[c]; per[i] += cp.AttemptsPer[c]; tper[i] += cp.TimePer[c]; }
+                }
+                double n = cs.Length;
+                Sim e0 = Sim.Load(cs[0].Before[reg.First]);
+                string gear = "";
+                for (int g = 1; g < GearDef.All.Length; g++) gear += (g > 1 ? " · " : "") + GearDef.All[g].Name.Split(' ')[0] + " " + e0.GearLevel((Gear)g) + " (" + e0.Blueprints((Gear)g) + " proj.)";
+                sb.AppendLine(string.Format(ci, "Entrada (media de {0}): {1:0} moedas · {2:0.0} estrelas · semente {3}: guilda {4} · armas {5}/{6}/{7} · {8}", n, inCoins / n, inStars / n,
+                    BaseSeed, string.Join("/", e0.Levels), e0.WeaponLevel(Weapon.Sling), e0.WeaponLevel(Weapon.Boomerang), e0.WeaponLevel(Weapon.Bomb), gear));
+                sb.AppendLine(string.Format(ci, "Campanha (regiao {0} dentro da completa): tentativas {1:0.0} · tempo de jogo do bot {2:0.0} min · moedas ganhas {3:0} · gastas {4:0} · estrelas da regiao {5:0.0}/48",
+                    region, att / n, tm / n / 60f, earn / n, spent / n, (endStars - inStars) / n));
+                var line = new StringBuilder("Por contrato (tentativas · tempo da entrega s):");
+                for (int i = 0; i < per.Length; i++) line.Append(string.Format(ci, " {0}={1:0.00}·{2:0}", reg.Contracts[i].Code, per[i] / n, tper[i] / n));
+                sb.AppendLine(line.ToString());
+                TestContext.WriteLine(sb.ToString());
+            }
         }
 
         /// <summary>Moedas paradas ao fim da regiao `region` (1-4): na entrada da seguinte, depois das compras; na 4, o save do fim mais uma

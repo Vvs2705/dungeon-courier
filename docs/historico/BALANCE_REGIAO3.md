@@ -4,6 +4,61 @@ Fonte: [`CONTEUDO_REGIOES.md`](CONTEUDO_REGIOES.md) §1.1, §3, §5, §6 e §10�
 
 Reproduzir: `dotnet test client/tools/coretests --filter Name~Tabela_Regiao3 --logger "console;verbosity=detailed"` imprime as tabelas abaixo (~25 s).
 
+## Remedição com o save real (2026-10-25)
+
+A tabela abaixo substitui a de baixo, que partia de um save **estimado** (`Bot.Regiao3StartSave`). Agora cada contrato da região 3 é medido a partir do save que cada uma das **16 campanhas completas do zero** (C1 → M4-16, sementes 8000–8015, as mesmas do `EconomiaTests`) tinha antes da 1ª tentativa dele, com 10 sementes do bot = **160 tentativas por contrato**. Mesmo bot, mesmas compras (`Bot.BuyAll`). Nenhum número do jogo mudou: só a medição.
+
+Reproduzir: `dotnet test client/tools/coretests --filter Name~TabelasRegioes3e4 --logger "console;verbosity=detailed"` (`[Explicit]`, ~1 min; imprime as duas regiões).
+
+**Entrada real** (média das 16): 2.138 moedas · 105,4 estrelas; a semente 8000 entra com guilda 8/8/8/8 · armas 3/3/3 · Fumaça 0 (1 proj.) · Gancho 0 (0 proj.) · Armadilha 0 (0 proj.) · Botas 4 (3 proj.)
+
+**Diferença para o save estimado:** o estimado entrava com ~3.000 moedas, 97 estrelas e as Botas no nível 5; o real entra com ~2.100 moedas, ~105 estrelas, Botas 4 e a Bomba de fumaça com 1 projeto (nível 0), porque o equipamento agora custa 12.500 por peça (Leva C). Quase tudo ficou igual (±5 pontos). Mudou: **M3-6 relíquia 68 → 55%** (falha de carga 32 → 45%), **M3-13 barril 80 → 90%** e **M3-16 91 → 97%** (morte 9 → 3%). A M3-6 é a mais dura da região e a candidata a ajuste no playtest.
+
+| Contrato | Carga | Salas | % concluído | % morte | % falha de carga | duração média (s) | mediana (s) | % salas com luta | moedas médias | estrelas | 3 estrelas % | rachaduras |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| M3-1 | Lanterna | 3 | 100 | 0 | 0 | 22 | 21 | 49 | 859 | 2.98 | 98 | 0.00 |
+| M3-2 | Caixa | 4 | 100 | 0 | 0 | 36 | 37 | 56 | 807 | 2.99 | 99 | 0.01 |
+| M3-3 | Espelho encantado | 4 | 98 | 0 | 2 | 30 | 30 | 56 | 854 | 1.99 | 8 | 1.11 |
+| M3-4 | Ovo | 7 | 100 | 0 | 0 | 92 | 91 | 64 | 1115 | 2.95 | 95 | 0.06 |
+| M3-5 | Balão de gás | 7 | 100 | 0 | 0 | 88 | 86 | 64 | 1250 | 2.84 | 84 | 0.19 |
+| M3-6 | Relíquia frágil | 7 | 55 | 0 | 45 | 90 | 98 | 96 | 691 | 1.22 | 12 | 1.97 |
+| M3-7 | Lanterna | 7 | 99 | 1 | 0 | 107 | 107 | 72 | 1100 | 2.95 | 96 | 0.03 |
+| M3-8 | Caixa | 7 | 99 | 1 | 0 | 123 | 119 | 62 | 1047 | 2.69 | 71 | 0.35 |
+| M3-9 | Espelho encantado | 7 | 93 | 1 | 6 | 90 | 90 | 60 | 1033 | 1.85 | 1 | 1.34 |
+| M3-10 | Mensagem urgente | 7 | 100 | 0 | 0 | 47 | 46 | 30 | 996 | 2.99 | 99 | 0.00 |
+| M3-11 | Balão de gás | 7 | 100 | 0 | 0 | 102 | 101 | 77 | 1205 | 2.73 | 73 | 0.31 |
+| M3-12 | Coração arcano | 7 | 100 | 0 | 0 | 101 | 103 | 67 | 1474 | 2.83 | 83 | 0.23 |
+| M3-13 | Barril de pólvora | 7 | 90 | 3 | 8 | 116 | 119 | 65 | 1113 | 2.48 | 69 | 0.34 |
+| M3-14 | Gaiola do grifinho | 7 | 99 | 0 | 1 | 92 | 90 | 62 | 1199 | 2.68 | 70 | 0.36 |
+| M3-15 | Espelho encantado | 7 | 78 | 6 | 16 | 105 | 105 | 65 | 893 | 1.54 | 0 | 1.73 |
+| M3-16 | Lanterna | 6 | 97 | 3 | 0 | 160 | 156 | 68 | 1394 | 2.72 | 78 | 0.26 |
+
+**H1** (agressividade 0,5): 64% das salas com luta escolhida
+
+| Sala | Ícone | Risco da carga | Visitas | Dano por visita | Tempo por visita (s) | % luta |
+|---|---|---|---|---|---|---|
+| R3-1 Corredor das Tochas | 1 | — | 1587 | 0.61 | 9.7 | 67 |
+| R3-2 Ossário | 1 | Ladrão | 2637 | 0.83 | 15.0 | 54 |
+| R3-3 Teia Grande | 1 | — | 1470 | 0.18 | 8.4 | 49 |
+| R3-4 Capela Fantasma | 2 | Ladrão, Arqueiro | 1476 | 1.17 | 9.4 | 81 |
+| R3-5 Sarcófagos | 1 | — | 2307 | 0.53 | 16.0 | 50 |
+| R3-6 Galeria das Gárgulas | 2 | Arqueiro, Pancada | 1151 | 1.47 | 11.2 | 61 |
+| R3-7 Emboscada na Cripta | 2 | Ladrão | 416 | 1.11 | 23.9 | 93 |
+| R3-8 Guardião do Mausoléu | 2 | Ladrão | 307 | 2.11 | 23.2 | 93 |
+| R3-9 Biblioteca Sombria | 2 | Ladrão | 1414 | 1.58 | 16.7 | 82 |
+| R3-10 Nave da Catedral | 3 | Ladrão, Arqueiro, Pancada | 242 | 4.49 | 34.5 | 99 |
+| S3-1 Cripta do Tesouro | 1 | — | 1270 | 0.26 | 11.1 | — |
+| M3 Covil da Viúva | 3 | Ladrão | 160 | 3.84 | 50.6 | — |
+| B3 Altar do Necromante | 3 | Arqueiro | 160 | 4.14 | 99.1 | — |
+
+Médias por ícone: 0,54 → 1,49 → 4,49 (folga ≥ 0,3) e nenhuma sala passa da média do ícone vizinho: os ícones continuam certos com o save real. Com Botas 4 a teia ainda não prende (R3-3 segue em 0,18).
+
+**Campanha (a região 3 dentro das 16 completas):** tentativas 17,3 · tempo de jogo do bot 25,5 min · moedas ganhas 18.290 · gastas 17.438 · estrelas da região 42,8/48
+
+Tentativas · tempo da entrega (s): M3-1 1,00·20 · M3-2 1,00·37 · M3-3 1,00·29 · M3-4 1,00·98 · M3-5 1,00·85 · M3-6 1,69·110 · M3-7 1,06·104 · M3-8 1,00·119 · M3-9 1,06·90 · M3-10 1,00·45 · M3-11 1,00·99 · M3-12 1,00·111 · M3-13 1,00·127 · M3-14 1,06·90 · M3-15 1,38·110 · M3-16 1,00·163.
+
+Os testes da região (`CoreTestsRegiao3.cs`) continuam partindo do save estimado: são rápidos e conferem o comportamento; o número de referência passa a ser este.
+
 ## Como medir
 
 - **Estado inicial = fim estimado da região 2** (`Bot.Regiao3StartSave`). A raia R2 mede a região 2 em paralelo; até lá vale a estimativa do desenho (§8 e §10.3) mais a campanha da região 1 medida no `BALANCE.md`: guilda 8/8/8/8, armas no nível 3, 97 estrelas, Botas de lama destravadas e no nível 5 (os 3 projetos da região 2), 1 projeto da Bomba de fumaça (R2-7) e **~3.000 moedas** (1.089 do fim da região 1 + ~4 × 3.768 de pagamento da região 2 − 4.237 da guilda − 2.100 das armas − 6.800 das Botas 2–5). Trocar pelo save medido da R2 quando ela publicar.
@@ -86,7 +141,7 @@ O bot entra com ~3.000 e sai com **~14.000 moedas paradas**. A região 3 paga 4.
 
 ## Pendências e riscos
 
-- **Estado inicial estimado**: trocar `Regiao3StartSave` pelo save medido da R2 (moedas, Botas, estrelas). Com menos moedas ou sem as Botas, a R3-3 e a M3 (teias) ficam mais duras.
+- ~~**Estado inicial estimado**~~ **refeito em 2026-10-25** com o save real da campanha completa (seção "Remedição com o save real" no topo): Botas 4 em vez de 5 e ~2.100 moedas; a R3-3 e a M3 não ficaram mais duras.
 - **Não implementado (ponytail):** explosão não espalha os ossos (não há gancho de explosão no núcleo; o dash espalha); o grito da gaiola (R2) não acorda a gárgula (o núcleo só tem `Wake` para dormindo; a R2 pode chamar um gancho se quiser); `Cargo.Out` não vai para o save (retomar a sala reacende a lanterna).
 - **Mais duros que a média:** M3-6 relíquia 68%, M3-15 espelho 77%, M3-13 barril 80% (morte 9%). Dentro da faixa de sanidade (≥ 40%), mas são candidatos a ajuste fino no playtest.
 - **Balanço do bot ≠ humano:** o bot vê inimigo fora da luz (só não atira nele) e não desvia de teia; o humano deve levar 2–3× o tempo do bot (~50–80 min na região 3).
