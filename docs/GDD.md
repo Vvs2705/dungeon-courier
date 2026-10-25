@@ -43,7 +43,7 @@ As seções 1 a 28 são o desenho (o original e as revisões de 2026-10-09). Est
 | §28 | catálogo de exploits; hipóteses H1–H5 | exploits **feitos e testados**; hipóteses **pendentes** | testes nomeados em `CoreTests.cs` e `CoreTestsRevisaoExploits.cs` (fechar o app depois do dano, morrer pelo resgate, rewarded repetido, reroll, relógio, carga largada, save futuro) | H1–H5 dependem do playtest e dos criativos no ar |
 
 **Dívidas conhecidas** (nenhuma trava o lançamento):
-- As tabelas de balance das regiões 3 e 4 partiram de um save estimado; a campanha inteira medida está no `BALANCE.md` ("Economia da campanha"). Refazer as tabelas por região a partir do `Before` dela quando alguém mexer nessas regiões.
+- ~~As tabelas de balance das regiões 3 e 4 partiram de um save estimado~~ refeitas em 2026-10-25 a partir do save real da campanha completa (`historico/BALANCE_REGIAO3.md` e `BALANCE_REGIAO4.md`, "Remedição com o save real"; teste `[Explicit]` `TabelasRegioes3e4_DoSaveReal_ParaBalanceMd`). Os pontos mais duros por tentativa são as relíquias (M3-6 55%, M4-4 41%).
 - O bot fecha um contrato bem mais rápido que uma pessoa; a duração real (alvo de 3–6 min) só sai do playtest.
 - Validação de recibo do IAP (`CrossPlatformValidator`) recomendada antes de vender de verdade (`MONETIZACAO.md` §2).
 
