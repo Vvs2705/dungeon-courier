@@ -1,4 +1,6 @@
-# Dungeon Courier — Art Bible v0.1 (PROPOSTO, 2026-10-09)
+# Dungeon Courier — Art Bible (v0.1 de 2026-10-09, em uso)
+
+**Estado (2026-10-25):** aplicada. Os Lotes 1–6 do Tripo foram gerados e viraram folhas (`RENDER_SPRITES.md`, `PROVENIENCIA.md`), e a arte v2 (1.3.0-beta: interface com Lilita One + Nunito, elenco HD, ícone do app, retratos pintados) seguiu estes pilares. O status de proposta logo abaixo é o do dia em que foi escrita.
 
 **Status:** PROPOSTO pela raia B de direção de arte (personas 06 art director, 28 concept, 29 character 3D, 32 technical artist, 33 rigging e blender-3d). Nada foi gerado, nenhum crédito foi gasto e nada foi medido no aparelho.
 

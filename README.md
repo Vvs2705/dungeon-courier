@@ -9,28 +9,38 @@
 **Como vai ser jogar:** "entregue e saia vivo"; o pagamento melhora a guilda e o equipamento.
 
 ## Situação
-**1.4.1-beta (2026-10-16): o GDD inteiro do nosso lado, com a arte v2, os anúncios reais e o tutorial guiado** (4 regiões, 72 contratos, 20 inimigos, 8 chefes, 15 cargas, 25 perks, eventos, temporada, sem fim, 4 idiomas, elenco maior e nítido, interface nova, ícone do app, 8 roupas, Unity IAP, LevelPlay + Unity Ads com anúncio não personalizado, AAB assinado, política de privacidade pública, página da loja e 13 criativos em 4 idiomas). Falta só a conta de organização da Play Console, que espera o D-U-N-S (previsão 2026-11-25). Testado no PC (portão completo) e no POCO F4 (Android 14): todas as telas certas, sem exceção, 308–322 MB de memória na partida. O que falta para o GDD completo está em [`docs/CONTRATO_LANCAMENTO.md`](docs/CONTRATO_LANCAMENTO.md) e no CHANGELOG.
+**1.4.3-beta (2026-10-22): o GDD inteiro feito do nosso lado** (4 regiões, 72 contratos, 63 salas, 20 inimigos, 8 chefes, 15 cargas, 25 perks, eventos, temporada, sem fim, 4 idiomas, arte v2 com elenco HD, tutorial guiado, 8 roupas, Unity IAP, LevelPlay + Unity Ads com anúncio não personalizado e sem `AD_ID`, AAB assinado, política de privacidade pública, página da loja e 13 criativos em 4 idiomas). Testado no PC (portão completo) e no POCO F4 (Android 14). Falta só o que depende de fora: a conta de organização da Play Console (espera o D-U-N-S, previsão 2026-11-25), o build iOS e o teste com jogadores. O estado de cada item do GDD, com onde está no código, fica no [`docs/GDD.md`](docs/GDD.md) §0; o que mudou em cada versão, no [`CHANGELOG.md`](CHANGELOG.md).
 
-- **Escopo da v1.0-beta:** [`docs/CONTRATO_V1.md`](docs/CONTRATO_V1.md) · **Balance medido pelo bot:** [`docs/BALANCE.md`](docs/BALANCE.md) · v0.1: [`docs/CONTRATO_V01.md`](docs/CONTRATO_V01.md)
-- **Teste com jogadores:** [`docs/TESTE_JOGADORES.md`](docs/TESTE_JOGADORES.md), [`docs/PERGUNTAS_PLAYTEST.md`](docs/PERGUNTAS_PLAYTEST.md); relatório dos diários: `python client/tools/diario_report.py <pasta>`
-- **Arte e áudio:** [`docs/ART_BIBLE.md`](docs/ART_BIBLE.md), [`docs/ASSETS.md`](docs/ASSETS.md), [`docs/RENDER_SPRITES.md`](docs/RENDER_SPRITES.md), [`docs/PROVENIENCIA.md`](docs/PROVENIENCIA.md), [`docs/AUDIO.md`](docs/AUDIO.md); UI: [`docs/UI_V1.md`](docs/UI_V1.md), mundo: [`docs/VIEW_V1_MUNDO.md`](docs/VIEW_V1_MUNDO.md)
-- **Jogar no PC:** abra o projeto `client/` no Unity 6000.3.27f1 e rode `DC/Aplicar settings`, ou gere o build com `Unity -batchmode -quit -projectPath client -executeMethod DC.EditorTools.Setup.BuildWindowsRelease` e abra `client/Builds/win-release/DungeonCourier.exe` (arraste com o mouse ou WASD; Espaço = dash). APK de teste: `Setup.BuildAndroidRelease` (fica só o APK atual).
+## Documentos
+| Assunto | Onde |
+|---|---|
+| Desenho e estado real (§0) | [`docs/GDD.md`](docs/GDD.md) · comparativo: [`docs/COMPETITIVO.md`](docs/COMPETITIVO.md) |
+| Onde está cada coisa no código | [`docs/MAPA_CODIGO.md`](docs/MAPA_CODIGO.md) |
+| Balance medido pelo bot | [`docs/BALANCE.md`](docs/BALANCE.md) |
+| Monetização (IAP, anúncios, manifesto) | [`docs/MONETIZACAO.md`](docs/MONETIZACAO.md) |
+| Página da loja e criativos | [`docs/LOJA.md`](docs/LOJA.md), [`docs/CRIATIVOS.md`](docs/CRIATIVOS.md) |
+| Teste com jogadores | [`docs/TESTE_JOGADORES.md`](docs/TESTE_JOGADORES.md), [`docs/PERGUNTAS_PLAYTEST.md`](docs/PERGUNTAS_PLAYTEST.md); relatório: `python client/tools/diario_report.py <pasta>` |
+| Arte, UI e áudio | [`docs/ART_BIBLE.md`](docs/ART_BIBLE.md), [`docs/RENDER_SPRITES.md`](docs/RENDER_SPRITES.md), [`docs/PROVENIENCIA.md`](docs/PROVENIENCIA.md), [`docs/UI_V1.md`](docs/UI_V1.md), [`docs/AUDIO.md`](docs/AUDIO.md) |
+| Lições para os outros jogos do estúdio | [`docs/LICOES_PARA_O_ESTUDIO.md`](docs/LICOES_PARA_O_ESTUDIO.md) |
+| Planos e relatórios já cumpridos (contratos v0.1, v1 e de lançamento, desenho das regiões, balance por região) | [`docs/historico/`](docs/historico/README.md) |
 
-- **GDD:** [`docs/GDD.md`](docs/GDD.md) (revisão competitiva de 2026-10-09 no topo).
-- **Comparativo com jogos similares e diferenciais:** [`docs/COMPETITIVO.md`](docs/COMPETITIVO.md).
+## Jogar e testar
+- **PC:** abra o projeto `client/` no Unity 6000.3.27f1 e rode `DC/Aplicar settings`, ou gere o build com `Unity -batchmode -quit -projectPath client -executeMethod DC.EditorTools.Setup.BuildWindowsRelease` e abra `client/Builds/win-release/DungeonCourier.exe` (arraste com o mouse ou WASD; Espaço = dash).
+- **Android:** `Setup.BuildAndroidRelease` (APK; fica só o atual) e `Setup.BuildAndroidBundle` (AAB assinado, chave fora do git). Detalhes em [`client/README.md`](client/README.md).
+- **Portão:** `client/tools/verify.sh quick` (núcleo e View sem o Unity) ou `full` (mais EditMode, build Windows e `-autoplay 30`). No CI roda o núcleo (`.github/workflows/nucleo.yml`).
 
 ## Estrutura do repositório
 | Pasta | Para quê |
 |---|---|
-| `docs/` | GDD, comparativo e, depois, balance, validações e contratos de cada fase |
+| `docs/` | GDD (com o estado real no §0), balance, monetização, loja, arte e playtest; `docs/historico/` guarda os planos já cumpridos |
 | `client/` | projeto Unity 6 (6000.3.x), Android primeiro, retrato; código do jogo em `client/Assets/_DC/` |
 | `client/Assets/_DC/Scripts/Core/` | núcleo em C# puro (regras, simulação, save), testável fora do Unity |
 | `client/Assets/_DC/Scripts/View/` | MonoBehaviours, UI, câmera, entrada |
 | `client/Assets/_DC/Editor/` | setup do projeto e builds por linha de comando |
-| `client/Assets/_DC/Tests/EditMode/` | testes NUnit do núcleo |
+| `client/Assets/_DC/Tests/` | testes NUnit do núcleo (`EditMode/`) e o teste do caminho do dinheiro (`PlayMode/`) |
 | `client/Assets/_DC/Resources/` | sprites e dados carregados em tempo de execução |
-| `client/tools/` | ferramentas fora do Unity (testes `dotnet`, scripts de arte, relatório de playtest) |
-| `arte/` | arte-fonte; `arte/tripo/` e `arte/mixamo/` ficam fora do git |
+| `client/tools/` | ferramentas fora do Unity (portão `verify.sh`, testes `dotnet`, scripts de arte e áudio, loja, criativos, relatório de playtest) |
+| `arte/` | arte-fonte da interface (`logo/`, `ui/`, `retratos/`); `arte/tripo/`, `arte/mixamo/` e `arte/roupas/` ficam fora do git |
 
 Como contribuir: [`CONTRIBUTING.md`](CONTRIBUTING.md). Histórico: [`CHANGELOG.md`](CHANGELOG.md).
 

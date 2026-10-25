@@ -8,7 +8,7 @@ namespace DC.Tests
 {
     /// <summary>Regiao 3 "Cripta Assombrada" (CONTEUDO_REGIOES §1.1, §3, §5, §6): registro e level design das salas, escuro e lanterna,
     /// espelho, balao, teias, fantasma, esqueleto, aranha, mumia, gargula, Viuva Aranha, Necromante e a campanha da regiao pelo bot
-    /// (docs/BALANCE_REGIAO3.md). So API publica.</summary>
+    /// (docs/historico/BALANCE_REGIAO3.md). So API publica.</summary>
     public partial class CoreTests
     {
         // ------------------------------------------------------------------ helpers da regiao 3

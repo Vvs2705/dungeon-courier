@@ -3,6 +3,15 @@
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões em [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
+### Documentação
+- **Auditoria do GDD contra o código** (2026-10-25): o GDD ganhou o §0 "Estado real", com cada seção, o que foi feito, como e onde está no código, e as divergências (guilda com 8 níveis em vez de 5, 63 salas, FTUE com o ovo no C3, `seed_code_entered` → `code_start`, mascote descartado). Notas curtas nas seções que o jogo mudou.
+- Planos e relatórios já cumpridos (`CONTRATO_V01`, `CONTRATO_V1`, `CONTRATO_LANCAMENTO`, `CONTEUDO_REGIOES`, `BALANCE_REGIAO2-4`, `ASSETS`, `VIEW_SPRITES`, `VIEW_V1_MUNDO`) foram para `docs/historico/`, com um índice; o código continua citando-os pelo nome.
+- `MONETIZACAO.md` reescrito no topo: dizia "LevelPlay desligado", mas os anúncios estão ligados no Android desde a 1.3.0-beta (versões, chaves, manifesto e tamanho do APK atuais). README, CLAUDE.md, `client/README.md`, `MAPA_CODIGO.md` (linhas, `verify.sh`), CONTRIBUTING, modelo de PR, `RENDER_SPRITES.md` (elenco HD), `ART_BIBLE.md`, `UI_V1.md` e `COMPETITIVO.md` atualizados. O termo do playtest dizia "o jogo não usa a internet"; agora cita os anúncios.
+
+### Removido
+- Fotos de validação `client/Builds/validation_v01`, `_v1`, `_v2` e `_v3` (145 PNGs, ~40 MB, todas de antes da arte v2; continuam no histórico do git), inclusive o `shots$name.png` gerado por engano.
+- `client/tools/regioes_check.py`: cópia em Python dos dados de desenho das regiões 2–4 para checar o level design antes de existir o C#. Os testes `LevelDesign_*` do núcleo checam as salas de verdade.
+
 ### Mudado
 - **Unity 6000.3.27f1 LTS** (era 6000.3.23f1), com o Input System 1.20.1 que vem junto. `verify.sh` e o viewcheck apontam para o editor novo. No PC ficou um Unity Hub só, o do site da Unity, que tem linha de comando para instalar editores.
 
@@ -79,7 +88,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões e
 
 ## [1.0.0-beta] - 2026-10-10
 ### Adicionado
-- **v1.0-beta**, versão completa para teste com jogadores reais (`docs/CONTRATO_V1.md`):
+- **v1.0-beta**, versão completa para teste com jogadores reais (`docs/historico/CONTRATO_V1.md`):
   - núcleo: 24 contratos na região "Porões da Guilda" (16 salas + 2 secretas + M1 + B1 + D1), cargas bolo, mensagem, caixa pesada e barril; arqueiro, limo, Capitão Ladrão (M1); armas estilingue, bumerangue e bombinha; 10 perks (escolha 1 de 3 após as camadas 2 e 4, sorteio pela semente, sem pagamento); reforço com teto; estrelas; contrato do dia e por código de 6 caracteres; guilda 4×8; save v2 com migração; 76 testes;
   - telas: título, menu, quadro, código, guilda/armas, configurações (som, música, vibração, idioma), créditos, pausa, perks; pt-BR e EN;
   - mundo: piso e parede texturizados, tochas, pilares, mira do arqueiro, poças do limo, barril com contagem, sala secreta, barra do chefe, VFX em pool;

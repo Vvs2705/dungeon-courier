@@ -51,7 +51,7 @@ namespace DC.Core
 
     public static partial class Balance
     {
-        // ---- regiao 3 (CONTEUDO_REGIOES §1.1, §5, §6). Hipoteses medidas em docs/BALANCE_REGIAO3.md.
+        // ---- regiao 3 (CONTEUDO_REGIOES §1.1, §5, §6). Hipoteses medidas em docs/historico/BALANCE_REGIAO3.md.
         /// <summary>Teia: carregando prende 1 s (depois 1,5 s imune aquela teia); sem carga x0,5; carga dentro leva +1 s para pegar (o ladrao
         /// tambem); o dash rasga. Conta como dentro com o centro a Radius + WebEdge.</summary>
         public const float WebStuck = 1f, WebImmune = 1.5f, WebSlow = 0.5f, WebPick = 1f, WebEdge = 0.2f;

@@ -1,4 +1,4 @@
-# Dungeon Courier — teste com jogadores reais (v1.0-beta)
+# Dungeon Courier — teste com jogadores reais (escrito para a v1.0-beta; vale para a 1.4.3-beta)
 
 Protocolo do teste da v1.0-beta (`CONTRATO_V1.md`) com pessoas de fora do estúdio. O teste não coleta dado pessoal. O jogo grava um diário local (`CONTRATO_V1.md` §10, `UI_V1.md` §4), o jogador o exporta no fim e o Vinicius lê os diários com `client/tools/diario_report.py`. As perguntas prontas estão em [`PERGUNTAS_PLAYTEST.md`](PERGUNTAS_PLAYTEST.md).
 
@@ -128,7 +128,7 @@ Ao receber, o Vinicius:
 >
 > **O que você vai fazer:** jogar cerca de 40 minutos com alguém observando e responder a algumas perguntas. Depois, se quiser, jogar em casa e, no dia combinado, mandar o "diário" do jogo.
 >
-> **O que o diário guarda:** só o que acontece no jogo (salas, portas, lutas, entregas, moedas do jogo), com data e hora, a versão do jogo, o tipo de aparelho (modelo e sistema) e um código aleatório criado pelo jogo. **Não** guarda seu nome, e-mail, telefone, localização, contatos, fotos nem áudio. O jogo não usa a internet: o diário só sai do aparelho quando você toca em EXPORTAR DIÁRIO e escolhe para onde mandar.
+> **O que o diário guarda:** só o que acontece no jogo (salas, portas, lutas, entregas, moedas do jogo), com data e hora, a versão do jogo, o tipo de aparelho (modelo e sistema) e um código aleatório criado pelo jogo. **Não** guarda seu nome, e-mail, telefone, localização, contatos, fotos nem áudio. O diário não vai pela internet: ele só sai do aparelho quando você toca em EXPORTAR DIÁRIO e escolhe para onde mandar. No Android o jogo mostra anúncios não personalizados (redes ironSource e Unity Ads), que usam a internet como diz a política de privacidade do jogo; as compras do teste são de mentira e não cobram nada.
 >
 > **Anotações:** quem observa anota o que você faz e frases que você diz enquanto joga, **sem o seu nome**, só com o código aleatório.
 >

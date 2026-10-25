@@ -115,7 +115,7 @@ Decisão do coordenador: o ralo do pós-campanha são os **níveis 6, 7 e 8** do
 
 # Lançamento — núcleo, Leva A (2026-10-11)
 
-Fonte: [`CONTRATO_LANCAMENTO.md`](CONTRATO_LANCAMENTO.md) §2–§7 e, no que é do núcleo, [`CONTEUDO_REGIOES.md`](CONTEUDO_REGIOES.md). Só o que mudou; o resto da v1 abaixo continua valendo. API no topo do `Sim.cs` (seção "LANCAMENTO"); números em `MetaDefs.cs` (`Balance` parcial, `GearDef`, `ModifierDef`, `EventDef`, `Season`, `Config`). **Todo número novo é PROVISÓRIO** até o bot das regiões 2–4 (Leva B) e o playtest medirem.
+Fonte: [`CONTRATO_LANCAMENTO.md`](historico/CONTRATO_LANCAMENTO.md) §2–§7 e, no que é do núcleo, [`CONTEUDO_REGIOES.md`](historico/CONTEUDO_REGIOES.md). Só o que mudou; o resto da v1 abaixo continua valendo. API no topo do `Sim.cs` (seção "LANCAMENTO"); números em `MetaDefs.cs` (`Balance` parcial, `GearDef`, `ModifierDef`, `EventDef`, `Season`, `Config`). **Todo número novo é PROVISÓRIO** até o bot das regiões 2–4 (Leva B) e o playtest medirem.
 
 ## Região 1: antes e depois
 
@@ -170,7 +170,7 @@ Tabela realista por contrato: C1–C11 e C13–C15 idênticas; C12 +4 moedas mé
 
 # v1.0-beta (2026-10-10)
 
-Fonte das regras: [`CONTRATO_V1.md`](CONTRATO_V1.md) §2–§10 (e o que continua do [`CONTRATO_V01.md`](CONTRATO_V01.md)). Núcleo em `client/Assets/_DC/Scripts/Core/` (API comentada no topo do `Sim.cs`). Números do contrato que mudaram estão nas decisões 21–41, com o antes e o depois.
+Fonte das regras: [`CONTRATO_V1.md`](historico/CONTRATO_V1.md) §2–§10 (e o que continua do [`CONTRATO_V01.md`](historico/CONTRATO_V01.md)). Núcleo em `client/Assets/_DC/Scripts/Core/` (API comentada no topo do `Sim.cs`). Números do contrato que mudaram estão nas decisões 21–41, com o antes e o depois.
 
 ## Como medir (v1)
 
@@ -316,7 +316,7 @@ Evolução das medições principais (campanha do bot):
 
 # v0.1 — medição do bot (2026-10-09, histórico)
 
-Fonte das regras e dos números iniciais: [`CONTRATO_V01.md`](CONTRATO_V01.md). Aqui ficam a medição do bot, os custos e as decisões tomadas no núcleo (`client/Assets/_DC/Scripts/Core/`), com o porquê. As decisões 1 e 2 já foram aceitas e levadas ao `CONTRATO_V01.md` pelo coordenador; a passada 2 (relíquia frágil e ícones) está nas decisões 18–19.
+Fonte das regras e dos números iniciais: [`CONTRATO_V01.md`](historico/CONTRATO_V01.md). Aqui ficam a medição do bot, os custos e as decisões tomadas no núcleo (`client/Assets/_DC/Scripts/Core/`), com o porquê. As decisões 1 e 2 já foram aceitas e levadas ao `CONTRATO_V01.md` pelo coordenador; a passada 2 (relíquia frágil e ícones) está nas decisões 18–19.
 
 ## Como medir
 
@@ -440,7 +440,7 @@ Passada 2 (decisões do coordenador, 2026-10-09):
     - **Depois:** C5 90% / 1,30 rachadura / 5% quebrada; C7 80% / 0,64 / 0%. Média 0,97.
 19. **Ícone de ameaça = ordem do dano medido: R4 2 → 3 e R5 3 → 2.** Antes, a R5 (ícone 3) tirava 1,12 de vida por visita, menos que a R2 (ícone 2, 1,40), e a R4 (ícone 2) era a pior sala (2,50); subir só a R4 não bastava. Depois: ícone 1 = R1/R3 (0,00/1,00) < ícone 2 = R5/R2 (1,14/1,29) < ícone 3 = R6/R4 (2,00/2,50). A B1 fica 3 e fora da trava (chefe, porta única, sem escolha). Efeito colateral medido: com os ícones novos o bot com relíquia escolhe mais R3 → R2, as duas salas com ladrão, e o C5 caiu de 86% para 78% antes do ajuste "cuidado depois da 1ª rachadura" da decisão 18.
 
-20. **Pouso só depois do 1º movimento na sala** (coordenador, 2026-10-09, foto `client/Builds/validation_v01/shots/02_c1_inicio.png`): com o dedo solto desde o início do C1, o courier pousava a caixa em 0,2 s e a 1ª dica era "arraste perto da carga para pegá-la", contra a FTUE. Agora `Run.AwaitingMove` segura o contador até o 1º movimento ou dash, com a dica `DragToWalk`. O bot dá um passo curto quando quer parar logo na entrada (sem isso o C5 caía de 90% para 67%, porque o bot levava golpe com a relíquia nas mãos). Teste `AoEntrar_NaoPousaAteOPrimeiroMovimento_FTUE` (vermelho provado); o teste do baú ganhou o passo inicial, sem o qual passaria por construção. Balance: 49/49, sem mudança de faixa.
+20. **Pouso só depois do 1º movimento na sala** (coordenador, 2026-10-09, foto `client/Builds/validation_v01/shots/02_c1_inicio.png`, fora do repositório desde 2026-10-25 e no histórico do git): com o dedo solto desde o início do C1, o courier pousava a caixa em 0,2 s e a 1ª dica era "arraste perto da carga para pegá-la", contra a FTUE. Agora `Run.AwaitingMove` segura o contador até o 1º movimento ou dash, com a dica `DragToWalk`. O bot dá um passo curto quando quer parar logo na entrada (sem isso o C5 caía de 90% para 67%, porque o bot levava golpe com a relíquia nas mãos). Teste `AoEntrar_NaoPousaAteOPrimeiroMovimento_FTUE` (vermelho provado); o teste do baú ganhou o passo inicial, sem o qual passaria por construção. Balance: 49/49, sem mudança de faixa.
 
 ## Achados para o design (precisam de decisão do Vinicius)
 

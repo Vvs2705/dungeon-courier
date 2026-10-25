@@ -1,5 +1,12 @@
 # RENDER_SPRITES — modelo 3D rigado → folhas de sprite 2D (Dungeon Courier)
 
+## Estado em 2026-10-16 (elenco HD, arte v2) — o atual
+
+- **Elenco maior e nítido (2026-10-15/16):** as 30 folhas de personagem foram re-renderizadas com `render_sprites.py --hd K --escala 1.25`. O `--hd` multiplica tamanho, escala e contorno (mais pixels por metro, mesmo tamanho no mundo); o `--escala` vai ao `meta.json` e a View mostra o ator 25% maior (`SpriteSheet.Escala` divide o ppu; sprite, âncoras, barra de vida e cabeça do courier acompanham). K = min(1,5; 4096 / (quadros × célula)): nenhuma folha passa de 4096 px. Os chefes ficaram como estavam.
+- **Comandos:** `client/tools/elenco_hd.sh <nome>` (um render por vez; os comandos de origem de cada folha estão no `PROVENIENCIA.md` §5). O courier sai com a aba do chapéu menor (`roupas_courier.py`, 0,78) e o ladrão com o saco menor (`saco_ladrao.py`, 0,7); as 6 roupas saem por troca de cor direto na folha (`roupas_2d.py`, `roupas_cor.py`).
+- **Cena da entrega:** baú abrindo de verdade (`bau_abrindo.py`, 10 quadros) e cliente em 3/4 (`cliente_hd`).
+- As seções abaixo são o registro das rodadas anteriores (formato das folhas no §4, que continua valendo).
+
 ## Estado em 2026-10-11, noite (raia G, Leva C — Lotes 5 e 6, dragão, ícone e roupas)
 
 - **Todos com exit 0 e `SPRITES_OK`**, conferidos nas folhas (`client/Builds/sprites_contact/`): sem braço em T (exceções no §7), item preso à mão, margem ≥ 4 px (a menor é 6 px, num prop do Lote 5; nos personagens, 13 px, no Land do dragão), passada no `stride_mps`. Ainda sem aprovação visual do Vinicius.

@@ -5,7 +5,7 @@ namespace DC.Core
     /// <summary>Bot na regiao 2 (CONTEUDO_REGIOES §11), com o mesmo handicap de reacao: sai do circulo da picareta, do monte, do pavio, da
     /// patada/pancada e da faixa da investida; sai do trilho com o sino e espera para cruzar; passa longe de quem dorme (se nao escolheu lutar);
     /// pousa fora do anel do sapo; contra a toupeira pousa na agua; na Rainha luta de dentro da poca; leva o cristal pela agua; acalma a
-    /// gaiola com o dash quando nao ha ladrao; pousa o coracao como isca com 3+ perseguidores. Medicao em docs/BALANCE_REGIAO2.md.</summary>
+    /// gaiola com o dash quando nao ha ladrao; pousa o coracao como isca com 3+ perseguidores. Medicao em docs/historico/BALANCE_REGIAO2.md.</summary>
     public sealed partial class Bot
     {
         int iceRoom = -1; bool refreeze;

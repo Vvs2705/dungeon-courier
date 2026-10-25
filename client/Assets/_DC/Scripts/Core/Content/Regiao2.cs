@@ -1,7 +1,7 @@
 namespace DC.Core
 {
-    /// <summary>Regiao 2 "Minas Alagadas" (CONTRATO_LANCAMENTO §2-§4; desenho em docs/CONTEUDO_REGIOES.md §2; medicao em
-    /// docs/BALANCE_REGIAO2.md): 14 salas (R2-1..R2-10, S2-1, M2, B2, D2) e os contratos M2-1..M2-16. Comportamentos em Run.Regiao2.cs.
+    /// <summary>Regiao 2 "Minas Alagadas" (CONTRATO_LANCAMENTO §2-§4; desenho em docs/historico/CONTEUDO_REGIOES.md §2; medicao em
+    /// docs/historico/BALANCE_REGIAO2.md): 14 salas (R2-1..R2-10, S2-1, M2, B2, D2) e os contratos M2-1..M2-16. Comportamentos em Run.Regiao2.cs.
     /// Regras do arquivo:
     ///  - ids de sala LOCAIS 0..n-1, na ordem do array Rooms (o registro em Content soma a base global; o Secret tambem e local);
     ///  - Code da sala: R2-1..R2-10 normais, S2-1 secreta, M2 mini-chefe, B2 chefe, D2 entrega (a 1a letra e o tipo);

@@ -36,7 +36,7 @@ namespace DC.Core
 
     public static partial class Balance
     {
-        // ---- regiao 2 (CONTEUDO_REGIOES §1.1, §5, §6). Hipoteses medidas em docs/BALANCE_REGIAO2.md.
+        // ---- regiao 2 (CONTEUDO_REGIOES §1.1, §5, §6). Hipoteses medidas em docs/historico/BALANCE_REGIAO2.md.
         /// <summary>Mineiro: circulo de 0,8 m onde o courier estava; recua com o courier a 3 m.</summary>
         public const float MinerCircle = 0.8f, MinerKeep = 3f;
         /// <summary>Toupeira: monte de 0,9 m, empurra a carga 1,5 m, fica >= 2 s por baixo, espera a 1,5 m da agua.</summary>
