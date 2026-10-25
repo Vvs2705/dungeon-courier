@@ -25,8 +25,8 @@ SAIDA = os.path.join(CLIENT, "Builds", "loja")
 LANGS = ("pt", "en", "es", "id")
 # paleta do jogo (Art.cs = ART_BIBLE sec. 3): fundo, carga (limao: so na carga), sombra
 BG, CARGO, DARK = (0x14, 0x16, 0x1F), (0xFF, 0xE1, 0x4D), (0x0E, 0x0F, 0x18)
-# docs/LOJA.md sec. 5, na ordem da loja: (nome da captura, fotos do -shot sem o sufixo _<lang>: a da loja primeiro, depois a que ja
-# existe em validation_v1, usada enquanto a da loja nao for tirada)
+# docs/LOJA.md sec. 5, na ordem da loja: (nome da captura, fotos do -shot sem o sufixo _<lang>: a da loja primeiro, depois um nome
+# alternativo, usado se a da loja faltar)
 CAPTURAS = [
     ("01_ladrao_quer_a_carga", ("c12_chamando",)),
     ("02_pousar_para_lutar", ("c1_ambiente",)),
@@ -259,7 +259,7 @@ def autoteste():
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Artes da pagina da Google Play (icone, feature graphic, capturas) do Dungeon Courier.")
-    ap.add_argument("--fotos", default=FOTOS, help="pasta das fotos -shot (padrao: client/Builds/validation_v1/shots)")
+    ap.add_argument("--fotos", default=FOTOS, help="pasta das fotos -shot (padrao: client/Builds/loja_fotos, do loja_fotos.sh)")
     ap.add_argument("--saida", default=SAIDA, help="pasta de saida (padrao: client/Builds/loja, fora do git)")
     ap.add_argument("--autoteste", action="store_true")
     o = ap.parse_args()

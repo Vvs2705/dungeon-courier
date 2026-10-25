@@ -22,7 +22,7 @@ namespace DC
         const float Tilt = 0.866f, Lift = 0.5f;
         // o que a camera precisa mostrar: x e o pe em m da sala; o topo vai ate as placas das portas (_plateS, em m de tela).
         // Largura 9,7 m = sala de 9 m + paredes de 0,35 m, rente (ART_BIBLE §2: ~112 px/m em 1080 px); em 16:9 a altura quase empata
-        // (9,73 m em 540x960); medida e conta em docs/VIEW_SPRITES.md §3
+        // (9,73 m em 540x960); medida e conta em docs/historico/VIEW_SPRITES.md §3
         const float ViewL = -WallT, ViewR = 9f + WallT, ViewB = -0.4f, ViewPad = 0.14f;
         const float WallT = 0.35f, TopWall = 0.5f, PlateH = 0.62f, PlateGap = 0.12f, Blink = 2f, PulseTime = 0.35f;
         // medido no PNG do `arco` (448 px a 120 px/m, pivo no pe; VIEW_SPRITES §2), em m de tela acima da base da parede: topo do arco 1,78;

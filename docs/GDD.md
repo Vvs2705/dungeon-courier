@@ -1,7 +1,53 @@
 # GDD 06 — DUNGEON COURIER
 ## Action Casual / Objective-runner / Portrait / Android + iOS
 
-> **Revisão 2026-10-09 (comparativo de mercado):** detalhe, fontes e matriz em [`COMPETITIVO.md`](COMPETITIVO.md). **Veredito mantido: NO-GO agora.** Esta revisão prepara o teste de criativos; não autoriza construção.
+# 0. ESTADO REAL (auditoria de 2026-10-25, 1.4.3-beta na `main`)
+
+As seções 1 a 28 são o desenho (o original e as revisões de 2026-10-09). Esta seção diz **o que foi construído, como e onde**, conferido no código da `main` (`4d3db49`). Onde o jogo diverge do texto, vale o jogo, e a divergência está na coluna da direita e numa nota na própria seção. Os planos que levaram até aqui estão em [`historico/`](historico/README.md).
+
+**Em uma linha:** o GDD inteiro está feito do nosso lado. Falta o que depende de fora: a conta de organização da Play Console (espera o D-U-N-S, previsão 2026-11-25), o build iOS (Mac + conta Apple) e o teste com jogadores e o teste de mercado (§15, §16, §26, §28 H1–H5), que dão os números que ainda são hipótese.
+
+**Como está feito (§13):** Unity 6000.3.27f1, Built-in RP, uGUI por código, retrato, Android primeiro.
+- `DC.Core` (`client/Assets/_DC/Scripts/Core/`): C# puro e determinístico, sem UnityEngine, passo fixo de 1/30 s. Regras, conteúdo, save, bot.
+- `DC` (`Scripts/View/`): um só MonoBehaviour de fluxo (`Game`), mundo, HUD, entrada e SDKs. A View só lê o Core.
+- Testes: ~175 testes NUnit, que rodam sem o Unity (`dotnet test client/tools/coretests`, também no CI `nucleo.yml`), e 1 teste PlayMode do caminho do dinheiro. Portão completo: `client/tools/verify.sh quick|full`.
+- Onde está cada coisa: [`MAPA_CODIGO.md`](MAPA_CODIGO.md).
+
+| § | Desenho | Estado | Como e onde | Divergência / pendência |
+|---|---|---|---|---|
+| §1 | action casual em retrato, Android primeiro | **feito** | `br.com.vstack.dungeoncourier`, 1.4.3-beta (versionCode 104032), APK e AAB assinados (`Editor/Setup.cs`) | iOS fica para depois (§21) |
+| §2 | carregar ocupa as mãos: arrastar anda com a carga, toque < 150 ms = dash que larga a carga, soltar > 200 ms = pousar e lutar, pegar de volta a até 1,5 m | **feito** | `Run.cs` (`CourierState`), `Balance.PlantDelay` 0,2 s, `PickupRange` 1,5 m, `JoystickLogica.TapMax` 0,15 s | auto-mira no mais perto, com prioridade para quem foge com a carga (1.4.3) |
+| §2 | ladrões vão à carga no chão, guardas seguram a porta, brutos batem | **feito** | `Run.cs`; carga sozinha 8 s a 3 m chama ladrão (`AloneTime`); `Run.Guard` | o guarda virou **sentinela** em 1.4.3: sai do posto e investe quando leva tiro (`BALANCE.md`, revisão de combate) |
+| §2 | portas com ícone de ameaça e de recompensa; carga que abre porta | **feito** | `RoomDef.Threat` (caveiras medidas pelo dano do bot), `CargoRisk`, mensagem abre porta trancada | — |
+| §2 | 7 cargas da tabela, cada uma mudando um verbo | **feito** | relíquia (3 rachaduras), ovo (choca e o filhote segue), coração arcano, bolo (sem dash), mensagem (cronômetro, abre porta), caixa pesada (×0,75 de velocidade), barril (explode em 3 s no chão) | o barril entrou junto com as outras, não ficou para a v0.2 |
+| §2 | carga perdida fica na masmorra, resgate no próximo contrato, 1 pendente | **feito** | `Sim.Pending`, `Balance.RescueBonus` +50% (menor que o pagamento perdido, §28), `RescuedIds` | — |
+| §2 | interrupção pausa; vida e integridade gravadas a cada dano | **feito** | `Game.OnApplicationPause/Focus`, save v3 com o contrato em curso | — |
+| §2/§12 | som e vibração em pousar, pegar, carga atingida, ladrão, entrega perfeita | **feito** | `Audio.cs` (todo som sintetizado, `AUDIO.md`), `Ajustes.Aperta` (Android) | — |
+| §3 | FTUE revisada (guarda no C1, 1º ladrão, bifurcação, cliente abre a caixa, sala secreta, contrato raro) | **feito**, com tutorial guiado | contratos C1–C24 em `Content/Regiao1.cs`; `View/Tour.cs` congela a tela e acende o alvo (1.4.0), cartão da carga nova (1.4.2) | o 2º contrato é com caixa e o 1º upgrade; o ovo estreia no 3º (C3). O rewarded "retome da sala" não aparece na 1ª sessão |
+| §4 | 1º dia: 8 contratos, 12 salas, 5 cargas, 6 inimigos, mini e chefe, 8 perks, 3 equipamentos, contrato do dia; 1ª compra depois de 3 contratos | **feito** (a região 1 cobre e passa) | região 1 com 21 salas, 7 cargas, 6 inimigos, Capitão Ladrão e Ogro, 10 perks, 3 armas (Estilingue, Bumerangue, Bombinha), contrato do dia `daily-AAAAMMDD`; Pacote inicial depois de `starter_after` = 3 | os "3 equipamentos base" viraram as 3 armas; o equipamento lateral (§6) é outra coisa |
+| §5 | D3 região 2, D7 chefe, D14 modificadores, D30 temporada, D60 cargas novas, D90 sem fim, maestria | **feito** | destrave por estrelas, não por dia: região 2 com 30 estrelas e o Ogro, 3 com 60, 4 com 95; modificadores com 40; temporada de 28 dias; sem fim depois do Dragão; maestria por carga (3/8/15/25/40 entregas, +2% por nível) | os "D" viraram metas de ritmo; o playtest diz se batem |
+| §6 | 1 moeda (Coins), Reputation não comprável, fontes e ralos, rerolls, equipamento lateral, relógio que não volta | **feito** | `Sim.Coins`; Reputation = contratos concluídos em sequência (não se compra) e as estrelas (0–3 por contrato) destravam regiões e modificadores (`Sim.RegionOpen`); guilda 4 linhas × **8 níveis**; rerolls por Coins (60 + 60 por troca); 4 equipamentos laterais (Fumaça, Gancho, Armadilha, Botas) com 3 projetos cada, níveis 1–5 na campanha e 6–8 depois do Dragão; `LastDateSeen` contra relógio voltado | o teto da guilda é 8, não 5 (CONTRATO_V1 §8). Stamps ficaram fora por decisão do próprio GDD |
+| §7 | rewarded (retomar, dobrar bônus, rota segura, baú do dia) com id; interstitial entre contratos com teto; IAP de conteúdo fixo | **feito e ligado** | Core: `sim.RewardOffer`, `sim.GrantReward` (`rw-<tentativa>-<tipo>`), `sim.InterstitialDue` (nunca nos 3 primeiros do dia, 1 a cada 3 contratos e 4 min), `sim.Purchase`. View: Unity IAP 5.4.3 e LevelPlay (ironSource 9.7.0) + Unity Ads no Android, anúncio não personalizado para todos, sem `AD_ID` (`MONETIZACAO.md`) | 9 produtos: Remover anúncios, Pacote inicial, 6 roupas e Pacote de evento. Sem banner. Produtos na Play esperam o D-U-N-S |
+| §8 | retenção: raro, região, chefe, marcos, quadro de eventos | **feito** | contrato raro depois de 8 h (pagamento ×2), marcos em 10/30/60/95/150 estrelas (o de 95 dá a roupa Fantasma) | — |
+| §9 | 5 live ops (Fragile Week, Midnight Delivery, No-Damage, Treasure Detour, Boss Courier Run) | **feito**, offline | `LiveEvent`, um por semana ISO em rodízio, 3 vagas (+2 com o pacote de evento), recompensa fixa | sem servidor: o calendário sai da data do aparelho |
+| §10 | lançamento: 4 regiões, 30–40 salas, 15 cargas, 20 inimigos, 8 chefes, 25 perks, 5 eventos | **feito** | Porões da Guilda, Minas Alagadas, Cripta Assombrada, Forja do Dragão; **72 contratos** (24 + 3 × 16); **63 salas** (46 normais, 5 secretas, 4 mini, 4 chefes, 4 de entrega); 15 cargas, 20 inimigos, 8 chefes, 25 perks, 5 eventos, 5 modificadores | salas acima do teto do GDD porque a região 1 já tinha 21 |
+| §11 | arte stylized, carga visível, câmera oblíqua | **feito** (arte v2) | courier **humano**: Tripo → Mixamo/Blender → folhas 2D a 60° (`render_sprites.py`, `RENDER_SPRITES.md`), elenco HD (escala 1,25), interface v2 (Lilita One + Nunito), ícone do app, retratos pintados, 8 roupas | o mascote sem rig foi descartado (decisão do Vinicius em 2026-10-09) |
+| §12 | áudio de jogo | **feito** | 148 arquivos sintetizados por `audio_gen.py` (SFX, 10 músicas: região, chefe, evento) | falta escuta humana |
+| §13 | módulos do contrato, rota, carga, combate, inimigos, entrega, guilda | **feito** com outros nomes | `ContractDef`/`RoomDef` (`Defs.cs`), camadas e portas em `ContractDef`, cargas, combate, mira e inimigos em `Run*.cs`, entrega e pagamento em `Sim.Settle`, guilda e meta em `Sim`/`Meta.cs` | do ARKANA veio só a lógica do joystick (`JoystickLogica`); o resto foi escrito aqui |
+| §14 | eventos de analytics | **feito, local** | diário CSV no aparelho com os eventos do §14 (`SimEvent.DiaryName`, `Defs.cs`) e os da meta, exportável (`Exportar.cs`); relatório `diario_report.py` | `seed_code_entered` virou `code_start`. Nada sai do aparelho: envio remoto depende de backend (fica para depois) |
+| §15–§16 | KPIs e teste de mercado | **pendente (externo)** | protocolo em `TESTE_JOGADORES.md` e `PERGUNTAS_PLAYTEST.md` | nenhum KPI medido com gente ainda |
+| §17 | 13 criativos | **feito** | 13 vídeos 9:16 × 4 idiomas gravados do jogo real (`-record`, `criativos.py`, `CRIATIVOS.md`) | o 13 é A/B de roupa do courier (o mascote saiu) |
+| §18–§21 | MVP, v0.1, v0.2, v1.0 | **feito**, menos iOS | v0.1 e `v1.0.0-beta` em 2026-10-09/10, GDD inteiro na 1.2.0-beta (2026-10-12); localização pt-BR, EN, ES e ID; remote config local (`config.json` + `config_url` opcional) | iOS: o código evita API só de Android, mas o build precisa de Mac e conta Apple |
+| §24 | IA fora do runtime | **feito** | bot de balanceamento (`Bot*.cs`), arte do Tripo com proveniência (`PROVENIENCIA.md`); nada de IA no jogo | — |
+| §27 | diferenciais C1–C7 | **feito**, menos C5 | C1 carregar ocupa as mãos, C2 carga muda verbo, C3 cena da entrega com o cliente, C4 resgate, C6 contrato por código de 6 caracteres, C7 "sem energia, sem gacha" na loja | C5 (mascote) descartado |
+| §28 | catálogo de exploits; hipóteses H1–H5 | exploits **feitos e testados**; hipóteses **pendentes** | testes nomeados em `CoreTests.cs` e `CoreTestsRevisaoExploits.cs` (fechar o app depois do dano, morrer pelo resgate, rewarded repetido, reroll, relógio, carga largada, save futuro) | H1–H5 dependem do playtest e dos criativos no ar |
+
+**Dívidas conhecidas** (nenhuma trava o lançamento):
+- As tabelas de balance das regiões 3 e 4 partiram de um save estimado; a campanha inteira medida está no `BALANCE.md` ("Economia da campanha"). Refazer as tabelas por região a partir do `Before` dela quando alguém mexer nessas regiões.
+- O bot fecha um contrato bem mais rápido que uma pessoa; a duração real (alvo de 3–6 min) só sai do playtest.
+- Validação de recibo do IAP (`CrossPlatformValidator`) recomendada antes de vender de verdade (`MONETIZACAO.md` §2).
+
+> **Revisão 2026-10-09 (comparativo de mercado, histórica):** detalhe, fontes e matriz em [`COMPETITIVO.md`](COMPETITIVO.md). O veredito da época era **NO-GO** para construir antes do teste de criativos; o Vinicius decidiu construir o jogo inteiro (`historico/CONTRATO_V1.md`, `historico/CONTRATO_LANCAMENTO.md`), e o teste de mercado ficou para depois do lançamento.
 > - **O nicho continua quase vazio no mobile de ação.** Dungeon Delivery (Com2uS) é um arcade pequeno (20 avaliações no iOS dos EUA). Delivery Survivors (Steam, 4º tri/2026) usa o tema, mas o verbo dele é "matar tudo". A fantasia de entregar vende em escala no hybrid-casual (Pizza Ready: 150M downloads em 2025, segundo a própria Supercent).
 > - **Core corrigido contra o dilema da raia B (§2):** carregar ocupa as mãos. Andando, o courier leva a carga e só tem o dash; parado, pousa a carga e ataca sozinho; o dash larga a carga. Ladrões correm para a carga no chão. Lutar vira escolha com custo, e o jogo não vira runner nem Archero.
 > - **Cada carga muda um verbo, não só a barra de vida (§2),** e algumas cargas abrem portas.
@@ -133,6 +179,8 @@ A sequência acima é a original. A revisada ensina "pousar para lutar" antes da
 - **8:30–9:30:** entrega com bônus por integridade.
 - **9:30–10:00:** o quadro mostra o contrato raro do próximo retorno.
 
+**No jogo (§0):** o C1 tem o guarda e o 1º ladrão, o C2 é com caixa e abre o 1º upgrade da guilda, e o ovo estreia no C3, junto com o 1º perk. O tutorial guiado (`Tour.cs`) acende cada coisa na 1ª vez em que ela aparece.
+
 # 4. PRIMEIRO DIA
 
 - 8 contratos;
@@ -200,7 +248,7 @@ Usos:
 
 | Fonte | Controle | Ralo |
 |---|---|---|
-| Pagamento do contrato + bônus por integridade | limitado pela duração do contrato (4–6 min) | upgrades da guilda (preço crescente, teto de 5 níveis por linha) |
+| Pagamento do contrato + bônus por integridade | limitado pela duração do contrato (4–6 min) | upgrades da guilda (preço crescente; no jogo, 4 linhas × 8 níveis, §0) |
 | Loot opcional (baús de rota) | fixo por sala, visível no ícone da porta | equipamento lateral |
 | Resgate de carga perdida | 1 pendente por vez; bônus uma vez por id de carga | rerolls limitados de contrato |
 | Contrato do dia | 1 por dia, id `daily-AAAAMMDD` | — |
@@ -287,7 +335,7 @@ Cargas precisam ser visíveis no personagem/mochila para reforçar fantasy.
 
 **PROPOSTA 2026-10-09 (decisão do Vinicius):** greybox em 2D top-down com arte procedural, como no Forge Street, e courier como **mascote sem rig humano** (um mímico que anda ou um goblin de mochila enorme, animado por squash and stretch), com a carga visível em cima dele. Corta o rig humanoide (Mixamo) e os inimigos rigados, o maior custo apontado pela raia C. Testar mascote × courier humano em criativo antes de decidir (§27, C5). O 3D oblíquo só entra se a tese validar.
 
-**DECISÃO 2026-10-09 (Vinicius):** o courier é **humano**, e a arte vem do **Tripo com créditos** (lote só com aval do custo), no pipeline do Forge Street: Tripo → Mixamo → Blender (`client/tools/render_sprites.py`) → sprites 2D com câmera a 60°. A proposta de mascote acima e o C5 do §27 ficam como histórico. Detalhe em [`ART_BIBLE.md`](ART_BIBLE.md) e [`ASSETS.md`](ASSETS.md).
+**DECISÃO 2026-10-09 (Vinicius):** o courier é **humano**, e a arte vem do **Tripo com créditos** (lote só com aval do custo), no pipeline do Forge Street: Tripo → Mixamo → Blender (`client/tools/render_sprites.py`) → sprites 2D com câmera a 60°. A proposta de mascote acima e o C5 do §27 ficam como histórico. Detalhe em [`ART_BIBLE.md`](ART_BIBLE.md) e [`ASSETS.md`](historico/ASSETS.md).
 
 # 12. ÁUDIO
 
@@ -333,7 +381,7 @@ O GDD contava "combat framework, camera, AI" do ARKANA; isso não existe em form
 - do COE: `Health.cs`, `Damage.cs`, `Hitbox.cs` (padrão de combate) e a arquitetura de save;
 - se o courier continuar humanoide: o pipeline do COE (`HumanoidSetup.cs`, `HumanoidMapping.cs`, `PrototipoAnimacoes.cs`) e a lição Tripo→Mixamo.
 
-**Não serve:** `Gameplay/Bot.cs`. **Precisa ser escrito:** `RouteGraph`, salas por kit, `CargoModifier`, a regra de carregar/pousar e a simulação headless do contrato em passo fixo (bot de balance e semente do contrato por código). O gargalo é conteúdo (salas), não código (raia C).
+**Não serve:** `Gameplay/Bot.cs`. **Precisa ser escrito** (foi, no `DC.Core`; ver §0): `RouteGraph`, salas por kit, `CargoModifier`, a regra de carregar/pousar e a simulação headless do contrato em passo fixo (bot de balance e semente do contrato por código). O gargalo é conteúdo (salas), não código (raia C).
 
 # 14. ANALYTICS
 
@@ -362,6 +410,8 @@ Métricas:
 - CPI.
 
 Eventos acrescentados em 2026-10-09: `cargo_drop`, `cargo_pickup`, `thief_grab`, `room_fight_choice` (lutou ou passou), `cargo_rescue_offer`, `cargo_rescue_result`, `seed_code_entered`.
+
+**No jogo (§0):** todos gravados no diário local (`SimEvent.DiaryName`, `Defs.cs`); `seed_code_entered` saiu como `code_start`, e a meta acrescentou `perk_pick`, `weapon_equip`, `daily_*`, `gear_*`, `event_*`, `season_*`, `rare_*`, `reroll`, `endless_*`, `rewarded_*`, `interstitial_show`, `outfit_equip`. Nada é enviado para fora do aparelho.
 
 # 15. KPIs — TARGETS INTERNOS
 
@@ -414,7 +464,7 @@ Comparar:
 Acrescentados em 2026-10-09 (§27):
 11. goblin ladrão corre para a caixa pousada → o courier larga a luta e mergulha de dash;
 12. “não deixe o ovo chocar”: cronômetro + filhote seguindo o courier;
-13. o mesmo vídeo com mascote mímico × courier humano.
+13. o mesmo vídeo com mascote mímico × courier humano (no jogo: A/B de roupa do courier, porque o mascote foi descartado; `CRIATIVOS.md`).
 
 # 18. MVP
 
@@ -440,6 +490,8 @@ Sem:
 
 1 região + 8 contratos, já com carregar/pousar (§2). Sem anúncio e sem IAP.
 
+**Feita em 2026-10-09** (`historico/CONTRATO_V01.md`).
+
 # 20. V0.2
 
 Se CPI/D1:
@@ -451,6 +503,8 @@ Se CPI/D1:
 - daily contracts;
 - contrato por código (§27, C6).
 
+**Feita** dentro da `v1.0.0-beta` e da 1.2.0-beta, sem esperar CPI/D1 (decisão do Vinicius de construir o jogo inteiro antes do teste de mercado).
+
 # 21. V1.0
 
 Se D7/LTV:
@@ -459,6 +513,8 @@ Se D7/LTV:
 - events;
 - iOS;
 - localization.
+
+**Feita, menos iOS** (1.2.0-beta em diante; §0).
 
 # 22. PRODUÇÃO
 

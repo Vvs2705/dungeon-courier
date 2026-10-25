@@ -1,4 +1,6 @@
-# Dungeon Courier — UI/UX da v1.0-beta (CONTRATO_V1 §1, §10, §11, §14)
+# Dungeon Courier — UI/UX (escrita na v1.0-beta, CONTRATO_V1 §1, §10, §11, §14; em uso na 1.4.3-beta)
+
+**Depois deste texto:** a interface v2 (1.3.0-beta: logo, fundo de masmorra, Lilita One + Nunito, botões com relevo, cartões de madeira e pergaminho, ícones pintados; `ui_assets.py`), o tutorial guiado (`Tour.cs`, 1.4.0: tela congelada, alvo aceso, cartão com o que/quando/por quê; cartão da carga nova na 1.4.2; REVER TUTORIAL nas configurações) e o joystick invisível por padrão (1.4.1, "Controle na tela" nas configurações). Fluxo, glossário e regras abaixo continuam valendo.
 
 Código: `client/Assets/_DC/Scripts/View/` — `Hud.cs` (estrutura, faixa do contrato, oferta, pausa, cena, resultado), `Menus.cs` (título, menu, quadro, código, guilda/armas/equipamento, perk, configurações, créditos), `MetaTelas.cs` (mapa, modificadores, eventos, temporada, marcos e maestria, sem fim, roupas, som de meta; §7), `Loja.cs` (`ILoja` + loja falsa), `Anuncios.cs` (`IAnuncios` + simulador, ofertas de rewarded, interstitial), `ConfigLocal.cs` (remote config), `Textos.cs` (pt-BR, EN, ES e ID; §3), `Art.cs` (ícones, `Ajustes`), `Exportar.cs` (diário e código para fora do aparelho), `Game.cs` (fluxo, diário, áudio por evento, sessão). uGUI por código, referência 1080 × 1920 casando a largura, dentro da área segura.
 

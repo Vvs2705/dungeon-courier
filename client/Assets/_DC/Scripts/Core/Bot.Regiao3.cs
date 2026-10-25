@@ -2,7 +2,7 @@ using System;
 
 namespace DC.Core
 {
-    /// <summary>Bot na regiao 3 (CONTEUDO_REGIOES §11) e a medicao da campanha da regiao (docs/BALANCE_REGIAO3.md). Mesmo handicap do bot
+    /// <summary>Bot na regiao 3 (CONTEUDO_REGIOES §11) e a medicao da campanha da regiao (docs/historico/BALANCE_REGIAO3.md). Mesmo handicap do bot
     /// da regiao 1 (reacao 0,25 s): sai das faixas e circulos de aviso; com o espelho (ate 1 rachadura) encara o arqueiro, o cuspe e o raio;
     /// leva a lanterna apagada a tocha; pega o balao antes de ~2,3 s no chao; leva a carga ate a pilha de ossos (a 3 m o esqueleto nao volta) e
     /// espera o esqueleto chegar perto antes de pousar; agarrado pela mumia pousa e luta (dash com pouca vida); no escuro chega perto do

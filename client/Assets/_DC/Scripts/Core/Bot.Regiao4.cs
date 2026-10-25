@@ -4,7 +4,7 @@ namespace DC.Core
 {
     /// <summary>Bot na regiao 4 (CONTEUDO_REGIOES §11): sai dos avisos no chao (frasco, chicote, giro, sopro, pouso, diabrete), espera o fogo do
     /// respiro do lado de fora, sai do fogo no chao, empurra inimigos na lava com o dash, pousa a planta e "da o passo" com o dash (luta de
-    /// longe dela) e, com o Mapa ou o Faro de bau, vai aos baus enterrados pela ganancia. Medicao em docs/BALANCE_REGIAO4.md.</summary>
+    /// longe dela) e, com o Mapa ou o Faro de bau, vai aos baus enterrados pela ganancia. Medicao em docs/historico/BALANCE_REGIAO4.md.</summary>
     public sealed partial class Bot
     {
         bool wantBuried4;

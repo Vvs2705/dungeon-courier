@@ -539,7 +539,7 @@ namespace DC.Tests
         }
     }
 
-    /// <summary>Medicao do bot na regiao 2 (docs/BALANCE_REGIAO2.md). A campanha da regiao 2 parte do estado do fim da regiao 1 medido pelo
+    /// <summary>Medicao do bot na regiao 2 (docs/historico/BALANCE_REGIAO2.md). A campanha da regiao 2 parte do estado do fim da regiao 1 medido pelo
     /// bot (BALANCE.md: 62,7 estrelas, guilda 7/7/7/6,8, armas 2,4/2,1/2,0, sobra de 1.089 moedas) e compra como o Bot.PlayCampaign; cada
     /// contrato e medido a partir do save que a campanha tinha antes da 1a tentativa dele. Asserts de faixa larga; o alvo fino fica no doc.</summary>
     public class BalanceTestsRegiao2

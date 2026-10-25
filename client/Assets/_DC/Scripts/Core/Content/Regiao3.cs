@@ -1,7 +1,7 @@
 namespace DC.Core
 {
-    /// <summary>Regiao 3 "Cripta Assombrada" (CONTRATO_LANCAMENTO §2-§4; desenho em docs/CONTEUDO_REGIOES.md §3; medicao em
-    /// docs/BALANCE_REGIAO3.md). 14 salas (R3-1..R3-10, S3-1, M3, B3, D3) e os 16 contratos M3-1..M3-16, com ids LOCAIS (o registro em
+    /// <summary>Regiao 3 "Cripta Assombrada" (CONTRATO_LANCAMENTO §2-§4; desenho em docs/historico/CONTEUDO_REGIOES.md §3; medicao em
+    /// docs/historico/BALANCE_REGIAO3.md). 14 salas (R3-1..R3-10, S3-1, M3, B3, D3) e os 16 contratos M3-1..M3-16, com ids LOCAIS (o registro em
     /// Content soma a base). Todas as salas sao escuras (Dark + tochas), menos a entrega D3. Comportamentos em Run.Regiao3.cs.
     /// Cargas que estreiam aqui: Lantern (M3-1), Mirror (M3-3), Balloon (M3-5). Inimigos: Ghost, Skeleton, Spider, Mummy, Gargoyle;
     /// mini-chefe SpiderWidow (M3); chefe Necromancer (B3).</summary>

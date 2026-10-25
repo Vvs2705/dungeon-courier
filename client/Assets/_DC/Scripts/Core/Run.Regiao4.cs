@@ -5,7 +5,7 @@ namespace DC.Core
 {
     // Regiao 4 (Forja do Dragao): lava, respiros e fogo no chao (CONTEUDO_REGIOES §1.1), salamandra, diabrete, kobold incendiario, elemental
     // de magma e brasa, ovo de salamandra, Capataz Kobold e Dragao Anciao (§5), planta carnivora e mapa do tesouro (§6). Numeros em
-    // Balance (fim deste arquivo); medicao em docs/BALANCE_REGIAO4.md. Tudo vale em qualquer sala que tenha o terreno/inimigo (sem fim).
+    // Balance (fim deste arquivo); medicao em docs/historico/BALANCE_REGIAO4.md. Tudo vale em qualquer sala que tenha o terreno/inimigo (sem fim).
     //
     // Para a View (so ler; quem muda e o Run):
     //   run.Forge.Marks   avisos no chao (ForgeMark). Kind: Flask = circulo do frasco (Pos, Radius); Whip = faixa do chicote (Pos = origem,
@@ -824,7 +824,7 @@ namespace DC.Core
 
     public static partial class Balance
     {
-        // ---- regiao 4 (CONTEUDO_REGIOES §1.1, §5, §6). HIPOTESES; medicao em docs/BALANCE_REGIAO4.md.
+        // ---- regiao 4 (CONTEUDO_REGIOES §1.1, §5, §6). HIPOTESES; medicao em docs/historico/BALANCE_REGIAO4.md.
         /// <summary>Lava: inimigo empurrado contra ela leva 3 (1x por empurrao; brasa morre). Respiro: ciclo de 4 s = 2,2 apagado + 0,8 brilhando
         /// + 1,0 de fogo; fogo tira 2 do courier e 3 do inimigo (1x por erupcao), racha a carga no chao e tira 25 do gelo.</summary>
         public const int LavaDamage = 3, VentCourierDamage = 2, VentEnemyDamage = 3;

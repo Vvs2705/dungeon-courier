@@ -1,41 +1,37 @@
-# Dungeon Courier: monetização real (Unity IAP; LevelPlay pronto e desligado)
+# Dungeon Courier: monetização real (Unity IAP + LevelPlay com Unity Ads)
 
-CONTRATO_LANCAMENTO §7 e §11. As regras ficam no `DC.Core`, que não conhece SDK nenhum: as ofertas, os ids `rw-*`, o teto do interstitial e os direitos de compra (`sim.Purchase`, `sim.GrantReward`, `sim.InterstitialDue`). A View só liga os SDKs a essas regras.
+Origem: `historico/CONTRATO_LANCAMENTO.md` §7 e §11. As regras ficam no `DC.Core`, que não conhece SDK nenhum: as ofertas, os ids `rw-*`, o teto do interstitial e os direitos de compra (`sim.Purchase`, `sim.GrantReward`, `sim.InterstitialDue`). A View só liga os SDKs a essas regras.
 
-**Decisão do coordenador (2026-10-12): o SDK de anúncio fica fora do build até haver conta LevelPlay.** Motivos:
-
-- os APKs vão para jogadores reais de playtest, e o jogo promete que nada sai do aparelho;
-- o SDK do ironSource roda na abertura do app e põe no manifesto o `AD_ID` e as permissões do WorkManager e do Privacy Sandbox mesmo sem chave (§1.3);
-- falta a decisão jurídica sobre o ECA Digital para menores.
-
-O código dos anúncios reais está pronto atrás do define `DC_LEVELPLAY`. O §4 diz como religar.
+**Estado (1.4.3-beta, conferido em 2026-10-25):** compras pelo Unity IAP e anúncios reais pelo LevelPlay com o Unity Ads, **ligados no build Android** desde a 1.3.0-beta (2026-10-16). Anúncio não personalizado para todos (decisão do ECA Digital), sem `AD_ID`. PC e Editor usam sempre a loja falsa e o simulador de anúncio. Falta só cadastrar os produtos na Play Console, que espera a conta de organização (D-U-N-S, previsão 2026-11-25).
 
 ## 1. Como está ligado
 
 | Peça | Versão | Onde |
 |---|---|---|
 | Unity IAP (`com.unity.purchasing`) | 5.4.3 | `Packages/manifest.json` (traz o `com.unity.services.core` 1.18.0 e o `com.unity.nuget.newtonsoft-json`) |
-| Anúncios | o simulador `AnunciosTeste` | `View/Anuncios.cs`. O LevelPlay (`View/AnunciosLevelPlay.cs`) só compila com `DC_LEVELPLAY`, que está **desligado** |
+| LevelPlay (`com.unity.services.levelplay`) | pacote 9.5.1; SDK ironSource 9.7.0 (Android `mediation-sdk` 9.7.0) | `Packages/manifest.json`, `Assets/LevelPlay/Editor/*.xml`, Gradle em `Assets/Plugins/Android/mainTemplate.gradle` |
+| Adaptador Unity Ads | 5.16 (Android `unityads-adapter` 5.15.0, que já traz o Unity Ads) | `Assets/LevelPlay/Editor/ISUnityAdsAdapterDependencies.xml` |
+| Define `DC_LEVELPLAY` | ligado só no Android (`ProjectSettings`: `IAP_FAKE_STORE_DEFAULT;DC_LEVELPLAY`) | `View/AnunciosLevelPlay.cs` só compila com ele; `View/DC.asmdef` referencia `Unity.LevelPlay`; o viewcheck compila com o define |
 
-Por que a 5.4.3 e não a 5.4.4 do IAP: a 5.4.4 puxa o `com.unity.services.deployment`, que só serve ao Editor e tem arquivos com caminho longo demais para o worktree (erro de importação). Nada de runtime muda entre as duas. O IAP põe o Google Play Billing no Gradle sozinho e não precisa de resolvedor de dependências nem de templates do Gradle.
+Por que a 5.4.3 e não a 5.4.4 do IAP: a 5.4.4 puxa o `com.unity.services.deployment`, que só serve ao Editor e tem arquivos com caminho longo demais para o worktree (erro de importação). Nada de runtime muda entre as duas. O IAP põe o Google Play Billing no Gradle sozinho.
 
 **Código (View):**
 
 - `Loja.cs`: `ILoja` (`Teste`, `Preco`, `Comprar`, `Restaurar`), a vitrine (Remover anúncios, Pacote inicial, as 8 roupas com 6 à venda, Pacote de evento e RESTAURAR COMPRAS), `Hud.Concede` (o único caminho para `sim.Purchase`) e a `LojaTeste` (janela "Loja de teste", também usada como confirmação da loja falsa do IAP).
 - `LojaIap.cs`: a loja real com Unity IAP 5.
 - `Anuncios.cs`: `IAnuncios`, `Hud.CriaAnuncios`, as ofertas de rewarded, o interstitial do CONTINUAR e o simulador `AnunciosTeste`.
-- `AnunciosLevelPlay.cs`: os anúncios reais, inteiros dentro de `#if DC_LEVELPLAY`.
+- `AnunciosLevelPlay.cs`: os anúncios reais, inteiros dentro de `#if DC_LEVELPLAY`; privacidade aplicada antes do `Init`.
 - `Hud.cs` troca as instâncias no construtor. `Game.cs` não abre sessão nova nem a pausa quando o app vai ao fundo por causa de um anúncio (`Hud.AnuncioAberto`).
-- `Editor/Setup.cs`: define `IAP_FAKE_STORE_DEFAULT` (a loja falsa do Unity não abre a janela em inglês dela). O `ResolveAndroid()` só age se o Mobile Dependency Resolver estiver no projeto, o que só acontece com o LevelPlay de volta (§4).
+- `Editor/Setup.cs`: define `IAP_FAKE_STORE_DEFAULT` (a loja falsa do Unity não abre a janela em inglês dela), `ResolveAndroid()` força o resolvedor antes de cada build Android e `SemIdDePublicidade` tira do manifesto o `AD_ID` e as permissões do Privacy Sandbox.
 
-**As chaves ficam num lugar só, `client/Assets/_DC/Resources/config.json`** (lidas do arquivo do build; o `config_url` remoto não mexe nelas):
+**As chaves ficam num lugar só, `client/Assets/_DC/Resources/config.json`** (lidas do arquivo do build; o `config_url` remoto não mexe nelas). Não são segredo: vão dentro do APK.
 
-| Chave | De fábrica | Efeito |
+| Chave | Hoje | Efeito |
 |---|---|---|
-| `iap_google_play` | `false` | `false`: loja falsa do Unity IAP também no Android (build de teste). `true`: Google Play no Android. PC e Editor usam sempre a loja falsa. |
-| `levelplay_app_key` | `""` | Só vale com `DC_LEVELPLAY`. Vazia: simulador, e **nenhuma rede de anúncio é iniciada**. Preenchida: `LevelPlay.Init` no Android (PC e Editor continuam no simulador). |
-| `levelplay_rewarded` | `""` | Id da unidade Rewarded (vazio = rewarded desligado). |
-| `levelplay_interstitial` | `""` | Id da unidade Interstitial (vazio = interstitial desligado). |
+| `iap_google_play` | `false` | `false`: loja falsa do Unity IAP também no Android (build de teste). `true`: Google Play no Android (ligar quando os produtos existirem na Play). PC e Editor usam sempre a loja falsa. |
+| `levelplay_app_key` | `28bb8d98d` | Preenchida: `LevelPlay.Init` no Android. Vazia: simulador, e nenhuma rede de anúncio é iniciada. |
+| `levelplay_rewarded` | `ilah7d1mcs7v1cno` | Id da unidade Rewarded (vazio = rewarded desligado). |
+| `levelplay_interstitial` | `cepd2rejxi2ykfxw` | Id da unidade Interstitial (vazio = interstitial desligado). |
 
 ### 1.1 Compras (Unity IAP 5)
 
@@ -63,58 +59,48 @@ Os ids seguem a ordem do enum `Product` (`LojaIap.Ids`). **Depois de cadastrado 
 
 ### 1.2 Anúncios
 
-- **Build atual:** sempre o simulador (`AnunciosTeste`, "ANÚNCIO DE TESTE", 5 s). Sem SDK de anúncio no APK.
-- **Com `DC_LEVELPLAY` (§4), a chave e o Android:** `LevelPlay.Init(appKey)`. Depois do init, cria e carrega o rewarded e o interstitial; se a carga falhar, tenta de novo em 30 s. Sem a chave, ou no PC/Editor, continua o simulador.
+- **PC e Editor:** sempre o simulador (`AnunciosTeste`, "ANÚNCIO DE TESTE", 5 s).
+- **Android (build atual, com `DC_LEVELPLAY` e a chave):** `LevelPlay.Init(appKey)`, com `LevelPlayPrivacySettings` antes (GDPR sem consentimento, CCPA opt-out, COPPA desligado: anúncio não personalizado para todos). Depois do init, cria e carrega o rewarded e o interstitial; se a carga falhar, tenta de novo em 30 s. Sem a chave, ou no PC/Editor, continua o simulador.
 - **Quando mostrar é sempre do Core.** Rewarded só com `sim.RewardOffer`, e a concessão é `sim.GrantReward`, com id `rw-<contrato>-<tipo>` no save (fechar e reabrir não repete). A recompensa só vale com `OnAdRewarded`, que pode chegar até 1 s depois do `OnAdClosed`. Interstitial só no CONTINUAR do resultado, quando `sim.InterstitialDue` deixa (nunca nos 3 primeiros contratos do dia, no máximo 1 a cada 3 contratos e 4 min, nunca com Remover anúncios, nunca dentro da masmorra) **e** há anúncio carregado (`IntersticialPronto`). Sem anúncio carregado, o jogo segue e o Core não conta nada.
 - **Rewarded real sem anúncio pronto:** aparece a janela "Carregando o anúncio…" por até 8 s e depois "Nenhum anúncio disponível agora". FECHAR (ou voltar) cancela sem recompensa.
 - Banner: não tem (GDD §7).
 
 ### 1.3 AndroidManifest
 
-Medido com o `aapt dump permissions` do SDK Android do Unity, nos três APKs de release. A origem vem do relatório de merge do Gradle (`manifest-merger-blame-release-report.txt`).
+Medido com o `aapt dump permissions` do SDK Android do Unity nos APKs de release. A origem vem do relatório de merge do Gradle (`manifest-merger-blame-release-report.txt`).
 
-| Permissão | Sem SDKs | Com IAP + LevelPlay (`bd10ca9`) | **Build atual (só IAP)** | De onde vem |
-|---|---|---|---|---|
-| `android.permission.INTERNET` | sim | sim | **sim** | já existia (o Unity põe por causa do `UnityWebRequest` do `config_url`) |
-| `android.permission.VIBRATE` | sim | sim | **sim** | o jogo (vibração) |
-| `com.android.vending.BILLING` | não | sim | **sim** | Google Play Billing 9.0.0 (Unity IAP) |
-| `com.google.android.gms.permission.AD_ID` | não | sim | **não** | `play-services-ads-identifier` (SDK LevelPlay) |
-| `android.permission.ACCESS_NETWORK_STATE` | não | sim | **sim** | hoje: `com.google.android.datatransport:transport-backend-cct` 3.1.8, a telemetria do Google Play Billing 9 (com o LevelPlay, também o Unity Ads). Permissão normal, sem dado do jogador |
-| `ACCESS_ADSERVICES_TOPICS` / `_ATTRIBUTION` | não | sim | **não** | Unity Ads (Privacy Sandbox) |
-| `WAKE_LOCK`, `RECEIVE_BOOT_COMPLETED`, `FOREGROUND_SERVICE` | não | sim | **não** | `androidx.work` (dependência do Unity Ads) |
-
-Componentes que o build atual ganha no manifesto merged (`Library/Bee/.../launcher/build/intermediates/merged_manifest`): as atividades do Billing (`ProxyBillingActivity`, `ProxyBillingActivityV2`), a `GoogleApiActivity` e o agendador do `datatransport` (2 serviços e 1 receptor). Com a loja falsa, o Billing nem é criado. **Nenhum** componente do ironSource ou do Unity Ads, nenhum WorkManager e nenhum `AD_ID` (conferido com `aapt dump permissions` e no merged: 0 ocorrências).
+| Permissão | Build atual (IAP + LevelPlay + Unity Ads) | De onde vem |
+|---|---|---|
+| `android.permission.INTERNET` | sim | o Unity (`UnityWebRequest` do `config_url`) e os SDKs |
+| `android.permission.VIBRATE` | sim | o jogo (vibração) |
+| `com.android.vending.BILLING` | sim | Google Play Billing 9.0.0 (Unity IAP) |
+| `android.permission.ACCESS_NETWORK_STATE` | sim | `datatransport` (telemetria do Billing 9) e o Unity Ads. Permissão normal, sem dado do jogador |
+| `WAKE_LOCK`, `RECEIVE_BOOT_COMPLETED`, `FOREGROUND_SERVICE` | sim | `androidx.work` (dependência do Unity Ads) |
+| `com.google.android.gms.permission.AD_ID` | **não** | removido por `Setup.SemIdDePublicidade` (o SDK pede; a Play Console declara "não usa ID de publicidade") |
+| `ACCESS_ADSERVICES_TOPICS` / `_ATTRIBUTION` / `_AD_ID` | **não** | Privacy Sandbox do Unity Ads, removidas pelo mesmo `SemIdDePublicidade` |
 
 ### 1.4 Tamanho do APK de release (ARM64, IL2CPP)
 
-| APK | Bytes | MiB |
-|---|---|---|
-| Sem SDKs (mesmo código e arte, 2026-10-11) | 56.889.340 | 54,3 |
-| Com Unity IAP + LevelPlay + Unity Ads (`bd10ca9`) | 68.595.132 | 65,4 |
-| **Build atual: só Unity IAP** | **67.053.160** | **63,9** |
+| APK | MiB |
+|---|---|
+| Sem SDKs (2026-10-11) | 54,3 |
+| Só Unity IAP (2026-10-12) | 63,9 |
+| IAP + LevelPlay + Unity Ads (2026-10-14) | 67,7 |
+| **Com o elenco HD (2026-10-16, 1.3.0-beta em diante)** | **83,0** |
 
-Do APK sem SDKs para o atual são +10,2 MB. Cerca de 2,2 MB disso não é SDK: são as folhas novas das roupas Mineiro e Coveiro (raia G), já no `Resources`; os dados do jogo foram de 32,4 para 34,6 MB comprimidos. O resto, cerca de 8 MB, é o IAP:
-
-- `libil2cpp.so`: 38,7 → 58,4 MB sem compressão. É o C# do IAP, do Services Core e do Newtonsoft.
-- `classes.dex`: 6,4 → 8,7 MB. É o Billing e o `datatransport`.
-- `global-metadata.dat`: 4,7 → 8,0 MB.
-
-Tirar o LevelPlay economizou pouco no C# (a maior parte do IL2CPP é do IAP) e cerca de 2,9 MB no Java. Se o tamanho pesar, suba o *Managed Stripping Level* do IL2CPP e teste a loja de novo.
+Quase todo o peso dos SDKs é C# do IAP, do Services Core e do Newtonsoft no `libil2cpp.so`; o salto de 67,7 para 83,0 MiB é arte (folhas maiores do elenco HD). Se o tamanho pesar, suba o *Managed Stripping Level* do IL2CPP e teste a loja de novo.
 
 ## 2. O que falta do lado do Vinicius
 
-1. **Play Console (compras):**
+1. **Play Console (compras),** quando a conta de organização sair (D-U-N-S):
    - Criar os 9 produtos do §1.1 com **esses ids**, em "Produtos no app", com preço e ativos. A Play não separa consumível de não consumível: quem consome o pacote de evento é o app.
    - Cadastrar testadores de licença.
    - Subir um AAB de teste interno com `iap_google_play: true`. A Play só entrega produtos para um app publicado numa faixa de teste e assinado com a chave de upload.
-   - Recomendado depois: a chave de licença da Play (Monetize > Licensing) no projeto Unity Cloud e a validação de recibo (`CrossPlatformValidator`). Hoje a compra é aceita como a loja entrega, sem validação local.
-2. **Conta LevelPlay**, para quando os anúncios voltarem (§4):
-   - Criar a conta em platform.ironsrc.com e adicionar o app Android `br.com.vstack.dungeoncourier`.
-   - Copiar o **App Key** e criar 2 unidades, **Rewarded** e **Interstitial**.
-   - Publicar o `app-ads.txt` no site da V-STACK (o painel do LevelPlay dá o conteúdo).
-   - AdMob como rede extra é opcional.
-3. **Política de privacidade publicada:** o item 8 (compras) do `LOJA.md` §4.5 já vale. O item 7 (anúncios) entra só junto com o LevelPlay.
-4. **Decisão jurídica (ECA Digital, Lei 15.211/2025), antes de religar os anúncios:** o público é 13+ e inclui adolescentes, e a lei restringe publicidade com perfilamento para menores. Decidir com quem cuida do jurídico se o jogo pede anúncios não personalizados para todos ou se pergunta a idade. Do nosso lado, os dois casos são uma chamada antes do `LevelPlay.Init`, em `AnunciosLevelPlay`: por exemplo, `LevelPlay.SetMetaData("is_child_directed", "true")` ou as opções de `LevelPlayPrivacySettings`.
+   - Recomendado: a chave de licença da Play (Monetize > Licensing) no projeto Unity Cloud e a validação de recibo (`CrossPlatformValidator`). Hoje a compra é aceita como a loja entrega, sem validação local.
+2. **LevelPlay depois da publicação:** ligar o app à loja no painel (Apps > Dungeon Courier > Live app, package `br.com.vstack.dungeoncourier`) e publicar o `app-ads.txt` no site da V-STACK (o painel dá o conteúdo).
+3. **Validar no aparelho:** Test Suite num build de desenvolvimento (§4, passo 6).
+
+Já feito: conta LevelPlay da V-STACK com as chaves (2026-10-14), Unity Ads ligado ao LevelPlay (2026-10-16), política de privacidade publicada com os itens 7 (anúncios) e 8 (compras) nos 4 idiomas (`LOJA.md` §4.5), e a decisão do ECA Digital (Lei 15.211/2025): anúncio não personalizado para todos, aplicado antes do `Init`.
 
 ## 3. Como testar
 
@@ -124,13 +110,13 @@ Tirar o LevelPlay economizou pouco no C# (a maior parte do IL2CPP é do IAP) e c
   - Comando: `Unity -batchmode -projectPath client -runTests -testPlatform PlayMode -assemblyNames DC.PlayTests -testsession -testResults r.xml`.
   - Sem `-testsession` o teste é ignorado, para não mexer no save do Editor.
   - Os testes EditMode (`DC.Tests`) não dependem de SDK: a loja do IAP não existe fora do Play Mode.
-- **Fotos:** `DungeonCourier.exe -testsession -dev-desbloqueia -tela loja -shot loja.png` e `-tela compra -shot compra.png` (540×960). As de referência estão em `client/Builds/validation_v2/shots/sdk_tela_loja.png` e `sdk_tela_compra.png`.
-- **APK de teste (como está):** loja falsa e simulador. Sem conta, sem SDK de anúncio e sem `AD_ID`.
+- **Fotos:** `DungeonCourier.exe -testsession -dev-desbloqueia -tela loja -shot loja.png` e `-tela compra -shot compra.png` (540×960). As fotos antigas de referência (anteriores à arte v2) saíram do repositório em 2026-10-25; tire novas com esses comandos.
+- **APK de teste (como está):** loja falsa do IAP (`iap_google_play: false`) e anúncios reais do LevelPlay (sem anúncio pronto, o jogo segue sem recompensa nem interstitial). Sem `AD_ID`.
 - **Compras reais:** faixa de teste interno da Play, conta de testador de licença (a compra não cobra) e `iap_google_play: true`. Teste: comprar uma roupa; desinstalar e reinstalar (a roupa volta ao abrir); RESTAURAR COMPRAS; comprar o pacote de evento com o quadro de eventos aberto.
 
-## 4. Religar o LevelPlay (quando houver conta e decisão do §2.4)
+## 4. Como o LevelPlay foi ligado (registro, para refazer ou atualizar)
 
-**Estado em 2026-10-12: a branch `feat/levelplay` já tem os passos 1, 2 e a privacidade do 5.** Ela traz:
+Em 2026-10-12 o coordenador tirou o SDK de anúncio do build enquanto não havia conta (os APKs iam para testadores e o jogo prometia que nada saía do aparelho). Ele voltou pela branch `feat/levelplay` (2026-10-12), com as chaves da conta em 2026-10-14, e está no build desde a 1.3.0-beta. A branch trouxe:
 - o pacote 9.5.1 com o Unity Ads e o resolver;
 - o define `DC_LEVELPLAY` no Android e o `Unity.LevelPlay` no asmdef e no viewcheck;
 - anúncio não personalizado para todos antes do `Init`: `LevelPlayPrivacySettings` com GDPR sem consentimento, CCPA com opt-out e COPPA desligado (público 13+);

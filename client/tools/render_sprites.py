@@ -2,7 +2,7 @@
 
 Copia adaptada de 03_FORGE_STREET/client/tools/render_sprites.py (2026-10-06/08: retarget por delta de repouso, modo
 estatico para props). O que o DC acrescenta (docs/RENDER_SPRITES.md):
-  --preset <ator>    escala, direcoes e celula do ator (tabela PRESETS = docs/ART_BIBLE.md sec. 4-5 e docs/ASSETS.md)
+  --preset <ator>    escala, direcoes e celula do ator (tabela PRESETS = docs/ART_BIBLE.md sec. 4-5 e docs/historico/ASSETS.md)
   --height/--width   normaliza o modelo para a medida de projeto (a altura do Tripo muda de modelo para modelo)
   --mirror           renderiza so as direcoes de S a N pelo oeste; o lado leste e o espelho (flipX na View)
   --hold FBX         os clipes "Carry*" levam a pose dos bracos (ombro..dedos) do quadro --hold-frame deste clipe

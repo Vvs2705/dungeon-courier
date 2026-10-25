@@ -30,7 +30,7 @@ namespace DC.Core
                         KoboldForeman = EnemyType.KoboldForeman, ElderDragon = EnemyType.ElderDragon;
         const RoomTrigger Half = RoomTrigger.Half, Down = RoomTrigger.CargoDown;
 
-        // Icone de ameaca = terco do dano medio por visita do bot (docs/BALANCE_REGIAO4.md): 1 = R4-1, R4-5, R4-9 · 2 = R4-2, R4-3, R4-4, R4-6 ·
+        // Icone de ameaca = terco do dano medio por visita do bot (docs/historico/BALANCE_REGIAO4.md): 1 = R4-1, R4-5, R4-9 · 2 = R4-2, R4-3, R4-4, R4-6 ·
         // 3 = R4-7, R4-8, R4-10 (o desenho chutava R4-5 = 2, R4-6 = 3, R4-7 = 2). Lava ou respiro = icone Pancada (RoomDef.Risk). Projetos de equipamento (CONTEUDO_REGIOES §8; raia E, BALANCE.md
         // "Economia da campanha": 4 baus para 3 projetos): Armadilha de urso em R4-3, R4-4, R4-6 e S4-1; o Gancho de reserva em R4-1. Regras de desenho em CoreTestsRegiao4.LevelDesign_Regiao4_*.
         public static readonly RoomDef[] Rooms =
@@ -120,7 +120,7 @@ namespace DC.Core
                         Barrel = CargoType.Barrel, Ice = CargoType.IceCrystal, Balloon = CargoType.Balloon, Flytrap = CargoType.Flytrap, Map = CargoType.TreasureMap;
 
         // Contratos (CONTEUDO_REGIOES §4.1): Tier = 16 + indice local; os 3 que ensinam sem reforco; M4-8 = mini-chefe, M4-16 = chefe final.
-        // Tempos pela medicao do bot (docs/BALANCE_REGIAO4.md; regra da regiao 1): ParTime = 1,6x a duracao do bot, ovo 2x, gelo (MeltTime no
+        // Tempos pela medicao do bot (docs/historico/BALANCE_REGIAO4.md; regra da regiao 1): ParTime = 1,6x a duracao do bot, ovo 2x, gelo (MeltTime no
         // campo do ovo) 2,2x, mensagem 2,5x. O desenho chutava 60/90/85/155/160/185/170/225/195/190/195/85/195/205/210/355.
         public static readonly ContractDef[] Contracts =
         {

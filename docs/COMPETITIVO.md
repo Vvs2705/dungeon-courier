@@ -1,6 +1,7 @@
 # DUNGEON COURIER — Comparativo competitivo (2026-10-09)
 
 **Status:** PROPOSTA. Pesquisa de mesa (web) e parecer de especialista. O veredito de 2026-10-06 (**NO-GO agora**) continua valendo: este documento prepara o teste de criativos, não autoriza construção.
+**Nota de 2026-10-25:** documento histórico da fase de validação. O Vinicius decidiu construir o jogo inteiro antes do teste de criativos; o jogo está na 1.4.3-beta e os diferenciais C1–C4, C6 e C7 estão feitos (GDD §0). O teste de mercado continua pendente, e os números de mercado abaixo são de 2026-10-09.
 **Base:** GDD (`GDD.md`), veredito (`00_PESQUISA/VEREDITO_VALIDACAO.md`) e raias A, B, C e D (`00_PESQUISA/validacao/`).
 **Convenção:** número sem fonte checada aparece como **não confirmado**.
 
