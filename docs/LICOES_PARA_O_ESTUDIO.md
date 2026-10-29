@@ -4,6 +4,8 @@ Playbook escrito em 2026-10-16, quando o Dungeon Courier chegou à 1.4.1-beta: G
 
 Cada lição foi paga com tempo, crédito ou retrabalho. O formato é **o que fazer**, **por quê** (o que aconteceu no DC) e **reaproveitar** (arquivo do repositório `Vvs2705/dungeon-courier` que dá para copiar ou adaptar).
 
+Para começar um jogo novo, use o prompt pronto em [`PROMPT_MESTRE_NOVOS_JOGOS.md`](PROMPT_MESTRE_NOVOS_JOGOS.md), que resume este playbook com a autorização permanente.
+
 Ideia central: **um jogo novo do estúdio não começa do zero.** O que dá para copiar está nas tabelas da §12. O que não se copia, mas se repete, está nas regras de processo da §1.
 
 ---

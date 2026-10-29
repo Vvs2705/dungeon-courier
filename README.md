@@ -21,7 +21,7 @@
 | Página da loja e criativos | [`docs/LOJA.md`](docs/LOJA.md), [`docs/CRIATIVOS.md`](docs/CRIATIVOS.md) |
 | Teste com jogadores | [`docs/TESTE_JOGADORES.md`](docs/TESTE_JOGADORES.md), [`docs/PERGUNTAS_PLAYTEST.md`](docs/PERGUNTAS_PLAYTEST.md); relatório: `python client/tools/diario_report.py <pasta>` |
 | Arte, UI e áudio | [`docs/ART_BIBLE.md`](docs/ART_BIBLE.md), [`docs/RENDER_SPRITES.md`](docs/RENDER_SPRITES.md), [`docs/PROVENIENCIA.md`](docs/PROVENIENCIA.md), [`docs/UI_V1.md`](docs/UI_V1.md), [`docs/AUDIO.md`](docs/AUDIO.md) |
-| Lições para os outros jogos do estúdio | [`docs/LICOES_PARA_O_ESTUDIO.md`](docs/LICOES_PARA_O_ESTUDIO.md) |
+| Lições para os outros jogos do estúdio | [`docs/LICOES_PARA_O_ESTUDIO.md`](docs/LICOES_PARA_O_ESTUDIO.md) · prompt para começar um jogo novo: [`docs/PROMPT_MESTRE_NOVOS_JOGOS.md`](docs/PROMPT_MESTRE_NOVOS_JOGOS.md) |
 | Planos e relatórios já cumpridos (contratos v0.1, v1 e de lançamento, desenho das regiões, balance por região) | [`docs/historico/`](docs/historico/README.md) |
 
 ## Jogar e testar
