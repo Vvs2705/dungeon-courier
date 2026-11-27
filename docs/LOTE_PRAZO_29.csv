@@ -1,1 +1,5 @@
 data,conta,id,tipo,task_id,creditos,arquivo,obs
+2026-11-27,A,golem,img,-,8,arte/tripo/_prazo29/golem/golem_img_v01.png..v04.png,"D01; Nano Banana 2, 4 variacoes (4 creditos por 2); escolhida a v04 (cristais nas costas aparecem por cima dos ombros)"
+2026-11-27,A,golem,malha,6a348662-73ed-4919-a0cd-643901b31504,60,arte/tripo/_prazo29/golem/golem_malha_v01.glb,"D01; H3.5, HD, 4K+PBR, 8K off, privado; entrada golem_img_v04; exportado em GLB (nao FBX)"
+2026-11-27,A,golem,var,75f7cacc-a935-4174-89cd-2355c6bff95f,60,arte/tripo/_prazo29/golem/golem_var_v01.glb,"D01; 2a malha a partir de golem_img_v02; GLB"
+2026-11-27,A,golem,rig,6a348662-73ed-4919-a0cd-643901b31504,20,arte/tripo/_prazo29/golem/golem_rig_v01.glb,"D01; Auto Rig humanoide Mixamo na malha v01; GLB com esqueleto + FBX Mixamo 2K em golem_rig_v01_fbx_mixamo_2k.zip"
