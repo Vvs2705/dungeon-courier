@@ -1,1 +1,29 @@
 data,conta,id,tipo,task_id,creditos,arquivo,obs
+2026-11-27,A,golem,img,-,8,arte/tripo/_prazo29/golem/golem_img_v01.png..v04.png,"D01; Nano Banana 2, 4 variacoes (4 creditos por 2); escolhida a v04 (cristais nas costas aparecem por cima dos ombros)"
+2026-11-27,A,golem,malha,6a348662-73ed-4919-a0cd-643901b31504,60,arte/tripo/_prazo29/golem/golem_malha_v01.glb,"D01; H3.5, HD, 4K+PBR, 8K off, privado; entrada golem_img_v04; exportado em GLB (nao FBX)"
+2026-11-27,A,golem,var,75f7cacc-a935-4174-89cd-2355c6bff95f,60,arte/tripo/_prazo29/golem/golem_var_v01.glb,"D01; 2a malha a partir de golem_img_v02; GLB"
+2026-11-27,A,golem,rig,6a348662-73ed-4919-a0cd-643901b31504,20,arte/tripo/_prazo29/golem/golem_rig_v01.glb,"D01; Auto Rig humanoide Mixamo na malha v01; GLB com esqueleto + FBX Mixamo 2K em golem_rig_v01_fbx_mixamo_2k.zip"
+2026-11-27,B,courier_noturno,img,-,0,arte/tripo/_prazo29/courier_noturno/courier_noturno_img_v01.png..v04.png,"Nano Banana 2, 4 variacoes; cota gratis do dia (a tela cobrou 0)"
+2026-11-27,B,courier_real,img,-,0,arte/tripo/_prazo29/courier_real/courier_real_img_v01.png..v04.png,"Nano Banana 2, 4 variacoes; cota gratis do dia (a tela cobrou 0)"
+2026-11-27,B,courier_explorador,img,-,0,arte/tripo/_prazo29/courier_explorador/courier_explorador_img_v01.png..v04.png,"Nano Banana 2, 4 variacoes; cota gratis do dia (a tela cobrou 0)"
+2026-11-27,B,courier_forja,img,-,0,arte/tripo/_prazo29/courier_forja/courier_forja_img_v01.png..v04.png,"Nano Banana 2, 4 variacoes; cota gratis do dia (a tela cobrou 0)"
+2026-11-27,B,courier_mineiro,img,-,0,arte/tripo/_prazo29/courier_mineiro/courier_mineiro_img_v01.png..v04.png,"Nano Banana 2, 4 variacoes; cota gratis do dia (a tela cobrou 0)"
+2026-11-27,B,courier_coveiro,img,-,0,arte/tripo/_prazo29/courier_coveiro/courier_coveiro_img_v01.png..v04.png,"Nano Banana 2, 4 variacoes; cota gratis do dia (a tela cobrou 0)"
+2026-11-27,B,courier_noturno,malha,15c85222-9bbb-40ec-ba0d-63161b16fdf9,60,arte/tripo/_prazo29/courier_noturno/courier_noturno_malha_v01.glb,"H3.5, HD, 4K+PBR, 8K off, privado; entrada courier_noturno_img_v02; GLB"
+2026-11-27,B,courier_real,malha,7ab386ff-181c-45ea-8862-98bc16b076c0,60,arte/tripo/_prazo29/courier_real/courier_real_malha_v01.glb,"H3.5, HD, 4K+PBR, 8K off, privado; entrada courier_real_img_v02; GLB"
+2026-11-27,B,courier_explorador,malha,dccc572d-bfe1-4063-a8fe-322077ae82a5,60,arte/tripo/_prazo29/courier_explorador/courier_explorador_malha_v01.glb,"H3.5, HD, 4K+PBR, 8K off, privado; entrada courier_explorador_img_v01; GLB"
+2026-11-27,B,courier_forja,malha,d06f9f27-7d49-4c72-a943-d5c6f14d9544,60,arte/tripo/_prazo29/courier_forja/courier_forja_malha_v01.glb,"H3.5, HD, 4K+PBR, 8K off, privado; entrada courier_forja_img_v02; GLB"
+2026-11-27,B,courier_mineiro,malha,ee38185e-616a-4f36-a0e0-58ed5da988a2,60,arte/tripo/_prazo29/courier_mineiro/courier_mineiro_malha_v01.glb,"H3.5, HD, 4K+PBR, 8K off, privado; entrada courier_mineiro_img_v01; GLB"
+2026-11-27,B,courier_coveiro,malha,e7da07c6-6866-4e18-a60a-9adffb26c8c2,60,arte/tripo/_prazo29/courier_coveiro/courier_coveiro_malha_v01.glb,"H3.5, HD, 4K+PBR, 8K off, privado; entrada courier_coveiro_img_v01; GLB"
+2026-11-27,B,courier_noturno,var,710da1a7-9ed8-4fd7-8922-7566e2dcc2dd,60,arte/tripo/_prazo29/courier_noturno/courier_noturno_var_v01.glb,"H3.5, HD, 4K+PBR, 8K off, privado; entrada courier_noturno_img_v01; GLB"
+2026-11-27,B,courier_real,var,3097cf64-fd9f-41ea-879a-5b4619955b7f,60,arte/tripo/_prazo29/courier_real/courier_real_var_v01.glb,"H3.5, HD, 4K+PBR, 8K off, privado; entrada courier_real_img_v03; GLB"
+2026-11-27,B,courier_explorador,var,0069b98c-ccef-46b1-9257-2a4afe01f7ac,60,arte/tripo/_prazo29/courier_explorador/courier_explorador_var_v01.glb,"H3.5, HD, 4K+PBR, 8K off, privado; entrada courier_explorador_img_v03; GLB"
+2026-11-27,B,courier_forja,var,907c1e2b-0e67-4e71-813e-57c7934dcc7c,60,arte/tripo/_prazo29/courier_forja/courier_forja_var_v01.glb,"H3.5, HD, 4K+PBR, 8K off, privado; entrada courier_forja_img_v01; GLB"
+2026-11-27,B,courier_mineiro,var,c2672cff-6848-4166-87bc-57ec1b3fe2cb,60,arte/tripo/_prazo29/courier_mineiro/courier_mineiro_var_v01.glb,"H3.5, HD, 4K+PBR, 8K off, privado; entrada courier_mineiro_img_v04; GLB"
+2026-11-27,B,courier_coveiro,var,2e54a362-6f9b-421f-810e-47a2a068e365,60,arte/tripo/_prazo29/courier_coveiro/courier_coveiro_var_v01.glb,"H3.5, HD, 4K+PBR, 8K off, privado; entrada courier_coveiro_img_v03; GLB"
+2026-11-27,B,courier_noturno,rig,15c85222-9bbb-40ec-ba0d-63161b16fdf9,20,arte/tripo/_prazo29/courier_noturno/courier_noturno_rig_v01_fbx_mixamo_2k.zip,Auto Rig humanoide Mixamo na malha v01; FBX Mixamo 2K
+2026-11-27,B,courier_real,rig,7ab386ff-181c-45ea-8862-98bc16b076c0,20,arte/tripo/_prazo29/courier_real/courier_real_rig_v01_fbx_mixamo_2k.zip,Auto Rig humanoide Mixamo na malha v01; FBX Mixamo 2K
+2026-11-27,B,courier_explorador,rig,dccc572d-bfe1-4063-a8fe-322077ae82a5,20,arte/tripo/_prazo29/courier_explorador/courier_explorador_rig_v01_fbx_mixamo_2k.zip,Auto Rig humanoide Mixamo na malha v01; FBX Mixamo 2K
+2026-11-27,B,courier_forja,rig,d06f9f27-7d49-4c72-a943-d5c6f14d9544,20,arte/tripo/_prazo29/courier_forja/courier_forja_rig_v01_fbx_mixamo_2k.zip,Auto Rig humanoide Mixamo na malha v01; FBX Mixamo 2K
+2026-11-27,B,courier_mineiro,rig,ee38185e-616a-4f36-a0e0-58ed5da988a2,20,arte/tripo/_prazo29/courier_mineiro/courier_mineiro_rig_v01_fbx_mixamo_2k.zip,Auto Rig humanoide Mixamo na malha v01; FBX Mixamo 2K
+2026-11-27,B,courier_coveiro,rig,e7da07c6-6866-4e18-a60a-9adffb26c8c2,20,arte/tripo/_prazo29/courier_coveiro/courier_coveiro_rig_v01_fbx_mixamo_2k.zip,Auto Rig humanoide Mixamo na malha v01; FBX Mixamo 2K
